@@ -1,0 +1,10 @@
+[package]
+
+name = "secp256k1"
+version = "0.0.1"
+authors = [
+	"Dawid Ciężarkiewicz <dpc@ucore.info>"
+	]
+
+[[lib]]
+name = "secp256k1"
