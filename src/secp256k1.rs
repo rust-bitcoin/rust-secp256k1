@@ -1,8 +1,10 @@
 #![crate_type = "lib"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![crate_id = "github.com/dpc/bitcoin-secp256k1-rs#secp256k1:0.1"]
+#![crate_name = "bitcoin-secp256k1-rs"]
 #![comment = "Bindings and wrapper functions for bitcoin secp256k1 library."]
+#![feature(phase)]
+
 
 extern crate libc;
 extern crate sync;
@@ -134,7 +136,7 @@ impl Secp256k1 {
 
         let res = unsafe {
             secp256k1_ecdsa_sign(
-                msg.as_ptr(), msg.len() as i32,
+                msg.as_ptr(), msg.len() as c_int,
                 sig.as_mut_ptr(), &mut siglen,
                 seckey.as_ptr(),
                 nonce.as_ptr()
@@ -154,7 +156,7 @@ impl Secp256k1 {
 
     pub fn sign_compact(
         &self,
-        sig : &mut Signature,
+        sig : &mut [u8],
         msg : &[u8],
         seckey : &SecKey,
         nonce : &Nonce
@@ -170,7 +172,7 @@ impl Secp256k1 {
 
         let res = unsafe {
             secp256k1_ecdsa_sign_compact(
-                msg.as_ptr(), msg.len() as i32,
+                msg.as_ptr(), msg.len() as c_int,
                 sig.as_mut_ptr(),
                 seckey.as_ptr(),
                 nonce.as_ptr(),
@@ -188,7 +190,7 @@ impl Secp256k1 {
     pub fn recover_compact(
         &self,
         msg : &[u8],
-        sig : &Signature,
+        sig : &[u8],
         pubkey : &mut PubKey,
         recid : i32
         ) -> Result<(), Error> {
@@ -225,7 +227,7 @@ impl Secp256k1 {
     }
 
 
-    pub fn verify(&self, msg : &[u8], sig : &Signature, pubkey : &PubKey) -> VerifyResult {
+    pub fn verify(&self, msg : &[u8], sig : &[u8], pubkey : &PubKey) -> VerifyResult {
 
         let (pub_ptr, pub_len) = match *pubkey {
             Uncompressed(ref key) => (key.as_ptr(), key.len()),
@@ -260,7 +262,7 @@ fn invalid_pubkey() {
 
     rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-    assert_eq!(s.verify(msg.as_mut_slice(), &sig, &pubkey), Err(InvalidPublicKey));
+    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidPublicKey));
 }
 
 #[test]
@@ -275,7 +277,7 @@ fn valid_pubkey_uncompressed() {
 
     rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-    assert_eq!(s.verify(msg.as_mut_slice(), &sig, &pubkey), Err(InvalidSignature));
+    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
 }
 
 #[test]
@@ -290,7 +292,7 @@ fn valid_pubkey_compressed() {
 
     rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-    assert_eq!(s.verify(msg.as_mut_slice(), &sig, &pubkey), Err(InvalidSignature));
+    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
 }
 
 #[test]
@@ -325,7 +327,7 @@ fn sign_and_verify() {
 
     s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
 
-    assert_eq!(s.verify(msg.as_slice(), &sig, &pubkey), Ok(true));
+    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
 }
 
 #[test]
@@ -345,7 +347,7 @@ fn sign_and_verify_fail() {
     s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
 
     rand::task_rng().fill_bytes(msg.as_mut_slice());
-    assert_eq!(s.verify(msg.as_slice(), &sig, &pubkey), Ok(false));
+    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(false));
 }
 
 #[test]
@@ -363,9 +365,9 @@ fn sign_compact() {
 
     s.pubkey_create(&mut pubkey, &seckey).unwrap();
 
-    let _ = s.sign_compact(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+    let _ = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
 
-    assert_eq!(s.verify(msg.as_slice(), &sig, &pubkey), Ok(true));
+    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
 }
 
 #[test]
@@ -383,11 +385,11 @@ fn sign_compact_with_recovery() {
 
     s.pubkey_create(&mut pubkey, &seckey).unwrap();
 
-    let recid = s.sign_compact(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+    let recid = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
 
-    s.recover_compact(msg.as_slice(), &sig, &mut pubkey, recid).unwrap();
+    s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid).unwrap();
 
-    assert_eq!(s.verify(msg.as_slice(), &sig, &pubkey), Ok(true));
+    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
 }
 
 
