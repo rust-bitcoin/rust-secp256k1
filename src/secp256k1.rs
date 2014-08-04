@@ -351,26 +351,6 @@ fn sign_and_verify_fail() {
 }
 
 #[test]
-fn sign_compact() {
-    let s = Secp256k1::new();
-
-    let mut msg = [0u8, ..32];
-    let mut seckey = [0u8, ..32];
-    let mut pubkey = Uncompressed([0u8, ..65]);
-    let mut nonce = [0u8, ..32];
-    let mut sig = Vec::from_elem(64, 0u8);
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-    rand::task_rng().fill_bytes(nonce);
-    rand::task_rng().fill_bytes(seckey);
-
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-
-    let _ = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
-
-    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
-}
-
-#[test]
 fn sign_compact_with_recovery() {
     let s = Secp256k1::new();
 
@@ -387,9 +367,7 @@ fn sign_compact_with_recovery() {
 
     let recid = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
 
-    s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid).unwrap();
-
-    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
+    assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid), Ok(()));
 }
 
 
