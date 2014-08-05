@@ -4,13 +4,11 @@
 #![crate_name = "bitcoin-secp256k1-rs"]
 #![comment = "Bindings and wrapper functions for bitcoin secp256k1 library."]
 #![feature(phase)]
+#![feature(globs)]  // for tests only
 
 
 extern crate libc;
 extern crate sync;
-
-use std::rand;
-use std::rand::Rng;
 
 use libc::{c_int, c_uchar};
 use sync::one::{Once, ONCE_INIT};
@@ -252,122 +250,129 @@ impl Secp256k1 {
     }
 }
 
-#[test]
-fn invalid_pubkey() {
-    let s = Secp256k1::new();
 
-    let mut msg = Vec::from_elem(32, 0u8);
-    let sig = Vec::from_elem(32, 0u8);
-    let pubkey = Compressed([0u8, .. 33]);
+#[cfg(test)]
+mod test {
 
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
+    use std::rand;
+    use std::rand::Rng;
+    use super::*;
 
-    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidPublicKey));
+    #[test]
+    fn invalid_pubkey() {
+        let s = Secp256k1::new();
+
+        let mut msg = Vec::from_elem(32, 0u8);
+        let sig = Vec::from_elem(32, 0u8);
+        let pubkey = Compressed([0u8, .. 33]);
+
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidPublicKey));
+    }
+
+    #[test]
+    fn valid_pubkey_uncompressed() {
+        let s = Secp256k1::new();
+
+        let seckey = [0u8, ..32];
+        let mut pubkey = Uncompressed([0u8, ..65]);
+        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let mut msg = Vec::from_elem(32, 0u8);
+        let sig = Vec::from_elem(32, 0u8);
+
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
+    }
+
+    #[test]
+    fn valid_pubkey_compressed() {
+        let s = Secp256k1::new();
+
+        let seckey = [0u8, ..32];
+        let mut pubkey = Compressed([0u8, .. 33]);
+        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let mut msg = Vec::from_elem(32, 0u8);
+        let sig = Vec::from_elem(32, 0u8);
+
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
+    }
+
+    #[test]
+    fn sign() {
+        let s = Secp256k1::new();
+
+        let mut msg = [0u8, ..32];
+        let mut seckey = [0u8, ..32];
+        let mut nonce = [0u8, ..32];
+        let mut sig = Vec::from_elem(72, 0u8);
+        rand::task_rng().fill_bytes(msg);
+        rand::task_rng().fill_bytes(nonce);
+        rand::task_rng().fill_bytes(seckey);
+
+        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+    }
+
+    #[test]
+    fn sign_and_verify() {
+        let s = Secp256k1::new();
+
+        let mut msg = Vec::from_elem(32, 0u8);
+        let mut seckey = [0u8, ..32];
+        let mut pubkey = Compressed([0u8, .. 33]);
+        let mut nonce = [0u8, ..32];
+        let mut sig = Vec::from_elem(72, 0u8);
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+        rand::task_rng().fill_bytes(nonce);
+        rand::task_rng().fill_bytes(seckey);
+
+        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+
+        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+
+        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
+    }
+
+    #[test]
+    fn sign_and_verify_fail() {
+        let s = Secp256k1::new();
+
+        let mut msg = Vec::from_elem(32, 0u8);
+        let mut seckey = [0u8, ..32];
+        let mut pubkey = Compressed([0u8, .. 33]);
+        let mut nonce = [0u8, ..32];
+        let mut sig = Vec::from_elem(72, 0u8);
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+        rand::task_rng().fill_bytes(nonce);
+        rand::task_rng().fill_bytes(seckey);
+
+        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(false));
+    }
+
+    #[test]
+    fn sign_compact_with_recovery() {
+        let s = Secp256k1::new();
+
+        let mut msg = [0u8, ..32];
+        let mut seckey = [0u8, ..32];
+        let mut pubkey = Uncompressed([0u8, ..65]);
+        let mut nonce = [0u8, ..32];
+        let mut sig = Vec::from_elem(64, 0u8);
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+        rand::task_rng().fill_bytes(nonce);
+        rand::task_rng().fill_bytes(seckey);
+
+        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+
+        let recid = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
+
+        assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid), Ok(()));
+    }
 }
-
-#[test]
-fn valid_pubkey_uncompressed() {
-    let s = Secp256k1::new();
-
-    let seckey = [0u8, ..32];
-    let mut pubkey = Uncompressed([0u8, ..65]);
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-    let mut msg = Vec::from_elem(32, 0u8);
-    let sig = Vec::from_elem(32, 0u8);
-
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-
-    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
-}
-
-#[test]
-fn valid_pubkey_compressed() {
-    let s = Secp256k1::new();
-
-    let seckey = [0u8, ..32];
-    let mut pubkey = Compressed([0u8, .. 33]);
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-    let mut msg = Vec::from_elem(32, 0u8);
-    let sig = Vec::from_elem(32, 0u8);
-
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-
-    assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
-}
-
-#[test]
-fn sign() {
-    let s = Secp256k1::new();
-
-    let mut msg = [0u8, ..32];
-    let mut seckey = [0u8, ..32];
-    let mut nonce = [0u8, ..32];
-    let mut sig = Vec::from_elem(72, 0u8);
-    rand::task_rng().fill_bytes(msg);
-    rand::task_rng().fill_bytes(nonce);
-    rand::task_rng().fill_bytes(seckey);
-
-    s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
-}
-
-#[test]
-fn sign_and_verify() {
-    let s = Secp256k1::new();
-
-    let mut msg = Vec::from_elem(32, 0u8);
-    let mut seckey = [0u8, ..32];
-    let mut pubkey = Compressed([0u8, .. 33]);
-    let mut nonce = [0u8, ..32];
-    let mut sig = Vec::from_elem(72, 0u8);
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-    rand::task_rng().fill_bytes(nonce);
-    rand::task_rng().fill_bytes(seckey);
-
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-
-    s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
-
-    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
-}
-
-#[test]
-fn sign_and_verify_fail() {
-    let s = Secp256k1::new();
-
-    let mut msg = Vec::from_elem(32, 0u8);
-    let mut seckey = [0u8, ..32];
-    let mut pubkey = Compressed([0u8, .. 33]);
-    let mut nonce = [0u8, ..32];
-    let mut sig = Vec::from_elem(72, 0u8);
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-    rand::task_rng().fill_bytes(nonce);
-    rand::task_rng().fill_bytes(seckey);
-
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-    s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
-
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-    assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(false));
-}
-
-#[test]
-fn sign_compact_with_recovery() {
-    let s = Secp256k1::new();
-
-    let mut msg = [0u8, ..32];
-    let mut seckey = [0u8, ..32];
-    let mut pubkey = Uncompressed([0u8, ..65]);
-    let mut nonce = [0u8, ..32];
-    let mut sig = Vec::from_elem(64, 0u8);
-    rand::task_rng().fill_bytes(msg.as_mut_slice());
-    rand::task_rng().fill_bytes(nonce);
-    rand::task_rng().fill_bytes(seckey);
-
-    s.pubkey_create(&mut pubkey, &seckey).unwrap();
-
-    let recid = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
-
-    assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid), Ok(()));
-}
-
-
