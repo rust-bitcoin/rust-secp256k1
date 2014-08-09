@@ -1,3 +1,11 @@
+
+//! # Secp256k1
+//! Rust bindings for Pieter Wuille's secp256k1 library, which is used for
+//! fast and accurate manipulation of ECDSA signatures on the secp256k1
+//! curve. Such signatures are used extensively by the Bitcoin network
+//! and its derivatives.
+//!
+
 #![crate_type = "lib"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
@@ -6,95 +14,76 @@
 #![feature(phase)]
 #![feature(globs)]  // for tests only
 
+// Coding conventions
+#![deny(non_uppercase_pattern_statics)]
+#![deny(uppercase_variables)]
+#![deny(non_camel_case_types)]
+#![deny(non_snake_case_functions)]
+#![deny(unused_mut)]
+#![warn(missing_doc)]
 
 extern crate libc;
 extern crate sync;
 
-use libc::{c_int, c_uchar};
+use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
 
-#[link(name = "secp256k1")]
-extern "C" {
-    pub fn secp256k1_start();
-    pub fn secp256k1_stop();
-    pub fn secp256k1_ecdsa_verify(
-        msg : *const c_uchar, msglen : c_int,
-        sig : *const c_uchar, siglen : c_int,
-        pubkey : *const c_uchar, pubkeylen : c_int
-        ) -> c_int;
+pub mod ffi;
 
-    pub fn secp256k1_ecdsa_pubkey_create(
-        pubkey : *mut c_uchar,
-        pubkeylen : *mut c_int,
-        seckey : *const c_uchar,
-        compressed : c_int
-        ) -> c_int;
-
-    pub fn secp256k1_ecdsa_sign(
-        msg : *const c_uchar, msglen : c_int,
-        sig : *mut c_uchar, siglen : *mut c_int,
-        seckey : *const c_uchar,
-        nonce : *const c_uchar
-        ) -> c_int;
-
-    pub fn secp256k1_ecdsa_sign_compact(
-        msg : *const c_uchar, msglen : c_int,
-        sig64 : *mut c_uchar,
-        seckey : *const c_uchar,
-        nonce : *const c_uchar,
-        recid : *mut c_int
-        ) -> c_int;
-
-    pub fn secp256k1_ecdsa_recover_compact(
-        msg : *const c_uchar, msglen : c_int,
-        sig64 : *const c_uchar,
-        pubkey : *mut c_uchar,
-        pubkeylen : *mut c_int,
-        compressed : c_int,
-        recid : c_int
-        ) -> c_int;
-}
-
+/// A secret 256-bit nonce used as `k` in an ECDSA signature
 pub type Nonce = [u8, ..32];
+
+/// A secret 256-bit key used as `x` in an ECDSA signature
 pub type SecKey = [u8, ..32];
-pub type PubKeyCompressed = [u8, ..33];
-pub type PubKeyUncompressed = [u8, ..65];
+
+/// A public key
 pub enum PubKey {
-    Compressed(PubKeyCompressed),
-    Uncompressed(PubKeyUncompressed)
+    /// A compressed (1-bit x-coordinate) EC public key
+    Compressed([u8, ..33]),
+    /// An uncompressed (full x-coordinate) EC public key
+    Uncompressed([u8, ..65])
 }
+/// An ECDSA signature
 pub type Signature = Vec<u8>;
 
+/// An ECDSA error
 #[deriving(Show)]
 #[deriving(Eq)]
 #[deriving(PartialEq)]
 pub enum Error {
+    /// Bad public key
     InvalidPublicKey,
+    /// Bad signature
     InvalidSignature,
+    /// Bad secret key
     InvalidSecretKey,
+    /// Bad nonce
     InvalidNonce,
 }
 
 #[deriving(Eq)]
 #[deriving(PartialEq)]
+/// Result of verifying a signature
 pub type VerifyResult = Result<bool, Error>;
 
 static mut Secp256k1_init : Once = ONCE_INIT;
 
+/// The secp256k1 engine, used to execute all signature operations
 pub struct Secp256k1;
 
 
 impl Secp256k1 {
+    /// Constructs a new secp256k1 engine.
     pub fn new() -> Secp256k1 {
         unsafe {
             Secp256k1_init.doit(|| {
-                secp256k1_start();
+                ffi::secp256k1_start();
             });
         }
         Secp256k1
     }
 
-
+    /// Determines the public key corresponding to a given private key.
     pub fn pubkey_create(
         &self,
         pubkey : &mut PubKey,
@@ -107,7 +96,7 @@ impl Secp256k1 {
         };
         let mut len = pub_len as c_int;
         let res = unsafe {
-            secp256k1_ecdsa_pubkey_create(
+            ffi::secp256k1_ecdsa_pubkey_create(
                 pub_ptr, &mut len,
                 seckey.as_ptr(),
                 if compressed {1} else {0}
@@ -123,6 +112,7 @@ impl Secp256k1 {
         }
     }
 
+    /// Constructs a signature for `msg` using the secret key `seckey`
     pub fn sign(&self, sig : &mut Signature, msg : &[u8], seckey : &SecKey, nonce : &Nonce) -> Result<(), Error> {
 
         let origlen = 72u;
@@ -133,7 +123,7 @@ impl Secp256k1 {
         }
 
         let res = unsafe {
-            secp256k1_ecdsa_sign(
+            ffi::secp256k1_ecdsa_sign(
                 msg.as_ptr(), msg.len() as c_int,
                 sig.as_mut_ptr(), &mut siglen,
                 seckey.as_ptr(),
@@ -152,6 +142,7 @@ impl Secp256k1 {
         }
     }
 
+    /// Constructs a compact signature for `msg` using the secret key `seckey`
     pub fn sign_compact(
         &self,
         sig : &mut [u8],
@@ -169,7 +160,7 @@ impl Secp256k1 {
         let mut recid = 0;
 
         let res = unsafe {
-            secp256k1_ecdsa_sign_compact(
+            ffi::secp256k1_ecdsa_sign_compact(
                 msg.as_ptr(), msg.len() as c_int,
                 sig.as_mut_ptr(),
                 seckey.as_ptr(),
@@ -185,6 +176,8 @@ impl Secp256k1 {
         }
     }
 
+    /// Determines the public key for which `sig` is a valid signature for
+    /// `msg`. Returns through the out-pointer `pubkey`.
     pub fn recover_compact(
         &self,
         msg : &[u8],
@@ -206,7 +199,7 @@ impl Secp256k1 {
 
         let mut len = pub_len as c_int;
         let res = unsafe {
-            secp256k1_ecdsa_recover_compact(
+            ffi::secp256k1_ecdsa_recover_compact(
                 msg.as_ptr(), msg.len() as i32,
                 sig.as_ptr(),
                 pub_ptr, &mut len,
@@ -225,6 +218,8 @@ impl Secp256k1 {
     }
 
 
+    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
+    /// key `pubkey`. Returns `Ok(true)` on success.
     pub fn verify(&self, msg : &[u8], sig : &[u8], pubkey : &PubKey) -> VerifyResult {
 
         let (pub_ptr, pub_len) = match *pubkey {
@@ -233,7 +228,7 @@ impl Secp256k1 {
         };
 
         let res = unsafe {
-            secp256k1_ecdsa_verify(
+            ffi::secp256k1_ecdsa_verify(
                 msg.as_ptr(), msg.len() as c_int,
                 sig.as_ptr(), sig.len() as c_int,
                 pub_ptr, pub_len as c_int
