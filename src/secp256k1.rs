@@ -25,7 +25,7 @@
 extern crate libc;
 extern crate sync;
 
-use std::io::IoError;
+use std::io::{IoError, IoResult};
 use std::rand::OsRng;
 use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
@@ -84,28 +84,40 @@ pub struct Secp256k1 {
     rng: OsRng
 }
 
+/// Does one-time initialization of the secp256k1 engine. Can be called
+/// multiple times, and is called by the `Secp256k1` constructor. This
+/// only needs to be called directly if you are using the library without
+/// a `Secp256k1` object, e.g. batch key generation through
+/// `key::PublicKey::from_secret_key`.
+pub fn init() {
+    unsafe {
+        Secp256k1_init.doit(|| {
+            ffi::secp256k1_start();
+        });
+    }
+}
+
 impl Secp256k1 {
     /// Constructs a new secp256k1 engine.
     pub fn new() -> Result<Secp256k1> {
-        unsafe {
-            Secp256k1_init.doit(|| {
-                ffi::secp256k1_start();
-            });
-        }
+        init();
         match OsRng::new() {
             Ok(rng) => Ok(Secp256k1 { rng: rng }),
             Err(e) => Err(RngError(e))
         }
     }
 
-    /// Generates a randam keypair
+    /// Generates a random keypair. Convenience function for `key::SecretKey::new`
+    /// and `key::PublicKey::from_secret_key`; call those functions directly for
+    /// batch key generation.
     pub fn generate_keypair(&mut self, compressed: bool)
                             -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(&mut self.rng);
-        (sk, key::PublicKey::from_secret_key(&sk, compressed))
+        unsafe { (sk, key::PublicKey::from_secret_key(&sk, compressed)) }
     }
 
-    /// Generates a random nonce
+    /// Generates a random nonce. Convenience function for `key::Nonce::new`; call
+    /// that function directly for batch nonce generation
     pub fn generate_nonce(&mut self) -> key::Nonce {
         key::Nonce::new(&mut self.rng)
     }

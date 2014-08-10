@@ -7,6 +7,7 @@ use constants;
 use ffi;
 
 use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
+use super::init;
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -124,20 +125,22 @@ impl PublicKey {
         )
     }
 
-    /// Creates a new public key from a secret key
+    /// Creates a new public key from a secret key. Marked `unsafe` since you must
+    /// call `init()` (or construct a `Secp256k1`, which does this for you) before
+    /// using this function
     #[inline]
-    pub fn from_secret_key(sk: &SecretKey, compressed: bool) -> PublicKey {
+    pub unsafe fn from_secret_key(sk: &SecretKey, compressed: bool) -> PublicKey {
         let mut pk = PublicKey::new(compressed);
         let compressed = if compressed {1} else {0};
-        unsafe {
-            let mut len = 0;
-            while ffi::secp256k1_ecdsa_pubkey_create(
-                pk.as_mut_ptr(), &mut len,
-                sk.as_ptr(), compressed) != 1 {
-                // loop
-            }
-            assert_eq!(len as uint, pk.len()); 
-        };
+        let mut len = 0;
+
+        while ffi::secp256k1_ecdsa_pubkey_create(
+            pk.as_mut_ptr(), &mut len,
+            sk.as_ptr(), compressed) != 1 {
+            // loop
+        }
+        assert_eq!(len as uint, pk.len()); 
+
         pk
     }
 
