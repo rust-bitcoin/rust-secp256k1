@@ -1,11 +1,12 @@
 //! Public/Private keys
 
+use std::intrinsics::copy_nonoverlapping_memory;
 use std::fmt;
 use std::rand::Rng;
 use constants;
 use ffi;
 
-use super::Result;
+use super::{Result, InvalidPublicKey, InvalidSecretKey};
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -56,6 +57,29 @@ impl SecretKey {
         SecretKey(random_32_bytes(rng))
     }
 
+    #[inline]
+    pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
+        match data.len() {
+            constants::SECRET_KEY_SIZE => {
+                let mut ret = [0, ..constants::SECRET_KEY_SIZE];
+                unsafe {
+                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                               data.as_ptr(),
+                                               data.len());
+                }
+                Ok(SecretKey(ret))
+            }
+            _ => Err(InvalidSecretKey)
+        }
+    }
+
+    /// Converts the secret key into a byte slice
+    #[inline]
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+        let &SecretKey(ref data) = self;
+        data.as_slice()
+    }
+
     /// Converts the secret key to a raw pointer suitable for use with
     /// the FFI functions
     #[inline]
@@ -90,6 +114,32 @@ impl PublicKey {
             assert_eq!(len as uint, pk.len()); 
         };
         pk
+    }
+
+    /// Creates a public key directly from a slice
+    #[inline]
+    pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
+        match data.len() {
+            constants::COMPRESSED_PUBLIC_KEY_SIZE => {
+                let mut ret = [0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE];
+                unsafe {
+                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                               data.as_ptr(),
+                                               data.len());
+                }
+                Ok(PublicKey(Compressed(ret)))
+            }
+            constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
+                let mut ret = [0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+                unsafe {
+                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                               data.as_ptr(),
+                                               data.len());
+                }
+                Ok(PublicKey(Uncompressed(ret)))
+            }
+            _ => Err(InvalidPublicKey)
+        }
     }
 
     /// Returns whether the public key is compressed or uncompressed
@@ -165,6 +215,53 @@ impl Eq for PublicKeyData {}
 impl fmt::Show for PublicKeyData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
+    }
+}
+
+impl PartialEq for SecretKey {
+    fn eq(&self, other: &SecretKey) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl Eq for SecretKey {}
+
+impl fmt::Show for SecretKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.as_slice().fmt(f)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::{Secp256k1, InvalidPublicKey};
+    use super::*;
+
+    #[test]
+    fn from_slice() {
+        assert_eq!(PublicKey::from_slice([]), Err(InvalidPublicKey));
+        assert_eq!(PublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
+
+        let uncompressed = PublicKey::from_slice([1, ..65]);
+        assert!(uncompressed.is_ok());
+        assert!(!uncompressed.unwrap().is_compressed());
+
+        let compressed = PublicKey::from_slice([1, ..33]);
+        assert!(compressed.is_ok());
+        assert!(compressed.unwrap().is_compressed());
+    }
+
+    #[test]
+    fn keypair_slice_round_trip() {
+        let mut s = Secp256k1::new().unwrap();
+
+        let (sk1, pk1) = s.generate_keypair(true);
+        assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
+        assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
+
+        let (sk2, pk2) = s.generate_keypair(false);
+        assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
+        assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
     }
 }
 
