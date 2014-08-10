@@ -25,32 +25,43 @@
 extern crate libc;
 extern crate sync;
 
+use std::io::IoError;
+use std::rand::OsRng;
 use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
 
+pub mod constants;
 pub mod ffi;
+pub mod key;
 
-/// A secret 256-bit nonce used as `k` in an ECDSA signature
-pub type Nonce = [u8, ..32];
+/// A tag used for recovering the public key from a compact signature
+pub struct RecoveryId(i32);
 
-/// A secret 256-bit key used as `x` in an ECDSA signature
-pub type SecKey = [u8, ..32];
-
-/// A public key
-pub enum PubKey {
-    /// A compressed (1-bit x-coordinate) EC public key
-    Compressed([u8, ..33]),
-    /// An uncompressed (full x-coordinate) EC public key
-    Uncompressed([u8, ..65])
-}
 /// An ECDSA signature
-pub type Signature = Vec<u8>;
+pub struct Signature(pub Vec<u8>);
+
+impl Signature {
+    /// Converts the signature to a mutable raw pointer suitable for use
+    /// with the FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        let &Signature(ref mut data) = self;
+        data.as_mut_ptr()
+    }
+
+    /// Converts the signature to a byte slice suitable for verification
+    #[inline]
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+        let &Signature(ref data) = self;
+        data.as_slice()
+    }
+}
 
 /// An ECDSA error
-#[deriving(Show)]
-#[deriving(Eq)]
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Eq, Clone, Show)]
 pub enum Error {
+    /// Signature failed verification
+    IncorrectSignature,
     /// Bad public key
     InvalidPublicKey,
     /// Bad signature
@@ -59,188 +70,122 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad nonce
     InvalidNonce,
+    /// Rng problem
+    RngError(IoError),
 }
 
-#[deriving(Eq)]
-#[deriving(PartialEq)]
+/// Result type
+pub type Result<T> = ::std::prelude::Result<T, Error>;
+
 /// Result of verifying a signature
-pub type VerifyResult = Result<bool, Error>;
+pub type VerifyResult = Result<bool>;
 
 static mut Secp256k1_init : Once = ONCE_INIT;
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1;
-
+pub struct Secp256k1 {
+    rng: OsRng
+}
 
 impl Secp256k1 {
     /// Constructs a new secp256k1 engine.
-    pub fn new() -> Secp256k1 {
+    pub fn new() -> Result<Secp256k1> {
         unsafe {
             Secp256k1_init.doit(|| {
                 ffi::secp256k1_start();
             });
         }
-        Secp256k1
-    }
-
-    /// Determines the public key corresponding to a given private key.
-    pub fn pubkey_create(
-        &self,
-        pubkey : &mut PubKey,
-        seckey : &SecKey
-        ) -> Result<(), Error> {
-
-        let (compressed, pub_ptr, pub_len) = match *pubkey {
-            Uncompressed(ref mut key) => (false, key.as_mut_ptr(), key.len()),
-            Compressed(ref mut key) => (true, key.as_mut_ptr(), key.len()),
-        };
-        let mut len = pub_len as c_int;
-        let res = unsafe {
-            ffi::secp256k1_ecdsa_pubkey_create(
-                pub_ptr, &mut len,
-                seckey.as_ptr(),
-                if compressed {1} else {0}
-                )
-        };
-
-        assert_eq!(pub_len as i32, len);
-
-        match res {
-            0 => Err(InvalidSecretKey),
-            1 => Ok(()),
-            _ => fail!("secp256k1_ecdsa_pubkey_create invalid return value"),
+        match OsRng::new() {
+            Ok(rng) => Ok(Secp256k1 { rng: rng }),
+            Err(e) => Err(RngError(e))
         }
     }
 
-    /// Constructs a signature for `msg` using the secret key `seckey`
-    pub fn sign(&self, sig : &mut Signature, msg : &[u8], seckey : &SecKey, nonce : &Nonce) -> Result<(), Error> {
-
-        let origlen = 72u;
-        let mut siglen = origlen as c_int;
-
-        if sig.len() != origlen {
-            fail!("invalid length of signature buffer");
-        }
-
-        let res = unsafe {
-            ffi::secp256k1_ecdsa_sign(
-                msg.as_ptr(), msg.len() as c_int,
-                sig.as_mut_ptr(), &mut siglen,
-                seckey.as_ptr(),
-                nonce.as_ptr()
-                )
-        };
-
-        if (origlen as c_int) < siglen {
-            fail!("secp256k1_ecdsa_sign wrong return len");
-        }
-
-        match res {
-            0 => Err(InvalidNonce),
-            1 => { sig.truncate(siglen as uint); Ok(()) },
-            _ => fail!("secp256k1_ecdsa_sign invalid return value"),
-        }
+    /// Generates a randam keypair
+    pub fn generate_keypair(&mut self, compressed: bool)
+                            -> (key::SecretKey, key::PublicKey) {
+        let sk = key::SecretKey::new(&mut self.rng);
+        (sk, key::PublicKey::from_secret_key(&sk, compressed))
     }
 
-    /// Constructs a compact signature for `msg` using the secret key `seckey`
-    pub fn sign_compact(
-        &self,
-        sig : &mut [u8],
-        msg : &[u8],
-        seckey : &SecKey,
-        nonce : &Nonce
-        ) -> Result<i32, Error> {
+    /// Generates a random nonce
+    pub fn generate_nonce(&mut self) -> key::Nonce {
+        key::Nonce::new(&mut self.rng)
+    }
 
-        let origlen = 64u;
+    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
+    pub fn sign(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
+                -> Result<Signature> {
+        let mut sig = vec![];
+        unsafe {
+            let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
+            sig.reserve(constants::MAX_SIGNATURE_SIZE);
+            if ffi::secp256k1_ecdsa_sign(msg.as_ptr(), msg.len() as c_int,
+                                         sig.as_mut_ptr(), &mut len,
+                                         sk.as_ptr(), nonce.as_ptr()) != 1 {
+                return Err(InvalidNonce);
+            }
+            // This assertation is probably too late :)
+            assert!(len as uint <= constants::MAX_SIGNATURE_SIZE);
+            sig.set_len(len as uint);
+        };
 
-        if sig.len() != origlen {
-            fail!("invalid length of signature buffer");
-        }
+        Ok(Signature(sig))
+    }
 
+    /// Constructs a compact signature for `msg` using the secret key `sk`
+    pub fn sign_compact(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
+                        -> Result<(Signature, RecoveryId)> {
+        let mut sig = vec![];
         let mut recid = 0;
-
-        let res = unsafe {
-            ffi::secp256k1_ecdsa_sign_compact(
-                msg.as_ptr(), msg.len() as c_int,
-                sig.as_mut_ptr(),
-                seckey.as_ptr(),
-                nonce.as_ptr(),
-                &mut recid
-                )
+        unsafe {
+            sig.reserve(constants::MAX_COMPACT_SIGNATURE_SIZE);
+            if ffi::secp256k1_ecdsa_sign_compact(msg.as_ptr(), msg.len() as c_int,
+                                                 sig.as_mut_ptr(), sk.as_ptr(),
+                                                 nonce.as_ptr(), &mut recid) != 1 {
+                return Err(InvalidNonce);
+            }
         };
-
-        match res {
-            0 => Err(InvalidNonce),
-            1 => { Ok(recid) },
-            _ => fail!("secp256k1_ecdsa_sign_compact invalid return value"),
-        }
+        Ok((Signature(sig), RecoveryId(recid)))
     }
 
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Returns through the out-pointer `pubkey`.
-    pub fn recover_compact(
-        &self,
-        msg : &[u8],
-        sig : &[u8],
-        pubkey : &mut PubKey,
-        recid : i32
-        ) -> Result<(), Error> {
+    pub fn recover_compact(&self, msg: &[u8], sig: &[u8],
+                           compressed: bool, recid: RecoveryId)
+                            -> Result<key::PublicKey> {
+        let mut pk = key::PublicKey::new(compressed);
+        let RecoveryId(recid) = recid;
 
-        let (compressed, pub_ptr, pub_len) = match *pubkey {
-            Uncompressed(ref mut key) => (false, key.as_mut_ptr(), key.len()),
-            Compressed(ref mut key) => (true, key.as_mut_ptr(), key.len()),
+        unsafe {
+            let mut len = 0;
+            if ffi::secp256k1_ecdsa_recover_compact(msg.as_ptr(), msg.len() as c_int,
+                                                    sig.as_ptr(), pk.as_mut_ptr(), &mut len,
+                                                    if compressed {1} else {0},
+                                                    recid) != 1 {
+                return Err(InvalidSignature);
+            }
+            assert_eq!(len as uint, pk.len());
         };
-
-        let origlen = 64u;
-
-        if sig.len() != origlen {
-            fail!("invalid length of signature buffer");
-        }
-
-        let mut len = pub_len as c_int;
-        let res = unsafe {
-            ffi::secp256k1_ecdsa_recover_compact(
-                msg.as_ptr(), msg.len() as i32,
-                sig.as_ptr(),
-                pub_ptr, &mut len,
-                if compressed {1} else {0},
-                recid
-                )
-        };
-
-        assert_eq!(pub_len as i32, len);
-
-        match res {
-            0 => Err(InvalidSignature),
-            1 => Ok(()),
-            _ => fail!("secp256k1_ecdsa_recover_compact invalid return value"),
-        }
+        Ok(pk)
     }
 
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
-    pub fn verify(&self, msg : &[u8], sig : &[u8], pubkey : &PubKey) -> VerifyResult {
-
-        let (pub_ptr, pub_len) = match *pubkey {
-            Uncompressed(ref key) => (key.as_ptr(), key.len()),
-            Compressed(ref key) => (key.as_ptr(), key.len()),
-        };
-
+    pub fn verify(&self, msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
         let res = unsafe {
-            ffi::secp256k1_ecdsa_verify(
-                msg.as_ptr(), msg.len() as c_int,
-                sig.as_ptr(), sig.len() as c_int,
-                pub_ptr, pub_len as c_int
-                )
+            ffi::secp256k1_ecdsa_verify(msg.as_ptr(), msg.len() as c_int,
+                                        sig.as_ptr(), sig.len() as c_int,
+                                        pk.as_ptr(), pk.len() as c_int)
         };
 
         match res {
-            1 => Ok(true),
-            0 => Ok(false),
+            1 => Ok(()),
+            0 => Err(IncorrectSignature),
             -1 => Err(InvalidPublicKey),
             -2 => Err(InvalidSignature),
-            _ => fail!("secp256k1_ecdsa_verify() invalid return value")
+            _ => unreachable!()
         }
     }
 }
@@ -252,122 +197,104 @@ mod test {
     use std::rand;
     use std::rand::Rng;
     use super::*;
+    use key::PublicKey;
 
     #[test]
     fn invalid_pubkey() {
-        let s = Secp256k1::new();
+        let s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
-        let pubkey = Compressed([0u8, .. 33]);
+        let pk = PublicKey::new(true);
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidPublicKey));
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidPublicKey));
     }
 
     #[test]
     fn valid_pubkey_uncompressed() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let seckey = [0u8, ..32];
-        let mut pubkey = Uncompressed([0u8, ..65]);
-        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let (_, pk) = s.generate_keypair(false);
+
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
     }
 
     #[test]
     fn valid_pubkey_compressed() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let seckey = [0u8, ..32];
-        let mut pubkey = Compressed([0u8, .. 33]);
-        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let (_, pk) = s.generate_keypair(true);
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pubkey), Err(InvalidSignature));
+        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
     }
 
     #[test]
     fn sign() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8, ..32];
-        let mut seckey = [0u8, ..32];
-        let mut nonce = [0u8, ..32];
-        let mut sig = Vec::from_elem(72, 0u8);
         rand::task_rng().fill_bytes(msg);
-        rand::task_rng().fill_bytes(nonce);
-        rand::task_rng().fill_bytes(seckey);
 
-        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+        let (sk, _) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
+
+        s.sign(msg.as_slice(), &sk, &nonce).unwrap();
     }
 
     #[test]
     fn sign_and_verify() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
-        let mut seckey = [0u8, ..32];
-        let mut pubkey = Compressed([0u8, .. 33]);
-        let mut nonce = [0u8, ..32];
-        let mut sig = Vec::from_elem(72, 0u8);
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        rand::task_rng().fill_bytes(nonce);
-        rand::task_rng().fill_bytes(seckey);
 
-        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
-        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
-        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(true));
+        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pk), Ok(()));
     }
 
     #[test]
     fn sign_and_verify_fail() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
-        let mut seckey = [0u8, ..32];
-        let mut pubkey = Compressed([0u8, .. 33]);
-        let mut nonce = [0u8, ..32];
-        let mut sig = Vec::from_elem(72, 0u8);
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        rand::task_rng().fill_bytes(nonce);
-        rand::task_rng().fill_bytes(seckey);
 
-        s.pubkey_create(&mut pubkey, &seckey).unwrap();
-        s.sign(&mut sig, msg.as_slice(), &seckey, &nonce).unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
+
+        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pubkey), Ok(false));
+        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pk), Err(IncorrectSignature));
     }
 
     #[test]
     fn sign_compact_with_recovery() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8, ..32];
-        let mut seckey = [0u8, ..32];
-        let mut pubkey = Uncompressed([0u8, ..65]);
-        let mut nonce = [0u8, ..32];
-        let mut sig = Vec::from_elem(64, 0u8);
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        rand::task_rng().fill_bytes(nonce);
-        rand::task_rng().fill_bytes(seckey);
 
-        s.pubkey_create(&mut pubkey, &seckey).unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
-        let recid = s.sign_compact(sig.as_mut_slice(), msg.as_slice(), &seckey, &nonce).unwrap();
+        let (sig, recid) = s.sign_compact(msg.as_slice(), &sk, &nonce).unwrap();
 
-        assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), &mut pubkey, recid), Ok(()));
+        assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), false, recid), Ok(pk));
     }
 }
