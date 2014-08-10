@@ -7,7 +7,6 @@ use constants;
 use ffi;
 
 use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
-use super::init;
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -315,13 +314,13 @@ mod test {
 
     #[test]
     fn keypair_slice_round_trip() {
-        let mut s = Secp256k1::new().unwrap();
+        let mut s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(true);
+        let (sk1, pk1) = s.generate_keypair(true).unwrap();
         assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
         assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
 
-        let (sk2, pk2) = s.generate_keypair(false);
+        let (sk2, pk2) = s.generate_keypair(false).unwrap();
         assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
         assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
     }
