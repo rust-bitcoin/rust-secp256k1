@@ -77,9 +77,6 @@ pub enum Error {
 /// Result type
 pub type Result<T> = ::std::prelude::Result<T, Error>;
 
-/// Result of verifying a signature
-pub type VerifyResult = Result<bool>;
-
 static mut Secp256k1_init : Once = ONCE_INIT;
 
 /// The secp256k1 engine, used to execute all signature operations
