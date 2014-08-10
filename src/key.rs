@@ -6,7 +6,7 @@ use std::rand::Rng;
 use constants;
 use ffi;
 
-use super::{Result, InvalidPublicKey, InvalidSecretKey};
+use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -41,6 +41,30 @@ impl Nonce {
         Nonce(random_32_bytes(rng))
     }
 
+    /// Converts a `NONCE_SIZE`-byte slice to a nonce
+    #[inline]
+    pub fn from_slice(data: &[u8]) -> Result<Nonce> {
+        match data.len() {
+            constants::NONCE_SIZE => {
+                let mut ret = [0, ..constants::NONCE_SIZE];
+                unsafe {
+                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                               data.as_ptr(),
+                                               data.len());
+                }
+                Ok(Nonce(ret))
+            }
+            _ => Err(InvalidNonce)
+        }
+    }
+
+    /// Converts the nonce into a byte slice
+    #[inline]
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+        let &Nonce(ref data) = self;
+        data.as_slice()
+    }
+
     /// Converts the nonce to a raw pointer suitable for use with
     /// the FFI functions
     #[inline]
@@ -57,6 +81,7 @@ impl SecretKey {
         SecretKey(random_32_bytes(rng))
     }
 
+    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
         match data.len() {
@@ -204,6 +229,20 @@ impl PublicKeyData {
 
 // We have to do all these impls ourselves as Rust can't derive
 // them for arrays
+impl PartialEq for Nonce {
+    fn eq(&self, other: &Nonce) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl Eq for Nonce {}
+
+impl fmt::Show for Nonce {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.as_slice().fmt(f)
+    }
+}
+
 impl PartialEq for PublicKeyData {
     fn eq(&self, other: &PublicKeyData) -> bool {
         self.as_slice() == other.as_slice()
@@ -234,11 +273,31 @@ impl fmt::Show for SecretKey {
 
 #[cfg(test)]
 mod test {
-    use super::super::{Secp256k1, InvalidPublicKey};
+    use std::rand::task_rng;
+
+    use super::super::{Secp256k1, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
     use super::*;
 
     #[test]
-    fn from_slice() {
+    fn nonce_from_slice() {
+        let n = Nonce::from_slice([1, ..31]);
+        assert_eq!(n, Err(InvalidNonce));
+
+        let n = SecretKey::from_slice([1, ..32]);
+        assert!(n.is_ok());
+    }
+
+    #[test]
+    fn skey_from_slice() {
+        let sk = SecretKey::from_slice([1, ..31]);
+        assert_eq!(sk, Err(InvalidSecretKey));
+
+        let sk = SecretKey::from_slice([1, ..32]);
+        assert!(sk.is_ok());
+    }
+
+    #[test]
+    fn pubkey_from_slice() {
         assert_eq!(PublicKey::from_slice([]), Err(InvalidPublicKey));
         assert_eq!(PublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
 
@@ -262,6 +321,13 @@ mod test {
         let (sk2, pk2) = s.generate_keypair(false);
         assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
         assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
+    }
+
+    #[test]
+    fn nonce_slice_round_trip() {
+        let mut rng = task_rng();
+        let nonce = Nonce::new(&mut rng);
+        assert_eq!(Nonce::from_slice(nonce.as_slice()), Ok(nonce));
     }
 }
 
