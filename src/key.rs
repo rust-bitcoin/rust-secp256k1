@@ -39,14 +39,9 @@ enum PublicKeyData {
 }
 
 fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8, ..32] {
-    [rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen(),
-     rng.gen(), rng.gen(), rng.gen(), rng.gen()]
+    let mut ret = [0u8, ..32];
+    rng.fill_bytes(ret);
+    ret
 }
 
 impl Nonce {
