@@ -52,22 +52,29 @@ pub mod key;
 pub struct RecoveryId(i32);
 
 /// An ECDSA signature
-pub struct Signature(pub Vec<u8>);
+pub struct Signature(uint, [u8, ..constants::MAX_SIGNATURE_SIZE]);
 
 impl Signature {
     /// Converts the signature to a mutable raw pointer suitable for use
     /// with the FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        let &Signature(ref mut data) = self;
-        data.as_mut_ptr()
+        let &Signature(_, ref mut data) = self;
+        data.as_mut_slice().as_mut_ptr()
     }
 
     /// Converts the signature to a byte slice suitable for verification
     #[inline]
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &Signature(ref data) = self;
-        data.as_slice()
+        let &Signature(len, ref data) = self;
+        data.slice_to(len)
+    }
+
+    /// Returns the length of the signature
+    #[inline]
+    pub fn len(&self) -> uint {
+        let &Signature(len, _) = self;
+        len
     }
 }
 
@@ -144,37 +151,33 @@ impl Secp256k1 {
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
     pub fn sign(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
                 -> Result<Signature> {
-        let mut sig = vec![];
+        let mut sig = [0, ..constants::MAX_SIGNATURE_SIZE];
+        let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
-            let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
-            sig.reserve(constants::MAX_SIGNATURE_SIZE);
             if ffi::secp256k1_ecdsa_sign(msg.as_ptr(), msg.len() as c_int,
-                                         sig.as_mut_ptr(), &mut len,
+                                         sig.as_mut_slice().as_mut_ptr(), &mut len,
                                          sk.as_ptr(), nonce.as_ptr()) != 1 {
                 return Err(InvalidNonce);
             }
             // This assertation is probably too late :)
             assert!(len as uint <= constants::MAX_SIGNATURE_SIZE);
-            sig.set_len(len as uint);
         };
-
-        Ok(Signature(sig))
+        Ok(Signature(len as uint, sig))
     }
 
     /// Constructs a compact signature for `msg` using the secret key `sk`
     pub fn sign_compact(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
                         -> Result<(Signature, RecoveryId)> {
-        let mut sig = vec![];
+        let mut sig = [0, ..constants::MAX_SIGNATURE_SIZE];
         let mut recid = 0;
         unsafe {
-            sig.reserve(constants::MAX_COMPACT_SIGNATURE_SIZE);
             if ffi::secp256k1_ecdsa_sign_compact(msg.as_ptr(), msg.len() as c_int,
-                                                 sig.as_mut_ptr(), sk.as_ptr(),
+                                                 sig.as_mut_slice().as_mut_ptr(), sk.as_ptr(),
                                                  nonce.as_ptr(), &mut recid) != 1 {
                 return Err(InvalidNonce);
             }
         };
-        Ok((Signature(sig), RecoveryId(recid)))
+        Ok((Signature(constants::MAX_COMPACT_SIGNATURE_SIZE, sig), RecoveryId(recid)))
     }
 
     /// Determines the public key for which `sig` is a valid signature for
