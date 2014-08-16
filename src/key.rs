@@ -15,7 +15,7 @@
 
 //! Public/Private keys
 
-use std::intrinsics::copy_nonoverlapping_memory;
+use std::intrinsics::transmute;
 use std::fmt;
 use std::rand::Rng;
 use constants;
@@ -31,12 +31,18 @@ pub struct SecretKey([u8, ..constants::SECRET_KEY_SIZE]);
 
 /// Public key
 #[deriving(PartialEq, Eq, Show)]
-pub struct PublicKey(PublicKeyData);
-
-enum PublicKeyData {
-    Compressed([u8, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]),
-    Uncompressed([u8, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
+pub enum PublicKey {
+    /// Compressed version of the PublicKey
+    Compressed(CompressedPublicKey),
+    /// Uncompressed version of the PublicKey
+    Uncompressed(UncompressedPublicKey),
 }
+
+/// Uncompressed Public key
+pub struct UncompressedPublicKey([u8, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]);
+
+/// Compressed Public key
+pub struct CompressedPublicKey([u8, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]);
 
 fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8, ..32] {
     [rng.gen(), rng.gen(), rng.gen(), rng.gen(),
@@ -58,17 +64,13 @@ impl Nonce {
 
     /// Converts a `NONCE_SIZE`-byte slice to a nonce
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<Nonce> {
+    pub fn from_slice<'a>(data: &'a [u8]) -> Result<&'a Nonce> {
         match data.len() {
             constants::NONCE_SIZE => {
-                let mut ret = [0, ..constants::NONCE_SIZE];
-                unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
-                }
-                Ok(Nonce(ret))
-            }
+                Ok(unsafe {
+                    transmute(data.as_ptr())
+                })
+            },
             _ => Err(InvalidNonce)
         }
     }
@@ -98,17 +100,13 @@ impl SecretKey {
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
+    pub fn from_slice<'a>(data: &'a [u8]) -> Result<&'a SecretKey> {
         match data.len() {
             constants::SECRET_KEY_SIZE => {
-                let mut ret = [0, ..constants::SECRET_KEY_SIZE];
-                unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
-                }
-                Ok(SecretKey(ret))
-            }
+                Ok(unsafe {
+                    transmute(data.as_ptr())
+                })
+            },
             _ => Err(InvalidSecretKey)
         }
     }
@@ -129,14 +127,36 @@ impl SecretKey {
     }
 }
 
+/// Trait for generics that want to work on both `CompressedPublicKey` and `UncompressedPublicKey`
+pub trait PublicKeyTrait {
+    /// Returns whether the public key is compressed or uncompressed
+    fn is_compressed(&self) -> bool;
+
+    /// Returns the length of the public key
+    fn len(&self) -> uint;
+
+    /// Converts the public key to a raw pointer suitable for use
+    /// with the FFI functions
+    fn as_ptr(&self) -> *const u8;
+
+    /// Converts the public key to a raw pointer suitable for use
+    /// with the FFI functions
+    fn as_mut_ptr(&mut self) -> *mut u8;
+
+    /// Converts the public key into a byte slice
+    #[inline]
+    fn as_slice<'a>(&'a self) -> &'a [u8];
+}
+
 impl PublicKey {
     /// Creates a new zeroed out public key
     #[inline]
     pub fn new(compressed: bool) -> PublicKey {
-        PublicKey(
-            if compressed { Compressed([0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]) }
-            else { Uncompressed([0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]) }
-        )
+        if compressed {
+            Compressed(CompressedPublicKey([0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]))
+        } else {
+            Uncompressed(UncompressedPublicKey([0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]))
+        }
     }
 
     /// Creates a new public key from a secret key. Marked `unsafe` since you must
@@ -153,93 +173,163 @@ impl PublicKey {
             sk.as_ptr(), compressed) != 1 {
             // loop
         }
-        assert_eq!(len as uint, pk.len()); 
+        assert_eq!(len as uint, pk.len());
 
         pk
     }
 
+}
+
+impl PublicKeyTrait for PublicKey {
+    #[inline]
+    fn is_compressed(&self) -> bool {
+        match *self {
+            Compressed(_) => true,
+            Uncompressed(_) => false,
+        }
+    }
+
+    #[inline]
+    fn len(&self) -> uint {
+        match *self {
+            Compressed(CompressedPublicKey(ref x)) => x.len(),
+            Uncompressed(UncompressedPublicKey(ref x)) => x.len(),
+        }
+    }
+
+    #[inline]
+    fn as_slice<'a>(&'a self) -> &'a [u8] {
+        match *self {
+            Compressed(CompressedPublicKey(ref x)) => x.as_slice(),
+            Uncompressed(UncompressedPublicKey(ref x)) => x.as_slice(),
+        }
+    }
+
+    #[inline]
+    fn as_ptr(&self) -> *const u8 {
+        match *self {
+            Compressed(CompressedPublicKey(ref x)) => x.as_ptr(),
+            Uncompressed(UncompressedPublicKey(ref x)) => x.as_ptr(),
+        }
+    }
+
+    #[inline]
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        match *self {
+            Compressed(CompressedPublicKey(ref mut x)) => x.as_mut_ptr(),
+            Uncompressed(UncompressedPublicKey(ref mut x)) => x.as_mut_ptr(),
+        }
+    }
+}
+
+impl UncompressedPublicKey {
     /// Creates a public key directly from a slice
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
+    pub fn from_slice<'a>(data: &'a [u8]) -> Result<&'a UncompressedPublicKey> {
         match data.len() {
-            constants::COMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE];
-                unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
-                }
-                Ok(PublicKey(Compressed(ret)))
-            }
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
-                unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
-                }
-                Ok(PublicKey(Uncompressed(ret)))
-            }
+                Ok(unsafe {
+                    transmute(data.as_ptr())
+                })
+            },
             _ => Err(InvalidPublicKey)
-        }
-    }
-
-    /// Returns whether the public key is compressed or uncompressed
-    #[inline]
-    pub fn is_compressed(&self) -> bool {
-        let &PublicKey(ref data) = self;
-        match *data {
-            Compressed(_) => true,
-            Uncompressed(_) => false
-        }
-    }
-
-    /// Returns the length of the public key
-    #[inline]
-    pub fn len(&self) -> uint {
-        let &PublicKey(ref data) = self;
-        match *data {
-            Compressed(ref x) => x.len(),
-            Uncompressed(ref x) => x.len()
         }
     }
 
     /// Converts the public key into a byte slice
     #[inline]
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &PublicKey(ref data) = self;
-        data.as_slice()
-    }
-
-    /// Converts the public key to a raw pointer suitable for use
-    /// with the FFI functions
-    #[inline]
-    pub fn as_ptr(&self) -> *const u8 {
-        let &PublicKey(ref data) = self;
-        match *data {
-            Compressed(ref x) => x.as_ptr(),
-            Uncompressed(ref x) => x.as_ptr()
-        }
-    }
-
-    /// Converts the public key to a mutable raw pointer suitable for use
-    /// with the FFI functions
-    #[inline]
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        let &PublicKey(ref mut data) = self;
-        match *data {
-            Compressed(ref mut x) => x.as_mut_ptr(),
-            Uncompressed(ref mut x) => x.as_mut_ptr()
+        match *self {
+            UncompressedPublicKey(ref x) => x.as_slice(),
         }
     }
 }
 
-impl PublicKeyData {
+impl CompressedPublicKey {
+    /// Creates a public key directly from a slice
+    #[inline]
+    pub fn from_slice<'a>(data: &'a [u8]) -> Result<&'a CompressedPublicKey> {
+        match data.len() {
+            constants::COMPRESSED_PUBLIC_KEY_SIZE => {
+                Ok(unsafe {
+                    transmute(data.as_ptr())
+                })
+            },
+            _ => Err(InvalidPublicKey)
+        }
+    }
+
+    /// Converts the public key into a byte slice
+    #[inline]
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
+        match *self {
+            CompressedPublicKey(ref x) => x.as_slice(),
+        }
+    }
+}
+
+impl PublicKeyTrait for CompressedPublicKey {
+    #[inline]
+    fn is_compressed(&self) -> bool {
+        true
+    }
+
+    #[inline]
+    fn len(&self) -> uint {
+        constants::COMPRESSED_PUBLIC_KEY_SIZE
+    }
+
     #[inline]
     fn as_slice<'a>(&'a self) -> &'a [u8] {
         match *self {
-            Compressed(ref x) => x.as_slice(),
-            Uncompressed(ref x) => x.as_slice()
+            CompressedPublicKey(ref x) => x.as_slice(),
+        }
+    }
+
+    #[inline]
+    fn as_ptr(&self) -> *const u8 {
+        match *self {
+            CompressedPublicKey(ref x) => x.as_ptr(),
+        }
+    }
+
+    #[inline]
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        match *self {
+            CompressedPublicKey(ref mut x) => x.as_mut_ptr(),
+        }
+    }
+}
+
+impl PublicKeyTrait for UncompressedPublicKey {
+    #[inline]
+    fn is_compressed(&self) -> bool {
+        false
+    }
+
+    #[inline]
+    fn len(&self) -> uint {
+        constants::UNCOMPRESSED_PUBLIC_KEY_SIZE
+    }
+
+    #[inline]
+    fn as_slice<'a>(&'a self) -> &'a [u8] {
+        match *self {
+            UncompressedPublicKey(ref x) => x.as_slice(),
+        }
+    }
+
+    #[inline]
+    fn as_ptr(&self) -> *const u8 {
+        match *self {
+            UncompressedPublicKey(ref x) => x.as_ptr(),
+        }
+    }
+
+    #[inline]
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        match *self {
+            UncompressedPublicKey(ref mut x) => x.as_mut_ptr(),
         }
     }
 }
@@ -259,16 +349,29 @@ impl fmt::Show for Nonce {
         self.as_slice().fmt(f)
     }
 }
-
-impl PartialEq for PublicKeyData {
-    fn eq(&self, other: &PublicKeyData) -> bool {
+// TODO: Switch to generics
+// impl<T : PublicKeyTrait> PartialEq for T {
+// after this is fixed with: https://github.com/rust-lang/rfcs/blob/master/active/0024-traits.md
+impl PartialEq for CompressedPublicKey {
+    fn eq(&self, other: &CompressedPublicKey) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
+impl PartialEq for UncompressedPublicKey {
+    fn eq(&self, other: &UncompressedPublicKey) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+impl Eq for CompressedPublicKey {}
+impl Eq for UncompressedPublicKey {}
 
-impl Eq for PublicKeyData {}
 
-impl fmt::Show for PublicKeyData {
+impl fmt::Show for CompressedPublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.as_slice().fmt(f)
+    }
+}
+impl fmt::Show for UncompressedPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
     }
@@ -297,32 +400,40 @@ mod test {
 
     #[test]
     fn nonce_from_slice() {
-        let n = Nonce::from_slice([1, ..31]);
+        let bad_arr = [1, ..31];
+        let n = Nonce::from_slice(bad_arr);
         assert_eq!(n, Err(InvalidNonce));
 
-        let n = SecretKey::from_slice([1, ..32]);
+        let good_arr = [1, ..32];
+        let n = SecretKey::from_slice(good_arr);
         assert!(n.is_ok());
     }
 
     #[test]
     fn skey_from_slice() {
-        let sk = SecretKey::from_slice([1, ..31]);
+        let bad_arr = [1, ..31];
+        let sk = SecretKey::from_slice(bad_arr);
         assert_eq!(sk, Err(InvalidSecretKey));
 
-        let sk = SecretKey::from_slice([1, ..32]);
+        let good_arr = [1, ..32];
+        let sk = SecretKey::from_slice(good_arr);
         assert!(sk.is_ok());
     }
 
     #[test]
     fn pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice([]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
+        assert_eq!(UncompressedPublicKey::from_slice([]), Err(InvalidPublicKey));
+        assert_eq!(CompressedPublicKey::from_slice([]), Err(InvalidPublicKey));
+        assert_eq!(UncompressedPublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
+        assert_eq!(CompressedPublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
 
-        let uncompressed = PublicKey::from_slice([1, ..65]);
+        let arr = [1, ..65];
+        let uncompressed = UncompressedPublicKey::from_slice(arr);
         assert!(uncompressed.is_ok());
         assert!(!uncompressed.unwrap().is_compressed());
 
-        let compressed = PublicKey::from_slice([1, ..33]);
+        let arr = [1, ..33];
+        let compressed = CompressedPublicKey::from_slice(arr);
         assert!(compressed.is_ok());
         assert!(compressed.unwrap().is_compressed());
     }
@@ -332,19 +443,19 @@ mod test {
         let mut s = Secp256k1::new();
 
         let (sk1, pk1) = s.generate_keypair(true).unwrap();
-        assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
+        assert_eq!(*SecretKey::from_slice(sk1.as_slice()).unwrap(), sk1);
+        assert_eq!(Compressed(*CompressedPublicKey::from_slice(pk1.as_slice()).unwrap()), pk1);
 
         let (sk2, pk2) = s.generate_keypair(false).unwrap();
-        assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
-        assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
+        assert_eq!(*SecretKey::from_slice(sk2.as_slice()).unwrap(), sk2);
+        assert_eq!(Uncompressed(*UncompressedPublicKey::from_slice(pk2.as_slice()).unwrap()), pk2);
     }
 
     #[test]
     fn nonce_slice_round_trip() {
         let mut rng = task_rng();
         let nonce = Nonce::new(&mut rng);
-        assert_eq!(Nonce::from_slice(nonce.as_slice()), Ok(nonce));
+        assert_eq!(*Nonce::from_slice(nonce.as_slice()).unwrap(), nonce);
     }
 }
 
