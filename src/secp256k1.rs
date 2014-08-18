@@ -43,6 +43,7 @@ use std::io::{IoError, IoResult};
 use std::rand::OsRng;
 use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
+use key::PublicKeyTrait;
 
 pub mod constants;
 pub mod ffi;
