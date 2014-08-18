@@ -6,6 +6,6 @@ authors = [
 	"Dawid Ciężarkiewicz <dpc@ucore.info>"
 	]
 
-[[lib]]
+[lib]
 name = "bitcoin-secp256k1-rs"
 path = "src/secp256k1.rs"

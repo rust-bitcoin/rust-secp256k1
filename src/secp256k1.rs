@@ -224,11 +224,12 @@ impl Secp256k1 {
 
 #[cfg(test)]
 mod test {
-
     use std::rand;
     use std::rand::Rng;
-    use super::*;
     use key::PublicKey;
+
+    use super::Secp256k1;
+    use super::{InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
     #[test]
     fn invalid_pubkey() {

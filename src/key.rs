@@ -288,7 +288,7 @@ mod test {
     use std::rand::task_rng;
 
     use super::super::{Secp256k1, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
-    use super::*;
+    use super::{Nonce, PublicKey, SecretKey};
 
     #[test]
     fn nonce_from_slice() {
