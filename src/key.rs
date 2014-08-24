@@ -101,6 +101,9 @@ impl SecretKey {
                     copy_nonoverlapping_memory(ret.as_mut_ptr(),
                                                data.as_ptr(),
                                                data.len());
+                    if ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
+                        return Err(InvalidSecretKey);
+                    }
                 }
                 Ok(SecretKey(ret))
             }
@@ -340,6 +343,24 @@ mod test {
         let mut rng = task_rng();
         let nonce = Nonce::new(&mut rng);
         assert_eq!(Nonce::from_slice(nonce.as_slice()), Ok(nonce));
+    }
+
+    #[test]
+    fn invalid_secret_key() {
+        // Zero
+        assert_eq!(SecretKey::from_slice([0, ..32]), Err(InvalidSecretKey));
+        // -1
+        assert_eq!(SecretKey::from_slice([0xff, ..32]), Err(InvalidSecretKey));
+        // Top of range
+        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40]).is_ok());
+        // One past top of range
+        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
     }
 }
 

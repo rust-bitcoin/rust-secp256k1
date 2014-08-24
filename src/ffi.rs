@@ -45,5 +45,7 @@ extern "C" {
                                            sig64: *const c_uchar, pk: *mut c_uchar,
                                            pk_len: *mut c_int, compressed: c_int,
                                            recid: c_int) -> c_int;
+
+    pub fn secp256k1_ecdsa_seckey_verify(sk: *const c_uchar) -> c_int;
 }
 
