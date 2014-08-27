@@ -25,12 +25,14 @@ use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
+impl_array_newtype!(Nonce, u8, constants::NONCE_SIZE)
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey([u8, ..constants::SECRET_KEY_SIZE]);
+impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE)
 
 /// Public key
-#[deriving(PartialEq, Eq, Show)]
+#[deriving(Clone, PartialEq, Eq, Show)]
 pub struct PublicKey(PublicKeyData);
 
 enum PublicKeyData {
@@ -67,21 +69,6 @@ impl Nonce {
             _ => Err(InvalidNonce)
         }
     }
-
-    /// Converts the nonce into a byte slice
-    #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &Nonce(ref data) = self;
-        data.as_slice()
-    }
-
-    /// Converts the nonce to a raw pointer suitable for use with
-    /// the FFI functions
-    #[inline]
-    pub fn as_ptr(&self) -> *const u8 {
-        let &Nonce(ref data) = self;
-        data.as_ptr()
-    }
 }
 
 impl SecretKey {
@@ -109,21 +96,6 @@ impl SecretKey {
             }
             _ => Err(InvalidSecretKey)
         }
-    }
-
-    /// Converts the secret key into a byte slice
-    #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &SecretKey(ref data) = self;
-        data.as_slice()
-    }
-
-    /// Converts the secret key to a raw pointer suitable for use with
-    /// the FFI functions
-    #[inline]
-    pub fn as_ptr(&self) -> *const u8 {
-        let &SecretKey(ref data) = self;
-        data.as_ptr()
     }
 }
 
@@ -244,18 +216,14 @@ impl PublicKeyData {
 
 // We have to do all these impls ourselves as Rust can't derive
 // them for arrays
-impl PartialEq for Nonce {
-    fn eq(&self, other: &Nonce) -> bool {
-        self.as_slice() == other.as_slice()
-    }
-}
-
-impl Eq for Nonce {}
-
 impl fmt::Show for Nonce {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
     }
+}
+
+impl Clone for PublicKeyData {
+    fn clone(&self) -> PublicKeyData { *self }
 }
 
 impl PartialEq for PublicKeyData {
@@ -271,14 +239,6 @@ impl fmt::Show for PublicKeyData {
         self.as_slice().fmt(f)
     }
 }
-
-impl PartialEq for SecretKey {
-    fn eq(&self, other: &SecretKey) -> bool {
-        self.as_slice() == other.as_slice()
-    }
-}
-
-impl Eq for SecretKey {}
 
 impl fmt::Show for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -26,6 +26,7 @@
 #![crate_name = "bitcoin-secp256k1-rs"]
 #![comment = "Bindings and wrapper functions for bitcoin secp256k1 library."]
 #![feature(phase)]
+#![feature(macro_rules)]
 #![feature(globs)]  // for tests only
 
 // Coding conventions
@@ -44,6 +45,7 @@ use std::rand::OsRng;
 use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
 
+mod macros;
 pub mod constants;
 pub mod ffi;
 pub mod key;
