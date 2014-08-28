@@ -95,6 +95,8 @@ pub enum Error {
     InvalidNonce,
     /// Rng problem
     RngError(IoError),
+    /// Boolean-returning function returned the wrong boolean
+    Unknown
 }
 
 /// Result type

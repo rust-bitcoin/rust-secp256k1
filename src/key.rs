@@ -21,7 +21,7 @@ use std::rand::Rng;
 use constants;
 use ffi;
 
-use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
+use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -95,6 +95,18 @@ impl SecretKey {
                 Ok(SecretKey(ret))
             }
             _ => Err(InvalidSecretKey)
+        }
+    }
+
+    #[inline]
+    /// Adds one secret key to another, modulo the curve order
+    pub fn add_assign(&mut self, other: &SecretKey) -> Result<()> {
+        unsafe {
+            if ffi::secp256k1_ecdsa_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
+                Err(Unknown)
+            } else {
+                Ok(())
+            }
         }
     }
 }
@@ -200,6 +212,20 @@ impl PublicKey {
         match *data {
             Compressed(ref mut x) => x.as_mut_ptr(),
             Uncompressed(ref mut x) => x.as_mut_ptr()
+        }
+    }
+
+    #[inline]
+    /// Adds the pk corresponding to `other` to the pk `self` in place
+    pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<()> {
+        unsafe {
+            if ffi::secp256k1_ecdsa_pubkey_tweak_add(self.as_mut_ptr(),
+                                                     self.len() as ::libc::c_int,
+                                                     other.as_ptr()) != 1 {
+                Err(Unknown)
+            } else {
+                Ok(())
+            }
         }
     }
 }
@@ -321,6 +347,26 @@ mod test {
                                        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
                                        0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
                                        0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
+    }
+
+    #[test]
+    fn test_addition() {
+        let mut s = Secp256k1::new();
+
+        let (mut sk1, mut pk1) = s.generate_keypair(true).unwrap();
+        let (mut sk2, mut pk2) = s.generate_keypair(true).unwrap();
+
+        unsafe {
+            assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
+            assert!(sk1.add_assign(&sk2).is_ok());
+            assert!(pk1.add_exp_assign(&sk2).is_ok());
+            assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
+
+            assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
+            assert!(sk2.add_assign(&sk1).is_ok());
+            assert!(pk2.add_exp_assign(&sk1).is_ok());
+            assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
+        }
     }
 }
 
