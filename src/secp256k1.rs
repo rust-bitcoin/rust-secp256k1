@@ -136,13 +136,8 @@ impl Secp256k1 {
                             -> Result<(key::SecretKey, key::PublicKey)> {
         match self.rng {
             Ok(ref mut rng) => {
-                let mut sk = key::SecretKey::new(rng);
-                let mut pk = key::PublicKey::from_secret_key(&sk, compressed);
-                while pk.is_err() {
-                    sk = key::SecretKey::new(rng);
-                    pk = key::PublicKey::from_secret_key(&sk, compressed);
-                }
-                Ok((sk, pk.unwrap()))
+                let sk = key::SecretKey::new(rng);
+                Ok((sk, key::PublicKey::from_secret_key(&sk, compressed)))
             }
             Err(ref e) => Err(RngError(e.clone()))
         }

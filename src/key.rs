@@ -76,6 +76,12 @@ impl SecretKey {
     /// Creates a new random secret key
     #[inline]
     pub fn new<R:Rng>(rng: &mut R) -> SecretKey {
+        let mut data = random_32_bytes(rng);
+        unsafe {
+            while ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
+                data = random_32_bytes(rng);
+            }
+        }
         SecretKey(random_32_bytes(rng))
     }
 
@@ -129,21 +135,21 @@ impl PublicKey {
 
     /// Creates a new public key from a secret key.
     #[inline]
-    pub fn from_secret_key(sk: &SecretKey, compressed: bool) -> Result<PublicKey> {
+    pub fn from_secret_key(sk: &SecretKey, compressed: bool) -> PublicKey {
         let mut pk = PublicKey::new(compressed);
         let compressed = if compressed {1} else {0};
         let mut len = 0;
 
         init();
         unsafe {
-            if ffi::secp256k1_ecdsa_pubkey_create(
+            // We can assume the return value because it's not possible to construct
+            // an invalid `SecretKey` without transmute trickery or something
+            assert_eq!(ffi::secp256k1_ecdsa_pubkey_create(
                 pk.as_mut_ptr(), &mut len,
-                sk.as_ptr(), compressed) != 1 {
-                return Err(InvalidSecretKey);
-            }
+                sk.as_ptr(), compressed), 1);
         }
         assert_eq!(len as uint, pk.len()); 
-        Ok(pk)
+        pk
     }
 
     /// Creates a public key directly from a slice
@@ -363,15 +369,15 @@ mod test {
         let (mut sk1, mut pk1) = s.generate_keypair(true).unwrap();
         let (mut sk2, mut pk2) = s.generate_keypair(true).unwrap();
 
-        assert_eq!(PublicKey::from_secret_key(&sk1, true), Ok(pk1));
+        assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
         assert!(sk1.add_assign(&sk2).is_ok());
         assert!(pk1.add_exp_assign(&sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&sk1, true), Ok(pk1));
+        assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&sk2, true), Ok(pk2));
+        assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
         assert!(sk2.add_assign(&sk1).is_ok());
         assert!(pk2.add_exp_assign(&sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&sk2, true), Ok(pk2));
+        assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
     }
 }
 
