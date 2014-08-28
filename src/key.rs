@@ -21,6 +21,7 @@ use std::rand::Rng;
 use constants;
 use ffi;
 
+use super::init;
 use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
@@ -81,16 +82,17 @@ impl SecretKey {
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
+        init();
         match data.len() {
             constants::SECRET_KEY_SIZE => {
                 let mut ret = [0, ..constants::SECRET_KEY_SIZE];
                 unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
                     if ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
+                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                               data.as_ptr(),
+                                               data.len());
                 }
                 Ok(SecretKey(ret))
             }
@@ -100,7 +102,11 @@ impl SecretKey {
 
     #[inline]
     /// Adds one secret key to another, modulo the curve order
+    /// Marked `unsafe` since you must
+    /// call `init()` (or construct a `Secp256k1`, which does this for you) before
+    /// using this function
     pub fn add_assign(&mut self, other: &SecretKey) -> Result<()> {
+        init();
         unsafe {
             if ffi::secp256k1_ecdsa_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
                 Err(Unknown)
@@ -121,23 +127,23 @@ impl PublicKey {
         )
     }
 
-    /// Creates a new public key from a secret key. Marked `unsafe` since you must
-    /// call `init()` (or construct a `Secp256k1`, which does this for you) before
-    /// using this function
+    /// Creates a new public key from a secret key.
     #[inline]
-    pub unsafe fn from_secret_key(sk: &SecretKey, compressed: bool) -> PublicKey {
+    pub fn from_secret_key(sk: &SecretKey, compressed: bool) -> Result<PublicKey> {
         let mut pk = PublicKey::new(compressed);
         let compressed = if compressed {1} else {0};
         let mut len = 0;
 
-        while ffi::secp256k1_ecdsa_pubkey_create(
-            pk.as_mut_ptr(), &mut len,
-            sk.as_ptr(), compressed) != 1 {
-            // loop
+        init();
+        unsafe {
+            if ffi::secp256k1_ecdsa_pubkey_create(
+                pk.as_mut_ptr(), &mut len,
+                sk.as_ptr(), compressed) != 1 {
+                return Err(InvalidSecretKey);
+            }
         }
         assert_eq!(len as uint, pk.len()); 
-
-        pk
+        Ok(pk)
     }
 
     /// Creates a public key directly from a slice
@@ -218,6 +224,7 @@ impl PublicKey {
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
     pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<()> {
+        init();
         unsafe {
             if ffi::secp256k1_ecdsa_pubkey_tweak_add(self.as_mut_ptr(),
                                                      self.len() as ::libc::c_int,
@@ -356,17 +363,15 @@ mod test {
         let (mut sk1, mut pk1) = s.generate_keypair(true).unwrap();
         let (mut sk2, mut pk2) = s.generate_keypair(true).unwrap();
 
-        unsafe {
-            assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
-            assert!(sk1.add_assign(&sk2).is_ok());
-            assert!(pk1.add_exp_assign(&sk2).is_ok());
-            assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
+        assert_eq!(PublicKey::from_secret_key(&sk1, true), Ok(pk1));
+        assert!(sk1.add_assign(&sk2).is_ok());
+        assert!(pk1.add_exp_assign(&sk2).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&sk1, true), Ok(pk1));
 
-            assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
-            assert!(sk2.add_assign(&sk1).is_ok());
-            assert!(pk2.add_exp_assign(&sk1).is_ok());
-            assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
-        }
+        assert_eq!(PublicKey::from_secret_key(&sk2, true), Ok(pk2));
+        assert!(sk2.add_assign(&sk1).is_ok());
+        assert!(pk2.add_exp_assign(&sk1).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&sk2, true), Ok(pk2));
     }
 }
 
