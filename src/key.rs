@@ -159,6 +159,10 @@ impl PublicKey {
             constants::COMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
+                    if ffi::secp256k1_ecdsa_pubkey_verify(data.as_ptr(),
+                                                          data.len() as ::libc::c_int) == 0 {
+                        return Err(InvalidPublicKey);
+                    }
                     copy_nonoverlapping_memory(ret.as_mut_ptr(),
                                                data.as_ptr(),
                                                data.len());
@@ -315,11 +319,11 @@ mod test {
         assert_eq!(PublicKey::from_slice([]), Err(InvalidPublicKey));
         assert_eq!(PublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
 
-        let uncompressed = PublicKey::from_slice([1, ..65]);
+        let uncompressed = PublicKey::from_slice([4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]);
         assert!(uncompressed.is_ok());
         assert!(!uncompressed.unwrap().is_compressed());
 
-        let compressed = PublicKey::from_slice([1, ..33]);
+        let compressed = PublicKey::from_slice([3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
         assert!(compressed.is_ok());
         assert!(compressed.unwrap().is_compressed());
     }

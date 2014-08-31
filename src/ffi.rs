@@ -48,6 +48,9 @@ extern "C" {
 
     pub fn secp256k1_ecdsa_seckey_verify(sk: *const c_uchar) -> c_int;
 
+    pub fn secp256k1_ecdsa_pubkey_verify(pk: *const c_uchar,
+                                         pk_len: c_int) -> c_int;
+
     pub fn secp256k1_ecdsa_privkey_tweak_add(sk: *mut c_uchar,
                                              tweak: *const c_uchar)
                                              -> c_int;
