@@ -2,10 +2,13 @@
 
 name = "bitcoin-secp256k1-rs"
 version = "0.0.1"
-authors = [
-	"Dawid Ciężarkiewicz <dpc@ucore.info>"
-	]
+authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
+            "Andrew Poelstra <apoelstra@wpsoftware.net" ]
 
 [lib]
 name = "bitcoin-secp256k1-rs"
 path = "src/secp256k1.rs"
+
+[dependencies.rust-crypto]
+git = "https://github.com/DaGenix/rust-crypto.git"
+

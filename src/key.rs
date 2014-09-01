@@ -330,13 +330,13 @@ mod test {
 
     #[test]
     fn keypair_slice_round_trip() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let (sk1, pk1) = s.generate_keypair(true).unwrap();
+        let (sk1, pk1) = s.generate_keypair(true);
         assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
         assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
 
-        let (sk2, pk2) = s.generate_keypair(false).unwrap();
+        let (sk2, pk2) = s.generate_keypair(false);
         assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
         assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
     }
@@ -368,10 +368,10 @@ mod test {
 
     #[test]
     fn test_addition() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(true).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(true).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(true);
+        let (mut sk2, mut pk2) = s.generate_keypair(true);
 
         assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
         assert!(sk1.add_assign(&sk2).is_ok());

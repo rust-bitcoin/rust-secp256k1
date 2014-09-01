@@ -36,13 +36,18 @@
 #![deny(unused_mut)]
 #![warn(missing_doc)]
 
+extern crate "rust-crypto" as crypto;
+
 extern crate libc;
 extern crate sync;
+extern crate test;
 
-use std::io::{IoError, IoResult};
-use std::rand::OsRng;
+use std::io::IoResult;
+use std::rand::{OsRng, Rng, SeedableRng};
 use libc::c_int;
 use sync::one::{Once, ONCE_INIT};
+
+use crypto::fortuna::Fortuna;
 
 mod macros;
 pub mod constants;
@@ -92,8 +97,6 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad nonce
     InvalidNonce,
-    /// Rng problem
-    RngError(IoError),
     /// Boolean-returning function returned the wrong boolean
     Unknown
 }
@@ -105,7 +108,7 @@ static mut Secp256k1_init : Once = ONCE_INIT;
 
 /// The secp256k1 engine, used to execute all signature operations
 pub struct Secp256k1 {
-    rng: IoResult<OsRng>
+    rng: Fortuna
 }
 
 /// Does one-time initialization of the secp256k1 engine. Can be called
@@ -123,32 +126,27 @@ pub fn init() {
 
 impl Secp256k1 {
     /// Constructs a new secp256k1 engine.
-    pub fn new() -> Secp256k1 {
+    pub fn new() -> IoResult<Secp256k1> {
         init();
-        Secp256k1 { rng: OsRng::new() }
+        let mut osrng = try!(OsRng::new());
+        let mut seed = [0, ..2048];
+        osrng.fill_bytes(seed.as_mut_slice());
+        Ok(Secp256k1 { rng: SeedableRng::from_seed(seed.as_slice()) })
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation.
     pub fn generate_keypair(&mut self, compressed: bool)
-                            -> Result<(key::SecretKey, key::PublicKey)> {
-        match self.rng {
-            Ok(ref mut rng) => {
-                let sk = key::SecretKey::new(rng);
-                Ok((sk, key::PublicKey::from_secret_key(&sk, compressed)))
-            }
-            Err(ref e) => Err(RngError(e.clone()))
-        }
+                            -> (key::SecretKey, key::PublicKey) {
+        let sk = key::SecretKey::new(&mut self.rng);
+        (sk, key::PublicKey::from_secret_key(&sk, compressed))
     }
 
     /// Generates a random nonce. Convenience function for `key::Nonce::new`; call
     /// that function directly for batch nonce generation
-    pub fn generate_nonce(&mut self) -> Result<key::Nonce> {
-        match self.rng {
-            Ok(ref mut rng) => Ok(key::Nonce::new(rng)),
-            Err(ref e) => Err(RngError(e.clone()))
-        }
+    pub fn generate_nonce(&mut self) -> key::Nonce {
+        key::Nonce::new(&mut self.rng)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
@@ -226,17 +224,19 @@ impl Secp256k1 {
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::rand;
     use std::rand::Rng;
-    use key::PublicKey;
 
+    use test::Bencher;
+
+    use key::PublicKey;
     use super::Secp256k1;
     use super::{InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
     #[test]
     fn invalid_pubkey() {
-        let s = Secp256k1::new();
+        let s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
@@ -249,9 +249,9 @@ mod test {
 
     #[test]
     fn valid_pubkey_uncompressed() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let (_, pk) = s.generate_keypair(false).unwrap();
+        let (_, pk) = s.generate_keypair(false);
 
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
@@ -263,9 +263,9 @@ mod test {
 
     #[test]
     fn valid_pubkey_compressed() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
-        let (_, pk) = s.generate_keypair(true).unwrap();
+        let (_, pk) = s.generate_keypair(true);
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
 
@@ -276,26 +276,26 @@ mod test {
 
     #[test]
     fn sign() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8, ..32];
         rand::task_rng().fill_bytes(msg);
 
-        let (sk, _) = s.generate_keypair(false).unwrap();
-        let nonce = s.generate_nonce().unwrap();
+        let (sk, _) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
         s.sign(msg.as_slice(), &sk, &nonce).unwrap();
     }
 
     #[test]
     fn sign_and_verify() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        let (sk, pk) = s.generate_keypair(false).unwrap();
-        let nonce = s.generate_nonce().unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
@@ -304,13 +304,13 @@ mod test {
 
     #[test]
     fn sign_and_verify_fail() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = Vec::from_elem(32, 0u8);
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        let (sk, pk) = s.generate_keypair(false).unwrap();
-        let nonce = s.generate_nonce().unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
@@ -320,16 +320,32 @@ mod test {
 
     #[test]
     fn sign_compact_with_recovery() {
-        let mut s = Secp256k1::new();
+        let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8, ..32];
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        let (sk, pk) = s.generate_keypair(false).unwrap();
-        let nonce = s.generate_nonce().unwrap();
+        let (sk, pk) = s.generate_keypair(false);
+        let nonce = s.generate_nonce();
 
         let (sig, recid) = s.sign_compact(msg.as_slice(), &sk, &nonce).unwrap();
 
         assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), false, recid), Ok(pk));
+    }
+
+    #[bench]
+    pub fn generate_compressed(bh: &mut Bencher) {
+        let mut s = Secp256k1::new().unwrap();
+        bh.iter( || {
+          let (_, _) = s.generate_keypair(true);
+        });
+    }
+
+    #[bench]
+    pub fn generate_uncompressed(bh: &mut Bencher) {
+        let mut s = Secp256k1::new().unwrap();
+        bh.iter( || {
+          let (_, _) = s.generate_keypair(false);
+        });
     }
 }
