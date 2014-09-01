@@ -205,7 +205,8 @@ impl Secp256k1 {
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
-    pub fn verify(&self, msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
+    pub fn verify(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
+        init();  // This is a static function, so we have to init
         let res = unsafe {
             ffi::secp256k1_ecdsa_verify(msg.as_ptr(), msg.len() as c_int,
                                         sig.as_ptr(), sig.len() as c_int,
