@@ -137,6 +137,7 @@ impl Secp256k1 {
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation.
+    #[inline]
     pub fn generate_keypair(&mut self, compressed: bool)
                             -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(&mut self.rng);
@@ -145,6 +146,7 @@ impl Secp256k1 {
 
     /// Generates a random nonce. Convenience function for `key::Nonce::new`; call
     /// that function directly for batch nonce generation
+    #[inline]
     pub fn generate_nonce(&mut self) -> key::Nonce {
         key::Nonce::new(&mut self.rng)
     }
@@ -205,6 +207,7 @@ impl Secp256k1 {
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
+    #[inline]
     pub fn verify(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
         init();  // This is a static function, so we have to init
         let res = unsafe {
@@ -229,7 +232,7 @@ mod tests {
     use std::rand;
     use std::rand::Rng;
 
-    use test::Bencher;
+    use test::{Bencher, black_box};
 
     use key::PublicKey;
     use super::Secp256k1;
@@ -237,15 +240,13 @@ mod tests {
 
     #[test]
     fn invalid_pubkey() {
-        let s = Secp256k1::new().unwrap();
-
         let mut msg = Vec::from_elem(32, 0u8);
         let sig = Vec::from_elem(32, 0u8);
         let pk = PublicKey::new(true);
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidPublicKey));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidPublicKey));
     }
 
     #[test]
@@ -259,7 +260,7 @@ mod tests {
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -272,7 +273,7 @@ mod tests {
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(s.verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -300,7 +301,7 @@ mod tests {
 
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
-        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pk), Ok(()));
+        assert_eq!(Secp256k1::verify(msg.as_slice(), sig.as_slice(), &pk), Ok(()));
     }
 
     #[test]
@@ -316,7 +317,7 @@ mod tests {
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        assert_eq!(s.verify(msg.as_slice(), sig.as_slice(), &pk), Err(IncorrectSignature));
+        assert_eq!(Secp256k1::verify(msg.as_slice(), sig.as_slice(), &pk), Err(IncorrectSignature));
     }
 
     #[test]
@@ -338,7 +339,9 @@ mod tests {
     pub fn generate_compressed(bh: &mut Bencher) {
         let mut s = Secp256k1::new().unwrap();
         bh.iter( || {
-          let (_, _) = s.generate_keypair(true);
+          let (sk, pk) = s.generate_keypair(true);
+          black_box(sk);
+          black_box(pk);
         });
     }
 
@@ -346,7 +349,9 @@ mod tests {
     pub fn generate_uncompressed(bh: &mut Bencher) {
         let mut s = Secp256k1::new().unwrap();
         bh.iter( || {
-          let (_, _) = s.generate_keypair(false);
+          let (sk, pk) = s.generate_keypair(false);
+          black_box(sk);
+          black_box(pk);
         });
     }
 }

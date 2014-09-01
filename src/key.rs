@@ -32,6 +32,12 @@ impl_array_newtype!(Nonce, u8, constants::NONCE_SIZE)
 pub struct SecretKey([u8, ..constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE)
 
+/// The number 1 encoded as a secret key
+pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
+                                       0, 0, 0, 0, 0, 0, 0, 0,
+                                       0, 0, 0, 0, 0, 0, 0, 0,
+                                       0, 0, 0, 0, 0, 0, 0, 1]);
+
 /// Public key
 #[deriving(Clone, PartialEq, Eq, Show)]
 pub struct PublicKey(PublicKeyData);
@@ -76,13 +82,14 @@ impl SecretKey {
     /// Creates a new random secret key
     #[inline]
     pub fn new<R:Rng>(rng: &mut R) -> SecretKey {
+        init();
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
                 data = random_32_bytes(rng);
             }
         }
-        SecretKey(random_32_bytes(rng))
+        SecretKey(data)
     }
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
@@ -120,6 +127,27 @@ impl SecretKey {
                 Ok(())
             }
         }
+    }
+
+    #[inline]
+    /// Returns an iterator for the (sk, pk) pairs starting one after this one,
+    /// and incrementing by one each time
+    pub fn sequence(&self, compressed: bool) -> Sequence {
+        Sequence { last_sk: *self, compressed: compressed }
+    }
+}
+
+/// An iterator of keypairs `(sk + 1, pk*G)`, `(sk + 2, pk*2G)`, ...
+pub struct Sequence {
+    compressed: bool,
+    last_sk: SecretKey,
+}
+
+impl<'a> Iterator<(SecretKey, PublicKey)> for Sequence {
+    #[inline]
+    fn next(&mut self) -> Option<(SecretKey, PublicKey)> {
+        self.last_sk.add_assign(&ONE).unwrap();
+        Some((self.last_sk, PublicKey::from_secret_key(&self.last_sk, self.compressed)))
     }
 }
 
@@ -293,6 +321,8 @@ impl fmt::Show for SecretKey {
 mod test {
     use std::rand::task_rng;
 
+    use test::Bencher;
+
     use super::super::{Secp256k1, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
     use super::{Nonce, PublicKey, SecretKey};
 
@@ -382,6 +412,14 @@ mod test {
         assert!(sk2.add_assign(&sk1).is_ok());
         assert!(pk2.add_exp_assign(&sk1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
+    }
+
+    #[bench]
+    pub fn sequence_iterate(bh: &mut Bencher) {
+        let mut s = Secp256k1::new().unwrap();
+        let (sk, _) = s.generate_keypair(true);
+        let mut iter = sk.sequence(true);
+        bh.iter(|| iter.next())
     }
 }
 
