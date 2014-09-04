@@ -42,6 +42,7 @@ extern crate libc;
 extern crate sync;
 extern crate test;
 
+use std::intrinsics::copy_nonoverlapping_memory;
 use std::io::IoResult;
 use std::rand::{OsRng, Rng, SeedableRng};
 use libc::c_int;
@@ -61,6 +62,14 @@ pub struct RecoveryId(i32);
 pub struct Signature(uint, [u8, ..constants::MAX_SIGNATURE_SIZE]);
 
 impl Signature {
+    /// Converts the signature to a raw pointer suitable for use
+    /// with the FFI functions
+    #[inline]
+    pub fn as_ptr(&self) -> *const u8 {
+        let &Signature(_, ref data) = self;
+        data.as_slice().as_ptr()
+    }
+
     /// Converts the signature to a mutable raw pointer suitable for use
     /// with the FFI functions
     #[inline]
@@ -81,6 +90,22 @@ impl Signature {
     pub fn len(&self) -> uint {
         let &Signature(len, _) = self;
         len
+    }
+
+    /// Converts a byte slice to a signature
+    #[inline]
+    pub fn from_slice(data: &[u8]) -> Result<Signature> {
+        if data.len() <= constants::MAX_SIGNATURE_SIZE {
+            let mut ret = [0, ..constants::MAX_SIGNATURE_SIZE];
+            unsafe {
+                copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                           data.as_ptr(),
+                                           data.len());
+            }
+            Ok(Signature(data.len(), ret))
+        } else {
+            Err(InvalidSignature)
+        }
     }
 }
 
@@ -208,7 +233,7 @@ impl Secp256k1 {
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
     #[inline]
-    pub fn verify(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
+    pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<()> {
         init();  // This is a static function, so we have to init
         let res = unsafe {
             ffi::secp256k1_ecdsa_verify(msg.as_ptr(), msg.len() as c_int,
@@ -235,18 +260,18 @@ mod tests {
     use test::{Bencher, black_box};
 
     use key::PublicKey;
-    use super::Secp256k1;
+    use super::{Secp256k1, Signature};
     use super::{InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
     #[test]
     fn invalid_pubkey() {
         let mut msg = Vec::from_elem(32, 0u8);
-        let sig = Vec::from_elem(32, 0u8);
+        let sig = Signature::from_slice([0, ..72]).unwrap();
         let pk = PublicKey::new(true);
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidPublicKey));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidPublicKey));
     }
 
     #[test]
@@ -256,11 +281,11 @@ mod tests {
         let (_, pk) = s.generate_keypair(false);
 
         let mut msg = Vec::from_elem(32, 0u8);
-        let sig = Vec::from_elem(32, 0u8);
+        let sig = Signature::from_slice([0, ..72]).unwrap();
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -269,11 +294,11 @@ mod tests {
 
         let (_, pk) = s.generate_keypair(true);
         let mut msg = Vec::from_elem(32, 0u8);
-        let sig = Vec::from_elem(32, 0u8);
+        let sig = Signature::from_slice([0, ..72]).unwrap();
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), sig.as_slice(), &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -301,7 +326,7 @@ mod tests {
 
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
-        assert_eq!(Secp256k1::verify(msg.as_slice(), sig.as_slice(), &pk), Ok(()));
+        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Ok(()));
     }
 
     #[test]
@@ -317,7 +342,7 @@ mod tests {
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
         rand::task_rng().fill_bytes(msg.as_mut_slice());
-        assert_eq!(Secp256k1::verify(msg.as_slice(), sig.as_slice(), &pk), Err(IncorrectSignature));
+        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Err(IncorrectSignature));
     }
 
     #[test]
