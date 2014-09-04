@@ -93,3 +93,10 @@ macro_rules! impl_array_newtype(
 )
 
 
+// for testing
+macro_rules! hex_slice(
+  ($s:expr) => (
+    $s.from_hex().unwrap().as_slice()
+  )
+)
+

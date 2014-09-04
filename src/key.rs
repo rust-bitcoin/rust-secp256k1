@@ -16,10 +16,16 @@
 //! Public/Private keys
 
 use std::intrinsics::copy_nonoverlapping_memory;
+use std::cmp;
 use std::fmt;
 use std::rand::Rng;
 use constants;
 use ffi;
+
+use crypto::digest::Digest;
+use crypto::sha2::Sha512;
+use crypto::hmac::Hmac;
+use crypto::mac::Mac;
 
 use super::init;
 use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
@@ -53,6 +59,17 @@ fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8, ..32] {
     ret
 }
 
+/// As described in RFC 6979
+fn bits2octets(data: &[u8]) -> [u8, ..32] {
+    let mut ret = [0, ..32];
+    unsafe {
+        copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                                   data.as_ptr(),
+                                   cmp::min(data.len(), 32));
+    }
+    ret
+}
+
 impl Nonce {
     /// Creates a new random nonce
     #[inline]
@@ -75,6 +92,64 @@ impl Nonce {
             }
             _ => Err(InvalidNonce)
         }
+    }
+
+    /// Generates a deterministic nonce by RFC6979 with HMAC-SHA512
+    #[inline]
+    #[allow(non_snake_case)] // so we can match the names in the RFC
+    pub fn deterministic(msg: &[u8], key: &SecretKey) -> Nonce {
+        static HMAC_SIZE: uint = 64;
+
+        macro_rules! hmac(
+            ($res:expr <- key $key:expr, data $($data:expr),+) => ({
+                let mut hmacker = Hmac::new(Sha512::new(), $key.as_slice());
+                $(hmacker.input($data.as_slice());)+
+                hmacker.raw_result($res.as_mut_slice());
+            })
+        )
+
+        // Section 3.2a
+        // Goofy block just to avoid marking `msg_hash` as mutable
+        let mut hasher = Sha512::new();
+        hasher.input(msg);
+        let mut x = [0, ..HMAC_SIZE];
+        hasher.result(x.as_mut_slice());
+        let msg_hash = bits2octets(x.as_slice());
+
+        // Section 3.2b
+        let mut V = [0x01u8, ..HMAC_SIZE];
+        // Section 3.2c
+        let mut K = [0x00u8, ..HMAC_SIZE];
+
+        // Section 3.2d
+        hmac!(K <- key K, data V, [0x00], key, msg_hash)
+
+        // Section 3.2e
+        hmac!(V <- key K, data V)
+
+        // Section 3.2f
+        hmac!(K <- key K, data V, [0x01], key, msg_hash)
+
+        // Section 3.2g
+        hmac!(V <- key K, data V)
+
+        // Section 3.2
+        let mut k = Err(InvalidSecretKey);
+        while k.is_err() {
+            // Try to generate the nonce
+            let mut T = [0x00u8, ..HMAC_SIZE];
+            hmac!(T <- key K, data V)
+
+            k = Nonce::from_slice(T.slice_to(constants::NONCE_SIZE));
+
+            // Replace K, V
+            if k.is_err() {
+                hmac!(K <- key K, data V, [0x00])
+                hmac!(V <- key K, data V)
+            }
+        }
+
+        k.unwrap()
     }
 }
 
@@ -319,6 +394,7 @@ impl fmt::Show for SecretKey {
 
 #[cfg(test)]
 mod test {
+    use serialize::hex::FromHex;
     use std::rand::task_rng;
 
     use test::Bencher;
@@ -412,6 +488,41 @@ mod test {
         assert!(sk2.add_assign(&sk1).is_ok());
         assert!(pk2.add_exp_assign(&sk1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
+    }
+
+    #[test]
+    fn test_deterministic() {
+        // nb code in comments is equivalent python
+
+        // from ecdsa import rfc6979
+        // from ecdsa.curves import SECP256k1
+        // # This key was generated randomly
+        // sk = 0x09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81
+        let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81")).unwrap();
+
+        // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
+        let nonce = Nonce::deterministic([], &sk);
+        assert_eq!(nonce.as_slice(),
+                   hex_slice!("d954eddd184cac2b60edcd0e6be9ec54d93f633b28b366420d38ed9c346ffe27"));
+
+        // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('test').digest())
+        let nonce = Nonce::deterministic(b"test", &sk);
+        assert_eq!(nonce.as_slice(),
+                   hex_slice!("609cc24acce2f19e46e38a82afc56c1745dee16e04f2b27e24999e1fefeb08bd"));
+
+        // # Decrease the secret key by one
+        // sk = 0x09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80
+        let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80")).unwrap();
+
+        // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
+        let nonce = Nonce::deterministic([], &sk);
+        assert_eq!(nonce.as_slice(),
+                   hex_slice!("9f45f8d0a28e8956673c8da6db3db86ca4f172f0a2dbd62364fdbf786c7d96df"));
+
+        // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('test').digest())
+        let nonce = Nonce::deterministic(b"test", &sk);
+        assert_eq!(nonce.as_slice(),
+                   hex_slice!("355c589ff662c838aee454d62b12c50a87b7e95ede2431c7cfa40b6ba2fddccd"));
     }
 
     #[bench]

@@ -39,6 +39,7 @@
 extern crate "rust-crypto" as crypto;
 
 extern crate libc;
+extern crate serialize;
 extern crate sync;
 extern crate test;
 
@@ -259,7 +260,7 @@ mod tests {
 
     use test::{Bencher, black_box};
 
-    use key::PublicKey;
+    use key::{PublicKey, Nonce};
     use super::{Secp256k1, Signature};
     use super::{InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
@@ -358,6 +359,20 @@ mod tests {
         let (sig, recid) = s.sign_compact(msg.as_slice(), &sk, &nonce).unwrap();
 
         assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), false, recid), Ok(pk));
+    }
+
+    #[test]
+    fn deterministic_sign() {
+        let mut msg = [0u8, ..32];
+        rand::task_rng().fill_bytes(msg.as_mut_slice());
+
+        let mut s = Secp256k1::new().unwrap();
+        let (sk, pk) = s.generate_keypair(true);
+        let nonce = Nonce::deterministic(msg, &sk);
+
+        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
+
+        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Ok(()));
     }
 
     #[bench]
