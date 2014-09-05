@@ -116,7 +116,7 @@ macro_rules! impl_array_newtype(
         impl<E: ::serialize::Encoder<S>, S> ::serialize::Encodable<E, S> for $thing {
             fn encode(&self, e: &mut E) -> ::std::prelude::Result<(), S> {
                 self.as_slice().encode(e)
-             }
+            }
         }
     }
 )

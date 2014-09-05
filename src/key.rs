@@ -19,8 +19,7 @@ use std::intrinsics::copy_nonoverlapping_memory;
 use std::cmp;
 use std::fmt;
 use std::rand::Rng;
-use constants;
-use ffi;
+use serialize::{Decoder, Decodable, Encoder, Encodable};
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha512;
@@ -29,6 +28,8 @@ use crypto::mac::Mac;
 
 use super::init;
 use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
+use constants;
+use ffi;
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
 pub struct Nonce([u8, ..constants::NONCE_SIZE]);
@@ -383,6 +384,40 @@ impl Eq for PublicKeyData {}
 impl fmt::Show for PublicKeyData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
+    }
+}
+
+impl<D: Decoder<E>, E> Decodable<D, E> for PublicKey {
+    fn decode(d: &mut D) -> ::std::prelude::Result<PublicKey, E> {
+        d.read_seq(|d, len| {
+            if len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
+                unsafe {
+                    use std::mem;
+                    let mut ret: [u8, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
+                    for i in range(0, len) {
+                        ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
+                    }
+                    Ok(PublicKey(Uncompressed(ret)))
+                }
+            } else if len == constants::COMPRESSED_PUBLIC_KEY_SIZE {
+                unsafe {
+                    use std::mem;
+                    let mut ret: [u8, ..constants::COMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
+                    for i in range(0, len) {
+                        ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
+                    }
+                    Ok(PublicKey(Compressed(ret)))
+                }
+            } else {
+                Err(d.error("Invalid length"))
+            }
+        })
+    }
+}
+
+impl <E: Encoder<S>, S> Encodable<E, S> for PublicKey {
+    fn encode(&self, e: &mut E) -> ::std::prelude::Result<(), S> {
+        self.as_slice().encode(e)
     }
 }
 
