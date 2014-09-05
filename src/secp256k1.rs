@@ -233,11 +233,20 @@ impl Secp256k1 {
         Ok(pk)
     }
 
+    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
+    /// key `pubkey`. Returns `Ok(true)` on success. Note that this function cannot
+    /// be used for Bitcoin consensus checking since there are transactions out
+    /// there with zero-padded signatures that don't fit in the `Signature` type.
+    /// Use `verify_raw` instead.
+    #[inline]
+    pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<()> {
+        Secp256k1::verify_raw(msg, sig.as_slice(), pk)
+    }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
     #[inline]
-    pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<()> {
+    pub fn verify_raw(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
         init();  // This is a static function, so we have to init
         let res = unsafe {
             ffi::secp256k1_ecdsa_verify(msg.as_ptr(), msg.len() as c_int,
