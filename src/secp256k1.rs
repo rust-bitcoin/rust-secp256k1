@@ -56,6 +56,9 @@ pub mod constants;
 pub mod ffi;
 pub mod key;
 
+/// I dunno where else to put this..
+fn assert_type_is_copy<T: Copy>() { }
+
 /// A tag used for recovering the public key from a compact signature
 pub struct RecoveryId(i32);
 
