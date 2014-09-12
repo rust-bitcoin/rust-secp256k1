@@ -17,10 +17,13 @@
 
 use std::intrinsics::copy_nonoverlapping_memory;
 use std::cmp;
+use std::default::Default;
 use std::fmt;
+use std::ptr::zero_memory;
 use std::rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 
+use secretdata::SecretData;
 use crypto::digest::Digest;
 use crypto::sha2::Sha512;
 use crypto::hmac::Hmac;
@@ -36,14 +39,17 @@ pub struct Nonce([u8, ..constants::NONCE_SIZE]);
 impl_array_newtype!(Nonce, u8, constants::NONCE_SIZE)
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
-pub struct SecretKey([u8, ..constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE)
+pub struct SecretKey<'a>(SecretData<'a, SecretKeyData>);
 
-/// The number 1 encoded as a secret key
-pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 1]);
+/// Secret 256-bit key used as `x` in an ECDSA signature
+struct SecretKeyData([u8, ..constants::SECRET_KEY_SIZE]);
+impl_array_newtype!(SecretKeyData, u8, constants::SECRET_KEY_SIZE)
+
+impl Default for SecretKeyData {
+    fn default() -> SecretKeyData {
+        SecretKeyData([0, ..constants::SECRET_KEY_SIZE])
+    }
+}
 
 /// Public key
 #[deriving(Clone, PartialEq, Eq, Show)]
@@ -98,7 +104,7 @@ impl Nonce {
     /// Generates a deterministic nonce by RFC6979 with HMAC-SHA512
     #[inline]
     #[allow(non_snake_case)] // so we can match the names in the RFC
-    pub fn deterministic(msg: &[u8], key: &SecretKey) -> Nonce {
+    pub fn deterministic<'a>(msg: &[u8], key: &SecretKey<'a>) -> Nonce {
         static HMAC_SIZE: uint = 64;
 
         macro_rules! hmac(
@@ -154,10 +160,16 @@ impl Nonce {
     }
 }
 
-impl SecretKey {
+impl<'a> SecretKey<'a> {
+    /// Creates a new zeroed-out secret key
+    #[inline]
+    pub fn new() -> SecretKey<'a> {
+        SecretKey(SecretData::new())
+    }
+
     /// Creates a new random secret key
     #[inline]
-    pub fn new<R:Rng>(rng: &mut R) -> SecretKey {
+    pub fn init_rng<R:Rng>(&'a mut self, rng: &mut R) {
         init();
         let mut data = random_32_bytes(rng);
         unsafe {
@@ -165,28 +177,39 @@ impl SecretKey {
                 data = random_32_bytes(rng);
             }
         }
-        SecretKey(data)
+        let &SecretKey(ref mut selfdata) = self;
+        selfdata.move(&mut SecretKeyData(data))
     }
 
-    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
+    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key,
+    /// zeroing out the original data
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
+    pub fn init_slice(&'a mut self, data: &mut [u8]) -> Result<()> {
         init();
         match data.len() {
             constants::SECRET_KEY_SIZE => {
-                let mut ret = [0, ..constants::SECRET_KEY_SIZE];
+                let &SecretKey(ref mut selfdata) = self;
                 unsafe {
                     if ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
+                    copy_nonoverlapping_memory(selfdata.data_mut().as_mut_ptr(),
                                                data.as_ptr(),
                                                data.len());
+                    zero_memory(data.as_mut_ptr(), data.len());
                 }
-                Ok(SecretKey(ret))
+                Ok(())
             }
             _ => Err(InvalidSecretKey)
         }
+    }
+
+    /// Copies the data from one key to another without zeroing anyth out
+    #[inline]
+    pub fn clone_from<'b>(&'a mut self, other: &SecretKey<'b>) {
+        let &SecretKey(ref mut selfdata) = self;
+        let &SecretKey(ref otherdata) = other;
+        selfdata.clone_from(otherdata);
     }
 
     #[inline]
@@ -194,7 +217,7 @@ impl SecretKey {
     /// Marked `unsafe` since you must
     /// call `init()` (or construct a `Secp256k1`, which does this for you) before
     /// using this function
-    pub fn add_assign(&mut self, other: &SecretKey) -> Result<()> {
+    pub fn add_assign<'b>(&mut self, other: &SecretKey<'b>) -> Result<()> {
         init();
         unsafe {
             if ffi::secp256k1_ecdsa_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -206,24 +229,24 @@ impl SecretKey {
     }
 
     #[inline]
-    /// Returns an iterator for the (sk, pk) pairs starting one after this one,
-    /// and incrementing by one each time
-    pub fn sequence(&self, compressed: bool) -> Sequence {
-        Sequence { last_sk: *self, compressed: compressed }
+    /// Returns an immutable view of the data as a byteslice
+    pub fn as_slice<'b>(&'b self) -> &'b [u8] {
+        let &SecretKey(ref selfdata) = self;
+        selfdata.data().as_slice()
     }
-}
 
-/// An iterator of keypairs `(sk + 1, pk*G)`, `(sk + 2, pk*2G)`, ...
-pub struct Sequence {
-    compressed: bool,
-    last_sk: SecretKey,
-}
-
-impl<'a> Iterator<(SecretKey, PublicKey)> for Sequence {
     #[inline]
-    fn next(&mut self) -> Option<(SecretKey, PublicKey)> {
-        self.last_sk.add_assign(&ONE).unwrap();
-        Some((self.last_sk, PublicKey::from_secret_key(&self.last_sk, self.compressed)))
+    /// Returns a raw pointer to the underlying secret key data
+    pub fn as_ptr(&self) -> *const u8 {
+        let &SecretKey(ref selfdata) = self;
+        selfdata.data().as_ptr()
+    }
+
+    #[inline]
+    /// Returns a mutable raw pointer to the underlying secret key data
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        let &SecretKey(ref mut selfdata) = self;
+        selfdata.data_mut().as_mut_ptr()
     }
 }
 
@@ -239,7 +262,7 @@ impl PublicKey {
 
     /// Creates a new public key from a secret key.
     #[inline]
-    pub fn from_secret_key(sk: &SecretKey, compressed: bool) -> PublicKey {
+    pub fn from_secret_key<'a>(sk: &SecretKey<'a>, compressed: bool) -> PublicKey {
         let mut pk = PublicKey::new(compressed);
         let compressed = if compressed {1} else {0};
         let mut len = 0;
@@ -337,7 +360,7 @@ impl PublicKey {
 
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
-    pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<()> {
+    pub fn add_exp_assign<'a>(&mut self, other: &SecretKey<'a>) -> Result<()> {
         init();
         unsafe {
             if ffi::secp256k1_ecdsa_pubkey_tweak_add(self.as_mut_ptr(),
@@ -421,9 +444,17 @@ impl <E: Encoder<S>, S> Encodable<E, S> for PublicKey {
     }
 }
 
-impl fmt::Show for SecretKey {
+impl<'a> PartialEq for SecretKey<'a> {
+    fn eq(&self, other: &SecretKey<'a>) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl<'a> Eq for SecretKey<'a> {}
+
+impl<'a> fmt::Show for SecretKey<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice().fmt(f)
+        write!(f, "[secret data]")
     }
 }
 
@@ -432,9 +463,7 @@ mod test {
     use serialize::hex::FromHex;
     use std::rand::task_rng;
 
-    use test::Bencher;
-
-    use super::super::{Secp256k1, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
+    use super::super::{InvalidNonce, InvalidPublicKey, InvalidSecretKey};
     use super::{Nonce, PublicKey, SecretKey};
 
     #[test]
@@ -442,17 +471,16 @@ mod test {
         let n = Nonce::from_slice([1, ..31]);
         assert_eq!(n, Err(InvalidNonce));
 
-        let n = SecretKey::from_slice([1, ..32]);
-        assert!(n.is_ok());
+        let mut n = SecretKey::new();
+        assert_eq!(n.init_slice([1, ..32]), Ok(()));
     }
 
     #[test]
     fn skey_from_slice() {
-        let sk = SecretKey::from_slice([1, ..31]);
-        assert_eq!(sk, Err(InvalidSecretKey));
-
-        let sk = SecretKey::from_slice([1, ..32]);
-        assert!(sk.is_ok());
+        let mut sk = SecretKey::new();
+        assert_eq!(sk.init_slice([1, ..31]), Err(InvalidSecretKey));
+        let mut sk = SecretKey::new();
+        assert_eq!(sk.init_slice([1, ..32]), Ok(()));
     }
 
     #[test]
@@ -471,14 +499,17 @@ mod test {
 
     #[test]
     fn keypair_slice_round_trip() {
-        let mut s = Secp256k1::new().unwrap();
+        let mut rng = task_rng();
+        let mut sk1 = SecretKey::new();
+        sk1.init_rng(&mut rng);
+        let mut sk2 = SecretKey::new();
+        sk2.clone_from(&sk1);
 
-        let (sk1, pk1) = s.generate_keypair(true);
-        assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
+        assert_eq!(sk1, sk2);
+
+        let pk1 = PublicKey::from_secret_key(&sk1, false);
         assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
-
-        let (sk2, pk2) = s.generate_keypair(false);
-        assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
+        let pk2 = PublicKey::from_secret_key(&sk1, true);
         assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
     }
 
@@ -491,28 +522,33 @@ mod test {
 
     #[test]
     fn invalid_secret_key() {
+        let mut sk = SecretKey::new();
         // Zero
-        assert_eq!(SecretKey::from_slice([0, ..32]), Err(InvalidSecretKey));
+        assert_eq!(sk.init_slice([0, ..32]), Err(InvalidSecretKey));
         // -1
-        assert_eq!(SecretKey::from_slice([0xff, ..32]), Err(InvalidSecretKey));
+        assert_eq!(sk.init_slice([0xff, ..32]), Err(InvalidSecretKey));
         // Top of range
-        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40]).is_ok());
+        assert_eq!(sk.init_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                   0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                   0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40]), Ok(()));
         // One past top of range
-        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
+        assert_eq!(sk.init_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                  0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                  0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]), Err(InvalidSecretKey));
     }
 
     #[test]
     fn test_addition() {
-        let mut s = Secp256k1::new().unwrap();
+        let mut rng = task_rng();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(true);
-        let (mut sk2, mut pk2) = s.generate_keypair(true);
+        let mut sk1 = SecretKey::new();
+        let mut sk2 = SecretKey::new();
+        sk1.init_rng(&mut rng);
+        sk2.init_rng(&mut rng);
+        let mut pk1 = PublicKey::from_secret_key(&sk1, true);
+        let mut pk2 = PublicKey::from_secret_key(&sk2, true);
 
         assert_eq!(PublicKey::from_secret_key(&sk1, true), pk1);
         assert!(sk1.add_assign(&sk2).is_ok());
@@ -533,7 +569,10 @@ mod test {
         // from ecdsa.curves import SECP256k1
         // # This key was generated randomly
         // sk = 0x09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81
-        let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81")).unwrap();
+        let mut sk = SecretKey::new();
+        sk.init_slice(hex_slice_mut!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81")).unwrap();
+        assert_eq!(sk.as_slice(),
+                   hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81"));
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
         let nonce = Nonce::deterministic([], &sk);
@@ -547,7 +586,7 @@ mod test {
 
         // # Decrease the secret key by one
         // sk = 0x09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80
-        let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80")).unwrap();
+        sk.init_slice(hex_slice_mut!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80")).unwrap();
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
         let nonce = Nonce::deterministic([], &sk);
@@ -558,14 +597,6 @@ mod test {
         let nonce = Nonce::deterministic(b"test", &sk);
         assert_eq!(nonce.as_slice(),
                    hex_slice!("355c589ff662c838aee454d62b12c50a87b7e95ede2431c7cfa40b6ba2fddccd"));
-    }
-
-    #[bench]
-    pub fn sequence_iterate(bh: &mut Bencher) {
-        let mut s = Secp256k1::new().unwrap();
-        let (sk, _) = s.generate_keypair(true);
-        let mut iter = sk.sequence(true);
-        bh.iter(|| iter.next())
     }
 }
 
