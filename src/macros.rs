@@ -27,7 +27,6 @@ macro_rules! impl_array_newtype(
             }
 
             #[inline]
-            #[allow(dead_code)]
             /// Provides an immutable view into the object from index `s` inclusive to `e` exclusive
             pub fn slice<'a>(&'a self, s: uint, e: uint) -> &'a [$ty] {
                 let &$thing(ref dat) = self;
@@ -35,7 +34,6 @@ macro_rules! impl_array_newtype(
             }
 
             #[inline]
-            #[allow(dead_code)]
             /// Provides an immutable view into the object, up to index `n` exclusive
             pub fn slice_to<'a>(&'a self, n: uint) -> &'a [$ty] {
                 let &$thing(ref dat) = self;
@@ -43,7 +41,6 @@ macro_rules! impl_array_newtype(
             }
 
             #[inline]
-            #[allow(dead_code)]
             /// Provides an immutable view into the object, starting from index `n`
             pub fn slice_from<'a>(&'a self, n: uint) -> &'a [$ty] {
                 let &$thing(ref dat) = self;
@@ -65,7 +62,6 @@ macro_rules! impl_array_newtype(
             }
 
             #[inline]
-            #[allow(dead_code)]
             /// Returns the length of the object as an array
             pub fn len(&self) -> uint { $len }
         }
@@ -132,11 +128,4 @@ macro_rules! hex_slice(
     $s.from_hex().unwrap().as_slice()
   )
 )
-
-macro_rules! hex_slice_mut(
-  ($s:expr) => (
-    $s.from_hex().unwrap().as_mut_slice()
-  )
-)
-
 
