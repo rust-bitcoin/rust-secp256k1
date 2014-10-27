@@ -46,7 +46,7 @@ extern crate test;
 use std::intrinsics::copy_nonoverlapping_memory;
 use std::io::IoResult;
 use std::rand::{OsRng, Rng, SeedableRng};
-use libc::c_int;
+use libc::{c_int, c_uint};
 use sync::one::{Once, ONCE_INIT};
 
 use crypto::fortuna::Fortuna;
@@ -64,6 +64,8 @@ pub struct RecoveryId(i32);
 
 /// An ECDSA signature
 pub struct Signature(uint, [u8, ..constants::MAX_SIGNATURE_SIZE]);
+
+const SECP256K1_START_SIGN_AND_START_VERIFY:c_uint = 3;
 
 impl Signature {
     /// Converts the signature to a raw pointer suitable for use
@@ -148,7 +150,7 @@ pub struct Secp256k1 {
 pub fn init() {
     unsafe {
         Secp256k1_init.doit(|| {
-            ffi::secp256k1_start();
+            ffi::secp256k1_start(SECP256K1_START_SIGN_AND_START_VERIFY);
         });
     }
 }

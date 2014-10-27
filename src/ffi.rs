@@ -14,11 +14,11 @@
 //
 
 //! FFI bindings
-use libc::{c_int, c_uchar};
+use libc::{c_int, c_uchar, c_uint};
 
 #[link(name = "secp256k1")]
 extern "C" {
-    pub fn secp256k1_start();
+    pub fn secp256k1_start(flags:c_uint);
 
     pub fn secp256k1_stop();
 
