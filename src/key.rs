@@ -252,7 +252,7 @@ impl PublicKey {
                 pk.as_mut_ptr(), &mut len,
                 sk.as_ptr(), compressed), 1);
         }
-        assert_eq!(len as uint, pk.len()); 
+        assert_eq!(len as uint, pk.len());
         pk
     }
 

@@ -30,11 +30,11 @@
 #![feature(globs)]  // for tests only
 
 // Coding conventions
-#![deny(non_uppercase_statics)]
+#![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
 #![deny(non_snake_case)]
 #![deny(unused_mut)]
-#![warn(missing_doc)]
+#![warn(missing_docs)]
 
 extern crate "rust-crypto" as crypto;
 
