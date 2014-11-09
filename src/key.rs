@@ -99,7 +99,7 @@ impl Nonce {
     #[inline]
     #[allow(non_snake_case)] // so we can match the names in the RFC
     pub fn deterministic(msg: &[u8], key: &SecretKey) -> Nonce {
-        static HMAC_SIZE: uint = 64;
+        const HMAC_SIZE: uint = 64;
 
         macro_rules! hmac(
             ($res:expr <- key $key:expr, data $($data:expr),+) => ({
@@ -252,7 +252,7 @@ impl PublicKey {
                 pk.as_mut_ptr(), &mut len,
                 sk.as_ptr(), compressed), 1);
         }
-        assert_eq!(len as uint, pk.len()); 
+        assert_eq!(len as uint, pk.len());
         pk
     }
 
