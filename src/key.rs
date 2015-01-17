@@ -27,17 +27,18 @@ use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 
 use super::init;
-use super::{Result, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
+use super::Result;
+use super::Error::{InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
 use constants;
 use ffi;
 
 /// Secret 256-bit nonce used as `k` in an ECDSA signature
-pub struct Nonce([u8, ..constants::NONCE_SIZE]);
-impl_array_newtype!(Nonce, u8, constants::NONCE_SIZE)
+pub struct Nonce([u8; constants::NONCE_SIZE]);
+impl_array_newtype!(Nonce, u8, constants::NONCE_SIZE);
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
-pub struct SecretKey([u8, ..constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE)
+pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
+impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 
 /// The number 1 encoded as a secret key
 pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
@@ -46,23 +47,25 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// Public key
-#[deriving(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Show)]
 pub struct PublicKey(PublicKeyData);
+impl Copy for PublicKey {}
 
 enum PublicKeyData {
-    Compressed([u8, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]),
-    Uncompressed([u8, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
+    Compressed([u8; constants::COMPRESSED_PUBLIC_KEY_SIZE]),
+    Uncompressed([u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
 }
+impl Copy for PublicKeyData {}
 
-fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8, ..32] {
-    let mut ret = [0u8, ..32];
-    rng.fill_bytes(ret);
+fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8; 32] {
+    let mut ret = [0u8; 32];
+    rng.fill_bytes(&mut ret);
     ret
 }
 
 /// As described in RFC 6979
-fn bits2octets(data: &[u8]) -> [u8, ..32] {
-    let mut ret = [0, ..32];
+fn bits2octets(data: &[u8]) -> [u8; 32] {
+    let mut ret = [0; 32];
     unsafe {
         copy_nonoverlapping_memory(ret.as_mut_ptr(),
                                    data.as_ptr(),
@@ -83,7 +86,7 @@ impl Nonce {
     pub fn from_slice(data: &[u8]) -> Result<Nonce> {
         match data.len() {
             constants::NONCE_SIZE => {
-                let mut ret = [0, ..constants::NONCE_SIZE];
+                let mut ret = [0; constants::NONCE_SIZE];
                 unsafe {
                     copy_nonoverlapping_memory(ret.as_mut_ptr(),
                                                data.as_ptr(),
@@ -99,54 +102,54 @@ impl Nonce {
     #[inline]
     #[allow(non_snake_case)] // so we can match the names in the RFC
     pub fn deterministic(msg: &[u8], key: &SecretKey) -> Nonce {
-        static HMAC_SIZE: uint = 64;
+        const HMAC_SIZE: usize = 64;
 
-        macro_rules! hmac(
-            ($res:expr <- key $key:expr, data $($data:expr),+) => ({
+        macro_rules! hmac {
+            ($res:expr; key $key:expr, data $($data:expr),+) => ({
                 let mut hmacker = Hmac::new(Sha512::new(), $key.as_slice());
                 $(hmacker.input($data.as_slice());)+
                 hmacker.raw_result($res.as_mut_slice());
             })
-        )
+        }
 
         // Section 3.2a
         // Goofy block just to avoid marking `msg_hash` as mutable
         let mut hasher = Sha512::new();
         hasher.input(msg);
-        let mut x = [0, ..HMAC_SIZE];
+        let mut x = [0; HMAC_SIZE];
         hasher.result(x.as_mut_slice());
         let msg_hash = bits2octets(x.as_slice());
 
         // Section 3.2b
-        let mut V = [0x01u8, ..HMAC_SIZE];
+        let mut V = [0x01u8; HMAC_SIZE];
         // Section 3.2c
-        let mut K = [0x00u8, ..HMAC_SIZE];
+        let mut K = [0x00u8; HMAC_SIZE];
 
         // Section 3.2d
-        hmac!(K <- key K, data V, [0x00], key, msg_hash)
+        hmac!(K; key K, data V, [0x00], key, msg_hash);
 
         // Section 3.2e
-        hmac!(V <- key K, data V)
+        hmac!(V; key K, data V);
 
         // Section 3.2f
-        hmac!(K <- key K, data V, [0x01], key, msg_hash)
+        hmac!(K; key K, data V, [0x01], key, msg_hash);
 
         // Section 3.2g
-        hmac!(V <- key K, data V)
+        hmac!(V; key K, data V);
 
         // Section 3.2
         let mut k = Err(InvalidSecretKey);
         while k.is_err() {
             // Try to generate the nonce
-            let mut T = [0x00u8, ..HMAC_SIZE];
-            hmac!(T <- key K, data V)
+            let mut T = [0x00u8; HMAC_SIZE];
+            hmac!(T; key K, data V);
 
             k = Nonce::from_slice(T.slice_to(constants::NONCE_SIZE));
 
             // Replace K, V
             if k.is_err() {
-                hmac!(K <- key K, data V, [0x00])
-                hmac!(V <- key K, data V)
+                hmac!(K; key K, data V, [0x00]);
+                hmac!(V; key K, data V);
             }
         }
 
@@ -174,7 +177,7 @@ impl SecretKey {
         init();
         match data.len() {
             constants::SECRET_KEY_SIZE => {
-                let mut ret = [0, ..constants::SECRET_KEY_SIZE];
+                let mut ret = [0; constants::SECRET_KEY_SIZE];
                 unsafe {
                     if ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
@@ -218,8 +221,11 @@ pub struct Sequence {
     compressed: bool,
     last_sk: SecretKey,
 }
+impl Copy for Sequence {}
 
-impl<'a> Iterator<(SecretKey, PublicKey)> for Sequence {
+impl Iterator for Sequence {
+    type Item = (SecretKey, PublicKey);
+
     #[inline]
     fn next(&mut self) -> Option<(SecretKey, PublicKey)> {
         self.last_sk.add_assign(&ONE).unwrap();
@@ -232,8 +238,11 @@ impl PublicKey {
     #[inline]
     pub fn new(compressed: bool) -> PublicKey {
         PublicKey(
-            if compressed { Compressed([0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE]) }
-            else { Uncompressed([0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]) }
+            if compressed {
+                PublicKeyData::Compressed([0; constants::COMPRESSED_PUBLIC_KEY_SIZE])
+            } else {
+                PublicKeyData::Uncompressed([0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
+            }
         )
     }
 
@@ -252,7 +261,7 @@ impl PublicKey {
                 pk.as_mut_ptr(), &mut len,
                 sk.as_ptr(), compressed), 1);
         }
-        assert_eq!(len as uint, pk.len()); 
+        assert_eq!(len as usize, pk.len()); 
         pk
     }
 
@@ -261,7 +270,7 @@ impl PublicKey {
     pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
         match data.len() {
             constants::COMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0, ..constants::COMPRESSED_PUBLIC_KEY_SIZE];
+                let mut ret = [0; constants::COMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
                     if ffi::secp256k1_ecdsa_pubkey_verify(data.as_ptr(),
                                                           data.len() as ::libc::c_int) == 0 {
@@ -271,16 +280,16 @@ impl PublicKey {
                                                data.as_ptr(),
                                                data.len());
                 }
-                Ok(PublicKey(Compressed(ret)))
+                Ok(PublicKey(PublicKeyData::Compressed(ret)))
             }
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+                let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
                     copy_nonoverlapping_memory(ret.as_mut_ptr(),
                                                data.as_ptr(),
                                                data.len());
                 }
-                Ok(PublicKey(Uncompressed(ret)))
+                Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
             }
             _ => Err(InvalidPublicKey)
         }
@@ -291,18 +300,18 @@ impl PublicKey {
     pub fn is_compressed(&self) -> bool {
         let &PublicKey(ref data) = self;
         match *data {
-            Compressed(_) => true,
-            Uncompressed(_) => false
+            PublicKeyData::Compressed(_) => true,
+            PublicKeyData::Uncompressed(_) => false
         }
     }
 
     /// Returns the length of the public key
     #[inline]
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         let &PublicKey(ref data) = self;
         match *data {
-            Compressed(ref x) => x.len(),
-            Uncompressed(ref x) => x.len()
+            PublicKeyData::Compressed(ref x) => x.len(),
+            PublicKeyData::Uncompressed(ref x) => x.len()
         }
     }
 
@@ -319,8 +328,8 @@ impl PublicKey {
     pub fn as_ptr(&self) -> *const u8 {
         let &PublicKey(ref data) = self;
         match *data {
-            Compressed(ref x) => x.as_ptr(),
-            Uncompressed(ref x) => x.as_ptr()
+            PublicKeyData::Compressed(ref x) => x.as_ptr(),
+            PublicKeyData::Uncompressed(ref x) => x.as_ptr()
         }
     }
 
@@ -328,10 +337,10 @@ impl PublicKey {
     /// with the FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        let &PublicKey(ref mut data) = self;
+        let &mut PublicKey(ref mut data) = self;
         match *data {
-            Compressed(ref mut x) => x.as_mut_ptr(),
-            Uncompressed(ref mut x) => x.as_mut_ptr()
+            PublicKeyData::Compressed(ref mut x) => x.as_mut_ptr(),
+            PublicKeyData::Uncompressed(ref mut x) => x.as_mut_ptr()
         }
     }
 
@@ -355,8 +364,8 @@ impl PublicKeyData {
     #[inline]
     fn as_slice<'a>(&'a self) -> &'a [u8] {
         match *self {
-            Compressed(ref x) => x.as_slice(),
-            Uncompressed(ref x) => x.as_slice()
+            PublicKeyData::Compressed(ref x) => x.as_slice(),
+            PublicKeyData::Uncompressed(ref x) => x.as_slice()
         }
     }
 }
@@ -387,26 +396,26 @@ impl fmt::Show for PublicKeyData {
     }
 }
 
-impl<D: Decoder<E>, E> Decodable<D, E> for PublicKey {
-    fn decode(d: &mut D) -> ::std::prelude::Result<PublicKey, E> {
+impl Decodable for PublicKey {
+    fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<PublicKey, D::Error> {
         d.read_seq(|d, len| {
             if len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
                 unsafe {
                     use std::mem;
-                    let mut ret: [u8, ..constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
+                    let mut ret: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
                     for i in range(0, len) {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
-                    Ok(PublicKey(Uncompressed(ret)))
+                    Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
                 }
             } else if len == constants::COMPRESSED_PUBLIC_KEY_SIZE {
                 unsafe {
                     use std::mem;
-                    let mut ret: [u8, ..constants::COMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
+                    let mut ret: [u8; constants::COMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
                     for i in range(0, len) {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
-                    Ok(PublicKey(Compressed(ret)))
+                    Ok(PublicKey(PublicKeyData::Compressed(ret)))
                 }
             } else {
                 Err(d.error("Invalid length"))
@@ -415,9 +424,9 @@ impl<D: Decoder<E>, E> Decodable<D, E> for PublicKey {
     }
 }
 
-impl <E: Encoder<S>, S> Encodable<E, S> for PublicKey {
-    fn encode(&self, e: &mut E) -> ::std::prelude::Result<(), S> {
-        self.as_slice().encode(e)
+impl Encodable for PublicKey {
+    fn encode<S: Encoder>(&self, s: &mut S) -> ::std::result::Result<(), S::Error> {
+        self.as_slice().encode(s)
     }
 }
 
@@ -430,41 +439,42 @@ impl fmt::Show for SecretKey {
 #[cfg(test)]
 mod test {
     use serialize::hex::FromHex;
-    use std::rand::task_rng;
+    use std::rand::thread_rng;
 
     use test::Bencher;
 
-    use super::super::{Secp256k1, InvalidNonce, InvalidPublicKey, InvalidSecretKey};
+    use super::super::Secp256k1;
+    use super::super::Error::{InvalidNonce, InvalidPublicKey, InvalidSecretKey};
     use super::{Nonce, PublicKey, SecretKey};
 
     #[test]
     fn nonce_from_slice() {
-        let n = Nonce::from_slice([1, ..31]);
+        let n = Nonce::from_slice(&[1; 31]);
         assert_eq!(n, Err(InvalidNonce));
 
-        let n = SecretKey::from_slice([1, ..32]);
+        let n = SecretKey::from_slice(&[1; 32]);
         assert!(n.is_ok());
     }
 
     #[test]
     fn skey_from_slice() {
-        let sk = SecretKey::from_slice([1, ..31]);
+        let sk = SecretKey::from_slice(&[1; 31]);
         assert_eq!(sk, Err(InvalidSecretKey));
 
-        let sk = SecretKey::from_slice([1, ..32]);
+        let sk = SecretKey::from_slice(&[1; 32]);
         assert!(sk.is_ok());
     }
 
     #[test]
     fn pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice([]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice([1, 2, 3]), Err(InvalidPublicKey));
+        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
 
-        let uncompressed = PublicKey::from_slice([4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]);
+        let uncompressed = PublicKey::from_slice(&[4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]);
         assert!(uncompressed.is_ok());
         assert!(!uncompressed.unwrap().is_compressed());
 
-        let compressed = PublicKey::from_slice([3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
+        let compressed = PublicKey::from_slice(&[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
         assert!(compressed.is_ok());
         assert!(compressed.unwrap().is_compressed());
     }
@@ -484,7 +494,7 @@ mod test {
 
     #[test]
     fn nonce_slice_round_trip() {
-        let mut rng = task_rng();
+        let mut rng = thread_rng();
         let nonce = Nonce::new(&mut rng);
         assert_eq!(Nonce::from_slice(nonce.as_slice()), Ok(nonce));
     }
@@ -492,19 +502,19 @@ mod test {
     #[test]
     fn invalid_secret_key() {
         // Zero
-        assert_eq!(SecretKey::from_slice([0, ..32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
         // -1
-        assert_eq!(SecretKey::from_slice([0xff, ..32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey));
         // Top of range
-        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40]).is_ok());
+        assert!(SecretKey::from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                        0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                        0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40]).is_ok());
         // One past top of range
-        assert!(SecretKey::from_slice([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
-                                       0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
-                                       0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
+        assert!(SecretKey::from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
+                                        0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
+                                        0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
     }
 
     #[test]
@@ -536,7 +546,7 @@ mod test {
         let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f81")).unwrap();
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
-        let nonce = Nonce::deterministic([], &sk);
+        let nonce = Nonce::deterministic(&[], &sk);
         assert_eq!(nonce.as_slice(),
                    hex_slice!("d954eddd184cac2b60edcd0e6be9ec54d93f633b28b366420d38ed9c346ffe27"));
 
@@ -550,7 +560,7 @@ mod test {
         let sk = SecretKey::from_slice(hex_slice!("09e918bbea76205445e9a73eaad2080a135d1e33e9dd1b3ca8a9a1285e7c1f80")).unwrap();
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
-        let nonce = Nonce::deterministic([], &sk);
+        let nonce = Nonce::deterministic(&[], &sk);
         assert_eq!(nonce.as_slice(),
                    hex_slice!("9f45f8d0a28e8956673c8da6db3db86ca4f172f0a2dbd62364fdbf786c7d96df"));
 
