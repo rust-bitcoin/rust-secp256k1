@@ -150,7 +150,8 @@ pub struct Secp256k1 {
 pub fn init() {
     unsafe {
         Secp256k1_init.call_once(|| {
-            ffi::secp256k1_start();
+            ffi::secp256k1_start(ffi::SECP256K1_START_VERIFY |
+                                 ffi::SECP256K1_START_SIGN);
         });
     }
 }

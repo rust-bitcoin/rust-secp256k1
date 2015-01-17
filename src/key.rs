@@ -164,7 +164,7 @@ impl SecretKey {
         init();
         let mut data = random_32_bytes(rng);
         unsafe {
-            while ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
+            while ffi::secp256k1_ec_seckey_verify(data.as_ptr()) == 0 {
                 data = random_32_bytes(rng);
             }
         }
@@ -179,7 +179,7 @@ impl SecretKey {
             constants::SECRET_KEY_SIZE => {
                 let mut ret = [0; constants::SECRET_KEY_SIZE];
                 unsafe {
-                    if ffi::secp256k1_ecdsa_seckey_verify(data.as_ptr()) == 0 {
+                    if ffi::secp256k1_ec_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
                     copy_nonoverlapping_memory(ret.as_mut_ptr(),
@@ -200,7 +200,7 @@ impl SecretKey {
     pub fn add_assign(&mut self, other: &SecretKey) -> Result<()> {
         init();
         unsafe {
-            if ffi::secp256k1_ecdsa_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
+            if ffi::secp256k1_ec_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
                 Err(Unknown)
             } else {
                 Ok(())
@@ -257,7 +257,7 @@ impl PublicKey {
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
-            assert_eq!(ffi::secp256k1_ecdsa_pubkey_create(
+            assert_eq!(ffi::secp256k1_ec_pubkey_create(
                 pk.as_mut_ptr(), &mut len,
                 sk.as_ptr(), compressed), 1);
         }
@@ -272,7 +272,7 @@ impl PublicKey {
             constants::COMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0; constants::COMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
-                    if ffi::secp256k1_ecdsa_pubkey_verify(data.as_ptr(),
+                    if ffi::secp256k1_ec_pubkey_verify(data.as_ptr(),
                                                           data.len() as ::libc::c_int) == 0 {
                         return Err(InvalidPublicKey);
                     }
@@ -349,9 +349,9 @@ impl PublicKey {
     pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<()> {
         init();
         unsafe {
-            if ffi::secp256k1_ecdsa_pubkey_tweak_add(self.as_mut_ptr(),
-                                                     self.len() as ::libc::c_int,
-                                                     other.as_ptr()) != 1 {
+            if ffi::secp256k1_ec_pubkey_tweak_add(self.as_mut_ptr(),
+                                                  self.len() as ::libc::c_int,
+                                                  other.as_ptr()) != 1 {
                 Err(Unknown)
             } else {
                 Ok(())
