@@ -79,12 +79,12 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn clone(&self) -> $thing {
                 unsafe {
-                    use std::intrinsics::copy_nonoverlapping_memory;
+                    use std::intrinsics::copy_nonoverlapping;
                     use std::mem;
                     let mut ret: $thing = mem::uninitialized();
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               self.as_ptr(),
-                                               mem::size_of::<$thing>());
+                    copy_nonoverlapping(ret.as_mut_ptr(),
+                                        self.as_ptr(),
+                                        mem::size_of::<$thing>());
                     ret
                 }
             }

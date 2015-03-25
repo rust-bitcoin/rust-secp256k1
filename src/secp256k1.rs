@@ -41,8 +41,8 @@ extern crate libc;
 extern crate serialize;
 extern crate test;
 
-use std::intrinsics::copy_nonoverlapping_memory;
-use std::io::IoResult;
+use std::intrinsics::copy_nonoverlapping;
+use std::io;
 use std::rand::{OsRng, Rng, SeedableRng};
 use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
@@ -103,9 +103,9 @@ impl Signature {
         if data.len() <= constants::MAX_SIGNATURE_SIZE {
             let mut ret = [0; constants::MAX_SIGNATURE_SIZE];
             unsafe {
-                copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                           data.as_ptr(),
-                                           data.len());
+                copy_nonoverlapping(ret.as_mut_ptr(),
+                                    data.as_ptr(),
+                                    data.len());
             }
             Ok(Signature(data.len(), ret))
         } else {
@@ -158,7 +158,7 @@ pub fn init() {
 
 impl Secp256k1 {
     /// Constructs a new secp256k1 engine.
-    pub fn new() -> IoResult<Secp256k1> {
+    pub fn new() -> io::Result<Secp256k1> {
         init();
         let mut osrng = try!(OsRng::new());
         let mut seed = [0; 2048];

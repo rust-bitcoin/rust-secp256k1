@@ -15,7 +15,7 @@
 
 //! Public/Private keys
 
-use std::intrinsics::copy_nonoverlapping_memory;
+use std::intrinsics::copy_nonoverlapping;
 use std::cmp;
 use std::fmt;
 use std::rand::Rng;
@@ -67,9 +67,9 @@ fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8; 32] {
 fn bits2octets(data: &[u8]) -> [u8; 32] {
     let mut ret = [0; 32];
     unsafe {
-        copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                   data.as_ptr(),
-                                   cmp::min(data.len(), 32));
+        copy_nonoverlapping(ret.as_mut_ptr(),
+                            data.as_ptr(),
+                            cmp::min(data.len(), 32));
     }
     ret
 }
@@ -88,9 +88,9 @@ impl Nonce {
             constants::NONCE_SIZE => {
                 let mut ret = [0; constants::NONCE_SIZE];
                 unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
+                    copy_nonoverlapping(ret.as_mut_ptr(),
+                                        data.as_ptr(),
+                                        data.len());
                 }
                 Ok(Nonce(ret))
             }
@@ -182,9 +182,9 @@ impl SecretKey {
                     if ffi::secp256k1_ec_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
+                    copy_nonoverlapping(ret.as_mut_ptr(),
+                                        data.as_ptr(),
+                                        data.len());
                 }
                 Ok(SecretKey(ret))
             }
@@ -276,18 +276,18 @@ impl PublicKey {
                                                           data.len() as ::libc::c_int) == 0 {
                         return Err(InvalidPublicKey);
                     }
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
+                    copy_nonoverlapping(ret.as_mut_ptr(),
+                                        data.as_ptr(),
+                                        data.len());
                 }
                 Ok(PublicKey(PublicKeyData::Compressed(ret)))
             }
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
-                    copy_nonoverlapping_memory(ret.as_mut_ptr(),
-                                               data.as_ptr(),
-                                               data.len());
+                    copy_nonoverlapping(ret.as_mut_ptr(),
+                                        data.as_ptr(),
+                                        data.len());
                 }
                 Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
             }
