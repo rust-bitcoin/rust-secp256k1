@@ -1,12 +1,12 @@
 [package]
 
-name = "bitcoin-secp256k1-rs"
+name = "secp256k1"
 version = "0.0.1"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net" ]
 
 [lib]
-name = "bitcoin-secp256k1-rs"
+name = "secp256k1"
 path = "src/secp256k1.rs"
 
 [dependencies.rust-crypto]

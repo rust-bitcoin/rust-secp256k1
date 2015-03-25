@@ -23,7 +23,7 @@
 #![crate_type = "lib"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![crate_name = "bitcoin-secp256k1-rs"]
+#![crate_name = "secp256k1"]
 
 // Keep this until 1.0 I guess; it's needed for `black_box` at least
 #![allow(unstable)]
