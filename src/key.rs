@@ -403,7 +403,7 @@ impl Decodable for PublicKey {
                 unsafe {
                     use std::mem;
                     let mut ret: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
-                    for i in range(0, len) {
+                    for i in 0..len {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
                     Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
@@ -412,7 +412,7 @@ impl Decodable for PublicKey {
                 unsafe {
                     use std::mem;
                     let mut ret: [u8; constants::COMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
-                    for i in range(0, len) {
+                    for i in 0..len {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
                     Ok(PublicKey(PublicKeyData::Compressed(ret)))

@@ -103,7 +103,7 @@ macro_rules! impl_array_newtype {
                         unsafe {
                             use std::mem;
                             let mut ret: [$ty; $len] = mem::uninitialized();
-                            for i in range(0, len) {
+                            for i in 0..len {
                                 ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                             }
                             Ok($thing(ret))
