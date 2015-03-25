@@ -44,10 +44,9 @@ extern crate test;
 
 use std::intrinsics::copy_nonoverlapping;
 use std::io;
-use std::rand::OsRng;
 use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
-use rand::{Rng, SeedableRng};
+use rand::{OsRng, Rng, SeedableRng};
 
 use crypto::fortuna::Fortuna;
 
@@ -274,8 +273,7 @@ impl Secp256k1 {
 #[cfg(test)]
 mod tests {
     use std::iter::repeat;
-    use std::rand::thread_rng;
-    use rand::Rng;
+    use rand::{Rng, thread_rng};
 
     use test::{Bencher, black_box};
 
