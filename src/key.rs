@@ -18,7 +18,7 @@
 use std::intrinsics::copy_nonoverlapping;
 use std::cmp;
 use std::fmt;
-use std::rand::Rng;
+use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 
 use crypto::digest::Digest;

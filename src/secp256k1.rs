@@ -38,14 +38,16 @@
 extern crate crypto;
 
 extern crate libc;
+extern crate rand;
 extern crate serialize;
 extern crate test;
 
 use std::intrinsics::copy_nonoverlapping;
 use std::io;
-use std::rand::{OsRng, Rng, SeedableRng};
+use std::rand::OsRng;
 use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
+use rand::{Rng, SeedableRng};
 
 use crypto::fortuna::Fortuna;
 
@@ -272,8 +274,8 @@ impl Secp256k1 {
 #[cfg(test)]
 mod tests {
     use std::iter::repeat;
-    use std::rand;
-    use std::rand::Rng;
+    use std::rand::thread_rng;
+    use rand::Rng;
 
     use test::{Bencher, black_box};
 
@@ -287,7 +289,7 @@ mod tests {
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let pk = PublicKey::new(true);
 
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidPublicKey));
     }
@@ -301,7 +303,7 @@ mod tests {
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
 
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
     }
@@ -314,7 +316,7 @@ mod tests {
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
 
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
     }
@@ -324,7 +326,7 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut msg);
+        thread_rng().fill_bytes(&mut msg);
 
         let (sk, _) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
@@ -337,7 +339,7 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
@@ -352,14 +354,14 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
         let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
 
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
         assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Err(IncorrectSignature));
     }
 
@@ -368,7 +370,7 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8; 32];
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
@@ -381,7 +383,7 @@ mod tests {
     #[test]
     fn deterministic_sign() {
         let mut msg = [0u8; 32];
-        rand::thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(msg.as_mut_slice());
 
         let mut s = Secp256k1::new().unwrap();
         let (sk, pk) = s.generate_keypair(true);
