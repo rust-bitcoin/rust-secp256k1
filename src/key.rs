@@ -47,7 +47,7 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// Public key
-#[derive(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct PublicKey(PublicKeyData);
 impl Copy for PublicKey {}
 
@@ -372,7 +372,7 @@ impl PublicKeyData {
 
 // We have to do all these impls ourselves as Rust can't derive
 // them for arrays
-impl fmt::Show for Nonce {
+impl fmt::Debug for Nonce {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
     }
@@ -390,7 +390,7 @@ impl PartialEq for PublicKeyData {
 
 impl Eq for PublicKeyData {}
 
-impl fmt::Show for PublicKeyData {
+impl fmt::Debug for PublicKeyData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
     }
@@ -430,7 +430,7 @@ impl Encodable for PublicKey {
     }
 }
 
-impl fmt::Show for SecretKey {
+impl fmt::Debug for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice().fmt(f)
     }

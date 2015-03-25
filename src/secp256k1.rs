@@ -115,7 +115,7 @@ impl Signature {
 }
 
 /// An ECDSA error
-#[derive(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Error {
     /// Signature failed verification
     IncorrectSignature,
