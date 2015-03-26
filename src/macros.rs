@@ -20,34 +20,6 @@ macro_rules! impl_array_newtype {
 
         impl $thing {
             #[inline]
-            /// Provides an immutable view into the object
-            pub fn as_slice<'a>(&'a self) -> &'a [$ty] {
-                let &$thing(ref dat) = self;
-                dat.as_slice()
-            }
-
-            #[inline]
-            /// Provides an immutable view into the object from index `s` inclusive to `e` exclusive
-            pub fn slice<'a>(&'a self, s: usize, e: usize) -> &'a [$ty] {
-                let &$thing(ref dat) = self;
-                dat.slice(s, e)
-            }
-
-            #[inline]
-            /// Provides an immutable view into the object, up to index `n` exclusive
-            pub fn slice_to<'a>(&'a self, n: usize) -> &'a [$ty] {
-                let &$thing(ref dat) = self;
-                dat.slice_to(n)
-            }
-
-            #[inline]
-            /// Provides an immutable view into the object, starting from index `n`
-            pub fn slice_from<'a>(&'a self, n: usize) -> &'a [$ty] {
-                let &$thing(ref dat) = self;
-                dat.slice_from(n)
-            }
-
-            #[inline]
             /// Converts the object to a raw pointer for FFI interfacing
             pub fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
@@ -69,7 +41,7 @@ macro_rules! impl_array_newtype {
         impl PartialEq for $thing {
             #[inline]
             fn eq(&self, other: &$thing) -> bool {
-                self.as_slice() == other.as_slice()
+                &self[..] == &other[..]
             }
         }
 
@@ -87,6 +59,56 @@ macro_rules! impl_array_newtype {
                                         mem::size_of::<$thing>());
                     ret
                 }
+            }
+        }
+
+        impl ::std::ops::Index<usize> for $thing {
+            type Output = $ty;
+
+            #[inline]
+            fn index(&self, index: usize) -> &$ty {
+                let &$thing(ref dat) = self;
+                &dat[index]
+            }
+        }
+
+        impl ::std::ops::Index<::std::ops::Range<usize>> for $thing {
+            type Output = [$ty];
+
+            #[inline]
+            fn index(&self, index: ::std::ops::Range<usize>) -> &[$ty] {
+                let &$thing(ref dat) = self;
+                &dat[index.start..index.end]
+            }
+        }
+
+        impl ::std::ops::Index<::std::ops::RangeTo<usize>> for $thing {
+            type Output = [$ty];
+
+            #[inline]
+            fn index(&self, index: ::std::ops::RangeTo<usize>) -> &[$ty] {
+                let &$thing(ref dat) = self;
+                &dat[..index.end]
+            }
+        }
+
+        impl ::std::ops::Index<::std::ops::RangeFrom<usize>> for $thing {
+            type Output = [$ty];
+
+            #[inline]
+            fn index(&self, index: ::std::ops::RangeFrom<usize>) -> &[$ty] {
+                let &$thing(ref dat) = self;
+                &dat[index.start..]
+            }
+        }
+
+        impl ::std::ops::Index<::std::ops::RangeFull> for $thing {
+            type Output = [$ty];
+
+            #[inline]
+            fn index(&self, _: ::std::ops::RangeFull) -> &[$ty] {
+                let &$thing(ref dat) = self;
+                &dat[..]
             }
         }
 
@@ -116,7 +138,7 @@ macro_rules! impl_array_newtype {
         impl ::serialize::Encodable for $thing {
             fn encode<S: ::serialize::Encoder>(&self, s: &mut S)
                                                -> ::std::result::Result<(), S::Error> {
-                self.as_slice().encode(s)
+                self[..].encode(s)
             }
         }
     }
@@ -126,7 +148,7 @@ macro_rules! impl_array_newtype {
 // for testing
 macro_rules! hex_slice {
   ($s:expr) => (
-    $s.from_hex().unwrap().as_slice()
+    &$s.from_hex().unwrap()[..]
   )
 }
 

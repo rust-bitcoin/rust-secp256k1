@@ -18,6 +18,7 @@
 use std::intrinsics::copy_nonoverlapping;
 use std::cmp;
 use std::fmt;
+use std::ops;
 use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 
@@ -106,8 +107,8 @@ impl Nonce {
 
         macro_rules! hmac {
             ($res:expr; key $key:expr, data $($data:expr),+) => ({
-                let mut hmacker = Hmac::new(Sha512::new(), $key.as_slice());
-                $(hmacker.input($data.as_slice());)+
+                let mut hmacker = Hmac::new(Sha512::new(), &$key[..]);
+                $(hmacker.input(&$data[..]);)+
                 hmacker.raw_result($res.as_mut_slice());
             })
         }
@@ -118,7 +119,7 @@ impl Nonce {
         hasher.input(msg);
         let mut x = [0; HMAC_SIZE];
         hasher.result(x.as_mut_slice());
-        let msg_hash = bits2octets(x.as_slice());
+        let msg_hash = bits2octets(&x);
 
         // Section 3.2b
         let mut V = [0x01u8; HMAC_SIZE];
@@ -144,7 +145,7 @@ impl Nonce {
             let mut T = [0x00u8; HMAC_SIZE];
             hmac!(T; key K, data V);
 
-            k = Nonce::from_slice(T.slice_to(constants::NONCE_SIZE));
+            k = Nonce::from_slice(&T[..constants::NONCE_SIZE]);
 
             // Replace K, V
             if k.is_err() {
@@ -315,13 +316,6 @@ impl PublicKey {
         }
     }
 
-    /// Converts the public key into a byte slice
-    #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &PublicKey(ref data) = self;
-        data.as_slice()
-    }
-
     /// Converts the public key to a raw pointer suitable for use
     /// with the FFI functions
     #[inline]
@@ -360,21 +354,11 @@ impl PublicKey {
     }
 }
 
-impl PublicKeyData {
-    #[inline]
-    fn as_slice<'a>(&'a self) -> &'a [u8] {
-        match *self {
-            PublicKeyData::Compressed(ref x) => x.as_slice(),
-            PublicKeyData::Uncompressed(ref x) => x.as_slice()
-        }
-    }
-}
-
 // We have to do all these impls ourselves as Rust can't derive
 // them for arrays
 impl fmt::Debug for Nonce {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice().fmt(f)
+        (&self[..]).fmt(f)
     }
 }
 
@@ -384,7 +368,7 @@ impl Clone for PublicKeyData {
 
 impl PartialEq for PublicKeyData {
     fn eq(&self, other: &PublicKeyData) -> bool {
-        self.as_slice() == other.as_slice()
+        &self[..] == &other[..]
     }
 }
 
@@ -392,7 +376,118 @@ impl Eq for PublicKeyData {}
 
 impl fmt::Debug for PublicKeyData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice().fmt(f)
+        (&self[..]).fmt(f)
+    }
+}
+
+
+impl ops::Index<usize> for PublicKeyData {
+    type Output = u8;
+
+    #[inline]
+    fn index(&self, index: usize) -> &u8 {
+        match *self {
+            PublicKeyData::Compressed(ref x) => &x[index],
+            PublicKeyData::Uncompressed(ref x) => &x[index]
+       }
+    }
+}
+
+impl ops::Index<usize> for PublicKey {
+    type Output = u8;
+
+    #[inline]
+    fn index(&self, index: usize) -> &u8 {
+        let &PublicKey(ref dat) = self;
+        &dat[index]
+    }
+}
+
+impl ops::Index<ops::Range<usize>> for PublicKeyData {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::Range<usize>) -> &[u8] {
+        match *self {
+            PublicKeyData::Compressed(ref x) => &x[index.start..index.end],
+            PublicKeyData::Uncompressed(ref x) => &x[index.start..index.end]
+       }
+    }
+}
+
+impl ops::Index<ops::Range<usize>> for PublicKey {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::Range<usize>) -> &[u8] {
+        let &PublicKey(ref dat) = self;
+        &dat[index.start..index.end]
+    }
+}
+
+impl ops::Index<ops::RangeTo<usize>> for PublicKeyData {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
+        match *self {
+            PublicKeyData::Compressed(ref x) => &x[..index.end],
+            PublicKeyData::Uncompressed(ref x) => &x[..index.end]
+       }
+    }
+}
+
+impl ops::Index<ops::RangeTo<usize>> for PublicKey {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
+        let &PublicKey(ref dat) = self;
+        &dat[..index.end]
+    }
+}
+
+impl ops::Index<ops::RangeFrom<usize>> for PublicKeyData {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
+        match *self {
+            PublicKeyData::Compressed(ref x) => &x[index.start..],
+            PublicKeyData::Uncompressed(ref x) => &x[index.start..]
+       }
+    }
+}
+
+impl ops::Index<ops::RangeFrom<usize>> for PublicKey {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
+        let &PublicKey(ref dat) = self;
+        &dat[index.start..]
+    }
+}
+
+impl ops::Index<ops::RangeFull> for PublicKeyData {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, _: ops::RangeFull) -> &[u8] {
+        match *self {
+            PublicKeyData::Compressed(ref x) => &x[..],
+            PublicKeyData::Uncompressed(ref x) => &x[..]
+       }
+    }
+}
+
+impl ops::Index<ops::RangeFull> for PublicKey {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, _: ops::RangeFull) -> &[u8] {
+        let &PublicKey(ref dat) = self;
+        &dat[..]
     }
 }
 
@@ -426,13 +521,13 @@ impl Decodable for PublicKey {
 
 impl Encodable for PublicKey {
     fn encode<S: Encoder>(&self, s: &mut S) -> ::std::result::Result<(), S::Error> {
-        self.as_slice().encode(s)
+        (&self[..]).encode(s)
     }
 }
 
 impl fmt::Debug for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice().fmt(f)
+        (&self[..]).fmt(f)
     }
 }
 

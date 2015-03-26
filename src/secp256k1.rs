@@ -73,7 +73,7 @@ impl Signature {
     #[inline]
     pub fn as_ptr(&self) -> *const u8 {
         let &Signature(_, ref data) = self;
-        data.as_slice().as_ptr()
+        data.as_ptr()
     }
 
     /// Converts the signature to a mutable raw pointer suitable for use
@@ -81,14 +81,14 @@ impl Signature {
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         let &mut Signature(_, ref mut data) = self;
-        data.as_mut_slice().as_mut_ptr()
+        data.as_mut_ptr()
     }
 
     /// Converts the signature to a byte slice suitable for verification
     #[inline]
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
         let &Signature(len, ref data) = self;
-        data.slice_to(len)
+        &data[..len]
     }
 
     /// Returns the length of the signature
@@ -164,7 +164,7 @@ impl Secp256k1 {
         let mut osrng = try!(OsRng::new());
         let mut seed = [0; 2048];
         osrng.fill_bytes(seed.as_mut_slice());
-        Ok(Secp256k1 { rng: SeedableRng::from_seed(seed.as_slice()) })
+        Ok(Secp256k1 { rng: SeedableRng::from_seed(&seed[..]) })
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
