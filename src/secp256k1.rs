@@ -36,7 +36,7 @@
 #![warn(missing_docs)]
 
 extern crate crypto;
-extern crate "rustc-serialize" as serialize;
+extern crate rustc_serialize as serialize;
 #[cfg(test)] extern crate test;
 
 extern crate libc;
