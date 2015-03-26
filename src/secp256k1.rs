@@ -43,7 +43,7 @@ extern crate libc;
 extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
-use std::io;
+use std::{io, ops};
 use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
 use rand::{OsRng, Rng, SeedableRng};
@@ -84,13 +84,6 @@ impl Signature {
         data.as_mut_ptr()
     }
 
-    /// Converts the signature to a byte slice suitable for verification
-    #[inline]
-    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
-        let &Signature(len, ref data) = self;
-        &data[..len]
-    }
-
     /// Returns the length of the signature
     #[inline]
     pub fn len(&self) -> usize {
@@ -112,6 +105,46 @@ impl Signature {
         } else {
             Err(Error::InvalidSignature)
         }
+    }
+}
+
+impl ops::Index<usize> for Signature {
+    type Output = u8;
+
+    #[inline]
+    fn index(&self, index: usize) -> &u8 {
+        let &Signature(_, ref dat) = self;
+        &dat[index]
+    }
+}
+
+impl ops::Index<ops::Range<usize>> for Signature {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::Range<usize>) -> &[u8] {
+        let &Signature(_, ref dat) = self;
+        &dat[index.start..index.end]
+    }
+}
+
+impl ops::Index<ops::RangeFrom<usize>> for Signature {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
+        let &Signature(_, ref dat) = self;
+        &dat[index.start..]
+    }
+}
+
+impl ops::Index<ops::RangeFull> for Signature {
+    type Output = [u8];
+
+    #[inline]
+    fn index(&self, _: ops::RangeFull) -> &[u8] {
+        let &Signature(_, ref dat) = self;
+        &dat[..]
     }
 }
 
@@ -245,7 +278,7 @@ impl Secp256k1 {
     /// Use `verify_raw` instead.
     #[inline]
     pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<()> {
-        Secp256k1::verify_raw(msg, sig.as_slice(), pk)
+        Secp256k1::verify_raw(msg, &sig[..], pk)
     }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public

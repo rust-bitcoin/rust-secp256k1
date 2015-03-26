@@ -16,9 +16,7 @@
 //! Public/Private keys
 
 use std::intrinsics::copy_nonoverlapping;
-use std::cmp;
-use std::fmt;
-use std::ops;
+use std::{cmp, fmt, ops};
 use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 
@@ -534,7 +532,7 @@ impl fmt::Debug for SecretKey {
 #[cfg(test)]
 mod test {
     use serialize::hex::FromHex;
-    use std::rand::thread_rng;
+    use rand::thread_rng;
 
     use test::Bencher;
 
@@ -579,19 +577,19 @@ mod test {
         let mut s = Secp256k1::new().unwrap();
 
         let (sk1, pk1) = s.generate_keypair(true);
-        assert_eq!(SecretKey::from_slice(sk1.as_slice()), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(pk1.as_slice()), Ok(pk1));
+        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
+        assert_eq!(PublicKey::from_slice(&pk1[..]), Ok(pk1));
 
         let (sk2, pk2) = s.generate_keypair(false);
-        assert_eq!(SecretKey::from_slice(sk2.as_slice()), Ok(sk2));
-        assert_eq!(PublicKey::from_slice(pk2.as_slice()), Ok(pk2));
+        assert_eq!(SecretKey::from_slice(&sk2[..]), Ok(sk2));
+        assert_eq!(PublicKey::from_slice(&pk2[..]), Ok(pk2));
     }
 
     #[test]
     fn nonce_slice_round_trip() {
         let mut rng = thread_rng();
         let nonce = Nonce::new(&mut rng);
-        assert_eq!(Nonce::from_slice(nonce.as_slice()), Ok(nonce));
+        assert_eq!(Nonce::from_slice(&nonce[..]), Ok(nonce));
     }
 
     #[test]
@@ -642,12 +640,12 @@ mod test {
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
         let nonce = Nonce::deterministic(&[], &sk);
-        assert_eq!(nonce.as_slice(),
+        assert_eq!(&nonce[..],
                    hex_slice!("d954eddd184cac2b60edcd0e6be9ec54d93f633b28b366420d38ed9c346ffe27"));
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('test').digest())
         let nonce = Nonce::deterministic(b"test", &sk);
-        assert_eq!(nonce.as_slice(),
+        assert_eq!(&nonce[..],
                    hex_slice!("609cc24acce2f19e46e38a82afc56c1745dee16e04f2b27e24999e1fefeb08bd"));
 
         // # Decrease the secret key by one
@@ -656,12 +654,12 @@ mod test {
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('').digest())
         let nonce = Nonce::deterministic(&[], &sk);
-        assert_eq!(nonce.as_slice(),
+        assert_eq!(&nonce[..],
                    hex_slice!("9f45f8d0a28e8956673c8da6db3db86ca4f172f0a2dbd62364fdbf786c7d96df"));
 
         // "%x" % rfc6979.generate_k(SECP256k1.generator, sk, hashlib.sha512, hashlib.sha512('test').digest())
         let nonce = Nonce::deterministic(b"test", &sk);
-        assert_eq!(nonce.as_slice(),
+        assert_eq!(&nonce[..],
                    hex_slice!("355c589ff662c838aee454d62b12c50a87b7e95ede2431c7cfa40b6ba2fddccd"));
     }
 
