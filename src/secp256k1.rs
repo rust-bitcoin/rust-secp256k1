@@ -26,7 +26,7 @@
 #![crate_name = "secp256k1"]
 
 // Keep this until 1.0 I guess; it's needed for `black_box` at least
-#![allow(unstable)]
+#![cfg_attr(test, feature(test))]
 
 // Coding conventions
 #![deny(non_upper_case_globals)]
@@ -36,11 +36,11 @@
 #![warn(missing_docs)]
 
 extern crate crypto;
+extern crate "rustc-serialize" as serialize;
+#[cfg(test)] extern crate test;
 
 extern crate libc;
 extern crate rand;
-extern crate serialize;
-extern crate test;
 
 use std::intrinsics::copy_nonoverlapping;
 use std::io;
