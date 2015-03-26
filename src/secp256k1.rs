@@ -362,7 +362,7 @@ mod tests {
         let (sk, _) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
-        s.sign(msg.as_slice(), &sk, &nonce).unwrap();
+        s.sign(&msg, &sk, &nonce).unwrap();
     }
 
     #[test]
@@ -375,9 +375,9 @@ mod tests {
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
-        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
+        let sig = s.sign(&msg, &sk, &nonce).unwrap();
 
-        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Ok(()));
+        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Ok(()));
     }
 
     #[test]
@@ -390,10 +390,10 @@ mod tests {
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
-        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
+        let sig = s.sign(&msg, &sk, &nonce).unwrap();
 
         thread_rng().fill_bytes(msg.as_mut_slice());
-        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Err(IncorrectSignature));
+        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(IncorrectSignature));
     }
 
     #[test]
@@ -406,9 +406,9 @@ mod tests {
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
-        let (sig, recid) = s.sign_compact(msg.as_slice(), &sk, &nonce).unwrap();
+        let (sig, recid) = s.sign_compact(&msg, &sk, &nonce).unwrap();
 
-        assert_eq!(s.recover_compact(msg.as_slice(), sig.as_slice(), false, recid), Ok(pk));
+        assert_eq!(s.recover_compact(&msg, &sig[..], false, recid), Ok(pk));
     }
 
     #[test]
@@ -420,9 +420,9 @@ mod tests {
         let (sk, pk) = s.generate_keypair(true);
         let nonce = Nonce::deterministic(&mut msg, &sk);
 
-        let sig = s.sign(msg.as_slice(), &sk, &nonce).unwrap();
+        let sig = s.sign(&msg, &sk, &nonce).unwrap();
 
-        assert_eq!(Secp256k1::verify(msg.as_slice(), &sig, &pk), Ok(()));
+        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Ok(()));
     }
 
     #[bench]
