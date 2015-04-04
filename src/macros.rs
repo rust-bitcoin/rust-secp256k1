@@ -54,8 +54,8 @@ macro_rules! impl_array_newtype {
                     use std::intrinsics::copy_nonoverlapping;
                     use std::mem;
                     let mut ret: $thing = mem::uninitialized();
-                    copy_nonoverlapping(ret.as_mut_ptr(),
-                                        self.as_ptr(),
+                    copy_nonoverlapping(self.as_ptr(),
+                                        ret.as_mut_ptr(),
                                         mem::size_of::<$thing>());
                     ret
                 }

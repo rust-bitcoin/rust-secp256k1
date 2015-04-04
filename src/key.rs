@@ -46,15 +46,14 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// Public key
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct PublicKey(PublicKeyData);
-impl Copy for PublicKey {}
 
+#[derive(Copy, Eq)]
 enum PublicKeyData {
     Compressed([u8; constants::COMPRESSED_PUBLIC_KEY_SIZE]),
     Uncompressed([u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
 }
-impl Copy for PublicKeyData {}
 
 fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
@@ -66,8 +65,8 @@ fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8; 32] {
 fn bits2octets(data: &[u8]) -> [u8; 32] {
     let mut ret = [0; 32];
     unsafe {
-        copy_nonoverlapping(ret.as_mut_ptr(),
-                            data.as_ptr(),
+        copy_nonoverlapping(data.as_ptr(),
+                            ret.as_mut_ptr(),
                             cmp::min(data.len(), 32));
     }
     ret
@@ -87,8 +86,8 @@ impl Nonce {
             constants::NONCE_SIZE => {
                 let mut ret = [0; constants::NONCE_SIZE];
                 unsafe {
-                    copy_nonoverlapping(ret.as_mut_ptr(),
-                                        data.as_ptr(),
+                    copy_nonoverlapping(data.as_ptr(),
+                                        ret.as_mut_ptr(),
                                         data.len());
                 }
                 Ok(Nonce(ret))
@@ -107,7 +106,7 @@ impl Nonce {
             ($res:expr; key $key:expr, data $($data:expr),+) => ({
                 let mut hmacker = Hmac::new(Sha512::new(), &$key[..]);
                 $(hmacker.input(&$data[..]);)+
-                hmacker.raw_result($res.as_mut_slice());
+                hmacker.raw_result(&mut $res);
             })
         }
 
@@ -116,7 +115,7 @@ impl Nonce {
         let mut hasher = Sha512::new();
         hasher.input(msg);
         let mut x = [0; HMAC_SIZE];
-        hasher.result(x.as_mut_slice());
+        hasher.result(&mut x);
         let msg_hash = bits2octets(&x);
 
         // Section 3.2b
@@ -181,8 +180,8 @@ impl SecretKey {
                     if ffi::secp256k1_ec_seckey_verify(data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
-                    copy_nonoverlapping(ret.as_mut_ptr(),
-                                        data.as_ptr(),
+                    copy_nonoverlapping(data.as_ptr(),
+                                        ret.as_mut_ptr(),
                                         data.len());
                 }
                 Ok(SecretKey(ret))
@@ -216,11 +215,11 @@ impl SecretKey {
 }
 
 /// An iterator of keypairs `(sk + 1, pk*G)`, `(sk + 2, pk*2G)`, ...
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Sequence {
     compressed: bool,
     last_sk: SecretKey,
 }
-impl Copy for Sequence {}
 
 impl Iterator for Sequence {
     type Item = (SecretKey, PublicKey);
@@ -275,8 +274,8 @@ impl PublicKey {
                                                           data.len() as ::libc::c_int) == 0 {
                         return Err(InvalidPublicKey);
                     }
-                    copy_nonoverlapping(ret.as_mut_ptr(),
-                                        data.as_ptr(),
+                    copy_nonoverlapping(data.as_ptr(),
+                                        ret.as_mut_ptr(),
                                         data.len());
                 }
                 Ok(PublicKey(PublicKeyData::Compressed(ret)))
@@ -284,8 +283,8 @@ impl PublicKey {
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
                 unsafe {
-                    copy_nonoverlapping(ret.as_mut_ptr(),
-                                        data.as_ptr(),
+                    copy_nonoverlapping(data.as_ptr(),
+                                        ret.as_mut_ptr(),
                                         data.len());
                 }
                 Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
@@ -369,8 +368,6 @@ impl PartialEq for PublicKeyData {
         &self[..] == &other[..]
     }
 }
-
-impl Eq for PublicKeyData {}
 
 impl fmt::Debug for PublicKeyData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

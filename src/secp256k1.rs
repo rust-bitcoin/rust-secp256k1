@@ -60,12 +60,12 @@ pub mod key;
 fn assert_type_is_copy<T: Copy>() { }
 
 /// A tag used for recovering the public key from a compact signature
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoveryId(i32);
-impl Copy for RecoveryId {}
 
 /// An ECDSA signature
+#[derive(Copy)]
 pub struct Signature(usize, [u8; constants::MAX_SIGNATURE_SIZE]);
-impl Copy for Signature {}
 
 impl Signature {
     /// Converts the signature to a raw pointer suitable for use
@@ -97,8 +97,8 @@ impl Signature {
         if data.len() <= constants::MAX_SIGNATURE_SIZE {
             let mut ret = [0; constants::MAX_SIGNATURE_SIZE];
             unsafe {
-                copy_nonoverlapping(ret.as_mut_ptr(),
-                                    data.as_ptr(),
+                copy_nonoverlapping(data.as_ptr(),
+                                    ret.as_mut_ptr(),
                                     data.len());
             }
             Ok(Signature(data.len(), ret))
@@ -148,8 +148,22 @@ impl ops::Index<ops::RangeFull> for Signature {
     }
 }
 
+impl Clone for Signature {
+    #[inline]
+    fn clone(&self) -> Signature {
+        unsafe {
+            use std::mem;
+            let mut ret: Signature = mem::uninitialized();
+            copy_nonoverlapping(self.as_ptr(),
+                                ret.as_mut_ptr(),
+                                mem::size_of::<Signature>());
+            ret
+        }
+    }
+}
+
 /// An ECDSA error
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Error {
     /// Signature failed verification
     IncorrectSignature,
@@ -164,7 +178,6 @@ pub enum Error {
     /// Boolean-returning function returned the wrong boolean
     Unknown
 }
-impl Copy for Error {}
 
 /// Result type
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -196,7 +209,7 @@ impl Secp256k1 {
         init();
         let mut osrng = try!(OsRng::new());
         let mut seed = [0; 2048];
-        osrng.fill_bytes(seed.as_mut_slice());
+        osrng.fill_bytes(&mut seed);
         Ok(Secp256k1 { rng: SeedableRng::from_seed(&seed[..]) })
     }
 
@@ -225,7 +238,7 @@ impl Secp256k1 {
         let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
             if ffi::secp256k1_ecdsa_sign(msg.as_ptr(), msg.len() as c_int,
-                                         sig.as_mut_slice().as_mut_ptr(), &mut len,
+                                         (&mut sig).as_mut_ptr(), &mut len,
                                          sk.as_ptr(), nonce.as_ptr()) != 1 {
                 return Err(Error::InvalidNonce);
             }
@@ -242,7 +255,7 @@ impl Secp256k1 {
         let mut recid = 0;
         unsafe {
             if ffi::secp256k1_ecdsa_sign_compact(msg.as_ptr(), msg.len() as c_int,
-                                                 sig.as_mut_slice().as_mut_ptr(), sk.as_ptr(),
+                                                 (&mut sig).as_mut_ptr(), sk.as_ptr(),
                                                  nonce.as_ptr(), &mut recid) != 1 {
                 return Err(Error::InvalidNonce);
             }
@@ -320,9 +333,9 @@ mod tests {
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let pk = PublicKey::new(true);
 
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidPublicKey));
+        assert_eq!(Secp256k1::verify(&mut msg, &sig, &pk), Err(InvalidPublicKey));
     }
 
     #[test]
@@ -334,9 +347,9 @@ mod tests {
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
 
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(&mut msg, &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -347,9 +360,9 @@ mod tests {
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
 
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
-        assert_eq!(Secp256k1::verify(msg.as_mut_slice(), &sig, &pk), Err(InvalidSignature));
+        assert_eq!(Secp256k1::verify(&mut msg, &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -370,7 +383,7 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
@@ -385,14 +398,14 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg: Vec<u8> = repeat(0).take(32).collect();
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
 
         let sig = s.sign(&msg, &sk, &nonce).unwrap();
 
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
         assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(IncorrectSignature));
     }
 
@@ -401,7 +414,7 @@ mod tests {
         let mut s = Secp256k1::new().unwrap();
 
         let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
         let (sk, pk) = s.generate_keypair(false);
         let nonce = s.generate_nonce();
@@ -414,7 +427,7 @@ mod tests {
     #[test]
     fn deterministic_sign() {
         let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(msg.as_mut_slice());
+        thread_rng().fill_bytes(&mut msg);
 
         let mut s = Secp256k1::new().unwrap();
         let (sk, pk) = s.generate_keypair(true);
