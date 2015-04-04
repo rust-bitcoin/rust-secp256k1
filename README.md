@@ -8,3 +8,5 @@ a C library by Peter Wuille for producing ECDSA signatures using the SECG curve
 * implements deterministic nonce generation via RFC6979
 * implements many unit tests, adding to those already present in `libsecp256k1`
 
+![Full documentation](https://www.wpsoftware.net/rustdoc/secp256k1/)
+
