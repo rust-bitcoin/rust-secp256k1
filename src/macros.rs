@@ -78,7 +78,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::std::ops::Range<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[index.start..index.end]
+                &dat[index]
             }
         }
 
@@ -88,7 +88,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::std::ops::RangeTo<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[..index.end]
+                &dat[index]
             }
         }
 
@@ -98,7 +98,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::std::ops::RangeFrom<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[index.start..]
+                &dat[index]
             }
         }
 

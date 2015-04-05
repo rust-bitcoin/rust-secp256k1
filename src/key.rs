@@ -404,8 +404,8 @@ impl ops::Index<ops::Range<usize>> for PublicKeyData {
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &[u8] {
         match *self {
-            PublicKeyData::Compressed(ref x) => &x[index.start..index.end],
-            PublicKeyData::Uncompressed(ref x) => &x[index.start..index.end]
+            PublicKeyData::Compressed(ref x) => &x[index],
+            PublicKeyData::Uncompressed(ref x) => &x[index]
        }
     }
 }
@@ -416,7 +416,7 @@ impl ops::Index<ops::Range<usize>> for PublicKey {
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &[u8] {
         let &PublicKey(ref dat) = self;
-        &dat[index.start..index.end]
+        &dat[index]
     }
 }
 
@@ -426,8 +426,8 @@ impl ops::Index<ops::RangeTo<usize>> for PublicKeyData {
     #[inline]
     fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
         match *self {
-            PublicKeyData::Compressed(ref x) => &x[..index.end],
-            PublicKeyData::Uncompressed(ref x) => &x[..index.end]
+            PublicKeyData::Compressed(ref x) => &x[index],
+            PublicKeyData::Uncompressed(ref x) => &x[index]
        }
     }
 }
@@ -438,7 +438,7 @@ impl ops::Index<ops::RangeTo<usize>> for PublicKey {
     #[inline]
     fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
         let &PublicKey(ref dat) = self;
-        &dat[..index.end]
+        &dat[index]
     }
 }
 
@@ -448,8 +448,8 @@ impl ops::Index<ops::RangeFrom<usize>> for PublicKeyData {
     #[inline]
     fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
         match *self {
-            PublicKeyData::Compressed(ref x) => &x[index.start..],
-            PublicKeyData::Uncompressed(ref x) => &x[index.start..]
+            PublicKeyData::Compressed(ref x) => &x[index],
+            PublicKeyData::Uncompressed(ref x) => &x[index]
        }
     }
 }
@@ -460,7 +460,7 @@ impl ops::Index<ops::RangeFrom<usize>> for PublicKey {
     #[inline]
     fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
         let &PublicKey(ref dat) = self;
-        &dat[index.start..]
+        &dat[index]
     }
 }
 
