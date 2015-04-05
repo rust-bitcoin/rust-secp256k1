@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/apoelstra/rust-secp256k1.png?branch=master)](https://travis-ci.org/apoelstra/rust-secp256k1)
+
 ### rust-secp256k1
 
 `rust-secp256k1` is a wrapper around ![libsecp256k1](https://github.com/bitcoin/secp256k1),
