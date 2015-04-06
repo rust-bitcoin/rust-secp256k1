@@ -15,8 +15,8 @@
 
 //! Constants
 
-/// The size (in bytes) of a nonce
-pub const NONCE_SIZE: usize = 32;
+/// The size (in bytes) of a message
+pub const MESSAGE_SIZE: usize = 32;
 
 /// The size (in bytes) of a secret key
 pub const SECRET_KEY_SIZE: usize = 32;
