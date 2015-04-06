@@ -26,8 +26,7 @@ use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 
 use super::init;
-use super::Result;
-use super::Error::{InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
+use super::Error::{self, InvalidNonce, InvalidPublicKey, InvalidSecretKey, Unknown};
 use constants;
 use ffi;
 
@@ -81,7 +80,7 @@ impl Nonce {
 
     /// Converts a `NONCE_SIZE`-byte slice to a nonce
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<Nonce> {
+    pub fn from_slice(data: &[u8]) -> Result<Nonce, Error> {
         match data.len() {
             constants::NONCE_SIZE => {
                 let mut ret = [0; constants::NONCE_SIZE];
@@ -171,7 +170,7 @@ impl SecretKey {
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<SecretKey> {
+    pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         init();
         match data.len() {
             constants::SECRET_KEY_SIZE => {
@@ -195,7 +194,7 @@ impl SecretKey {
     /// Marked `unsafe` since you must
     /// call `init()` (or construct a `Secp256k1`, which does this for you) before
     /// using this function
-    pub fn add_assign(&mut self, other: &SecretKey) -> Result<()> {
+    pub fn add_assign(&mut self, other: &SecretKey) -> Result<(), Error> {
         init();
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -265,7 +264,7 @@ impl PublicKey {
 
     /// Creates a public key directly from a slice
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<PublicKey> {
+    pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         match data.len() {
             constants::COMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0; constants::COMPRESSED_PUBLIC_KEY_SIZE];
@@ -337,7 +336,7 @@ impl PublicKey {
 
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
-    pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<()> {
+    pub fn add_exp_assign(&mut self, other: &SecretKey) -> Result<(), Error> {
         init();
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(self.as_mut_ptr(),
@@ -487,7 +486,7 @@ impl ops::Index<ops::RangeFull> for PublicKey {
 }
 
 impl Decodable for PublicKey {
-    fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<PublicKey, D::Error> {
+    fn decode<D: Decoder>(d: &mut D) -> Result<PublicKey, D::Error> {
         d.read_seq(|d, len| {
             if len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
                 unsafe {
@@ -515,13 +514,13 @@ impl Decodable for PublicKey {
 }
 
 impl Encodable for PublicKey {
-    fn encode<S: Encoder>(&self, s: &mut S) -> ::std::result::Result<(), S::Error> {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         (&self[..]).encode(s)
     }
 }
 
 impl fmt::Debug for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         (&self[..]).fmt(f)
     }
 }

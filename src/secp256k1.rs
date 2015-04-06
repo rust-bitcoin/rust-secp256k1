@@ -43,7 +43,7 @@ extern crate libc;
 extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
-use std::{io, ops};
+use std::{fmt, io, ops};
 use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
 use rand::{OsRng, Rng, SeedableRng};
@@ -93,7 +93,7 @@ impl Signature {
 
     /// Converts a byte slice to a signature
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<Signature> {
+    pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
         if data.len() <= constants::MAX_SIGNATURE_SIZE {
             let mut ret = [0; constants::MAX_SIGNATURE_SIZE];
             unsafe {
@@ -179,8 +179,12 @@ pub enum Error {
     Unknown
 }
 
-/// Result type
-pub type Result<T> = ::std::result::Result<T, Error>;
+// Passthrough Debug to Display, since errors should be user-visible
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fmt::Debug::fmt(self, f)
+    }
+}
 
 static mut Secp256k1_init: Once = ONCE_INIT;
 
@@ -233,7 +237,7 @@ impl Secp256k1 {
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
     pub fn sign(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
-                -> Result<Signature> {
+                -> Result<Signature, Error> {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
@@ -250,7 +254,7 @@ impl Secp256k1 {
 
     /// Constructs a compact signature for `msg` using the secret key `sk`
     pub fn sign_compact(&self, msg: &[u8], sk: &key::SecretKey, nonce: &key::Nonce)
-                        -> Result<(Signature, RecoveryId)> {
+                        -> Result<(Signature, RecoveryId), Error> {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut recid = 0;
         unsafe {
@@ -267,7 +271,7 @@ impl Secp256k1 {
     /// `msg`. Returns through the out-pointer `pubkey`.
     pub fn recover_compact(&self, msg: &[u8], sig: &[u8],
                            compressed: bool, recid: RecoveryId)
-                            -> Result<key::PublicKey> {
+                            -> Result<key::PublicKey, Error> {
         let mut pk = key::PublicKey::new(compressed);
         let RecoveryId(recid) = recid;
 
@@ -290,14 +294,14 @@ impl Secp256k1 {
     /// there with zero-padded signatures that don't fit in the `Signature` type.
     /// Use `verify_raw` instead.
     #[inline]
-    pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<()> {
+    pub fn verify(msg: &[u8], sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
         Secp256k1::verify_raw(msg, &sig[..], pk)
     }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success.
     #[inline]
-    pub fn verify_raw(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<()> {
+    pub fn verify_raw(msg: &[u8], sig: &[u8], pk: &key::PublicKey) -> Result<(), Error> {
         init();  // This is a static function, so we have to init
         let res = unsafe {
             ffi::secp256k1_ecdsa_verify(msg.as_ptr(), msg.len() as c_int,

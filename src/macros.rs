@@ -113,7 +113,7 @@ macro_rules! impl_array_newtype {
         }
 
         impl ::serialize::Decodable for $thing {
-            fn decode<D: ::serialize::Decoder>(d: &mut D) -> ::std::result::Result<$thing, D::Error> {
+            fn decode<D: ::serialize::Decoder>(d: &mut D) -> Result<$thing, D::Error> {
                 use serialize::Decodable;
 
                 ::assert_type_is_copy::<$ty>();
@@ -137,7 +137,7 @@ macro_rules! impl_array_newtype {
 
         impl ::serialize::Encodable for $thing {
             fn encode<S: ::serialize::Encoder>(&self, s: &mut S)
-                                               -> ::std::result::Result<(), S::Error> {
+                                               -> Result<(), S::Error> {
                 self[..].encode(s)
             }
         }
