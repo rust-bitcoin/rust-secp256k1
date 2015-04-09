@@ -7,7 +7,7 @@ authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
 
 [lib]
 name = "secp256k1"
-path = "src/secp256k1.rs"
+path = "src/lib.rs"
 
 [dependencies.rust-crypto]
 git = "https://github.com/DaGenix/rust-crypto.git"
