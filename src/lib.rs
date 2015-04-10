@@ -37,6 +37,7 @@
 
 extern crate crypto;
 extern crate rustc_serialize as serialize;
+extern crate serde;
 #[cfg(test)] extern crate test;
 
 extern crate libc;

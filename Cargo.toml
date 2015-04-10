@@ -16,4 +16,5 @@ git = "https://github.com/DaGenix/rust-crypto.git"
 rand = "*"
 libc = "*"
 rustc-serialize = "*"
+serde = "*"
 
