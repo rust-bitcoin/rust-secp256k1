@@ -102,30 +102,6 @@ impl SecretKey {
             }
         }
     }
-
-    #[inline]
-    /// Returns an iterator for the (sk, pk) pairs starting one after this one,
-    /// and incrementing by one each time
-    pub fn sequence(&self, compressed: bool) -> Sequence {
-        Sequence { last_sk: *self, compressed: compressed }
-    }
-}
-
-/// An iterator of keypairs `(sk + 1, pk*G)`, `(sk + 2, pk*2G)`, ...
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Sequence {
-    compressed: bool,
-    last_sk: SecretKey,
-}
-
-impl Iterator for Sequence {
-    type Item = (SecretKey, PublicKey);
-
-    #[inline]
-    fn next(&mut self) -> Option<(SecretKey, PublicKey)> {
-        self.last_sk.add_assign(&ONE).unwrap();
-        Some((self.last_sk, PublicKey::from_secret_key(&self.last_sk, self.compressed)))
-    }
 }
 
 impl PublicKey {
@@ -477,8 +453,6 @@ impl fmt::Debug for SecretKey {
 
 #[cfg(test)]
 mod test {
-    use test::Bencher;
-
     use super::super::Secp256k1;
     use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
     use super::{PublicKey, SecretKey};
@@ -613,14 +587,6 @@ mod test {
         assert!(sk2.add_assign(&sk1).is_ok());
         assert!(pk2.add_exp_assign(&sk1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&sk2, true), pk2);
-    }
-
-    #[bench]
-    pub fn sequence_iterate(bh: &mut Bencher) {
-        let mut s = Secp256k1::new().unwrap();
-        let (sk, _) = s.generate_keypair(true);
-        let mut iter = sk.sequence(true);
-        bh.iter(|| iter.next())
     }
 }
 
