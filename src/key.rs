@@ -55,7 +55,7 @@ fn random_32_bytes<R:Rng>(rng: &mut R) -> [u8; 32] {
 impl SecretKey {
     /// Creates a new random secret key
     #[inline]
-    pub fn new(secp: &mut Secp256k1) -> SecretKey {
+    pub fn new<R: Rng>(secp: &mut Secp256k1<R>) -> SecretKey {
         let mut data = random_32_bytes(&mut secp.rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(secp.ctx, data.as_ptr()) == 0 {
@@ -67,7 +67,8 @@ impl SecretKey {
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8]) -> Result<SecretKey, Error> {
+    pub fn from_slice<R: Rng>(secp: &Secp256k1<R>, data: &[u8])
+                             -> Result<SecretKey, Error> {
         match data.len() {
             constants::SECRET_KEY_SIZE => {
                 let mut ret = [0; constants::SECRET_KEY_SIZE];
@@ -87,7 +88,10 @@ impl SecretKey {
 
     #[inline]
     /// Adds one secret key to another, modulo the curve order
-    pub fn add_assign(&mut self, secp: &Secp256k1, other: &SecretKey) -> Result<(), Error> {
+    pub fn add_assign<R: Rng>(&mut self,
+                              secp: &Secp256k1<R>,
+                              other: &SecretKey)
+                             -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
                 Err(Unknown)
@@ -113,7 +117,10 @@ impl PublicKey {
 
     /// Creates a new public key from a secret key.
     #[inline]
-    pub fn from_secret_key(secp: &Secp256k1, sk: &SecretKey, compressed: bool) -> PublicKey {
+    pub fn from_secret_key<R: Rng>(secp: &Secp256k1<R>,
+                                   sk: &SecretKey,
+                                   compressed: bool)
+                                  -> PublicKey {
         let mut pk = PublicKey::new(compressed);
         let compressed = if compressed {1} else {0};
         let mut len = 0;
@@ -132,7 +139,8 @@ impl PublicKey {
 
     /// Creates a public key directly from a slice
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8]) -> Result<PublicKey, Error> {
+    pub fn from_slice<R: Rng>(secp: &Secp256k1<R>, data: &[u8])
+                             -> Result<PublicKey, Error> {
         match data.len() {
             constants::COMPRESSED_PUBLIC_KEY_SIZE => {
                 let mut ret = [0; constants::COMPRESSED_PUBLIC_KEY_SIZE];
@@ -204,7 +212,10 @@ impl PublicKey {
 
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
-    pub fn add_exp_assign(&mut self, secp: &Secp256k1, other: &SecretKey) -> Result<(), Error> {
+    pub fn add_exp_assign<R: Rng>(&mut self,
+                                  secp: &Secp256k1<R>,
+                                  other: &SecretKey)
+                                 -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, self.as_mut_ptr(),
                                                   self.len() as ::libc::c_int,

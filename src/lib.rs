@@ -212,28 +212,37 @@ impl fmt::Display for Error {
 }
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1 {
+pub struct Secp256k1<R: Rng = Fortuna> {
     ctx: ffi::Context,
-    rng: Fortuna
+    rng: R
 }
 
-impl Drop for Secp256k1 {
+impl<R: Rng> Drop for Secp256k1<R> {
     fn drop(&mut self) {
         unsafe { ffi::secp256k1_context_destroy(self.ctx); }
     }
 }
 
-impl Secp256k1 {
-    /// Constructs a new secp256k1 engine.
-    pub fn new() -> io::Result<Secp256k1> {
+impl Secp256k1<Fortuna> {
+    /// Constructs a new secp256k1 engine with the default key-generation Rng
+    /// (a Fortuna seeded with randomness from the OS during `new`)
+    pub fn new() -> io::Result<Secp256k1<Fortuna>> {
+        let mut osrng = try!(OsRng::new());
+        let mut seed = [0; 2048];
+        osrng.fill_bytes(&mut seed);
+        let rng: Fortuna = SeedableRng::from_seed(&seed[..]);
+        Secp256k1::with_rng(rng)
+    }
+}
+
+impl<R: Rng> Secp256k1<R> {
+    /// Constructs a new secp256k1 engine with its key-generation RNG specified
+    pub fn with_rng(rng: R) -> io::Result<Secp256k1<R>> {
         let ctx = unsafe {
             ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
                                           ffi::SECP256K1_START_SIGN)
         };
-        let mut osrng = try!(OsRng::new());
-        let mut seed = [0; 2048];
-        osrng.fill_bytes(&mut seed);
-        Ok(Secp256k1 { ctx: ctx, rng: SeedableRng::from_seed(&seed[..]) })
+        Ok(Secp256k1 { ctx: ctx, rng: rng })
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
