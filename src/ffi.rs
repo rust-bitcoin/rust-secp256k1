@@ -32,65 +32,87 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
+#[repr(C)]
+struct ContextInner;
+
+/// A Secp256k1 context, containing various precomputed values and such
+/// needed to do elliptic curve computations. If you create one of these
+/// with `secp256k1_context_create` you MUST destroy it with
+/// `secp256k1_context_destroy`, or else you will have a memory leak.
+/// Furthermore, you MUST NOT use this object after destroying it; it is
+/// `Copy` so the compiler will not help you to avoid this. There is no
+/// need for ordinary users of this library to ever use this type directly.
+#[repr(C)]
+#[allow(raw_pointer_derive)]
+#[derive(Copy, Clone, Debug)]
+pub struct Context(*mut ContextInner);
+
 #[link(name = "secp256k1")]
 extern "C" {
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
 
     pub static secp256k1_nonce_function_default: NonceFn;
 
-    pub fn secp256k1_start(flags: c_uint);
+    pub fn secp256k1_context_create(flags: c_uint) -> Context;
 
-    pub fn secp256k1_stop();
+    pub fn secp256k1_context_destroy(cx: Context);
 
-    pub fn secp256k1_ecdsa_verify(msg32: *const c_uchar,
+    pub fn secp256k1_ecdsa_verify(cx: Context, msg32: *const c_uchar,
                                   sig: *const c_uchar, sig_len: c_int,
                                   pk: *const c_uchar, pk_len: c_int)
                                   -> c_int;
 
-    pub fn secp256k1_ec_pubkey_create(pk: *mut c_uchar, pk_len: *mut c_int,
+    pub fn secp256k1_ec_pubkey_create(cx: Context,
+                                      pk: *mut c_uchar, pk_len: *mut c_int,
                                       sk: *const c_uchar, compressed: c_int)
                                       -> c_int;
 
-    pub fn secp256k1_ecdsa_sign(msg32: *const c_uchar,
+    pub fn secp256k1_ecdsa_sign(cx: Context, msg32: *const c_uchar,
                                 sig: *mut c_uchar, sig_len: *mut c_int,
                                 sk: *const c_uchar,
                                 noncefn: NonceFn, noncedata: *const c_void)
                                 -> c_int;
 
-    pub fn secp256k1_ecdsa_sign_compact(msg: *const c_uchar,
+    pub fn secp256k1_ecdsa_sign_compact(cx: Context, msg: *const c_uchar,
                                         sig64: *mut c_uchar, sk: *const c_uchar,
                                         noncefn: NonceFn, noncedata: *const c_void,
                                         recid: *mut c_int)
                                         -> c_int;
 
-    pub fn secp256k1_ecdsa_recover_compact(msg32: *const c_uchar,
+    pub fn secp256k1_ecdsa_recover_compact(cx: Context, msg32: *const c_uchar,
                                            sig64: *const c_uchar, pk: *mut c_uchar,
                                            pk_len: *mut c_int, compressed: c_int,
                                            recid: c_int) -> c_int;
 
-    pub fn secp256k1_ec_seckey_verify(sk: *const c_uchar) -> c_int;
+    pub fn secp256k1_ec_seckey_verify(cx: Context,
+                                      sk: *const c_uchar) -> c_int;
 
-    pub fn secp256k1_ec_pubkey_verify(pk: *const c_uchar,
+    pub fn secp256k1_ec_pubkey_verify(cx: Context,
+                                      pk: *const c_uchar,
                                       pk_len: c_int) -> c_int;
 
 //TODO secp256k1_ec_pubkey_decompress
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
-    pub fn secp256k1_ec_privkey_tweak_add(sk: *mut c_uchar,
+    pub fn secp256k1_ec_privkey_tweak_add(cx: Context,
+                                          sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_add(pk: *mut c_uchar,
+    pub fn secp256k1_ec_pubkey_tweak_add(cx: Context,
+                                         pk: *mut c_uchar,
                                          pk_len: c_int,
                                          tweak: *const c_uchar)
                                          -> c_int;
 
-    pub fn secp256k1_ec_privkey_tweak_mul(sk: *mut c_uchar,
+    pub fn secp256k1_ec_privkey_tweak_mul(cx: Context,
+                                          sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_mul(pk: *mut c_uchar,
+    pub fn secp256k1_ec_pubkey_tweak_mul(cx: Context,
+                                         pk: *mut c_uchar,
                                          pk_len: c_int,
                                          tweak: *const c_uchar)
                                          -> c_int;

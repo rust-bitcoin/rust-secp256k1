@@ -45,7 +45,6 @@ extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
 use std::{fmt, io, ops, ptr};
-use std::sync::{Once, ONCE_INIT};
 use libc::c_int;
 use rand::{OsRng, Rng, SeedableRng};
 
@@ -212,35 +211,29 @@ impl fmt::Display for Error {
     }
 }
 
-static mut Secp256k1_init: Once = ONCE_INIT;
-
 /// The secp256k1 engine, used to execute all signature operations
 pub struct Secp256k1 {
+    ctx: ffi::Context,
     rng: Fortuna
 }
 
-/// Does one-time initialization of the secp256k1 engine. Can be called
-/// multiple times, and is called by the `Secp256k1` constructor. This
-/// only needs to be called directly if you are using the library without
-/// a `Secp256k1` object, e.g. batch key generation through
-/// `key::PublicKey::from_secret_key`.
-pub fn init() {
-    unsafe {
-        Secp256k1_init.call_once(|| {
-            ffi::secp256k1_start(ffi::SECP256K1_START_VERIFY |
-                                 ffi::SECP256K1_START_SIGN);
-        });
+impl Drop for Secp256k1 {
+    fn drop(&mut self) {
+        unsafe { ffi::secp256k1_context_destroy(self.ctx); }
     }
 }
 
 impl Secp256k1 {
     /// Constructs a new secp256k1 engine.
     pub fn new() -> io::Result<Secp256k1> {
-        init();
+        let ctx = unsafe {
+            ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
+                                          ffi::SECP256K1_START_SIGN)
+        };
         let mut osrng = try!(OsRng::new());
         let mut seed = [0; 2048];
         osrng.fill_bytes(&mut seed);
-        Ok(Secp256k1 { rng: SeedableRng::from_seed(&seed[..]) })
+        Ok(Secp256k1 { ctx: ctx, rng: SeedableRng::from_seed(&seed[..]) })
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
@@ -249,8 +242,8 @@ impl Secp256k1 {
     #[inline]
     pub fn generate_keypair(&mut self, compressed: bool)
                             -> (key::SecretKey, key::PublicKey) {
-        let sk = key::SecretKey::new(&mut self.rng);
-        let pk = key::PublicKey::from_secret_key(&sk, compressed);
+        let sk = key::SecretKey::new(self);
+        let pk = key::PublicKey::from_secret_key(self, &sk, compressed);
         (sk, pk)
     }
 
@@ -260,7 +253,7 @@ impl Secp256k1 {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
-            if ffi::secp256k1_ecdsa_sign(msg.as_ptr(), (&mut sig).as_mut_ptr(),
+            if ffi::secp256k1_ecdsa_sign(self.ctx, msg.as_ptr(), sig.as_mut_ptr(),
                                          &mut len, sk.as_ptr(),
                                          ffi::secp256k1_nonce_function_rfc6979,
                                          ptr::null()) != 1 {
@@ -278,7 +271,7 @@ impl Secp256k1 {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut recid = 0;
         unsafe {
-            if ffi::secp256k1_ecdsa_sign_compact(msg.as_ptr(),
+            if ffi::secp256k1_ecdsa_sign_compact(self.ctx, msg.as_ptr(),
                                                  sig.as_mut_ptr(), sk.as_ptr(),
                                                  ffi::secp256k1_nonce_function_default,
                                                  ptr::null(), &mut recid) != 1 {
@@ -298,7 +291,7 @@ impl Secp256k1 {
 
         unsafe {
             let mut len = 0;
-            if ffi::secp256k1_ecdsa_recover_compact(msg.as_ptr(),
+            if ffi::secp256k1_ecdsa_recover_compact(self.ctx, msg.as_ptr(),
                                                     sig.as_ptr(), pk.as_mut_ptr(), &mut len,
                                                     if compressed {1} else {0},
                                                     recid) != 1 {
@@ -311,21 +304,17 @@ impl Secp256k1 {
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success. Note that this function cannot
-    /// be used for Bitcoin consensus checking since there are transactions out
-    /// there with zero-padded signatures that don't fit in the `Signature` type.
-    /// Use `verify_raw` instead.
+    /// be used for Bitcoin consensus checking since there may exist signatures
+    /// which OpenSSL would verify but not libsecp256k1, or vice-versa.
     #[inline]
-    pub fn verify(msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
-        Secp256k1::verify_raw(msg, &sig[..], pk)
+    pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
+        self.verify_raw(msg, &sig[..], pk)
     }
 
-    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
-    /// key `pubkey`. Returns `Ok(true)` on success.
-    #[inline]
-    pub fn verify_raw(msg: &Message, sig: &[u8], pk: &key::PublicKey) -> Result<(), Error> {
-        init();  // This is a static function, so we have to init
+    /// Verifies a signature described as a slice of bytes rather than opaque `Signature`
+    pub fn verify_raw(&self, msg: &Message, sig: &[u8], pk: &key::PublicKey) -> Result<(), Error> {
         let res = unsafe {
-            ffi::secp256k1_ecdsa_verify(msg.as_ptr(),
+            ffi::secp256k1_ecdsa_verify(self.ctx, msg.as_ptr(),
                                         sig.as_ptr(), sig.len() as c_int,
                                         pk.as_ptr(), pk.len() as c_int)
         };
@@ -354,13 +343,14 @@ mod tests {
 
     #[test]
     fn invalid_pubkey() {
+        let s = Secp256k1::new().unwrap();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let pk = PublicKey::new(true);
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(InvalidPublicKey));
+        assert_eq!(s.verify(&msg, &sig, &pk), Err(InvalidPublicKey));
     }
 
     #[test]
@@ -374,7 +364,7 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(InvalidSignature));
+        assert_eq!(s.verify(&msg, &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -387,7 +377,7 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(InvalidSignature));
+        assert_eq!(s.verify(&msg, &sig, &pk), Err(InvalidSignature));
     }
 
     #[test]
@@ -415,7 +405,7 @@ mod tests {
 
         let sig = s.sign(&msg, &sk).unwrap();
 
-        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Ok(()));
+        assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
     }
 
     #[test]
@@ -433,7 +423,7 @@ mod tests {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        assert_eq!(Secp256k1::verify(&msg, &sig, &pk), Err(IncorrectSignature));
+        assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
     }
 
     #[test]
