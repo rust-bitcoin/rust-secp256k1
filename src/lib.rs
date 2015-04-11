@@ -56,9 +56,6 @@ pub mod constants;
 pub mod ffi;
 pub mod key;
 
-/// I dunno where else to put this..
-fn assert_type_is_copy<T: Copy>() { }
-
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoveryId(i32);
@@ -269,7 +266,7 @@ impl<R: Rng> Secp256k1<R> {
                 return Err(Error::SignFailed);
             }
             // This assertation is probably too late :)
-            assert!(len as usize <= constants::MAX_SIGNATURE_SIZE);
+            debug_assert!(len as usize <= constants::MAX_SIGNATURE_SIZE);
         };
         Ok(Signature(len as usize, sig))
     }
@@ -306,7 +303,7 @@ impl<R: Rng> Secp256k1<R> {
                                                     recid) != 1 {
                 return Err(Error::InvalidSignature);
             }
-            assert_eq!(len as usize, pk.len());
+            debug_assert_eq!(len as usize, pk.len());
         };
         Ok(pk)
     }

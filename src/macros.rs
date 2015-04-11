@@ -116,8 +116,6 @@ macro_rules! impl_array_newtype {
             fn decode<D: ::serialize::Decoder>(d: &mut D) -> Result<$thing, D::Error> {
                 use serialize::Decodable;
 
-                ::assert_type_is_copy::<$ty>();
-
                 d.read_seq(|d, len| {
                     if len != $len {
                         Err(d.error("Invalid length"))

@@ -128,12 +128,12 @@ impl PublicKey {
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
-            assert_eq!(ffi::secp256k1_ec_pubkey_create(
-                secp.ctx,
-                pk.as_mut_ptr(), &mut len,
-                sk.as_ptr(), compressed), 1);
+            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx,
+                                                      pk.as_mut_ptr(), &mut len,
+                                                      sk.as_ptr(), compressed);
+            debug_assert_eq!(res, 1);
         }
-        assert_eq!(len as usize, pk.len()); 
+        debug_assert_eq!(len as usize, pk.len()); 
         pk
     }
 
@@ -406,7 +406,7 @@ impl Deserialize for PublicKey {
             fn visit_seq<V>(&mut self, mut v: V) -> Result<PublicKey, V::Error>
                 where V: de::SeqVisitor
             {
-                assert!(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE >= constants::COMPRESSED_PUBLIC_KEY_SIZE);
+                debug_assert!(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE >= constants::COMPRESSED_PUBLIC_KEY_SIZE);
 
                 unsafe {
                     use std::mem;
