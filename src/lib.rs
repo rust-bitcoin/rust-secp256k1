@@ -209,14 +209,25 @@ impl fmt::Display for Error {
 }
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1<R: Rng = Fortuna> {
+pub struct Secp256k1<R = Fortuna> {
     ctx: ffi::Context,
     rng: R
 }
 
-impl<R: Rng> Drop for Secp256k1<R> {
+impl<R> Drop for Secp256k1<R> {
     fn drop(&mut self) {
         unsafe { ffi::secp256k1_context_destroy(self.ctx); }
+    }
+}
+
+impl Secp256k1<()> {
+    /// Constructs a new secp256k1 engine without a RNG. This is
+    /// useful for, e.g. BIP32 implementations, where all keys are
+    /// computed externally to the secp256k1 engine. Note that if
+    /// you try to use this for `SecretKey::new`, which generates
+    /// a random key, it will panic.
+    pub fn new_deterministic() -> Secp256k1<()> {
+        Secp256k1::with_rng(()).unwrap()
     }
 }
 
@@ -233,15 +244,6 @@ impl Secp256k1<Fortuna> {
 }
 
 impl<R: Rng> Secp256k1<R> {
-    /// Constructs a new secp256k1 engine with its key-generation RNG specified
-    pub fn with_rng(rng: R) -> io::Result<Secp256k1<R>> {
-        let ctx = unsafe {
-            ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
-                                          ffi::SECP256K1_START_SIGN)
-        };
-        Ok(Secp256k1 { ctx: ctx, rng: rng })
-    }
-
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation.
@@ -251,6 +253,17 @@ impl<R: Rng> Secp256k1<R> {
         let sk = key::SecretKey::new(self);
         let pk = key::PublicKey::from_secret_key(self, &sk, compressed);
         (sk, pk)
+    }
+}
+
+impl<R> Secp256k1<R> {
+    /// Constructs a new secp256k1 engine with its key-generation RNG specified
+    pub fn with_rng(rng: R) -> io::Result<Secp256k1<R>> {
+        let ctx = unsafe {
+            ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
+                                          ffi::SECP256K1_START_SIGN)
+        };
+        Ok(Secp256k1 { ctx: ctx, rng: rng })
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
@@ -349,7 +362,7 @@ mod tests {
 
     #[test]
     fn invalid_pubkey() {
-        let s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new_deterministic();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let pk = PublicKey::new(true);
         let mut msg = [0u8; 32];
