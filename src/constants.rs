@@ -31,7 +31,7 @@ pub const COMPRESSED_PUBLIC_KEY_SIZE: usize = 33;
 pub const MAX_SIGNATURE_SIZE: usize = 72;
 
 /// The maximum size of a compact signature
-pub const MAX_COMPACT_SIGNATURE_SIZE: usize = 64;
+pub const COMPACT_SIGNATURE_SIZE: usize = 64;
 
 /// The order of the secp256k1 curve
 pub const CURVE_ORDER: [u8; 32] = [

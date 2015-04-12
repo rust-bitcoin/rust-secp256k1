@@ -221,8 +221,6 @@ pub enum Error {
     InvalidSignature,
     /// Bad secret key
     InvalidSecretKey,
-    /// Signing failed: bad nonce, bad privkey or signature was too small
-    SignFailed,
     /// Boolean-returning function returned the wrong boolean
     Unknown
 }
@@ -317,36 +315,36 @@ impl<R> Secp256k1<R> {
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
-                -> Result<Signature, Error> {
+                -> Signature {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
-            if ffi::secp256k1_ecdsa_sign(self.ctx, msg.as_ptr(), sig.as_mut_ptr(),
-                                         &mut len, sk.as_ptr(),
-                                         ffi::secp256k1_nonce_function_rfc6979,
-                                         ptr::null()) != 1 {
-                return Err(Error::SignFailed);
-            }
+            // We can assume the return value because it's not possible to construct
+            // an invalid signature from a valid `Message` and `SecretKey`
+            assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, msg.as_ptr(), sig.as_mut_ptr(),
+                                                 &mut len, sk.as_ptr(),
+                                                 ffi::secp256k1_nonce_function_rfc6979,
+                                                 ptr::null()), 1);
             // This assertation is probably too late :)
             debug_assert!(len as usize <= constants::MAX_SIGNATURE_SIZE);
-        };
-        Ok(Signature(len as usize, sig))
+        }
+        Signature(len as usize, sig)
     }
 
     /// Constructs a compact signature for `msg` using the secret key `sk`
     pub fn sign_compact(&self, msg: &Message, sk: &key::SecretKey)
-                        -> Result<(Signature, RecoveryId), Error> {
+                        -> (Signature, RecoveryId) {
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut recid = 0;
         unsafe {
-            if ffi::secp256k1_ecdsa_sign_compact(self.ctx, msg.as_ptr(),
-                                                 sig.as_mut_ptr(), sk.as_ptr(),
-                                                 ffi::secp256k1_nonce_function_default,
-                                                 ptr::null(), &mut recid) != 1 {
-                return Err(Error::SignFailed);
-            }
-        };
-        Ok((Signature(constants::MAX_COMPACT_SIGNATURE_SIZE, sig), RecoveryId(recid)))
+            // We can assume the return value because it's not possible to construct
+            // an invalid signature from a valid `Message` and `SecretKey`
+            assert_eq!(ffi::secp256k1_ecdsa_sign_compact(self.ctx, msg.as_ptr(),
+                                                         sig.as_mut_ptr(), sk.as_ptr(),
+                                                         ffi::secp256k1_nonce_function_default,
+                                                         ptr::null(), &mut recid), 1);
+        }
+        (Signature(constants::COMPACT_SIGNATURE_SIZE, sig), RecoveryId(recid))
     }
 
     /// Determines the public key for which `sig` is a valid signature for
@@ -357,6 +355,9 @@ impl<R> Secp256k1<R> {
         let mut pk = key::PublicKey::new(compressed);
         let RecoveryId(recid) = recid;
 
+        if sig.len() != constants::COMPACT_SIGNATURE_SIZE {
+            return Err(Error::InvalidSignature);
+        }
         unsafe {
             let mut len = 0;
             if ffi::secp256k1_ecdsa_recover_compact(self.ctx, msg.as_ptr(),
@@ -400,14 +401,14 @@ impl<R> Secp256k1<R> {
 
 #[cfg(test)]
 mod tests {
-    use std::iter::repeat;
     use rand::{Rng, thread_rng};
 
     use test::{Bencher, black_box};
 
-    use key::PublicKey;
-    use super::{Secp256k1, Signature, Message};
-    use super::Error::{InvalidPublicKey, IncorrectSignature, InvalidSignature};
+    use key::{SecretKey, PublicKey};
+    use super::constants;
+    use super::{Secp256k1, Signature, Message, RecoveryId};
+    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
     #[test]
     fn invalid_pubkey() {
@@ -450,30 +451,39 @@ mod tests {
 
     #[test]
     fn sign() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new_deterministic();
+        let one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let sk = SecretKey::from_slice(&s, &one).unwrap();
+        let msg = Message::from_slice(&one).unwrap();
 
-        let (sk, _) = s.generate_keypair(false);
-
-        s.sign(&msg, &sk).unwrap();
+        let sig = s.sign(&msg, &sk);
+        assert_eq!(sig, Signature(70, [
+            0x30, 0x44, 0x02, 0x20, 0x66, 0x73, 0xff, 0xad,
+            0x21, 0x47, 0x74, 0x1f, 0x04, 0x77, 0x2b, 0x6f,
+            0x92, 0x1f, 0x0b, 0xa6, 0xaf, 0x0c, 0x1e, 0x77,
+            0xfc, 0x43, 0x9e, 0x65, 0xc3, 0x6d, 0xed, 0xf4,
+            0x09, 0x2e, 0x88, 0x98, 0x02, 0x20, 0x4c, 0x1a,
+            0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8, 0x80, 0x12,
+            0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f, 0xff, 0x20,
+            0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06, 0x8d, 0x12,
+            0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89, 0x00, 0x00]))
     }
 
     #[test]
     fn sign_and_verify() {
         let mut s = Secp256k1::new().unwrap();
 
-        let mut msg: Vec<u8> = repeat(0).take(32).collect();
-        thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let mut msg = [0; 32];
+        for _ in 0..100 {
+            thread_rng().fill_bytes(&mut msg);
+            let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(false);
-
-        let sig = s.sign(&msg, &sk).unwrap();
-
-        assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
+            let (sk, pk) = s.generate_keypair(false);
+            let sig = s.sign(&msg, &sk);
+            assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
+         }
     }
 
     #[test]
@@ -486,12 +496,16 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(false);
 
-        let sig = s.sign(&msg, &sk).unwrap();
+        let sig = s.sign(&msg, &sk);
+        let (sig_compact, recid) = s.sign_compact(&msg, &sk);
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
         assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
+
+        let recovered_key = s.recover_compact(&msg, &sig_compact[..], false, recid).unwrap();
+        assert!(recovered_key != pk);
     }
 
     #[test]
@@ -504,9 +518,53 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(false);
 
-        let (sig, recid) = s.sign_compact(&msg, &sk).unwrap();
+        let (sig, recid) = s.sign_compact(&msg, &sk);
 
         assert_eq!(s.recover_compact(&msg, &sig[..], false, recid), Ok(pk));
+    }
+
+    #[test]
+    fn bad_recovery() {
+        let s = Secp256k1::new().unwrap();
+
+        let msg = Message::from_slice(&[0x55; 32]).unwrap();
+
+        // Bad length
+        assert_eq!(s.recover_compact(&msg, &[1; 63], false, RecoveryId(0)), Err(InvalidSignature));
+        assert_eq!(s.recover_compact(&msg, &[1; 65], false, RecoveryId(0)), Err(InvalidSignature));
+        // Zero is not a valid sig
+        assert_eq!(s.recover_compact(&msg, &[0; 64], false, RecoveryId(0)), Err(InvalidSignature));
+        // ...but 111..111 is
+        assert!(s.recover_compact(&msg, &[1; 64], false, RecoveryId(0)).is_ok());
+    }
+
+    #[test]
+    fn test_bad_slice() {
+        assert_eq!(Signature::from_slice(&[0; constants::MAX_SIGNATURE_SIZE + 1]),
+                   Err(InvalidSignature));
+        assert!(Signature::from_slice(&[0; constants::MAX_SIGNATURE_SIZE]).is_ok());
+
+        assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE - 1]),
+                   Err(InvalidMessage));
+        assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE + 1]),
+                   Err(InvalidMessage));
+        assert!(Signature::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
+    }
+
+    #[test]
+    fn test_debug_output() {
+        let sig = Signature(0, [4; 72]);
+        assert_eq!(&format!("{:?}", sig), "Signature()");
+        let sig = Signature(10, [5; 72]);
+        assert_eq!(&format!("{:?}", sig), "Signature(05050505050505050505)");
+        let sig = Signature(72, [6; 72]);
+        assert_eq!(&format!("{:?}", sig), "Signature(060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606)");
+
+        let msg = Message([1, 2, 3, 4, 5, 6, 7, 8,
+                           9, 10, 11, 12, 13, 14, 15, 16,
+                           17, 18, 19, 20, 21, 22, 23, 24,
+                           25, 26, 27, 28, 29, 30, 31, 255]);
+        assert_eq!(&format!("{:?}", msg), "Message(0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fff)");
     }
 
     #[bench]
