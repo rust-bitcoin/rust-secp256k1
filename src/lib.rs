@@ -227,7 +227,7 @@ impl Secp256k1<()> {
     /// you try to use this for `SecretKey::new`, which generates
     /// a random key, it will panic.
     pub fn new_deterministic() -> Secp256k1<()> {
-        Secp256k1::with_rng(()).unwrap()
+        Secp256k1::with_rng(())
     }
 }
 
@@ -239,7 +239,7 @@ impl Secp256k1<Fortuna> {
         let mut seed = [0; 2048];
         osrng.fill_bytes(&mut seed);
         let rng: Fortuna = SeedableRng::from_seed(&seed[..]);
-        Secp256k1::with_rng(rng)
+        Ok(Secp256k1::with_rng(rng))
     }
 }
 
@@ -258,12 +258,12 @@ impl<R: Rng> Secp256k1<R> {
 
 impl<R> Secp256k1<R> {
     /// Constructs a new secp256k1 engine with its key-generation RNG specified
-    pub fn with_rng(rng: R) -> io::Result<Secp256k1<R>> {
+    pub fn with_rng(rng: R) -> Secp256k1<R> {
         let ctx = unsafe {
             ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
                                           ffi::SECP256K1_START_SIGN)
         };
-        Ok(Secp256k1 { ctx: ctx, rng: rng })
+        Secp256k1 { ctx: ctx, rng: rng }
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
