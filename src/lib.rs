@@ -35,7 +35,6 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-extern crate crypto;
 extern crate rustc_serialize as serialize;
 extern crate serde;
 #[cfg(test)] extern crate test;
@@ -44,11 +43,9 @@ extern crate libc;
 extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
-use std::{cmp, fmt, io, ops, ptr};
+use std::{cmp, fmt, ops, ptr};
 use libc::c_int;
-use rand::{OsRng, Rng, SeedableRng};
-
-use crypto::fortuna::Fortuna;
+use rand::Rng;
 
 #[macro_use]
 mod macros;
@@ -233,84 +230,55 @@ impl fmt::Display for Error {
 }
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1<R = Fortuna> {
-    ctx: ffi::Context,
-    rng: R
+pub struct Secp256k1 {
+    ctx: ffi::Context
 }
 
-impl<R: Clone> Clone for Secp256k1<R> {
-    fn clone(&self) -> Secp256k1<R> {
+impl Clone for Secp256k1 {
+    fn clone(&self) -> Secp256k1 {
         Secp256k1 {
-            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) },
-            rng: self.rng.clone()
+            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) }
         }
     }
 }
 
-impl<R: PartialEq> PartialEq for Secp256k1<R> {
-    fn eq(&self, other: &Secp256k1<R>) -> bool {
-        // The contexts will always be "equal" in a functional sense
-        self.rng == other.rng
-    }
+impl PartialEq for Secp256k1 {
+    // Contexts will always be "equal" in a functional sense
+    fn eq(&self, _: &Secp256k1) -> bool { true }
 }
-impl<R: Eq> Eq for Secp256k1<R> { }
+impl Eq for Secp256k1 { }
 
-impl<R: fmt::Debug> fmt::Debug for Secp256k1<R> {
+impl fmt::Debug for Secp256k1 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Secp256k1 {{ ctx: (secp256k1 context), rng: {:?} }}", self.rng)
+        write!(f, "Secp256k1 {{ secp256k1 context }}")
     }
 }
 
-impl<R> Drop for Secp256k1<R> {
+impl Drop for Secp256k1 {
     fn drop(&mut self) {
         unsafe { ffi::secp256k1_context_destroy(self.ctx); }
     }
 }
 
-impl Secp256k1<()> {
-    /// Constructs a new secp256k1 engine without a RNG. This is
-    /// useful for, e.g. BIP32 implementations, where all keys are
-    /// computed externally to the secp256k1 engine. Note that if
-    /// you try to use this for `SecretKey::new`, which generates
-    /// a random key, it will panic.
-    pub fn new_deterministic() -> Secp256k1<()> {
-        Secp256k1::with_rng(())
-    }
-}
-
-impl Secp256k1<Fortuna> {
-    /// Constructs a new secp256k1 engine with the default key-generation Rng
-    /// (a Fortuna seeded with randomness from the OS during `new`)
-    pub fn new() -> io::Result<Secp256k1<Fortuna>> {
-        let mut osrng = try!(OsRng::new());
-        let mut seed = [0; 2048];
-        osrng.fill_bytes(&mut seed);
-        let rng: Fortuna = SeedableRng::from_seed(&seed[..]);
-        Ok(Secp256k1::with_rng(rng))
-    }
-}
-
-impl<R: Rng> Secp256k1<R> {
-    /// Generates a random keypair. Convenience function for `key::SecretKey::new`
-    /// and `key::PublicKey::from_secret_key`; call those functions directly for
-    /// batch key generation.
-    #[inline]
-    pub fn generate_keypair(&mut self, compressed: bool)
-                            -> (key::SecretKey, key::PublicKey) {
-        let sk = key::SecretKey::new(self);
-        let pk = key::PublicKey::from_secret_key(self, &sk, compressed);
-        (sk, pk)
-    }
-}
-
-impl<R> Secp256k1<R> {
-    /// Constructs a new secp256k1 engine with its key-generation RNG specified
-    pub fn with_rng(rng: R) -> Secp256k1<R> {
+impl Secp256k1 {
+    /// Creates a new Secp256k1 context
+    pub fn new() -> Secp256k1 {
         let ctx = unsafe {
             ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
                                           ffi::SECP256K1_START_SIGN)
         };
-        Secp256k1 { ctx: ctx, rng: rng }
+        Secp256k1 { ctx: ctx }
+    }
+
+    /// Generates a random keypair. Convenience function for `key::SecretKey::new`
+    /// and `key::PublicKey::from_secret_key`; call those functions directly for
+    /// batch key generation.
+    #[inline]
+    pub fn generate_keypair<R: Rng>(&self, rng: &mut R, compressed: bool)
+                                   -> (key::SecretKey, key::PublicKey) {
+        let sk = key::SecretKey::new(self, rng);
+        let pk = key::PublicKey::from_secret_key(self, &sk, compressed);
+        (sk, pk)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
@@ -412,7 +380,7 @@ mod tests {
 
     #[test]
     fn invalid_pubkey() {
-        let s = Secp256k1::new_deterministic();
+        let s = Secp256k1::new();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let pk = PublicKey::new(true);
         let mut msg = [0u8; 32];
@@ -424,9 +392,9 @@ mod tests {
 
     #[test]
     fn valid_pubkey_uncompressed() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
-        let (_, pk) = s.generate_keypair(false);
+        let (_, pk) = s.generate_keypair(&mut thread_rng(), false);
 
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let mut msg = [0u8; 32];
@@ -438,9 +406,9 @@ mod tests {
 
     #[test]
     fn valid_pubkey_compressed() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
-        let (_, pk) = s.generate_keypair(true);
+        let (_, pk) = s.generate_keypair(&mut thread_rng(), true);
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -451,7 +419,7 @@ mod tests {
 
     #[test]
     fn sign() {
-        let s = Secp256k1::new_deterministic();
+        let s = Secp256k1::new();
         let one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
@@ -473,14 +441,14 @@ mod tests {
 
     #[test]
     fn sign_and_verify() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
         let mut msg = [0; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, pk) = s.generate_keypair(false);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
             let sig = s.sign(&msg, &sk);
             assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
          }
@@ -488,13 +456,13 @@ mod tests {
 
     #[test]
     fn sign_and_verify_fail() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(false);
+        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
 
         let sig = s.sign(&msg, &sk);
         let (sig_compact, recid) = s.sign_compact(&msg, &sk);
@@ -510,13 +478,13 @@ mod tests {
 
     #[test]
     fn sign_compact_with_recovery() {
-        let mut s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(false);
+        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
 
         let (sig, recid) = s.sign_compact(&msg, &sk);
 
@@ -525,7 +493,7 @@ mod tests {
 
     #[test]
     fn bad_recovery() {
-        let s = Secp256k1::new().unwrap();
+        let s = Secp256k1::new();
 
         let msg = Message::from_slice(&[0x55; 32]).unwrap();
 
@@ -569,9 +537,15 @@ mod tests {
 
     #[bench]
     pub fn generate_compressed(bh: &mut Bencher) {
-        let mut s = Secp256k1::new().unwrap();
+        struct CounterRng(u32);
+        impl Rng for CounterRng {
+            fn next_u32(&mut self) -> u32 { self.0 += 1; self.0 }
+        }
+
+        let s = Secp256k1::new();
+        let mut r = CounterRng(0);
         bh.iter( || {
-          let (sk, pk) = s.generate_keypair(true);
+          let (sk, pk) = s.generate_keypair(&mut r, true);
           black_box(sk);
           black_box(pk);
         });
@@ -579,9 +553,15 @@ mod tests {
 
     #[bench]
     pub fn generate_uncompressed(bh: &mut Bencher) {
-        let mut s = Secp256k1::new().unwrap();
+        struct CounterRng(u32);
+        impl Rng for CounterRng {
+            fn next_u32(&mut self) -> u32 { self.0 += 1; self.0 }
+        }
+
+        let s = Secp256k1::new();
+        let mut r = CounterRng(0);
         bh.iter( || {
-          let (sk, pk) = s.generate_keypair(false);
+          let (sk, pk) = s.generate_keypair(&mut r, false);
           black_box(sk);
           black_box(pk);
         });
