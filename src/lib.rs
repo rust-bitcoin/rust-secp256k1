@@ -44,7 +44,7 @@ extern crate libc;
 extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
-use std::{fmt, io, ops, ptr};
+use std::{cmp, fmt, io, ops, ptr};
 use libc::c_int;
 use rand::{OsRng, Rng, SeedableRng};
 
@@ -105,13 +105,23 @@ impl Signature {
     }
 }
 
+impl fmt::Debug for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "Signature("));
+        for i in self[..].iter().cloned() {
+            try!(write!(f, "{:02x}", i));
+        }
+        write!(f, ")")
+    }
+}
+
 impl ops::Index<usize> for Signature {
     type Output = u8;
 
     #[inline]
     fn index(&self, index: usize) -> &u8 {
-        let &Signature(_, ref dat) = self;
-        &dat[index]
+        assert!(index < self.0);
+        &self.1[index]
     }
 }
 
@@ -120,8 +130,8 @@ impl ops::Index<ops::Range<usize>> for Signature {
 
     #[inline]
     fn index(&self, index: ops::Range<usize>) -> &[u8] {
-        let &Signature(_, ref dat) = self;
-        &dat[index.start..index.end]
+        assert!(index.end < self.0);
+        &self.1[index]
     }
 }
 
@@ -130,8 +140,7 @@ impl ops::Index<ops::RangeFrom<usize>> for Signature {
 
     #[inline]
     fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
-        let &Signature(_, ref dat) = self;
-        &dat[index.start..]
+        &self.1[index.start..self.0]
     }
 }
 
@@ -140,10 +149,17 @@ impl ops::Index<ops::RangeFull> for Signature {
 
     #[inline]
     fn index(&self, _: ops::RangeFull) -> &[u8] {
-        let &Signature(_, ref dat) = self;
-        &dat[..]
+        &self.1[0..self.0]
     }
 }
+
+impl cmp::PartialEq for Signature {
+    #[inline]
+    fn eq(&self, other: &Signature) -> bool {
+        &self[..] == &other[..]
+    }
+}
+impl cmp::Eq for Signature { }
 
 impl Clone for Signature {
     #[inline]
@@ -182,6 +198,16 @@ impl Message {
     }
 }
 
+impl fmt::Debug for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, "Message("));
+        for i in self[..].iter().cloned() {
+            try!(write!(f, "{:02x}", i));
+        }
+        write!(f, ")")
+    }
+}
+
 /// An ECDSA error
 #[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Error {
@@ -212,6 +238,29 @@ impl fmt::Display for Error {
 pub struct Secp256k1<R = Fortuna> {
     ctx: ffi::Context,
     rng: R
+}
+
+impl<R: Clone> Clone for Secp256k1<R> {
+    fn clone(&self) -> Secp256k1<R> {
+        Secp256k1 {
+            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) },
+            rng: self.rng.clone()
+        }
+    }
+}
+
+impl<R: PartialEq> PartialEq for Secp256k1<R> {
+    fn eq(&self, other: &Secp256k1<R>) -> bool {
+        // The contexts will always be "equal" in a functional sense
+        self.rng == other.rng
+    }
+}
+impl<R: Eq> Eq for Secp256k1<R> { }
+
+impl<R: fmt::Debug> fmt::Debug for Secp256k1<R> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "Secp256k1 {{ ctx: (secp256k1 context), rng: {:?} }}", self.rng)
+    }
 }
 
 impl<R> Drop for Secp256k1<R> {

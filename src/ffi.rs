@@ -55,6 +55,8 @@ extern "C" {
 
     pub fn secp256k1_context_create(flags: c_uint) -> Context;
 
+    pub fn secp256k1_context_clone(cx: Context) -> Context;
+
     pub fn secp256k1_context_destroy(cx: Context);
 
     pub fn secp256k1_ecdsa_verify(cx: Context, msg32: *const c_uchar,
