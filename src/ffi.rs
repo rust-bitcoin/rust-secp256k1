@@ -47,6 +47,9 @@ struct ContextInner;
 #[derive(Copy, Clone, Debug)]
 pub struct Context(*mut ContextInner);
 
+unsafe impl Send for Context {}
+unsafe impl Sync for Context {}
+
 #[link(name = "secp256k1")]
 extern "C" {
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
