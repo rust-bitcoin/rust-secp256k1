@@ -507,6 +507,12 @@ mod tests {
     }
 
     #[test]
+    fn recid_sanity_check() {
+        let one = RecoveryId(1);
+        assert_eq!(one, one.clone());
+    }
+
+    #[test]
     fn invalid_pubkey() {
         let s = Secp256k1::new();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
