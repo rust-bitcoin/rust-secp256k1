@@ -208,6 +208,9 @@ impl fmt::Debug for Message {
 /// An ECDSA error
 #[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Error {
+    /// A `Secp256k1` was used for an operation, but it was not created to
+    /// support this (so necessary precomputations have not been done)
+    IncapableContext,
     /// Signature failed verification
     IncorrectSignature,
     /// Badly sized message
@@ -231,26 +234,49 @@ impl fmt::Display for Error {
 
 /// The secp256k1 engine, used to execute all signature operations
 pub struct Secp256k1 {
-    ctx: ffi::Context
+    ctx: ffi::Context,
+    caps: ContextFlag
+}
+
+/// Flags used to determine the capabilities of a `Secp256k1` object;
+/// the more capabilities, the more expensive it is to create.
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+pub enum ContextFlag {
+    /// Can neither sign nor verify signatures (cheapest to create, useful
+    /// for cases not involving signatures, such as creating keys from slices)
+    None,
+    /// Can sign but not verify signatures
+    SignOnly,
+    /// Can verify but not create signatures
+    VerifyOnly,
+    /// Can verify and create signatures
+    Full
+}
+
+// Passthrough Debug to Display, since caps should be user-visible
+impl fmt::Display for ContextFlag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 impl Clone for Secp256k1 {
     fn clone(&self) -> Secp256k1 {
         Secp256k1 {
-            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) }
+            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) },
+            caps: self.caps
         }
     }
 }
 
 impl PartialEq for Secp256k1 {
-    // Contexts will always be "equal" in a functional sense
-    fn eq(&self, _: &Secp256k1) -> bool { true }
+    fn eq(&self, other: &Secp256k1) -> bool { self.caps == other.caps }
 }
 impl Eq for Secp256k1 { }
 
 impl fmt::Debug for Secp256k1 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Secp256k1 {{ secp256k1 context }}")
+        write!(f, "Secp256k1 {{ [private], caps: {:?} }}", self.caps)
     }
 }
 
@@ -262,28 +288,45 @@ impl Drop for Secp256k1 {
 
 impl Secp256k1 {
     /// Creates a new Secp256k1 context
+    #[inline]
     pub fn new() -> Secp256k1 {
-        let ctx = unsafe {
-            ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY |
-                                          ffi::SECP256K1_START_SIGN)
+        Secp256k1::with_caps(ContextFlag::Full)
+    }
+
+    /// Creates a new Secp256k1 context with the specified capabilities
+    pub fn with_caps(caps: ContextFlag) -> Secp256k1 {
+        let flag = match caps {
+            ContextFlag::None => 0,
+            ContextFlag::SignOnly => ffi::SECP256K1_START_SIGN,
+            ContextFlag::VerifyOnly => ffi::SECP256K1_START_VERIFY,
+            ContextFlag::Full => ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY
         };
-        Secp256k1 { ctx: ctx }
+        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(flag) }, caps: caps }
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
-    /// batch key generation.
+    /// batch key generation. Requires a signing-capable context.
     #[inline]
     pub fn generate_keypair<R: Rng>(&self, rng: &mut R, compressed: bool)
-                                   -> (key::SecretKey, key::PublicKey) {
+                                   -> Result<(key::SecretKey, key::PublicKey), Error> {
+        if self.caps == ContextFlag::VerifyOnly || self.caps == ContextFlag::None {
+            return Err(Error::IncapableContext);
+        }
+
         let sk = key::SecretKey::new(self, rng);
         let pk = key::PublicKey::from_secret_key(self, &sk, compressed);
-        (sk, pk)
+        Ok((sk, pk))
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`
+    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
+    /// Requires a signing-capable context.
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
-                -> Signature {
+                -> Result<Signature, Error> {
+        if self.caps == ContextFlag::VerifyOnly || self.caps == ContextFlag::None {
+            return Err(Error::IncapableContext);
+        }
+
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut len = constants::MAX_SIGNATURE_SIZE as c_int;
         unsafe {
@@ -296,12 +339,17 @@ impl Secp256k1 {
             // This assertation is probably too late :)
             debug_assert!(len as usize <= constants::MAX_SIGNATURE_SIZE);
         }
-        Signature(len as usize, sig)
+        Ok(Signature(len as usize, sig))
     }
 
-    /// Constructs a compact signature for `msg` using the secret key `sk`
+    /// Constructs a compact signature for `msg` using the secret key `sk`.
+    /// Requires a signing-capable context.
     pub fn sign_compact(&self, msg: &Message, sk: &key::SecretKey)
-                        -> (Signature, RecoveryId) {
+                        -> Result<(Signature, RecoveryId), Error> {
+        if self.caps == ContextFlag::VerifyOnly || self.caps == ContextFlag::None {
+            return Err(Error::IncapableContext);
+        }
+
         let mut sig = [0; constants::MAX_SIGNATURE_SIZE];
         let mut recid = 0;
         unsafe {
@@ -312,14 +360,19 @@ impl Secp256k1 {
                                                          ffi::secp256k1_nonce_function_default,
                                                          ptr::null(), &mut recid), 1);
         }
-        (Signature(constants::COMPACT_SIGNATURE_SIZE, sig), RecoveryId(recid))
+        Ok((Signature(constants::COMPACT_SIGNATURE_SIZE, sig), RecoveryId(recid)))
     }
 
     /// Determines the public key for which `sig` is a valid signature for
-    /// `msg`. Returns through the out-pointer `pubkey`.
+    /// `msg`. Returns through the out-pointer `pubkey`. Requires a verify-capable
+    /// context.
     pub fn recover_compact(&self, msg: &Message, sig: &[u8],
                            compressed: bool, recid: RecoveryId)
                             -> Result<key::PublicKey, Error> {
+        if self.caps == ContextFlag::SignOnly || self.caps == ContextFlag::None {
+            return Err(Error::IncapableContext);
+        }
+
         let mut pk = key::PublicKey::new(compressed);
         let RecoveryId(recid) = recid;
 
@@ -342,14 +395,20 @@ impl Secp256k1 {
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success. Note that this function cannot
     /// be used for Bitcoin consensus checking since there may exist signatures
-    /// which OpenSSL would verify but not libsecp256k1, or vice-versa.
+    /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
+    /// verify-capable context.
     #[inline]
     pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
         self.verify_raw(msg, &sig[..], pk)
     }
 
-    /// Verifies a signature described as a slice of bytes rather than opaque `Signature`
+    /// Verifies a signature described as a slice of bytes rather than opaque `Signature`.
+    /// Requires a verify-capable context.
     pub fn verify_raw(&self, msg: &Message, sig: &[u8], pk: &key::PublicKey) -> Result<(), Error> {
+        if self.caps == ContextFlag::SignOnly || self.caps == ContextFlag::None {
+            return Err(Error::IncapableContext);
+        }
+
         let res = unsafe {
             ffi::secp256k1_ecdsa_verify(self.ctx, msg.as_ptr(),
                                         sig.as_ptr(), sig.len() as c_int,
@@ -375,8 +434,77 @@ mod tests {
 
     use key::{SecretKey, PublicKey};
     use super::constants;
-    use super::{Secp256k1, Signature, Message, RecoveryId};
-    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature};
+    use super::{Secp256k1, Signature, Message, RecoveryId, ContextFlag};
+    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature,
+                       IncapableContext};
+
+    #[test]
+    fn capabilities() {
+        let none = Secp256k1::with_caps(ContextFlag::None);
+        let sign = Secp256k1::with_caps(ContextFlag::SignOnly);
+        let vrfy = Secp256k1::with_caps(ContextFlag::VerifyOnly);
+        let full = Secp256k1::with_caps(ContextFlag::Full);
+
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+
+        // Try key generation
+        assert_eq!(none.generate_keypair(&mut thread_rng(), true), Err(IncapableContext));
+        assert_eq!(none.generate_keypair(&mut thread_rng(), false), Err(IncapableContext));
+        assert_eq!(vrfy.generate_keypair(&mut thread_rng(), true), Err(IncapableContext));
+        assert_eq!(vrfy.generate_keypair(&mut thread_rng(), false), Err(IncapableContext));
+        assert!(sign.generate_keypair(&mut thread_rng(), true).is_ok());
+        assert!(sign.generate_keypair(&mut thread_rng(), false).is_ok());
+        assert!(full.generate_keypair(&mut thread_rng(), true).is_ok());
+        assert!(full.generate_keypair(&mut thread_rng(), false).is_ok());
+        let (sk, pk) = full.generate_keypair(&mut thread_rng(), true).unwrap();
+
+        // Try signing
+        assert_eq!(none.sign(&msg, &sk), Err(IncapableContext));
+        assert_eq!(vrfy.sign(&msg, &sk), Err(IncapableContext));
+        assert!(sign.sign(&msg, &sk).is_ok());
+        assert!(full.sign(&msg, &sk).is_ok());
+        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+        let sig = full.sign(&msg, &sk).unwrap();
+
+        // Try verifying
+        assert_eq!(none.verify(&msg, &sig, &pk), Err(IncapableContext));
+        assert_eq!(sign.verify(&msg, &sig, &pk), Err(IncapableContext));
+        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+        assert!(full.verify(&msg, &sig, &pk).is_ok());
+
+        // Try compact signing
+        assert_eq!(none.sign_compact(&msg, &sk), Err(IncapableContext));
+        assert_eq!(vrfy.sign_compact(&msg, &sk), Err(IncapableContext));
+        assert!(sign.sign_compact(&msg, &sk).is_ok());
+        assert!(full.sign_compact(&msg, &sk).is_ok());
+        let (csig, recid) = full.sign_compact(&msg, &sk).unwrap();
+
+        // Try pk recovery
+        assert_eq!(none.recover_compact(&msg, &csig[..], true, recid), Err(IncapableContext));
+        assert_eq!(none.recover_compact(&msg, &csig[..], false, recid), Err(IncapableContext));
+        assert_eq!(sign.recover_compact(&msg, &csig[..], true, recid), Err(IncapableContext));
+        assert_eq!(sign.recover_compact(&msg, &csig[..], false, recid), Err(IncapableContext));
+        assert!(vrfy.recover_compact(&msg, &csig[..], false, recid).is_ok());
+        assert!(vrfy.recover_compact(&msg, &csig[..], true, recid).is_ok());
+        assert!(full.recover_compact(&msg, &csig[..], false, recid).is_ok());
+        assert!(full.recover_compact(&msg, &csig[..], true, recid).is_ok());
+
+        assert_eq!(vrfy.recover_compact(&msg, &csig[..], false, recid),
+                   full.recover_compact(&msg, &csig[..], false, recid));
+        assert_eq!(vrfy.recover_compact(&msg, &csig[..], true, recid),
+                   full.recover_compact(&msg, &csig[..], true, recid));
+
+        assert_eq!(full.recover_compact(&msg, &csig[..], true, recid), Ok(pk));
+
+        // Check that we can produce keys from slices with no precomputation
+        let (pk_slice, sk_slice) = (&pk[..], &sk[..]);
+        let new_pk = PublicKey::from_slice(&none, pk_slice).unwrap();
+        let new_sk = SecretKey::from_slice(&none, sk_slice).unwrap();
+        assert_eq!(sk, new_sk);
+        assert_eq!(pk, new_pk);
+    }
 
     #[test]
     fn invalid_pubkey() {
@@ -394,7 +522,7 @@ mod tests {
     fn valid_pubkey_uncompressed() {
         let s = Secp256k1::new();
 
-        let (_, pk) = s.generate_keypair(&mut thread_rng(), false);
+        let (_, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
 
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let mut msg = [0u8; 32];
@@ -408,7 +536,7 @@ mod tests {
     fn valid_pubkey_compressed() {
         let s = Secp256k1::new();
 
-        let (_, pk) = s.generate_keypair(&mut thread_rng(), true);
+        let (_, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
         let sig = Signature::from_slice(&[0; 72]).unwrap();
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -426,7 +554,7 @@ mod tests {
         let sk = SecretKey::from_slice(&s, &one).unwrap();
         let msg = Message::from_slice(&one).unwrap();
 
-        let sig = s.sign(&msg, &sk);
+        let sig = s.sign(&msg, &sk).unwrap();
         assert_eq!(sig, Signature(70, [
             0x30, 0x44, 0x02, 0x20, 0x66, 0x73, 0xff, 0xad,
             0x21, 0x47, 0x74, 0x1f, 0x04, 0x77, 0x2b, 0x6f,
@@ -448,8 +576,8 @@ mod tests {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
-            let sig = s.sign(&msg, &sk);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
+            let sig = s.sign(&msg, &sk).unwrap();
             assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
          }
     }
@@ -462,10 +590,10 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
+        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
 
-        let sig = s.sign(&msg, &sk);
-        let (sig_compact, recid) = s.sign_compact(&msg, &sk);
+        let sig = s.sign(&msg, &sk).unwrap();
+        let (sig_compact, recid) = s.sign_compact(&msg, &sk).unwrap();
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -484,9 +612,9 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
+        let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
 
-        let (sig, recid) = s.sign_compact(&msg, &sk);
+        let (sig, recid) = s.sign_compact(&msg, &sk).unwrap();
 
         assert_eq!(s.recover_compact(&msg, &sig[..], false, recid), Ok(pk));
     }
@@ -545,7 +673,7 @@ mod tests {
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
         bh.iter( || {
-          let (sk, pk) = s.generate_keypair(&mut r, true);
+          let (sk, pk) = s.generate_keypair(&mut r, true).unwrap();
           black_box(sk);
           black_box(pk);
         });
@@ -561,7 +689,7 @@ mod tests {
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
         bh.iter( || {
-          let (sk, pk) = s.generate_keypair(&mut r, false);
+          let (sk, pk) = s.generate_keypair(&mut r, false).unwrap();
           black_box(sk);
           black_box(pk);
         });

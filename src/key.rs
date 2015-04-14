@@ -500,11 +500,11 @@ mod test {
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng(), true);
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng(), true).unwrap();
         assert_eq!(SecretKey::from_slice(&s, &sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&s, &pk1[..]), Ok(pk1));
 
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng(), false);
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng(), false).unwrap();
         assert_eq!(SecretKey::from_slice(&s, &sk2[..]), Ok(sk2));
         assert_eq!(PublicKey::from_slice(&s, &pk2[..]), Ok(pk2));
     }
@@ -587,10 +587,10 @@ mod test {
 
         let s = Secp256k1::new();
         for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
             round_trip!(sk);
             round_trip!(pk);
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
             round_trip!(sk);
             round_trip!(pk);
         }
@@ -648,10 +648,10 @@ mod test {
 
         let s = Secp256k1::new();
         for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
             round_trip!(sk);
             round_trip!(pk);
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true);
+            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
             round_trip!(sk);
             round_trip!(pk);
         }
@@ -685,8 +685,8 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        s.generate_keypair(&mut BadRng(0xff), false);
-        s.generate_keypair(&mut BadRng(0xff), true);
+        s.generate_keypair(&mut BadRng(0xff), false).unwrap();
+        s.generate_keypair(&mut BadRng(0xff), true).unwrap();
     }
 
     #[test]
@@ -720,8 +720,8 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (sk1, pk1) = s.generate_keypair(&mut DumbRng(0), false);
-        let (sk2, pk2) = s.generate_keypair(&mut DumbRng(0), true);
+        let (sk1, pk1) = s.generate_keypair(&mut DumbRng(0), false).unwrap();
+        let (sk2, pk2) = s.generate_keypair(&mut DumbRng(0), true).unwrap();
 
         assert_eq!(&format!("{:?}", sk1),
                    "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
@@ -737,8 +737,8 @@ mod test {
     fn test_addition() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng(), true);
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng(), true);
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng(), true).unwrap();
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk1, true), pk1);
         assert!(sk1.add_assign(&s, &sk2).is_ok());
