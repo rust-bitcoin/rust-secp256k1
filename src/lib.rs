@@ -589,6 +589,42 @@ mod tests {
     }
 
     #[test]
+    fn sign_and_verify_extreme() {
+        let s = Secp256k1::new();
+
+        // Wild keys: 1, CURVE_ORDER - 1
+        // Wild msgs: 0, 1, CURVE_ORDER - 1, CURVE_ORDER
+        let mut wild_keys = [[0; 32]; 2];
+        let mut wild_msgs = [[0; 32]; 4];
+
+        wild_keys[0][0] = 1;
+        wild_msgs[1][0] = 1;
+        unsafe {
+            use constants;
+            use std::intrinsics::copy_nonoverlapping;
+            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                wild_keys[1].as_mut_ptr(),
+                                32);
+            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                wild_msgs[1].as_mut_ptr(),
+                                32);
+            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                wild_msgs[2].as_mut_ptr(),
+                                32);
+            wild_keys[1][0] -= 1;
+            wild_msgs[1][0] -= 1;
+        }
+
+        for key in wild_keys.iter().map(|k| SecretKey::from_slice(&s, &k[..]).unwrap()) {
+            for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
+                let sig = s.sign(&msg, &key).unwrap();
+                let pk = PublicKey::from_secret_key(&s, &key, true);
+                assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
+            }
+        }
+    }
+
+    #[test]
     fn sign_and_verify_fail() {
         let s = Secp256k1::new();
 
