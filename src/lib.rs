@@ -715,9 +715,9 @@ mod tests {
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
         bh.iter( || {
-          let (sk, pk) = s.generate_keypair(&mut r, true).unwrap();
-          black_box(sk);
-          black_box(pk);
+            let (sk, pk) = s.generate_keypair(&mut r, true).unwrap();
+            black_box(sk);
+            black_box(pk);
         });
     }
 
@@ -730,10 +730,112 @@ mod tests {
 
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
-        bh.iter( || {
-          let (sk, pk) = s.generate_keypair(&mut r, false).unwrap();
-          black_box(sk);
-          black_box(pk);
+        bh.iter(|| {
+            let (sk, pk) = s.generate_keypair(&mut r, false).unwrap();
+            black_box(sk);
+            black_box(pk);
+        });
+    }
+
+    #[bench]
+    pub fn sign_uncompressed(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), false).unwrap();
+
+        bh.iter(|| {
+            let sig = s.sign(&msg, &sk).unwrap();
+            black_box(sig);
+        });
+    }
+
+    #[bench]
+    pub fn sign_compressed(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+
+        bh.iter(|| {
+            let sig = s.sign(&msg, &sk).unwrap();
+            black_box(sig);
+        });
+    }
+
+    #[bench]
+    pub fn sign_uncompressed_compact(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), false).unwrap();
+
+        bh.iter(|| {
+            let sig = s.sign_compact(&msg, &sk).unwrap();
+            black_box(sig);
+        });
+    }
+
+    #[bench]
+    pub fn sign_compressed_compact(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+
+        bh.iter(|| {
+            let sig = s.sign_compact(&msg, &sk).unwrap();
+            black_box(sig);
+        });
+    }
+
+    #[bench]
+    pub fn verify(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let sig = s.sign(&msg, &sk).unwrap();
+
+        bh.iter(|| {
+            let res = s.verify(&msg, &sig, &pk).unwrap();
+            black_box(res);
+        });
+    }
+
+    #[bench]
+    pub fn recover_uncompressed(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let (sig, rid) = s.sign_compact(&msg, &sk).unwrap();
+
+        bh.iter(|| {
+            let res = s.recover_compact(&msg, &sig[..], false, rid).unwrap();
+            black_box(res);
+        });
+    }
+
+    #[bench]
+    pub fn recover_compressed(bh: &mut Bencher) {
+        let s = Secp256k1::new();
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let (sig, rid) = s.sign_compact(&msg, &sk).unwrap();
+
+        bh.iter(|| {
+            let res = s.recover_compact(&msg, &sig[..], true, rid).unwrap();
+            black_box(res);
         });
     }
 }
+
