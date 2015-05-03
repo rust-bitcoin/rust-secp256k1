@@ -304,6 +304,25 @@ impl Secp256k1 {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(flag) }, caps: caps }
     }
 
+    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistence;
+    /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell
+    pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
+        let mut seed = [0; 32];
+        rng.fill_bytes(&mut seed);
+        unsafe {
+            let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_ptr());
+            // This function cannot fail; it has an error return for future-proofing.
+            // We do not expose this error since it is impossible to hit, and we have
+            // precedent for not exposing impossible errors (for example in
+            // `PublicKey::from_secret_key` where it is impossble to create an invalid
+            // secret key through the API.)
+            // However, if this DOES fail, the result is potentially weaker side-channel
+            // resistance, which is deadly and undetectable, so we take out the entire
+            // thread to be on the safe side.
+            assert!(err == 1);
+        }
+    }
+
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation. Requires a signing-capable context.
@@ -553,7 +572,8 @@ mod tests {
 
     #[test]
     fn sign() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
         let one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
@@ -575,7 +595,8 @@ mod tests {
 
     #[test]
     fn sign_and_verify() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
 
         let mut msg = [0; 32];
         for _ in 0..100 {
@@ -590,7 +611,8 @@ mod tests {
 
     #[test]
     fn sign_and_verify_extreme() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
 
         // Wild keys: 1, CURVE_ORDER - 1
         // Wild msgs: 0, 1, CURVE_ORDER - 1, CURVE_ORDER
@@ -626,7 +648,8 @@ mod tests {
 
     #[test]
     fn sign_and_verify_fail() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -648,7 +671,8 @@ mod tests {
 
     #[test]
     fn sign_compact_with_recovery() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -663,7 +687,8 @@ mod tests {
 
     #[test]
     fn bad_recovery() {
-        let s = Secp256k1::new();
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
 
         let msg = Message::from_slice(&[0x55; 32]).unwrap();
 

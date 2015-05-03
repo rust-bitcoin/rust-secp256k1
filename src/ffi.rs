@@ -121,5 +121,9 @@ extern "C" {
                                          pk_len: c_int,
                                          tweak: *const c_uchar)
                                          -> c_int;
+
+    pub fn secp256k1_context_randomize(cx: Context,
+                                       seed32: *const c_uchar)
+                                       -> c_int;
 }
 
