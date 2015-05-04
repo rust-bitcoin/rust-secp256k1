@@ -1,20 +1,25 @@
 [package]
 
 name = "secp256k1"
-version = "0.0.1"
+version = "0.1.0"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net" ]
+license = "CC0-1.0"
+homepage = "https://github.com/apoelstra/rust-secp256k1/"
+repository = "https://github.com/apoelstra/rust-secp256k1/"
+documentation = "https://www.wpsoftware.net/rustdoc/secp256k1/"
+description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
+keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
+readme = "README.md"
 
 [lib]
 name = "secp256k1"
 path = "src/lib.rs"
 
-[dependencies.rust-crypto]
-git = "https://github.com/DaGenix/rust-crypto.git"
-
 [dependencies]
-rand = "*"
-libc = "*"
-rustc-serialize = "*"
-serde = "*"
+rand = "0.3"
+rust-crypto = "0.2"
+libc = "0.1"
+rustc-serialize = "0.3"
+serde = "0.3"
 
