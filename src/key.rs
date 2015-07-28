@@ -16,7 +16,8 @@
 //! Public/Private keys
 
 use std::intrinsics::copy_nonoverlapping;
-use std::{fmt, marker, ops};
+use std::marker;
+use arrayvec::ArrayVec;
 use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
@@ -29,6 +30,7 @@ use ffi;
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
+impl_pretty_debug!(SecretKey);
 
 /// The number 1 encoded as a secret key
 pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
@@ -36,15 +38,9 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 1]);
 
-/// Public key
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct PublicKey(PublicKeyData);
-
-#[derive(Copy, Eq)]
-enum PublicKeyData {
-    Compressed([u8; constants::COMPRESSED_PUBLIC_KEY_SIZE]),
-    Uncompressed([u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
-}
+/// A Secp256k1 public key, used for verification of signatures
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct PublicKey(ffi::PublicKey);
 
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
@@ -103,113 +99,76 @@ impl SecretKey {
 impl PublicKey {
     /// Creates a new zeroed out public key
     #[inline]
-    pub fn new(compressed: bool) -> PublicKey {
-        PublicKey(
-            if compressed {
-                PublicKeyData::Compressed([0; constants::COMPRESSED_PUBLIC_KEY_SIZE])
-            } else {
-                PublicKeyData::Uncompressed([0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE])
-            }
-        )
+    pub fn new() -> PublicKey {
+        PublicKey(ffi::PublicKey::new())
+    }
+
+    /// Creates a new public key from a FFI public key
+    #[inline]
+    pub fn from_ffi(pk: ffi::PublicKey) -> PublicKey {
+        PublicKey(pk)
+    }
+
+    /// Determines whether a pubkey is valid
+    #[inline]
+    pub fn is_valid(&self) -> bool {
+        // The only invalid pubkey the API should be able to create is
+        // the zero one.
+        self.0[..].iter().any(|&x| x != 0)
+    }
+
+    /// Obtains a raw pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_ptr(&self) -> *const ffi::PublicKey {
+        &self.0 as *const _
     }
 
     /// Creates a new public key from a secret key.
     #[inline]
     pub fn from_secret_key(secp: &Secp256k1,
-                              sk: &SecretKey,
-                              compressed: bool)
-                             -> PublicKey {
-        let mut pk = PublicKey::new(compressed);
-        let compressed = if compressed {1} else {0};
-        let mut len = 0;
-
+                           sk: &SecretKey)
+                           -> PublicKey {
+        let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
-            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx,
-                                                      pk.as_mut_ptr(), &mut len,
-                                                      sk.as_ptr(), compressed);
+            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_ptr());
             debug_assert_eq!(res, 1);
         }
-        debug_assert_eq!(len as usize, pk.len()); 
-        pk
+        PublicKey(pk)
     }
 
     /// Creates a public key directly from a slice
     #[inline]
     pub fn from_slice(secp: &Secp256k1, data: &[u8])
-                        -> Result<PublicKey, Error> {
-        match data.len() {
-            constants::COMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0; constants::COMPRESSED_PUBLIC_KEY_SIZE];
-                unsafe {
-                    if ffi::secp256k1_ec_pubkey_verify(secp.ctx, data.as_ptr(),
-                                                       data.len() as ::libc::c_int) == 0 {
-                        return Err(InvalidPublicKey);
-                    }
-                    copy_nonoverlapping(data.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        data.len());
-                }
-                Ok(PublicKey(PublicKeyData::Compressed(ret)))
+                      -> Result<PublicKey, Error> {
+
+        let mut pk = unsafe { ffi::PublicKey::blank() };
+        unsafe {
+            if ffi::secp256k1_ec_pubkey_parse(secp.ctx, &mut pk, data.as_ptr(),
+                                              data.len() as ::libc::c_int) == 1 {
+                Ok(PublicKey(pk))
+            } else {
+                Err(InvalidPublicKey)
             }
-            constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => {
-                let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
-                unsafe {
-                    if ffi::secp256k1_ec_pubkey_verify(secp.ctx, data.as_ptr(),
-                                                       data.len() as ::libc::c_int) == 0 {
-                        return Err(InvalidPublicKey);
-                    }
-                    copy_nonoverlapping(data.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        data.len());
-                }
-                Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
-            }
-            _ => Err(InvalidPublicKey)
         }
     }
 
-    /// Returns whether the public key is compressed or uncompressed
     #[inline]
-    pub fn is_compressed(&self) -> bool {
-        let &PublicKey(ref data) = self;
-        match *data {
-            PublicKeyData::Compressed(_) => true,
-            PublicKeyData::Uncompressed(_) => false
-        }
-    }
+    /// Serialize the key as a byte-encoded pair of values. In compressed form
+    /// the y-coordinate is represented by only a single bit, as x determines
+    /// it up to one bit.
+    pub fn serialize_vec(&self, secp: &Secp256k1, compressed: bool) -> ArrayVec<[u8; constants::PUBLIC_KEY_SIZE]> {
+        let mut ret = ArrayVec::new();
 
-    /// Returns the length of the public key
-    #[inline]
-    pub fn len(&self) -> usize {
-        let &PublicKey(ref data) = self;
-        match *data {
-            PublicKeyData::Compressed(ref x) => x.len(),
-            PublicKeyData::Uncompressed(ref x) => x.len()
+        unsafe {
+            let mut ret_len = ret.len() as ::libc::c_int;
+            debug_assert!(ffi::secp256k1_ec_pubkey_serialize(secp.ctx, ret.as_ptr(),
+                                                             &mut ret_len, self.as_ptr(),
+                                                             if compressed {1} else {0}) == 1);
+            ret.set_len(ret_len as usize);
         }
-    }
-
-    /// Converts the public key to a raw pointer suitable for use
-    /// with the FFI functions
-    #[inline]
-    pub fn as_ptr(&self) -> *const u8 {
-        let &PublicKey(ref data) = self;
-        match *data {
-            PublicKeyData::Compressed(ref x) => x.as_ptr(),
-            PublicKeyData::Uncompressed(ref x) => x.as_ptr()
-        }
-    }
-
-    /// Converts the public key to a mutable raw pointer suitable for use
-    /// with the FFI functions
-    #[inline]
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        let &mut PublicKey(ref mut data) = self;
-        match *data {
-            PublicKeyData::Compressed(ref mut x) => x.as_mut_ptr(),
-            PublicKeyData::Uncompressed(ref mut x) => x.as_mut_ptr()
-        }
+        ret
     }
 
     #[inline]
@@ -217,152 +176,20 @@ impl PublicKey {
     pub fn add_exp_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
                          -> Result<(), Error> {
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, self.as_mut_ptr(),
-                                                  self.len() as ::libc::c_int,
-                                                  other.as_ptr()) != 1 {
-                Err(Unknown)
-            } else {
+            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
+                                                  other.as_ptr()) == 1 {
                 Ok(())
+            } else {
+                Err(Unknown)
             }
         }
-    }
-}
-
-// We have to do all these impls ourselves as Rust can't derive
-// them for arrays
-impl Clone for PublicKeyData {
-    fn clone(&self) -> PublicKeyData { *self }
-}
-
-impl PartialEq for PublicKeyData {
-    fn eq(&self, other: &PublicKeyData) -> bool {
-        &self[..] == &other[..]
-    }
-}
-
-impl fmt::Debug for PublicKeyData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for i in self[..].iter().cloned() {
-            try!(write!(f, "{:02x}", i));
-        }
-        Ok(())
-    }
-}
-
-
-impl ops::Index<usize> for PublicKeyData {
-    type Output = u8;
-
-    #[inline]
-    fn index(&self, index: usize) -> &u8 {
-        match *self {
-            PublicKeyData::Compressed(ref x) => &x[index],
-            PublicKeyData::Uncompressed(ref x) => &x[index]
-       }
-    }
-}
-
-impl ops::Index<usize> for PublicKey {
-    type Output = u8;
-
-    #[inline]
-    fn index(&self, index: usize) -> &u8 {
-        let &PublicKey(ref dat) = self;
-        &dat[index]
-    }
-}
-
-impl ops::Index<ops::Range<usize>> for PublicKeyData {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::Range<usize>) -> &[u8] {
-        match *self {
-            PublicKeyData::Compressed(ref x) => &x[index],
-            PublicKeyData::Uncompressed(ref x) => &x[index]
-       }
-    }
-}
-
-impl ops::Index<ops::Range<usize>> for PublicKey {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::Range<usize>) -> &[u8] {
-        let &PublicKey(ref dat) = self;
-        &dat[index]
-    }
-}
-
-impl ops::Index<ops::RangeTo<usize>> for PublicKeyData {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
-        match *self {
-            PublicKeyData::Compressed(ref x) => &x[index],
-            PublicKeyData::Uncompressed(ref x) => &x[index]
-       }
-    }
-}
-
-impl ops::Index<ops::RangeTo<usize>> for PublicKey {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::RangeTo<usize>) -> &[u8] {
-        let &PublicKey(ref dat) = self;
-        &dat[index]
-    }
-}
-
-impl ops::Index<ops::RangeFrom<usize>> for PublicKeyData {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
-        match *self {
-            PublicKeyData::Compressed(ref x) => &x[index],
-            PublicKeyData::Uncompressed(ref x) => &x[index]
-       }
-    }
-}
-
-impl ops::Index<ops::RangeFrom<usize>> for PublicKey {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
-        let &PublicKey(ref dat) = self;
-        &dat[index]
-    }
-}
-
-impl ops::Index<ops::RangeFull> for PublicKeyData {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, _: ops::RangeFull) -> &[u8] {
-        match *self {
-            PublicKeyData::Compressed(ref x) => &x[..],
-            PublicKeyData::Uncompressed(ref x) => &x[..]
-       }
-    }
-}
-
-impl ops::Index<ops::RangeFull> for PublicKey {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, _: ops::RangeFull) -> &[u8] {
-        let &PublicKey(ref dat) = self;
-        &dat[..]
     }
 }
 
 impl Decodable for PublicKey {
     fn decode<D: Decoder>(d: &mut D) -> Result<PublicKey, D::Error> {
         d.read_seq(|d, len| {
+            let s = Secp256k1::with_caps(::ContextFlag::None);
             if len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
                 unsafe {
                     use std::mem;
@@ -370,7 +197,7 @@ impl Decodable for PublicKey {
                     for i in 0..len {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
-                    Ok(PublicKey(PublicKeyData::Uncompressed(ret)))
+                    PublicKey::from_slice(&s, &ret).map_err(|_| d.error("invalid public key"))
                 }
             } else if len == constants::COMPRESSED_PUBLIC_KEY_SIZE {
                 unsafe {
@@ -379,7 +206,7 @@ impl Decodable for PublicKey {
                     for i in 0..len {
                         ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
                     }
-                    Ok(PublicKey(PublicKeyData::Compressed(ret)))
+                    PublicKey::from_slice(&s, &ret).map_err(|_| d.error("invalid public key"))
                 }
             } else {
                 Err(d.error("Invalid length"))
@@ -390,7 +217,8 @@ impl Decodable for PublicKey {
 
 impl Encodable for PublicKey {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        (&self[..]).encode(s)
+        let secp = Secp256k1::with_caps(::ContextFlag::None);
+        self.serialize_vec(&secp, true).encode(s)
     }
 }
 
@@ -411,10 +239,10 @@ impl Deserialize for PublicKey {
             {
                 debug_assert!(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE >= constants::COMPRESSED_PUBLIC_KEY_SIZE);
 
+                let s = Secp256k1::with_caps(::ContextFlag::None);
                 unsafe {
                     use std::mem;
-                    let mut ret_u: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
-                    let mut ret_c: [u8; constants::COMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
+                    let mut ret: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
 
                     let mut read_len = 0;
                     while read_len < constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
@@ -422,19 +250,12 @@ impl Deserialize for PublicKey {
                             Some(c) => c,
                             None => break
                         };
-                        ret_u[read_len] = read_ch;
-                        if read_len < constants::COMPRESSED_PUBLIC_KEY_SIZE { ret_c[read_len] = read_ch; }
+                        ret[read_len] = read_ch;
                         read_len += 1;
                     }
                     try!(v.end());
 
-                    if read_len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
-                        Ok(PublicKey(PublicKeyData::Uncompressed(ret_u)))
-                    } else if read_len == constants::COMPRESSED_PUBLIC_KEY_SIZE {
-                        Ok(PublicKey(PublicKeyData::Compressed(ret_c)))
-                    } else {
-                        return Err(de::Error::syntax_error());
-                    }
+                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|_| de::Error::syntax_error())
                 }
             }
         }
@@ -448,17 +269,8 @@ impl Serialize for PublicKey {
     fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
         where S: Serializer
     {
-        (&self.0[..]).serialize(s)
-    }
-}
-
-impl fmt::Debug for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "SecretKey("));
-        for i in self[..].iter().cloned() {
-            try!(write!(f, "{:02x}", i));
-        }
-        write!(f, ")")
+        let secp = Secp256k1::with_caps(::ContextFlag::None);
+        (&self.serialize_vec(&secp, true)[..]).serialize(s)
     }
 }
 
@@ -489,24 +301,19 @@ mod test {
 
         let uncompressed = PublicKey::from_slice(&s, &[4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]);
         assert!(uncompressed.is_ok());
-        assert!(!uncompressed.unwrap().is_compressed());
 
         let compressed = PublicKey::from_slice(&s, &[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
         assert!(compressed.is_ok());
-        assert!(compressed.unwrap().is_compressed());
     }
 
     #[test]
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
         assert_eq!(SecretKey::from_slice(&s, &sk1[..]), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(&s, &pk1[..]), Ok(pk1));
-
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng(), false).unwrap();
-        assert_eq!(SecretKey::from_slice(&s, &sk2[..]), Ok(sk2));
-        assert_eq!(PublicKey::from_slice(&s, &pk2[..]), Ok(pk2));
+        assert_eq!(PublicKey::from_slice(&s, &pk1.serialize_vec(&s, true)[..]), Ok(pk1));
+        assert_eq!(PublicKey::from_slice(&s, &pk1.serialize_vec(&s, false)[..]), Ok(pk1));
     }
 
     #[test]
@@ -554,7 +361,7 @@ mod test {
         let mut decoder = json::Decoder::new(json32.clone());
         assert!(<SecretKey as Decodable>::decode(&mut decoder).is_ok());
         let mut decoder = json::Decoder::new(json65.clone());
-        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_ok());
+        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_err());
         let mut decoder = json::Decoder::new(json65.clone());
         assert!(<SecretKey as Decodable>::decode(&mut decoder).is_err());
 
@@ -581,16 +388,13 @@ mod test {
                 let json = json::Json::from_reader(&mut Cursor::new(encoded.as_bytes())).unwrap();
                 let mut decoder = json::Decoder::new(json);
                 let decoded = Decodable::decode(&mut decoder);
-                assert_eq!(Some(start), decoded.ok());
+                assert_eq!(Ok(Some(start)), decoded);
             })
         );
 
         let s = Secp256k1::new();
         for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
-            round_trip!(sk);
-            round_trip!(pk);
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+            let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
             round_trip!(sk);
             round_trip!(pk);
         }
@@ -613,9 +417,10 @@ mod test {
         let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c))).unwrap();
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_ok());
 
+        // All zeroes pk is invalid
         let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
         let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c))).unwrap();
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_ok());
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
         let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c))).unwrap();
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
 
@@ -648,10 +453,7 @@ mod test {
 
         let s = Secp256k1::new();
         for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), false).unwrap();
-            round_trip!(sk);
-            round_trip!(pk);
-            let (sk, pk) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+            let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
             round_trip!(sk);
             round_trip!(pk);
         }
@@ -685,8 +487,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        s.generate_keypair(&mut BadRng(0xff), false).unwrap();
-        s.generate_keypair(&mut BadRng(0xff), true).unwrap();
+        s.generate_keypair(&mut BadRng(0xff)).unwrap();
     }
 
     #[test]
@@ -720,35 +521,46 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (sk1, pk1) = s.generate_keypair(&mut DumbRng(0), false).unwrap();
-        let (sk2, pk2) = s.generate_keypair(&mut DumbRng(0), true).unwrap();
+        let (sk, _) = s.generate_keypair(&mut DumbRng(0)).unwrap();
 
-        assert_eq!(&format!("{:?}", sk1),
+        assert_eq!(&format!("{:?}", sk),
                    "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
-        assert_eq!(&format!("{:?}", pk1),
-                   "PublicKey(049510c48c265cefb3413be0e6b75beef02ebafcaf6634f962b27b4832abc4feec01bd8ff2e31057f7b7a244ed8c5ccd9781a63a6f607b40b493330cd159ecd5ce)");
-        assert_eq!(&format!("{:?}", sk2),
-                   "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
-        assert_eq!(&format!("{:?}", pk2),
-                   "PublicKey(029510c48c265cefb3413be0e6b75beef02ebafcaf6634f962b27b4832abc4feec)");
+    }
+
+    #[test]
+    fn test_pubkey_serialize() {
+        struct DumbRng(u32);
+        impl Rng for DumbRng {
+            fn next_u32(&mut self) -> u32 {
+                self.0 = self.0.wrapping_add(1);
+                self.0
+            }
+        }
+
+        let s = Secp256k1::new();
+        let (_, pk1) = s.generate_keypair(&mut DumbRng(0)).unwrap();
+        assert_eq!(&pk1.serialize_vec(&s, false)[..],
+                   &[4, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236, 1, 189, 143, 242, 227, 16, 87, 247, 183, 162, 68, 237, 140, 92, 205, 151, 129, 166, 58, 111, 96, 123, 64, 180, 147, 51, 12, 209, 89, 236, 213, 206][..]);
+        assert_eq!(&pk1.serialize_vec(&s, true)[..],
+                   &[2, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236][..]);
     }
 
     #[test]
     fn test_addition() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng(), true).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng(), true).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1, true), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
         assert!(sk1.add_assign(&s, &sk2).is_ok());
         assert!(pk1.add_exp_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1, true), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2, true), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2, true), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 }
 

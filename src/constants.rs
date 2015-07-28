@@ -21,6 +21,10 @@ pub const MESSAGE_SIZE: usize = 32;
 /// The size (in bytes) of a secret key
 pub const SECRET_KEY_SIZE: usize = 32;
 
+/// The size (in bytes) of a public key array. This only needs to be 65
+/// but must be 72 for compatibility with the `ArrayVec` library.
+pub const PUBLIC_KEY_SIZE: usize = 72;
+
 /// The size (in bytes) of an uncompressed public key
 pub const UNCOMPRESSED_PUBLIC_KEY_SIZE: usize = 65;
 

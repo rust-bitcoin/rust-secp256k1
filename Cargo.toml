@@ -17,6 +17,7 @@ name = "secp256k1"
 path = "src/lib.rs"
 
 [dependencies]
+arrayvec = "0.3"
 rand = "0.3"
 libc = "0.1"
 rustc-serialize = "0.3"
