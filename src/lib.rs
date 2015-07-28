@@ -25,9 +25,6 @@
 #![crate_type = "dylib"]
 #![crate_name = "secp256k1"]
 
-// Keep this until 1.0 I guess; it's needed for `black_box` at least
-#![cfg_attr(test, feature(test))]
-
 // Coding conventions
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
@@ -35,10 +32,12 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+#![cfg_attr(all(test, feature = "unstable"), feature(test))]
+#[cfg(all(test, feature = "unstable"))] extern crate test;
+
 extern crate arrayvec;
 extern crate rustc_serialize as serialize;
 extern crate serde;
-#[cfg(test)] extern crate test;
 
 extern crate libc;
 extern crate rand;
@@ -369,8 +368,6 @@ impl Secp256k1 {
 mod tests {
     use rand::{Rng, thread_rng};
 
-    use test::{Bencher, black_box};
-
     use key::{SecretKey, PublicKey};
     use super::constants;
     use super::{Secp256k1, Signature, Message, RecoveryId, ContextFlag};
@@ -614,6 +611,14 @@ mod tests {
                            25, 26, 27, 28, 29, 30, 31, 255]);
         assert_eq!(&format!("{:?}", msg), "Message(0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fff)");
     }
+}
+
+#[cfg(all(test, feature = "unstable"))]
+mod benches {
+    use rand::{Rng, thread_rng};
+    use test::{Bencher, black_box};
+
+    use super::{Secp256k1, Message};
 
     #[bench]
     pub fn generate(bh: &mut Bencher) {

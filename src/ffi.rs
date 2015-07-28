@@ -34,7 +34,7 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
-#[repr(C)] struct ContextInner;
+#[repr(C)] struct ContextInner(c_int);
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these

@@ -16,6 +16,9 @@ readme = "README.md"
 name = "secp256k1"
 path = "src/lib.rs"
 
+[features]
+unstable = []
+
 [dependencies]
 arrayvec = "0.3"
 rand = "0.3"
