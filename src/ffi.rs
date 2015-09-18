@@ -64,15 +64,43 @@ impl PublicKey {
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
 #[allow(raw_pointer_derive)]
-pub struct Signature([c_uchar; 65]);
-impl_array_newtype!(Signature, c_uchar, 65);
+pub struct Signature([c_uchar; 64]);
+impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
 
+/// Library-internal representation of a Secp256k1 signature + recovery ID
+#[repr(C)]
+#[allow(raw_pointer_derive)]
+pub struct RecoverableSignature([c_uchar; 65]);
+impl_array_newtype!(RecoverableSignature, c_uchar, 65);
+impl_raw_debug!(RecoverableSignature);
+
 impl Signature {
-    /// Create a new (zeroed) public key usable for the FFI interface
-    pub fn new() -> Signature { Signature([0; 65]) }
-    /// Create a new (uninitialized) public key usable for the FFI interface
+    /// Create a new (zeroed) signature usable for the FFI interface
+    pub fn new() -> Signature { Signature([0; 64]) }
+    /// Create a new (uninitialized) signature usable for the FFI interface
     pub unsafe fn blank() -> Signature { mem::uninitialized() }
+}
+
+impl RecoverableSignature {
+    /// Create a new (zeroed) signature usable for the FFI interface
+    pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
+    /// Create a new (uninitialized) signature usable for the FFI interface
+    pub unsafe fn blank() -> RecoverableSignature { mem::uninitialized() }
+}
+
+/// Library-internal representation of an ECDH shared secret
+#[repr(C)]
+#[allow(raw_pointer_derive)]
+pub struct SharedSecret([c_uchar; 32]);
+impl_array_newtype!(SharedSecret, c_uchar, 32);
+impl_raw_debug!(SharedSecret);
+
+impl SharedSecret {
+    /// Create a new (zeroed) signature usable for the FFI interface
+    pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
+    /// Create a new (uninitialized) signature usable for the FFI interface
+    pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
 }
 
 unsafe impl Send for Context {}
@@ -95,6 +123,13 @@ extern "C" {
                                        seed32: *const c_uchar)
                                        -> c_int;
 
+    // TODO secp256k1_context_set_illegal_callback
+    // TODO secp256k1_context_set_error_callback
+    // (Actually, I don't really want these exposed; if either of these
+    // are ever triggered it indicates a bug in rust-secp256k1, since
+    // one goal is to use Rust's type system to eliminate all possible
+    // bad inputs.)
+
     // Pubkeys
     pub fn secp256k1_ec_pubkey_parse(cx: Context, pk: *mut PublicKey,
                                      input: *const c_uchar, in_len: c_int)
@@ -110,30 +145,49 @@ extern "C" {
                                                input: *const c_uchar, in_len: c_int)
                                                -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_parse_compact(cx: Context, sig: *mut Signature,
-                                                   input64: *const c_uchar, recid: c_int)
-                                                   -> c_int;
-
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: Context, output: *const c_uchar,
                                                    out_len: c_int, sig: *const Signature)
                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_serialize_compact(cx: Context, output64: *const c_uchar,
-                                                       recid: *mut c_int, sig: *const Signature)
-                                                       -> c_int;
+    pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: Context, sig: *mut RecoverableSignature,
+                                                               input64: *const c_uchar, recid: c_int)
+                                                               -> c_int;
+
+    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: Context, output64: *const c_uchar,
+                                                                   recid: *mut c_int, sig: *const RecoverableSignature)
+                                                                   -> c_int;
+
+    pub fn secp256k1_ecdsa_recoverable_signature_convert(cx: Context, sig: *mut Signature,
+                                                         input: *const RecoverableSignature) 
+                                                         -> c_int;
 
     // ECDSA
-    pub fn secp256k1_ecdsa_verify(cx: Context, msg32: *const c_uchar,
-                                  sig: *const Signature, pk: *const PublicKey)
+    pub fn secp256k1_ecdsa_verify(cx: Context,
+                                  sig: *const Signature,
+                                  msg32: *const c_uchar,
+                                  pk: *const PublicKey)
                                   -> c_int;
 
-    pub fn secp256k1_ecdsa_sign(cx: Context, msg32: *const c_uchar,
-                                sig: *mut Signature, sk: *const c_uchar,
-                                noncefn: NonceFn, noncedata: *const c_void)
+    pub fn secp256k1_ecdsa_sign(cx: Context,
+                                sig: *mut Signature,
+                                msg32: *const c_uchar,
+                                sk: *const c_uchar,
+                                noncefn: NonceFn,
+                                noncedata: *const c_void)
                                 -> c_int;
 
-    pub fn secp256k1_ecdsa_recover(cx: Context, msg32: *const c_uchar,
-                                   sig: *const Signature, pk: *mut PublicKey)
+    pub fn secp256k1_ecdsa_sign_recoverable(cx: Context,
+                                            sig: *mut RecoverableSignature,
+                                            msg32: *const c_uchar,
+                                            sk: *const c_uchar,
+                                            noncefn: NonceFn,
+                                            noncedata: *const c_void)
+                                            -> c_int;
+
+    pub fn secp256k1_ecdsa_recover(cx: Context,
+                                   pk: *mut PublicKey,
+                                   sig: *const RecoverableSignature,
+                                   msg32: *const c_uchar)
                                    -> c_int;
 
     // EC
@@ -168,8 +222,14 @@ extern "C" {
 
     pub fn secp256k1_ec_pubkey_combine(cx: Context,
                                        out: *mut PublicKey,
-                                       n: c_int,
-                                       ins: *const *const PublicKey)
+                                       ins: *const *const PublicKey,
+                                       n: c_int)
                                        -> c_int;
+
+    pub fn secp256k1_ecdh(cx: Context,
+                          out: *mut SharedSecret,
+                          point: *const PublicKey,
+                          scalar: *const c_uchar)
+                          -> c_int;
 }
 
