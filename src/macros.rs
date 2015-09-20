@@ -163,7 +163,7 @@ macro_rules! impl_array_newtype {
                             for i in 0..$len {
                                 ret[i] = match try!(v.visit()) {
                                     Some(c) => c,
-                                    None => return Err(::serde::de::Error::end_of_stream_error())
+                                    None => return Err(::serde::de::Error::end_of_stream())
                                 };
                             }
                             try!(v.end());

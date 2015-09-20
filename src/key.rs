@@ -255,7 +255,7 @@ impl Deserialize for PublicKey {
                     }
                     try!(v.end());
 
-                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|_| de::Error::syntax_error())
+                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|e| de::Error::syntax(&e.to_string()))
                 }
             }
         }
@@ -402,40 +402,42 @@ mod test {
 
     #[test]
     fn test_bad_serde_deserialize() {
-        use serde::{json, Deserialize};
+        use serde::Deserialize;
+        use json;
 
         // Invalid length
         let zero31 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c)));
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c)));
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
 
         let zero32 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c)));
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c)));
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_ok());
 
         // All zeroes pk is invalid
         let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c)));
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c)));
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
 
         // Syntax error
         let string = "\"my key\"".as_bytes();
-        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c)));
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c))).unwrap();
+        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c)));
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
     }
 
 
     #[test]
     fn test_serialize_serde() {
-        use serde::{json, Serialize, Deserialize};
+        use serde::{Serialize, Deserialize};
+        use json;
 
         macro_rules! round_trip (
             ($var:ident) => ({
@@ -445,7 +447,7 @@ mod test {
                     let mut serializer = json::ser::Serializer::new(&mut encoded);
                     start.serialize(&mut serializer).unwrap();
                 }
-                let mut deserializer = json::de::Deserializer::new(encoded.iter().map(|c| Ok(*c))).unwrap();
+                let mut deserializer = json::de::Deserializer::new(encoded.iter().map(|c| Ok(*c)));
                 let decoded = Deserialize::deserialize(&mut deserializer);
                 assert_eq!(Some(start), decoded.ok());
             })

@@ -17,7 +17,9 @@
 use std::mem;
 use libc::{c_int, c_uchar, c_uint, c_void};
 
+/// Flag for context to enable verification precomputation
 pub const SECP256K1_START_VERIFY: c_uint = 0x1;
+/// Flag for context to enable signing precomputation
 pub const SECP256K1_START_SIGN: c_uint = 0x2;
 
 /// A nonce generation function. Ordinary users of the library
