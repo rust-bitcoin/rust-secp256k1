@@ -112,6 +112,7 @@ mod benches {
     use rand::{Rng, thread_rng};
     use test::{Bencher, black_box};
 
+    use super::SharedSecret;
     use super::super::{Secp256k1, Message};
 
     #[bench]
@@ -120,7 +121,6 @@ mod benches {
         let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
 
         let s = Secp256k1::new();
-        let mut r = CounterRng(0);
         bh.iter( || {
             let res = SharedSecret::new(&s, &pk, &sk);
             black_box(res);

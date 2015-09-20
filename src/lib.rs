@@ -729,7 +729,7 @@ mod benches {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
         let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let sig = s.sign(&msg, &sk).unwrap();
+        let sig = s.sign_recoverable(&msg, &sk).unwrap();
 
         bh.iter(|| {
             let res = s.recover(&msg, &sig).unwrap();
