@@ -45,7 +45,6 @@ extern crate rand;
 
 use std::intrinsics::copy_nonoverlapping;
 use std::{fmt, ops, ptr};
-use libc::c_int;
 use rand::Rng;
 
 #[macro_use]
@@ -75,7 +74,7 @@ impl Signature {
 
         unsafe {
             if ffi::secp256k1_ecdsa_signature_parse_der(secp.ctx, &mut ret,
-                                                        data.as_ptr(), data.len() as libc::c_int) == 1 {
+                                                        data.as_ptr(), data.len() as libc::size_t) == 1 {
                 Ok(Signature(ret))
             } else {
                 Err(Error::InvalidSignature)

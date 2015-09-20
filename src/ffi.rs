@@ -15,7 +15,7 @@
 
 //! FFI bindings
 use std::mem;
-use libc::{c_int, c_uchar, c_uint, c_void};
+use libc::{c_int, c_uchar, c_uint, c_void, size_t};
 
 /// Flag for context to enable verification precomputation
 pub const SECP256K1_START_VERIFY: c_uint = 0x1;
@@ -134,21 +134,21 @@ extern "C" {
 
     // Pubkeys
     pub fn secp256k1_ec_pubkey_parse(cx: Context, pk: *mut PublicKey,
-                                     input: *const c_uchar, in_len: c_int)
+                                     input: *const c_uchar, in_len: size_t)
                                      -> c_int;
 
     pub fn secp256k1_ec_pubkey_serialize(cx: Context, output: *const c_uchar,
-                                         out_len: *mut c_int, pk: *const PublicKey
-,                                        compressed: c_int)
+                                         out_len: *mut size_t, pk: *const PublicKey
+,                                        compressed: c_uint)
                                          -> c_int;
 
     // Signatures
     pub fn secp256k1_ecdsa_signature_parse_der(cx: Context, sig: *mut Signature,
-                                               input: *const c_uchar, in_len: c_int)
+                                               input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: Context, output: *const c_uchar,
-                                                   out_len: c_int, sig: *const Signature)
+                                                   out_len: *const size_t, sig: *const Signature)
                                                    -> c_int;
 
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: Context, sig: *mut RecoverableSignature,
