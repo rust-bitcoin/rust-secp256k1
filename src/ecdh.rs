@@ -109,11 +109,11 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
-    use rand::{Rng, thread_rng};
+    use rand::thread_rng;
     use test::{Bencher, black_box};
 
     use super::SharedSecret;
-    use super::super::{Secp256k1, Message};
+    use super::super::Secp256k1;
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
