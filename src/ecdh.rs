@@ -112,7 +112,7 @@ mod benches {
     use rand::{Rng, thread_rng};
     use test::{Bencher, black_box};
 
-    use super::{Secp256k1, Message};
+    use super::super::{Secp256k1, Message};
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
