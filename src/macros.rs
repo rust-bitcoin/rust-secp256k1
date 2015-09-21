@@ -214,10 +214,3 @@ macro_rules! impl_raw_debug {
      }
 }
 
-// for testing
-macro_rules! hex_slice {
-  ($s:expr) => (
-    &$s.from_hex().unwrap()[..]
-  )
-}
-
