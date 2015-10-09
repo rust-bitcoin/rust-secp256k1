@@ -13,7 +13,9 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! FFI bindings
+//! # FFI bindings
+//! Direct bindings to the underlying C library functions. These should
+//! not be needed for most users.
 use std::mem;
 use libc::{c_int, c_uchar, c_uint, c_void, size_t};
 

@@ -13,7 +13,8 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! Constants
+//! # Constants
+//! Constants related to the API and the underlying curve
 
 /// The size (in bytes) of a message
 pub const MESSAGE_SIZE: usize = 32;

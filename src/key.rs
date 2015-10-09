@@ -13,7 +13,7 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! Public/Private keys
+//! # Public and secret keys
 
 use std::intrinsics::copy_nonoverlapping;
 use std::marker;

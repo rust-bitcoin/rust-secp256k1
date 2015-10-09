@@ -182,7 +182,7 @@ impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
 
 impl Message {
-    /// Converts a `MESSAGE_SIZE`-byte slice to a nonce
+    /// Converts a `MESSAGE_SIZE`-byte slice to a message object
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
         match data.len() {
