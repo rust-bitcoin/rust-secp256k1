@@ -43,7 +43,7 @@ extern crate serde_json as json;
 extern crate libc;
 extern crate rand;
 
-use std::intrinsics::copy_nonoverlapping;
+use libc::size_t;
 use std::{fmt, ops, ptr};
 use rand::Rng;
 
@@ -92,6 +92,20 @@ impl Signature {
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
         &self.0 as *const _
+    }
+
+    #[inline]
+    /// Serializes the signature in DER format
+    pub fn serialize_der(&self, secp: &Secp256k1) -> Vec<u8> {
+        let mut ret = Vec::with_capacity(72);
+        let mut len: size_t = ret.capacity() as size_t;
+        unsafe {
+            let err = ffi::secp256k1_ecdsa_signature_serialize_der(secp.ctx, ret.as_mut_ptr(),
+                                                                   &mut len, self.as_ptr());
+            debug_assert!(err == 1);
+            ret.set_len(len as usize);
+        }
+        ret
     }
 }
 
@@ -189,9 +203,9 @@ impl Message {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0; constants::MESSAGE_SIZE];
                 unsafe {
-                    copy_nonoverlapping(data.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        data.len());
+                    ptr::copy_nonoverlapping(data.as_ptr(),
+                                             ret.as_mut_ptr(),
+                                             data.len());
                 }
                 Ok(Message(ret))
             }
@@ -417,6 +431,7 @@ impl Secp256k1 {
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
+    use std::ptr;
 
     use key::{SecretKey, PublicKey};
     use super::constants;
@@ -526,6 +541,24 @@ mod tests {
     }
 
     #[test]
+    fn signature_der_roundtrip() {
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
+
+        let mut msg = [0; 32];
+        for _ in 0..100 {
+            thread_rng().fill_bytes(&mut msg);
+            let msg = Message::from_slice(&msg).unwrap();
+
+            let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+            let sig1 = s.sign(&msg, &sk).unwrap();
+            let der = sig1.serialize_der(&s);
+            let sig2 = Signature::from_der(&s, &der[..]).unwrap();
+            assert_eq!(sig1, sig2);
+         }
+    }
+
+    #[test]
     fn sign_and_verify() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -555,16 +588,15 @@ mod tests {
         wild_msgs[1][0] = 1;
         unsafe {
             use constants;
-            use std::intrinsics::copy_nonoverlapping;
-            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                wild_keys[1].as_mut_ptr(),
-                                32);
-            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                wild_msgs[1].as_mut_ptr(),
-                                32);
-            copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                wild_msgs[2].as_mut_ptr(),
-                                32);
+            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                     wild_keys[1].as_mut_ptr(),
+                                     32);
+            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                     wild_msgs[1].as_mut_ptr(),
+                                     32);
+            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
+                                     wild_msgs[2].as_mut_ptr(),
+                                     32);
             wild_keys[1][0] -= 1;
             wild_msgs[1][0] -= 1;
         }
