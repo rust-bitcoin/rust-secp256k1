@@ -141,6 +141,19 @@ impl RecoverableSignature {
         &self.0 as *const _
     }
 
+    #[inline]
+    /// Serializes the recoverable signature in compact format
+    pub fn serialize_compact(&self, secp: &Secp256k1) -> (RecoveryId, [u8; 64]) {
+        let mut ret = [0u8; 64];
+        let mut recid = 0i32;
+        unsafe {
+            let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
+                secp.ctx, ret.as_mut_ptr(), &mut recid, self.as_ptr());
+            assert!(err == 1);
+        }
+        (RecoveryId(recid), ret)
+    }
+
     /// Converts a recoverable signature to a non-recoverable one (this is needed
     /// for verification
     #[inline]
@@ -699,6 +712,27 @@ mod tests {
                            17, 18, 19, 20, 21, 22, 23, 24,
                            25, 26, 27, 28, 29, 30, 31, 255]);
         assert_eq!(&format!("{:?}", msg), "Message(0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fff)");
+    }
+
+    #[test]
+    fn test_recov_sig_serialize_compact() {
+        let s = Secp256k1::new();
+
+        let recid_in = RecoveryId(1);
+        let bytes_in = &[
+            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
+            0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
+            0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
+            0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
+            0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
+            0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
+            0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
+            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89];
+        let sig = RecoverableSignature::from_compact(
+            &s, bytes_in, recid_in).unwrap();
+        let (recid_out, bytes_out) = sig.serialize_compact(&s);
+        assert_eq!(recid_in, recid_out);
+        assert_eq!(&bytes_in[..], &bytes_out[..]);
     }
 }
 
