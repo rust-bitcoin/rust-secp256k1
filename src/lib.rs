@@ -66,6 +66,23 @@ pub struct Signature(ffi::Signature);
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
+impl RecoveryId {
+    #[inline]
+    /// Allows library users to create valid recovery IDs from i32.
+    pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
+        match id {
+            0 | 1 | 2 | 3 => Ok(RecoveryId(id)),
+            _ => Err(Error::InvalidRecoveryId)
+        }
+    }
+
+    #[inline]
+    /// Allows library users to convert recovery IDs to i32.
+    pub fn to_i32(&self) -> i32 {
+        self.0
+    }
+}
+
 impl Signature {
     #[inline]
     /// Converts a DER-encoded byte slice to a signature
@@ -243,6 +260,8 @@ pub enum Error {
     InvalidSignature,
     /// Bad secret key
     InvalidSecretKey,
+    /// Bad recovery id
+    InvalidRecoveryId,
     /// Boolean-returning function returned the wrong boolean
     Unknown
 }
@@ -733,6 +752,20 @@ mod tests {
         let (recid_out, bytes_out) = sig.serialize_compact(&s);
         assert_eq!(recid_in, recid_out);
         assert_eq!(&bytes_in[..], &bytes_out[..]);
+    }
+
+    #[test]
+    fn test_recov_id_conversion_between_i32() {
+        assert!(RecoveryId::from_i32(-1).is_err());
+        assert!(RecoveryId::from_i32(0).is_ok());
+        assert!(RecoveryId::from_i32(1).is_ok());
+        assert!(RecoveryId::from_i32(2).is_ok());
+        assert!(RecoveryId::from_i32(3).is_ok());
+        assert!(RecoveryId::from_i32(4).is_err());
+        let id0 = RecoveryId::from_i32(0).unwrap();
+        assert_eq!(id0.to_i32(), 0);
+        let id1 = RecoveryId(1);
+        assert_eq!(id1.to_i32(), 1);
     }
 }
 
