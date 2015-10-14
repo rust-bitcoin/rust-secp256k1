@@ -172,6 +172,9 @@ impl PublicKey {
     /// Adds the pk corresponding to `other` to the pk `self` in place
     pub fn add_exp_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
                          -> Result<(), Error> {
+        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
+            return Err(IncapableContext);
+        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
@@ -282,7 +285,7 @@ impl Serialize for PublicKey {
 
 #[cfg(test)]
 mod test {
-    use super::super::Secp256k1;
+    use super::super::{Secp256k1, ContextFlag};
     use super::super::Error::{InvalidPublicKey, InvalidSecretKey, IncapableContext};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
@@ -347,7 +350,33 @@ mod test {
     fn test_pubkey_from_slice_bad_context() {
         let s = Secp256k1::without_caps();
         let sk = SecretKey::new(&s, &mut thread_rng());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext))
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
+
+        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
+
+        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
+        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
+
+        let s = Secp256k1::with_caps(ContextFlag::Full);
+        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
+    }
+
+    #[test]
+    fn test_add_exp_bad_context() {
+        let s = Secp256k1::with_caps(ContextFlag::Full);
+        let (sk, mut pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        assert!(pk.add_exp_assign(&s, &sk).is_ok());
+
+        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
+        assert!(pk.add_exp_assign(&s, &sk).is_ok());
+
+        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
+        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
+
+        let s = Secp256k1::with_caps(ContextFlag::None);
+        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
     }
 
     #[test]
