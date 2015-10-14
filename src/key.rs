@@ -22,8 +22,8 @@ use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
-use super::Secp256k1;
-use super::Error::{self, InvalidPublicKey, InvalidSecretKey, Unknown};
+use super::{Secp256k1, ContextFlag};
+use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey, Unknown};
 use constants;
 use ffi;
 
@@ -103,12 +103,6 @@ impl PublicKey {
         PublicKey(ffi::PublicKey::new())
     }
 
-    /// Creates a new public key from a FFI public key
-    #[inline]
-    pub fn from_ffi(pk: ffi::PublicKey) -> PublicKey {
-        PublicKey(pk)
-    }
-
     /// Determines whether a pubkey is valid
     #[inline]
     pub fn is_valid(&self) -> bool {
@@ -127,7 +121,10 @@ impl PublicKey {
     #[inline]
     pub fn from_secret_key(secp: &Secp256k1,
                            sk: &SecretKey)
-                           -> PublicKey {
+                           -> Result<PublicKey, Error> {
+        if secp.caps == ContextFlag::VerifyOnly || secp.caps == ContextFlag::None {
+            return Err(IncapableContext);
+        }
         let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -135,7 +132,7 @@ impl PublicKey {
             let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_ptr());
             debug_assert_eq!(res, 1);
         }
-        PublicKey(pk)
+        Ok(PublicKey(pk))
     }
 
     /// Creates a public key directly from a slice
@@ -215,6 +212,15 @@ impl Decodable for PublicKey {
     }
 }
 
+/// Creates a new public key from a FFI public key
+impl From<ffi::PublicKey> for PublicKey {
+    #[inline]
+    fn from(pk: ffi::PublicKey) -> PublicKey {
+        PublicKey(pk)
+    }
+}
+
+
 impl Encodable for PublicKey {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         let secp = Secp256k1::with_caps(::ContextFlag::None);
@@ -277,7 +283,7 @@ impl Serialize for PublicKey {
 #[cfg(test)]
 mod test {
     use super::super::Secp256k1;
-    use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
+    use super::super::Error::{InvalidPublicKey, InvalidSecretKey, IncapableContext};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
@@ -335,6 +341,13 @@ mod test {
                                         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
                                         0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
                                         0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41]).is_err());
+    }
+
+    #[test]
+    fn test_pubkey_from_slice_bad_context() {
+        let s = Secp256k1::without_caps();
+        let sk = SecretKey::new(&s, &mut thread_rng());
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext))
     }
 
     #[test]
@@ -554,15 +567,15 @@ mod test {
         let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
         let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
         assert!(sk1.add_assign(&s, &sk2).is_ok());
         assert!(pk1.add_exp_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
     }
 }
 

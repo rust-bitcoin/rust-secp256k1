@@ -99,12 +99,6 @@ impl Signature {
         }
     }
 
-    /// Creates a new public key from a FFI public key
-    #[inline]
-    pub fn from_ffi(sig: ffi::Signature) -> Signature {
-        Signature(sig)
-    }
-
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
@@ -126,6 +120,15 @@ impl Signature {
     }
 }
 
+/// Creates a new signature from a FFI signature
+impl From<ffi::Signature> for Signature {
+    #[inline]
+    fn from(sig: ffi::Signature) -> Signature {
+        Signature(sig)
+    }
+}
+
+
 impl RecoverableSignature {
     #[inline]
     /// Converts a compact-encoded byte slice to a signature. This
@@ -144,12 +147,6 @@ impl RecoverableSignature {
                 Err(Error::InvalidSignature)
             }
         }
-    }
-
-    /// Creates a new public key from a FFI public key
-    #[inline]
-    pub fn from_ffi(sig: ffi::RecoverableSignature) -> RecoverableSignature {
-        RecoverableSignature(sig)
     }
 
     /// Obtains a raw pointer suitable for use with FFI functions
@@ -181,6 +178,14 @@ impl RecoverableSignature {
             assert!(err == 1);
         }
         Signature(ret)
+    }
+}
+
+/// Creates a new recoverable signature from a FFI one
+impl From<ffi::RecoverableSignature> for RecoverableSignature {
+    #[inline]
+    fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
+        RecoverableSignature(sig)
     }
 }
 
@@ -345,6 +350,11 @@ impl Secp256k1 {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(flag) }, caps: caps }
     }
 
+    /// Creates a new Secp256k1 context with no capabilities (just de/serialization)
+    pub fn without_caps() -> Secp256k1 {
+        Secp256k1::with_caps(ContextFlag::None)
+    }
+
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistence;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell
     pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
@@ -370,12 +380,8 @@ impl Secp256k1 {
     #[inline]
     pub fn generate_keypair<R: Rng>(&self, rng: &mut R)
                                    -> Result<(key::SecretKey, key::PublicKey), Error> {
-        if self.caps == ContextFlag::VerifyOnly || self.caps == ContextFlag::None {
-            return Err(Error::IncapableContext);
-        }
-
         let sk = key::SecretKey::new(self, rng);
-        let pk = key::PublicKey::from_secret_key(self, &sk);
+        let pk = try!(key::PublicKey::from_secret_key(self, &sk));
         Ok((sk, pk))
     }
 
@@ -395,7 +401,7 @@ impl Secp256k1 {
                                                  sk.as_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                  ptr::null()), 1);
         }
-        Ok(Signature::from_ffi(ret))
+        Ok(Signature::from(ret))
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
@@ -414,7 +420,7 @@ impl Secp256k1 {
                                                              sk.as_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                              ptr::null()), 1);
         }
-        Ok(RecoverableSignature::from_ffi(ret))
+        Ok(RecoverableSignature::from(ret))
     }
 
     /// Determines the public key for which `sig` is a valid signature for
@@ -434,7 +440,7 @@ impl Secp256k1 {
                 return Err(Error::InvalidSignature);
             }
         };
-        Ok(key::PublicKey::from_ffi(pk))
+        Ok(key::PublicKey::from(pk))
     }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
@@ -636,7 +642,7 @@ mod tests {
         for key in wild_keys.iter().map(|k| SecretKey::from_slice(&s, &k[..]).unwrap()) {
             for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
                 let sig = s.sign(&msg, &key).unwrap();
-                let pk = PublicKey::from_secret_key(&s, &key);
+                let pk = PublicKey::from_secret_key(&s, &key).unwrap();
                 assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
             }
         }

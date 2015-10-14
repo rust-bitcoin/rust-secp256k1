@@ -38,18 +38,21 @@ impl SharedSecret {
         }
     }
 
-    /// Creates a new shared secret from a FFI shared secret
-    #[inline]
-    pub fn from_ffi(ss: ffi::SharedSecret) -> SharedSecret {
-        SharedSecret(ss)
-    }
-
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::SharedSecret {
         &self.0 as *const _
     }
 }
+
+/// Creates a new shared secret from a FFI shared secret
+impl From<ffi::SharedSecret> for SharedSecret {
+    #[inline]
+    fn from(ss: ffi::SharedSecret) -> SharedSecret {
+        SharedSecret(ss)
+    }
+}
+
 
 impl ops::Index<usize> for SharedSecret {
     type Output = u8;
