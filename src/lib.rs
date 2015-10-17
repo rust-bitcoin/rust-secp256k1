@@ -44,7 +44,7 @@ extern crate libc;
 extern crate rand;
 
 use libc::size_t;
-use std::{fmt, ops, ptr};
+use std::{error, fmt, ops, ptr};
 use rand::Rng;
 
 #[macro_use]
@@ -267,14 +267,28 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad recovery id
     InvalidRecoveryId,
-    /// Boolean-returning function returned the wrong boolean
-    Unknown
 }
 
 // Passthrough Debug to Display, since errors should be user-visible
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        fmt::Debug::fmt(self, f)
+        f.write_str(error::Error::description(self))
+    }
+}
+
+impl error::Error for Error {
+    fn cause(&self) -> Option<&error::Error> { None }
+
+    fn description(&self) -> &str {
+        match *self {
+            Error::IncapableContext => "secp: context does not have sufficient capabilities",
+            Error::IncorrectSignature => "secp: signature failed verification",
+            Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
+            Error::InvalidPublicKey => "secp: malformed public key",
+            Error::InvalidSignature => "secp: malformed signature",
+            Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
+            Error::InvalidRecoveryId => "secp: bad recovery id"
+        }
     }
 }
 

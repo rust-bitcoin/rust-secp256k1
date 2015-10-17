@@ -23,7 +23,7 @@ use serialize::{Decoder, Decodable, Encoder, Encodable};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 use super::{Secp256k1, ContextFlag};
-use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey, Unknown};
+use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
 use constants;
 use ffi;
 
@@ -88,7 +88,7 @@ impl SecretKey {
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
-                Err(Unknown)
+                Err(InvalidSecretKey)
             } else {
                 Ok(())
             }
@@ -180,7 +180,7 @@ impl PublicKey {
                                                   other.as_ptr()) == 1 {
                 Ok(())
             } else {
-                Err(Unknown)
+                Err(InvalidSecretKey)
             }
         }
     }
