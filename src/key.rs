@@ -160,9 +160,10 @@ impl PublicKey {
 
         unsafe {
             let mut ret_len = ret.len() as ::libc::size_t;
+            let compressed = if compressed { ffi::SECP256K1_SER_COMPRESSED } else { ffi::SECP256K1_SER_UNCOMPRESSED };
             debug_assert!(ffi::secp256k1_ec_pubkey_serialize(secp.ctx, ret.as_ptr(),
                                                              &mut ret_len, self.as_ptr(),
-                                                             if compressed {1} else {0}) == 1);
+                                                             compressed) == 1);
             ret.set_len(ret_len as usize);
         }
         ret

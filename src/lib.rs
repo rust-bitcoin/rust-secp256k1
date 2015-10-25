@@ -356,7 +356,7 @@ impl Secp256k1 {
     /// Creates a new Secp256k1 context with the specified capabilities
     pub fn with_caps(caps: ContextFlag) -> Secp256k1 {
         let flag = match caps {
-            ContextFlag::None => 0,
+            ContextFlag::None => ffi::SECP256K1_START_NONE,
             ContextFlag::SignOnly => ffi::SECP256K1_START_SIGN,
             ContextFlag::VerifyOnly => ffi::SECP256K1_START_VERIFY,
             ContextFlag::Full => ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY
