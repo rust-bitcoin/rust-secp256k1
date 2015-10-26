@@ -174,6 +174,10 @@ extern "C" {
                                                          input: *const RecoverableSignature) 
                                                          -> c_int;
 
+    pub fn secp256k1_ecdsa_signature_normalize(cx: Context, out_sig: *mut Signature,
+                                               in_sig: *const Signature)
+                                               -> c_int;
+
     // ECDSA
     pub fn secp256k1_ecdsa_verify(cx: Context,
                                   sig: *const Signature,

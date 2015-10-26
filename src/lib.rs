@@ -115,10 +115,42 @@ impl Signature {
         }
     }
 
+    /// Normalizes a signature to a "low S" form. In ECDSA, signatures are
+    /// of the form (r, s) where r and s are numbers lying in some finite
+    /// field. The verification equation will pass for (r, s) iff it passes
+    /// for (r, -s), so it is possible to ``modify'' signatures in transit
+    /// by flipping the sign of s. This does not constitute a forgery since
+    /// the signed message still cannot be changed, but for some applications,
+    /// changing even the signature itself can be a problem. Such applications
+    /// require a "strong signature". It is believed that ECDSA is a strong
+    /// signature except for this ambiguity in the sign of s, so to accomodate
+    /// these applications libsecp256k1 will only accept signatures for which
+    /// s is in the lower half of the field range. This eliminates the
+    /// ambiguity.
+    ///
+    /// However, for some systems, signatures with high s-values are considered
+    /// valid. (For example, parsing the historic Bitcoin blockchain requires
+    /// this.) For these applications we provide this normalization function,
+    /// which ensures that the s value lies in the lower half of its range.
+    pub fn normalize_s(&mut self, secp: &Secp256k1) {
+        unsafe {
+            // Ignore return value, which indicates whether the sig
+            // was already normalized. We don't care.
+            ffi::secp256k1_ecdsa_signature_normalize(secp.ctx, self.as_mut_ptr(),
+                                                     self.as_ptr());
+        }
+    }
+
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
         &self.0 as *const _
+    }
+
+    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature {
+        &mut self.0 as *mut _
     }
 
     #[inline]
@@ -631,10 +663,21 @@ mod tests {
 
     #[test]
     fn signature_lax_der() {
-        let secp = Secp256k1::without_caps();
-        let sig = hex!("304402204c2dd8a9b6f8d425fcd8ee9a20ac73b619906a6367eac6cb93e70375225ec0160220356878eff111ff3663d7e6bf08947f94443845e0dcc54961664d922f7660b80c01");
-        assert!(Signature::from_der(&secp, &sig[..]).is_err());
-        assert!(Signature::from_der_lax(&secp, &sig[..]).is_ok());
+        macro_rules! check_lax_sig(
+            ($hex:expr) => ({
+                let secp = Secp256k1::without_caps();
+                let sig = hex!($hex);
+                assert!(Signature::from_der_lax(&secp, &sig[..]).is_ok());
+            })
+        );
+
+        check_lax_sig!("304402204c2dd8a9b6f8d425fcd8ee9a20ac73b619906a6367eac6cb93e70375225ec0160220356878eff111ff3663d7e6bf08947f94443845e0dcc54961664d922f7660b80c");
+        check_lax_sig!("304402202ea9d51c7173b1d96d331bd41b3d1b4e78e66148e64ed5992abd6ca66290321c0220628c47517e049b3e41509e9d71e480a0cdc766f8cdec265ef0017711c1b5336f");
+        check_lax_sig!("3045022100bf8e050c85ffa1c313108ad8c482c4849027937916374617af3f2e9a881861c9022023f65814222cab09d5ec41032ce9c72ca96a5676020736614de7b78a4e55325a");
+        check_lax_sig!("3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45");
+        check_lax_sig!("3046022100eaa5f90483eb20224616775891397d47efa64c68b969db1dacb1c30acdfc50aa022100cf9903bbefb1c8000cf482b0aeeb5af19287af20bd794de11d82716f9bae3db1");
+        check_lax_sig!("3045022047d512bc85842ac463ca3b669b62666ab8672ee60725b6c06759e476cebdc6c102210083805e93bd941770109bcc797784a71db9e48913f702c56e60b1c3e2ff379a60");
+        check_lax_sig!("3044022023ee4e95151b2fbbb08a72f35babe02830d14d54bd7ed1320e4751751d1baa4802206235245254f58fd1be6ff19ca291817da76da65c2f6d81d654b5185dd86b8acf");
     }
 
     #[test]
@@ -813,6 +856,27 @@ mod tests {
         assert_eq!(id0.to_i32(), 0);
         let id1 = RecoveryId(1);
         assert_eq!(id1.to_i32(), 1);
+    }
+
+    #[test]
+    fn test_low_s() {
+        // nb this is a transaction on testnet
+        // txid 8ccc87b72d766ab3128f03176bb1c98293f2d1f85ebfaf07b82cc81ea6891fa9
+        //      input number 3
+        let sig = hex!("3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45");
+        let pk = hex!("031ee99d2b786ab3b0991325f2de8489246a6a3fdb700f6d0511b1d80cf5f4cd43");
+        let msg = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
+
+        let secp = Secp256k1::new();
+        let mut sig = Signature::from_der(&secp, &sig[..]).unwrap();
+        let pk = PublicKey::from_slice(&secp, &pk[..]).unwrap();
+        let msg = Message::from_slice(&msg[..]).unwrap();
+
+        // without normalization we expect this will fail
+        assert_eq!(secp.verify(&msg, &sig, &pk), Err(IncorrectSignature));
+        // after normalization it should pass
+        sig.normalize_s(&secp);
+        assert_eq!(secp.verify(&msg, &sig, &pk), Ok(()));
     }
 }
 
