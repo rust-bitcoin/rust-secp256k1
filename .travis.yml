@@ -7,11 +7,6 @@ matrix:
     - rust: nightly
 
 install:
-  - git clone https://github.com/bitcoin/secp256k1.git
-  - cd secp256k1
-  - ./autogen.sh && ./configure --enable-module-ecdh --enable-module-recovery && make && sudo make install
-  - sudo ldconfig /usr/local/lib
-  - cd ..
   - |
       pip install 'travis-cargo<0.2' --user &&
       export PATH=$HOME/.local/bin:$PATH
