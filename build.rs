@@ -24,21 +24,25 @@
 extern crate gcc;
 
 fn main() {
-    gcc::Config::new()
-                .file("depend/secp256k1/src/secp256k1.c")
-                .include("depend/secp256k1/")
-                .include("depend/secp256k1/src")
-                // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
-                .define("USE_NUM_NONE", Some("1"))
-                .define("USE_FIELD_INV_BUILTIN", Some("1"))
-                .define("USE_SCALAR_INV_BUILTIN", Some("1"))
-                // TODO these should use 64-bit variants on 64-bit systems
-                .define("USE_FIELD_10X26", Some("1"))
-                .define("USE_SCALAR_8X32", Some("1"))
-                .define("USE_ENDOMORPHISM", Some("1"))
-                // These all are OK.
-                .define("ENABLE_MODULE_ECDH", Some("1"))
-                .define("ENABLE_MODULE_RECOVERY", Some("1"))
-                .compile("libsecp256k1.a");
+    let mut base_config = gcc::Config::new();
+    base_config.include("depend/secp256k1/")
+               .include("depend/secp256k1/src")
+               .flag("-g")
+               // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
+               .define("USE_NUM_NONE", Some("1"))
+               .define("USE_FIELD_INV_BUILTIN", Some("1"))
+               .define("USE_SCALAR_INV_BUILTIN", Some("1"))
+               // TODO these should use 64-bit variants on 64-bit systems
+               .define("USE_FIELD_10X26", Some("1"))
+               .define("USE_SCALAR_8X32", Some("1"))
+               .define("USE_ENDOMORPHISM", Some("1"))
+               // These all are OK.
+               .define("ENABLE_MODULE_ECDH", Some("1"))
+               .define("ENABLE_MODULE_RECOVERY", Some("1"));
+
+    // secp256k1
+    base_config.file("depend/secp256k1/src/laxder_shim.c")
+               .file("depend/secp256k1/src/secp256k1.c")
+               .compile("libsecp256k1.a");
 }
 

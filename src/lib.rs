@@ -99,6 +99,22 @@ impl Signature {
         }
     }
 
+    /// Converts a "lax DER"-encoded byte slice to a signature. This is basically
+    /// only useful for validating signatures in the Bitcoin blockchain from before
+    /// 2016. It should never be used in new applications. This library does not
+    /// support serializing to this "format"
+    pub fn from_der_lax(secp: &Secp256k1, data: &[u8]) -> Result<Signature, Error> {
+        unsafe {
+            let mut ret = ffi::Signature::blank();
+            if ffi::secp256k1_ecdsa_signature_parse_der_lax_(secp.ctx, &mut ret,
+                                                             data.as_ptr(), data.len() as libc::size_t) == 1 {
+                Ok(Signature(ret))
+            } else {
+                Err(Error::InvalidSignature)
+            }
+        }
+    }
+
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
@@ -484,12 +500,15 @@ impl Secp256k1 {
 mod tests {
     use rand::{Rng, thread_rng};
     use std::ptr;
+    use serialize::hex::FromHex;
 
     use key::{SecretKey, PublicKey};
     use super::constants;
     use super::{Secp256k1, Signature, RecoverableSignature, Message, RecoveryId, ContextFlag};
     use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature,
                        IncapableContext};
+
+    macro_rules! hex (($hex:expr) => ($hex.from_hex().unwrap()));
 
     #[test]
     fn capabilities() {
@@ -608,6 +627,14 @@ mod tests {
             let sig2 = Signature::from_der(&s, &der[..]).unwrap();
             assert_eq!(sig1, sig2);
          }
+    }
+
+    #[test]
+    fn signature_lax_der() {
+        let secp = Secp256k1::without_caps();
+        let sig = hex!("304402204c2dd8a9b6f8d425fcd8ee9a20ac73b619906a6367eac6cb93e70375225ec0160220356878eff111ff3663d7e6bf08947f94443845e0dcc54961664d922f7660b80c01");
+        assert!(Signature::from_der(&secp, &sig[..]).is_err());
+        assert!(Signature::from_der_lax(&secp, &sig[..]).is_ok());
     }
 
     #[test]

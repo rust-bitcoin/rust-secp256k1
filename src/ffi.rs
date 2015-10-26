@@ -154,6 +154,10 @@ extern "C" {
                                                input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
+    pub fn secp256k1_ecdsa_signature_parse_der_lax_(cx: Context, sig: *mut Signature,
+                                                    input: *const c_uchar, in_len: size_t)
+                                                    -> c_int;
+
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: Context, output: *const c_uchar,
                                                    out_len: *const size_t, sig: *const Signature)
                                                    -> c_int;
