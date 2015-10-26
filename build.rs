@@ -26,6 +26,7 @@ extern crate gcc;
 fn main() {
     let mut base_config = gcc::Config::new();
     base_config.include("depend/secp256k1/")
+               .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
                .flag("-g")
                // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
