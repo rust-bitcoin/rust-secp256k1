@@ -159,7 +159,7 @@ extern "C" {
                                                     -> c_int;
 
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: Context, output: *const c_uchar,
-                                                   out_len: *const size_t, sig: *const Signature)
+                                                   out_len: *mut size_t, sig: *const Signature)
                                                    -> c_int;
 
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: Context, sig: *mut RecoverableSignature,
