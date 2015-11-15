@@ -44,19 +44,13 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
-#[repr(C)] struct ContextInner(c_int);
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
 /// with `secp256k1_context_create` you MUST destroy it with
 /// `secp256k1_context_destroy`, or else you will have a memory leak.
-/// Furthermore, you MUST NOT use this object after destroying it; it is
-/// `Copy` so the compiler will not help you to avoid this. There is no
-/// need for ordinary users of this library to ever use this type directly.
-#[repr(C)]
-#[allow(raw_pointer_derive)]
-#[derive(Copy, Clone, Debug)]
-pub struct Context(*mut ContextInner);
+#[derive(Clone, Debug)]
+#[repr(C)] pub struct Context(c_int);
 
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
@@ -113,22 +107,19 @@ impl SharedSecret {
     pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
 }
 
-unsafe impl Send for Context {}
-unsafe impl Sync for Context {}
-
 extern "C" {
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
 
     pub static secp256k1_nonce_function_default: NonceFn;
 
     // Contexts
-    pub fn secp256k1_context_create(flags: c_uint) -> Context;
+    pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
 
-    pub fn secp256k1_context_clone(cx: Context) -> Context;
+    pub fn secp256k1_context_clone(cx: *mut Context) -> *mut Context;
 
-    pub fn secp256k1_context_destroy(cx: Context);
+    pub fn secp256k1_context_destroy(cx: *mut Context);
 
-    pub fn secp256k1_context_randomize(cx: Context,
+    pub fn secp256k1_context_randomize(cx: *mut Context,
                                        seed32: *const c_uchar)
                                        -> c_int;
 
@@ -140,52 +131,52 @@ extern "C" {
     // bad inputs.)
 
     // Pubkeys
-    pub fn secp256k1_ec_pubkey_parse(cx: Context, pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
                                      input: *const c_uchar, in_len: size_t)
                                      -> c_int;
 
-    pub fn secp256k1_ec_pubkey_serialize(cx: Context, output: *const c_uchar,
+    pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *const c_uchar,
                                          out_len: *mut size_t, pk: *const PublicKey
 ,                                        compressed: c_uint)
                                          -> c_int;
 
     // Signatures
-    pub fn secp256k1_ecdsa_signature_parse_der(cx: Context, sig: *mut Signature,
+    pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
                                                input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_parse_der_lax_(cx: Context, sig: *mut Signature,
+    pub fn secp256k1_ecdsa_signature_parse_der_lax_(cx: *const Context, sig: *mut Signature,
                                                     input: *const c_uchar, in_len: size_t)
                                                     -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_serialize_der(cx: Context, output: *const c_uchar,
+    pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *const c_uchar,
                                                    out_len: *mut size_t, sig: *const Signature)
                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: Context, sig: *mut RecoverableSignature,
+    pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
                                                                input64: *const c_uchar, recid: c_int)
                                                                -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: Context, output64: *const c_uchar,
+    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
                                                                    recid: *mut c_int, sig: *const RecoverableSignature)
                                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_convert(cx: Context, sig: *mut Signature,
+    pub fn secp256k1_ecdsa_recoverable_signature_convert(cx: *const Context, sig: *mut Signature,
                                                          input: *const RecoverableSignature) 
                                                          -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_normalize(cx: Context, out_sig: *mut Signature,
+    pub fn secp256k1_ecdsa_signature_normalize(cx: *const Context, out_sig: *mut Signature,
                                                in_sig: *const Signature)
                                                -> c_int;
 
     // ECDSA
-    pub fn secp256k1_ecdsa_verify(cx: Context,
+    pub fn secp256k1_ecdsa_verify(cx: *const Context,
                                   sig: *const Signature,
                                   msg32: *const c_uchar,
                                   pk: *const PublicKey)
                                   -> c_int;
 
-    pub fn secp256k1_ecdsa_sign(cx: Context,
+    pub fn secp256k1_ecdsa_sign(cx: *const Context,
                                 sig: *mut Signature,
                                 msg32: *const c_uchar,
                                 sk: *const c_uchar,
@@ -193,7 +184,7 @@ extern "C" {
                                 noncedata: *const c_void)
                                 -> c_int;
 
-    pub fn secp256k1_ecdsa_sign_recoverable(cx: Context,
+    pub fn secp256k1_ecdsa_sign_recoverable(cx: *const Context,
                                             sig: *mut RecoverableSignature,
                                             msg32: *const c_uchar,
                                             sk: *const c_uchar,
@@ -201,49 +192,49 @@ extern "C" {
                                             noncedata: *const c_void)
                                             -> c_int;
 
-    pub fn secp256k1_ecdsa_recover(cx: Context,
+    pub fn secp256k1_ecdsa_recover(cx: *const Context,
                                    pk: *mut PublicKey,
                                    sig: *const RecoverableSignature,
                                    msg32: *const c_uchar)
                                    -> c_int;
 
     // EC
-    pub fn secp256k1_ec_seckey_verify(cx: Context,
+    pub fn secp256k1_ec_seckey_verify(cx: *const Context,
                                       sk: *const c_uchar) -> c_int;
 
-    pub fn secp256k1_ec_pubkey_create(cx: Context, pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_create(cx: *const Context, pk: *mut PublicKey,
                                       sk: *const c_uchar) -> c_int;
 
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
-    pub fn secp256k1_ec_privkey_tweak_add(cx: Context,
+    pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_add(cx: Context,
+    pub fn secp256k1_ec_pubkey_tweak_add(cx: *const Context,
                                          pk: *mut PublicKey,
                                          tweak: *const c_uchar)
                                          -> c_int;
 
-    pub fn secp256k1_ec_privkey_tweak_mul(cx: Context,
+    pub fn secp256k1_ec_privkey_tweak_mul(cx: *const Context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_mul(cx: Context,
+    pub fn secp256k1_ec_pubkey_tweak_mul(cx: *const Context,
                                          pk: *mut PublicKey,
                                          tweak: *const c_uchar)
                                          -> c_int;
 
-    pub fn secp256k1_ec_pubkey_combine(cx: Context,
+    pub fn secp256k1_ec_pubkey_combine(cx: *const Context,
                                        out: *mut PublicKey,
                                        ins: *const *const PublicKey,
                                        n: c_int)
                                        -> c_int;
 
-    pub fn secp256k1_ecdh(cx: Context,
+    pub fn secp256k1_ecdh(cx: *const Context,
                           out: *mut SharedSecret,
                           point: *const PublicKey,
                           scalar: *const c_uchar)

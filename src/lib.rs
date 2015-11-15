@@ -342,9 +342,12 @@ impl error::Error for Error {
 
 /// The secp256k1 engine, used to execute all signature operations
 pub struct Secp256k1 {
-    ctx: ffi::Context,
+    ctx: *mut ffi::Context,
     caps: ContextFlag
 }
+
+unsafe impl Send for Secp256k1 {}
+unsafe impl Sync for Secp256k1 {}
 
 /// Flags used to determine the capabilities of a `Secp256k1` object;
 /// the more capabilities, the more expensive it is to create.
