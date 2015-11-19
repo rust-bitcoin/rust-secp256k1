@@ -15,7 +15,9 @@ install:
 script:
   - |
       travis-cargo build &&
+      travis-cargo build --release &&
       travis-cargo test &&
+      travis-cargo test --release &&
       travis-cargo bench &&
       travis-cargo --only stable doc
 
