@@ -43,7 +43,7 @@ fn main() {
 
     // secp256k1
     base_config.file("depend/secp256k1/src/laxder_shim.c")
-               .file("depend/secp256k1/src/secp256k1.c")
+               .file("depend/secp256k1/src/ext.c")
                .compile("libsecp256k1.a");
 }
 

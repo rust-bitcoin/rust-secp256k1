@@ -46,7 +46,7 @@ noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libsecp256k1.pc
 
-libsecp256k1_la_SOURCES = src/secp256k1.c
+libsecp256k1_la_SOURCES = src/ext.c
 libsecp256k1_la_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
 libsecp256k1_la_LIBADD = $(SECP_LIBS)
 

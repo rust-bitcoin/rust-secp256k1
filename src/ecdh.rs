@@ -38,6 +38,17 @@ impl SharedSecret {
         }
     }
 
+    /// Creates a new unhashed shared secret from a pubkey and secret key
+    #[inline]
+    pub fn new_raw(secp: &Secp256k1, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
+        unsafe {
+            let mut ss = ffi::SharedSecret::blank();
+            let res = ffi::secp256k1_ecdh_raw(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
+            debug_assert_eq!(res, 1);
+            SharedSecret(ss)
+        }
+    }
+
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::SharedSecret {
