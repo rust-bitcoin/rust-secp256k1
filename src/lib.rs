@@ -451,7 +451,7 @@ impl Secp256k1 {
         Ok((sk, pk))
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
                 -> Result<Signature, Error> {
@@ -470,7 +470,7 @@ impl Secp256k1 {
         Ok(Signature::from(ret))
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
                 -> Result<RecoverableSignature, Error> {
