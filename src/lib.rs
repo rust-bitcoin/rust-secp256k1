@@ -53,6 +53,7 @@ pub mod constants;
 pub mod ecdh;
 pub mod ffi;
 pub mod key;
+pub mod schnorr;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -489,8 +490,7 @@ impl Secp256k1 {
     }
 
     /// Determines the public key for which `sig` is a valid signature for
-    /// `msg`. Returns through the out-pointer `pubkey`. Requires a verify-capable
-    /// context.
+    /// `msg`. Requires a verify-capable context.
     pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
                   -> Result<key::PublicKey, Error> {
         if self.caps == ContextFlag::SignOnly || self.caps == ContextFlag::None {
@@ -585,12 +585,8 @@ mod tests {
 
         // Try pk recovery
         assert_eq!(none.recover(&msg, &sigr), Err(IncapableContext));
-        assert_eq!(none.recover(&msg, &sigr), Err(IncapableContext));
-        assert_eq!(sign.recover(&msg, &sigr), Err(IncapableContext));
         assert_eq!(sign.recover(&msg, &sigr), Err(IncapableContext));
         assert!(vrfy.recover(&msg, &sigr).is_ok());
-        assert!(vrfy.recover(&msg, &sigr).is_ok());
-        assert!(full.recover(&msg, &sigr).is_ok());
         assert!(full.recover(&msg, &sigr).is_ok());
 
         assert_eq!(vrfy.recover(&msg, &sigr),
