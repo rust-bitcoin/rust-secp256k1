@@ -67,14 +67,12 @@ impl PublicKey {
 
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 impl_raw_debug!(RecoverableSignature);
@@ -95,7 +93,6 @@ impl RecoverableSignature {
 
 /// Library-internal representation of an ECDH shared secret
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct SharedSecret([c_uchar; 32]);
 impl_array_newtype!(SharedSecret, c_uchar, 32);
 impl_raw_debug!(SharedSecret);
