@@ -17,6 +17,8 @@
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
 use std::mem;
+use std::hash;
+
 use libc::{c_int, c_uchar, c_uint, c_void, size_t};
 
 /// Flag for context to enable no precomputation
@@ -63,6 +65,12 @@ impl PublicKey {
     pub fn new() -> PublicKey { PublicKey([0; 64]) }
     /// Create a new (uninitialized) public key usable for the FFI interface
     pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
+}
+
+impl hash::Hash for PublicKey {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0)
+    }
 }
 
 /// Library-internal representation of a Secp256k1 signature
