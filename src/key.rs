@@ -39,8 +39,9 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// A Secp256k1 public key, used for verification of signatures
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::PublicKey);
+
 
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
@@ -607,6 +608,29 @@ mod test {
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+    }
+
+    #[test]
+    fn pubkey_hash() {
+        use std::hash::{Hash, SipHasher, Hasher};
+        use std::collections::HashSet;
+
+        fn hash<T: Hash>(t: &T) -> u64 {
+            let mut s = SipHasher::new();
+            t.hash(&mut s);
+            s.finish()
+        }
+
+        let s = Secp256k1::new();
+        let mut set = HashSet::new();
+        const COUNT : usize = 1024;
+        let count = (0..COUNT).map(|_| {
+            let (_, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+            let hash = hash(&pk);
+            assert!(!set.contains(&hash));
+            set.insert(hash);
+        }).count();
+        assert_eq!(count, COUNT);
     }
 }
 

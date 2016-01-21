@@ -32,6 +32,10 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+#![cfg_attr(feature = "dev", allow(unstable_features))]
+#![cfg_attr(feature = "dev", feature(plugin))]
+#![cfg_attr(feature = "dev", plugin(clippy))]
+
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 
@@ -53,6 +57,7 @@ pub mod constants;
 pub mod ecdh;
 pub mod ffi;
 pub mod key;
+pub mod schnorr;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -450,7 +455,7 @@ impl Secp256k1 {
         Ok((sk, pk))
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
                 -> Result<Signature, Error> {
@@ -469,7 +474,7 @@ impl Secp256k1 {
         Ok(Signature::from(ret))
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and nonce `nonce`.
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
                 -> Result<RecoverableSignature, Error> {
@@ -489,8 +494,7 @@ impl Secp256k1 {
     }
 
     /// Determines the public key for which `sig` is a valid signature for
-    /// `msg`. Returns through the out-pointer `pubkey`. Requires a verify-capable
-    /// context.
+    /// `msg`. Requires a verify-capable context.
     pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
                   -> Result<key::PublicKey, Error> {
         if self.caps == ContextFlag::SignOnly || self.caps == ContextFlag::None {
@@ -585,12 +589,8 @@ mod tests {
 
         // Try pk recovery
         assert_eq!(none.recover(&msg, &sigr), Err(IncapableContext));
-        assert_eq!(none.recover(&msg, &sigr), Err(IncapableContext));
-        assert_eq!(sign.recover(&msg, &sigr), Err(IncapableContext));
         assert_eq!(sign.recover(&msg, &sigr), Err(IncapableContext));
         assert!(vrfy.recover(&msg, &sigr).is_ok());
-        assert!(vrfy.recover(&msg, &sigr).is_ok());
-        assert!(full.recover(&msg, &sigr).is_ok());
         assert!(full.recover(&msg, &sigr).is_ok());
 
         assert_eq!(vrfy.recover(&msg, &sigr),

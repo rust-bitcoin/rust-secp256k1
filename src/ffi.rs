@@ -17,6 +17,8 @@
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
 use std::mem;
+use std::hash;
+
 use libc::{c_int, c_uchar, c_uint, c_void, size_t};
 
 /// Flag for context to enable no precomputation
@@ -65,16 +67,20 @@ impl PublicKey {
     pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
 }
 
+impl hash::Hash for PublicKey {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0)
+    }
+}
+
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 impl_raw_debug!(RecoverableSignature);
@@ -95,7 +101,6 @@ impl RecoverableSignature {
 
 /// Library-internal representation of an ECDH shared secret
 #[repr(C)]
-#[allow(raw_pointer_derive)]
 pub struct SharedSecret([c_uchar; 32]);
 impl_array_newtype!(SharedSecret, c_uchar, 32);
 impl_raw_debug!(SharedSecret);
@@ -197,6 +202,27 @@ extern "C" {
                                    sig: *const RecoverableSignature,
                                    msg32: *const c_uchar)
                                    -> c_int;
+
+    // Schnorr
+    pub fn secp256k1_schnorr_sign(cx: *const Context,
+                                  sig64: *mut c_uchar,
+                                  msg32: *const c_uchar,
+                                  sk: *const c_uchar,
+                                  noncefn: NonceFn,
+                                  noncedata: *const c_void)
+                                  -> c_int;
+
+    pub fn secp256k1_schnorr_verify(cx: *const Context,
+                                    sig64: *const c_uchar,
+                                    msg32: *const c_uchar,
+                                    pk: *const PublicKey)
+                                    -> c_int;
+
+    pub fn secp256k1_schnorr_recover(cx: *const Context,
+                                     pk: *mut PublicKey,
+                                     sig64: *const c_uchar,
+                                     msg32: *const c_uchar)
+                                     -> c_int;
 
     // EC
     pub fn secp256k1_ec_seckey_verify(cx: *const Context,

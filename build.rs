@@ -39,6 +39,7 @@ fn main() {
                .define("USE_ENDOMORPHISM", Some("1"))
                // These all are OK.
                .define("ENABLE_MODULE_ECDH", Some("1"))
+               .define("ENABLE_MODULE_SCHNORR", Some("1"))
                .define("ENABLE_MODULE_RECOVERY", Some("1"));
 
     // secp256k1
