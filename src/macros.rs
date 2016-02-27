@@ -177,7 +177,7 @@ macro_rules! impl_array_newtype {
                 }
 
                 // Begin actual function
-                d.visit(Visitor { marker: ::std::marker::PhantomData })
+                d.deserialize(Visitor { marker: ::std::marker::PhantomData })
             }
         }
 

@@ -267,13 +267,13 @@ impl Deserialize for PublicKey {
                     }
                     try!(v.end());
 
-                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|e| de::Error::syntax(&e.to_string()))
+                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|e| de::Error::custom(e.to_string().as_ref()))
                 }
             }
         }
 
         // Begin actual function
-        d.visit(Visitor { marker: ::std::marker::PhantomData })
+        d.deserialize(Visitor { marker: ::std::marker::PhantomData })
     }
 }
 
