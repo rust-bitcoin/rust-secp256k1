@@ -16,6 +16,26 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
+
+// Coding conventions
+#![deny(non_upper_case_globals)]
+#![deny(non_camel_case_types)]
+#![deny(non_snake_case)]
+#![deny(unused_mut)]
+#![warn(missing_docs)]
+
+#![cfg_attr(feature = "dev", allow(unstable_features))]
+#![cfg_attr(feature = "dev", feature(plugin))]
+#![cfg_attr(feature = "dev", plugin(clippy))]
+
+extern crate libc;
+extern crate rustc_serialize as serialize;
+extern crate serde;
+extern crate serde_json as json;
+
+#[macro_use]
+mod macros;
+
 use std::mem;
 use std::hash;
 
@@ -266,4 +286,3 @@ extern "C" {
                           scalar: *const c_uchar)
                           -> c_int;
 }
-

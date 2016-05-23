@@ -1,18 +1,22 @@
 [package]
-name = "secp256k1"
-version = "0.6.0"
+name = "secp256k1-sys"
+version = "0.1.0"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
 homepage = "https://github.com/apoelstra/rust-secp256k1/"
 repository = "https://github.com/apoelstra/rust-secp256k1/"
-documentation = "https://www.wpsoftware.net/rustdoc/secp256k1/"
-description = "High-level bindings for the `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
+documentation = "https://www.wpsoftware.net/rustdoc/secp256k1-sys/"
+description = "Raw bindings for the `libsecp256k1` library."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
+build = "build.rs"
+
+[build-dependencies]
+gcc = "0.3"
 
 [lib]
-name = "secp256k1"
+name = "secp256k1_sys"
 path = "src/lib.rs"
 
 [features]
@@ -21,11 +25,8 @@ default = []
 dev = ["clippy"]
 
 [dependencies]
-arrayvec = "0.3"
 clippy = {version = "0.0", optional = true}
-rand = "0.3"
 libc = "0.1"
 rustc-serialize = "0.3"
-secp256k1-sys = "0.1"
 serde = "0.6"
 serde_json = "0.6"

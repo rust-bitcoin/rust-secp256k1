@@ -20,11 +20,6 @@
 //! and its derivatives.
 //!
 
-#![crate_type = "lib"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-#![crate_name = "secp256k1"]
-
 // Coding conventions
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
@@ -40,12 +35,12 @@
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 
 extern crate arrayvec;
-extern crate rustc_serialize as serialize;
-extern crate serde;
-extern crate serde_json as json;
-
 extern crate libc;
 extern crate rand;
+extern crate rustc_serialize as serialize;
+extern crate secp256k1_sys as ffi;
+extern crate serde;
+extern crate serde_json as json;
 
 use libc::size_t;
 use std::{error, fmt, ops, ptr};
@@ -55,7 +50,6 @@ use rand::Rng;
 mod macros;
 pub mod constants;
 pub mod ecdh;
-pub mod ffi;
 pub mod key;
 pub mod schnorr;
 
