@@ -40,7 +40,7 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-pub struct PublicKey(ffi::PublicKey);
+pub struct PublicKey(ffi::secp256k1_pubkey);
 
 
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
@@ -101,7 +101,7 @@ impl PublicKey {
     /// Creates a new zeroed out public key
     #[inline]
     pub fn new() -> PublicKey {
-        PublicKey(ffi::PublicKey::new())
+        PublicKey(ffi::secp256k1_pubkey::new())
     }
 
     /// Determines whether a pubkey is valid
@@ -114,7 +114,7 @@ impl PublicKey {
 
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
-    pub fn as_ptr(&self) -> *const ffi::PublicKey {
+    pub fn as_ptr(&self) -> *const ffi::secp256k1_pubkey {
         &self.0 as *const _
     }
 
@@ -126,7 +126,7 @@ impl PublicKey {
         if secp.caps == ContextFlag::VerifyOnly || secp.caps == ContextFlag::None {
             return Err(IncapableContext);
         }
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = unsafe { ffi::secp256k1_pubkey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
@@ -141,7 +141,7 @@ impl PublicKey {
     pub fn from_slice(secp: &Secp256k1, data: &[u8])
                       -> Result<PublicKey, Error> {
 
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = unsafe { ffi::secp256k1_pubkey::blank() };
         unsafe {
             if ffi::secp256k1_ec_pubkey_parse(secp.ctx, &mut pk, data.as_ptr(),
                                               data.len() as ::libc::size_t) == 1 {
@@ -161,7 +161,7 @@ impl PublicKey {
 
         unsafe {
             let mut ret_len = constants::PUBLIC_KEY_SIZE as ::libc::size_t;
-            let compressed = if compressed { ffi::SECP256K1_SER_COMPRESSED } else { ffi::SECP256K1_SER_UNCOMPRESSED };
+            let compressed = if compressed { ffi::SECP256K1_EC_COMPRESSED } else { ffi::SECP256K1_EC_UNCOMPRESSED };
             let err = ffi::secp256k1_ec_pubkey_serialize(secp.ctx, ret.as_ptr(),
                                                          &mut ret_len, self.as_ptr(),
                                                          compressed);
@@ -219,9 +219,9 @@ impl Decodable for PublicKey {
 }
 
 /// Creates a new public key from a FFI public key
-impl From<ffi::PublicKey> for PublicKey {
+impl From<ffi::secp256k1_pubkey> for PublicKey {
     #[inline]
-    fn from(pk: ffi::PublicKey) -> PublicKey {
+    fn from(pk: ffi::secp256k1_pubkey) -> PublicKey {
         PublicKey(pk)
     }
 }

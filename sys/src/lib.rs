@@ -19,7 +19,7 @@
 
 // Coding conventions
 #![deny(non_upper_case_globals)]
-#![deny(non_camel_case_types)]
+#![allow(non_camel_case_types)]
 #![deny(non_snake_case)]
 #![deny(unused_mut)]
 #![warn(missing_docs)]
@@ -42,15 +42,15 @@ use std::hash;
 use libc::{c_int, c_uchar, c_uint, c_void, size_t};
 
 /// Flag for context to enable no precomputation
-pub const SECP256K1_START_NONE: c_uint = (1 << 0) | 0;
+pub const SECP256K1_CONTEXT_NONE: c_uint = (1 << 0) | 0;
 /// Flag for context to enable verification precomputation
-pub const SECP256K1_START_VERIFY: c_uint = (1 << 0) | (1 << 8);
+pub const SECP256K1_CONTEXT_VERIFY: c_uint = (1 << 0) | (1 << 8);
 /// Flag for context to enable signing precomputation
-pub const SECP256K1_START_SIGN: c_uint = (1 << 0) | (1 << 9);
+pub const SECP256K1_CONTEXT_SIGN: c_uint = (1 << 0) | (1 << 9);
 /// Flag for keys to indicate uncompressed serialization format
-pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1) | 0;
+pub const SECP256K1_EC_UNCOMPRESSED: c_uint = (1 << 1) | 0;
 /// Flag for keys to indicate compressed serialization format
-pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
+pub const SECP256K1_EC_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 
 /// A nonce generation function. Ordinary users of the library
 /// never need to see this type; only if you need to control
@@ -59,7 +59,7 @@ pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 /// around the FFI functions to use it. And it's an unsafe type.
 /// Nonces are generated deterministically by RFC6979 by
 /// default; there should be no need to ever change this.
-pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
+pub type secp256k1_nonce_function = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         msg32: *const c_uchar,
                                         key32: *const c_uchar,
                                         algo16: *const c_uchar,
@@ -72,22 +72,22 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
 /// with `secp256k1_context_create` you MUST destroy it with
 /// `secp256k1_context_destroy`, or else you will have a memory leak.
 #[derive(Clone, Debug)]
-#[repr(C)] pub struct Context(c_int);
+#[repr(C)] pub struct secp256k1_context(c_int);
 
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
-pub struct PublicKey([c_uchar; 64]);
-impl_array_newtype!(PublicKey, c_uchar, 64);
-impl_raw_debug!(PublicKey);
+pub struct secp256k1_pubkey([c_uchar; 64]);
+impl_array_newtype!(secp256k1_pubkey, c_uchar, 64);
+impl_raw_debug!(secp256k1_pubkey);
 
-impl PublicKey {
+impl secp256k1_pubkey {
     /// Create a new (zeroed) public key usable for the FFI interface
-    pub fn new() -> PublicKey { PublicKey([0; 64]) }
+    pub fn new() -> secp256k1_pubkey { secp256k1_pubkey([0; 64]) }
     /// Create a new (uninitialized) public key usable for the FFI interface
-    pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
+    pub unsafe fn blank() -> secp256k1_pubkey { mem::uninitialized() }
 }
 
-impl hash::Hash for PublicKey {
+impl hash::Hash for secp256k1_pubkey {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         state.write(&self.0)
     }
@@ -95,56 +95,56 @@ impl hash::Hash for PublicKey {
 
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
-pub struct Signature([c_uchar; 64]);
-impl_array_newtype!(Signature, c_uchar, 64);
-impl_raw_debug!(Signature);
+pub struct secp256k1_ecdsa_signature([c_uchar; 64]);
+impl_array_newtype!(secp256k1_ecdsa_signature, c_uchar, 64);
+impl_raw_debug!(secp256k1_ecdsa_signature);
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
-pub struct RecoverableSignature([c_uchar; 65]);
-impl_array_newtype!(RecoverableSignature, c_uchar, 65);
-impl_raw_debug!(RecoverableSignature);
+pub struct secp256k1_ecdsa_recoverable_signature([c_uchar; 65]);
+impl_array_newtype!(secp256k1_ecdsa_recoverable_signature, c_uchar, 65);
+impl_raw_debug!(secp256k1_ecdsa_recoverable_signature);
 
-impl Signature {
+impl secp256k1_ecdsa_signature {
     /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> Signature { Signature([0; 64]) }
+    pub fn new() -> secp256k1_ecdsa_signature { secp256k1_ecdsa_signature([0; 64]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> Signature { mem::uninitialized() }
+    pub unsafe fn blank() -> secp256k1_ecdsa_signature { mem::uninitialized() }
 }
 
-impl RecoverableSignature {
+impl secp256k1_ecdsa_recoverable_signature {
     /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
+    pub fn new() -> secp256k1_ecdsa_recoverable_signature { secp256k1_ecdsa_recoverable_signature([0; 65]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> RecoverableSignature { mem::uninitialized() }
+    pub unsafe fn blank() -> secp256k1_ecdsa_recoverable_signature { mem::uninitialized() }
 }
 
 /// Library-internal representation of an ECDH shared secret
 #[repr(C)]
-pub struct SharedSecret([c_uchar; 32]);
-impl_array_newtype!(SharedSecret, c_uchar, 32);
-impl_raw_debug!(SharedSecret);
+pub struct secp256k1_shared_secret([c_uchar; 32]);
+impl_array_newtype!(secp256k1_shared_secret, c_uchar, 32);
+impl_raw_debug!(secp256k1_shared_secret);
 
-impl SharedSecret {
+impl secp256k1_shared_secret {
     /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
+    pub fn new() -> secp256k1_shared_secret { secp256k1_shared_secret([0; 32]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
+    pub unsafe fn blank() -> secp256k1_shared_secret { mem::uninitialized() }
 }
 
 extern "C" {
-    pub static secp256k1_nonce_function_rfc6979: NonceFn;
+    pub static secp256k1_nonce_function_rfc6979: secp256k1_nonce_function;
 
-    pub static secp256k1_nonce_function_default: NonceFn;
+    pub static secp256k1_nonce_function_default: secp256k1_nonce_function;
 
-    // Contexts
-    pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
+    // secp256k1_contexts
+    pub fn secp256k1_context_create(flags: c_uint) -> *mut secp256k1_context;
 
-    pub fn secp256k1_context_clone(cx: *mut Context) -> *mut Context;
+    pub fn secp256k1_context_clone(cx: *mut secp256k1_context) -> *mut secp256k1_context;
 
-    pub fn secp256k1_context_destroy(cx: *mut Context);
+    pub fn secp256k1_context_destroy(cx: *mut secp256k1_context);
 
-    pub fn secp256k1_context_randomize(cx: *mut Context,
+    pub fn secp256k1_context_randomize(cx: *mut secp256k1_context,
                                        seed32: *const c_uchar)
                                        -> c_int;
 
@@ -156,133 +156,133 @@ extern "C" {
     // bad inputs.)
 
     // Pubkeys
-    pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_parse(cx: *const secp256k1_context, pk: *mut secp256k1_pubkey,
                                      input: *const c_uchar, in_len: size_t)
                                      -> c_int;
 
-    pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *const c_uchar,
-                                         out_len: *mut size_t, pk: *const PublicKey
+    pub fn secp256k1_ec_pubkey_serialize(cx: *const secp256k1_context, output: *const c_uchar,
+                                         out_len: *mut size_t, pk: *const secp256k1_pubkey
 ,                                        compressed: c_uint)
                                          -> c_int;
 
-    // Signatures
-    pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
+    // secp256k1_ecdsa_signatures
+    pub fn secp256k1_ecdsa_signature_parse_der(cx: *const secp256k1_context, sig: *mut secp256k1_ecdsa_signature,
                                                input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
-    pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                         input: *const c_uchar, in_len: size_t)
-                                         -> c_int;
-
-    pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *const c_uchar,
-                                                   out_len: *mut size_t, sig: *const Signature)
+    pub fn secp256k1_ecdsa_signature_parse_der_lax(cx: *const secp256k1_context, sig: *mut secp256k1_ecdsa_signature,
+                                                   input: *const c_uchar, in_len: size_t)
                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
+    pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const secp256k1_context, output: *const c_uchar,
+                                                   out_len: *mut size_t, sig: *const secp256k1_ecdsa_signature)
+                                                   -> c_int;
+
+    pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const secp256k1_context, sig: *mut secp256k1_ecdsa_recoverable_signature,
                                                                input64: *const c_uchar, recid: c_int)
                                                                -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
-                                                                   recid: *mut c_int, sig: *const RecoverableSignature)
+    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const secp256k1_context, output64: *const c_uchar,
+                                                                   recid: *mut c_int, sig: *const secp256k1_ecdsa_recoverable_signature)
                                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_convert(cx: *const Context, sig: *mut Signature,
-                                                         input: *const RecoverableSignature) 
+    pub fn secp256k1_ecdsa_recoverable_signature_convert(cx: *const secp256k1_context, sig: *mut secp256k1_ecdsa_signature,
+                                                         input: *const secp256k1_ecdsa_recoverable_signature) 
                                                          -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_normalize(cx: *const Context, out_sig: *mut Signature,
-                                               in_sig: *const Signature)
+    pub fn secp256k1_ecdsa_signature_normalize(cx: *const secp256k1_context, out_sig: *mut secp256k1_ecdsa_signature,
+                                               in_sig: *const secp256k1_ecdsa_signature)
                                                -> c_int;
 
     // ECDSA
-    pub fn secp256k1_ecdsa_verify(cx: *const Context,
-                                  sig: *const Signature,
+    pub fn secp256k1_ecdsa_verify(cx: *const secp256k1_context,
+                                  sig: *const secp256k1_ecdsa_signature,
                                   msg32: *const c_uchar,
-                                  pk: *const PublicKey)
+                                  pk: *const secp256k1_pubkey)
                                   -> c_int;
 
-    pub fn secp256k1_ecdsa_sign(cx: *const Context,
-                                sig: *mut Signature,
+    pub fn secp256k1_ecdsa_sign(cx: *const secp256k1_context,
+                                sig: *mut secp256k1_ecdsa_signature,
                                 msg32: *const c_uchar,
                                 sk: *const c_uchar,
-                                noncefn: NonceFn,
+                                noncefn: secp256k1_nonce_function,
                                 noncedata: *const c_void)
                                 -> c_int;
 
-    pub fn secp256k1_ecdsa_sign_recoverable(cx: *const Context,
-                                            sig: *mut RecoverableSignature,
+    pub fn secp256k1_ecdsa_sign_recoverable(cx: *const secp256k1_context,
+                                            sig: *mut secp256k1_ecdsa_recoverable_signature,
                                             msg32: *const c_uchar,
                                             sk: *const c_uchar,
-                                            noncefn: NonceFn,
+                                            noncefn: secp256k1_nonce_function,
                                             noncedata: *const c_void)
                                             -> c_int;
 
-    pub fn secp256k1_ecdsa_recover(cx: *const Context,
-                                   pk: *mut PublicKey,
-                                   sig: *const RecoverableSignature,
+    pub fn secp256k1_ecdsa_recover(cx: *const secp256k1_context,
+                                   pk: *mut secp256k1_pubkey,
+                                   sig: *const secp256k1_ecdsa_recoverable_signature,
                                    msg32: *const c_uchar)
                                    -> c_int;
 
     // Schnorr
-    pub fn secp256k1_schnorr_sign(cx: *const Context,
+    pub fn secp256k1_schnorr_sign(cx: *const secp256k1_context,
                                   sig64: *mut c_uchar,
                                   msg32: *const c_uchar,
                                   sk: *const c_uchar,
-                                  noncefn: NonceFn,
+                                  noncefn: secp256k1_nonce_function,
                                   noncedata: *const c_void)
                                   -> c_int;
 
-    pub fn secp256k1_schnorr_verify(cx: *const Context,
+    pub fn secp256k1_schnorr_verify(cx: *const secp256k1_context,
                                     sig64: *const c_uchar,
                                     msg32: *const c_uchar,
-                                    pk: *const PublicKey)
+                                    pk: *const secp256k1_pubkey)
                                     -> c_int;
 
-    pub fn secp256k1_schnorr_recover(cx: *const Context,
-                                     pk: *mut PublicKey,
+    pub fn secp256k1_schnorr_recover(cx: *const secp256k1_context,
+                                     pk: *mut secp256k1_pubkey,
                                      sig64: *const c_uchar,
                                      msg32: *const c_uchar)
                                      -> c_int;
 
     // EC
-    pub fn secp256k1_ec_seckey_verify(cx: *const Context,
+    pub fn secp256k1_ec_seckey_verify(cx: *const secp256k1_context,
                                       sk: *const c_uchar) -> c_int;
 
-    pub fn secp256k1_ec_pubkey_create(cx: *const Context, pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_create(cx: *const secp256k1_context, pk: *mut secp256k1_pubkey,
                                       sk: *const c_uchar) -> c_int;
 
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
-    pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
+    pub fn secp256k1_ec_privkey_tweak_add(cx: *const secp256k1_context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_add(cx: *const Context,
-                                         pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_tweak_add(cx: *const secp256k1_context,
+                                         pk: *mut secp256k1_pubkey,
                                          tweak: *const c_uchar)
                                          -> c_int;
 
-    pub fn secp256k1_ec_privkey_tweak_mul(cx: *const Context,
+    pub fn secp256k1_ec_privkey_tweak_mul(cx: *const secp256k1_context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
 
-    pub fn secp256k1_ec_pubkey_tweak_mul(cx: *const Context,
-                                         pk: *mut PublicKey,
+    pub fn secp256k1_ec_pubkey_tweak_mul(cx: *const secp256k1_context,
+                                         pk: *mut secp256k1_pubkey,
                                          tweak: *const c_uchar)
                                          -> c_int;
 
-    pub fn secp256k1_ec_pubkey_combine(cx: *const Context,
-                                       out: *mut PublicKey,
-                                       ins: *const *const PublicKey,
+    pub fn secp256k1_ec_pubkey_combine(cx: *const secp256k1_context,
+                                       out: *mut secp256k1_pubkey,
+                                       ins: *const *const secp256k1_pubkey,
                                        n: c_int)
                                        -> c_int;
 
-    pub fn secp256k1_ecdh(cx: *const Context,
-                          out: *mut SharedSecret,
-                          point: *const PublicKey,
+    pub fn secp256k1_ecdh(cx: *const secp256k1_context,
+                          out: *mut secp256k1_shared_secret,
+                          point: *const secp256k1_pubkey,
                           scalar: *const c_uchar)
                           -> c_int;
 }

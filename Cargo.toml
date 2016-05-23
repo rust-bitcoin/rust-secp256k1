@@ -26,6 +26,7 @@ clippy = {version = "0.0", optional = true}
 rand = "0.3"
 libc = "0.1"
 rustc-serialize = "0.3"
-secp256k1-sys = "0.1"
+# secp256k1-sys = "0.1"
+secp256k1-sys = { path = "sys" }
 serde = "0.6"
 serde_json = "0.6"
