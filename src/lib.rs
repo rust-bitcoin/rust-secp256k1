@@ -41,8 +41,6 @@
 
 extern crate arrayvec;
 extern crate rustc_serialize as serialize;
-extern crate serde;
-extern crate serde_json as json;
 
 extern crate libc;
 extern crate rand;

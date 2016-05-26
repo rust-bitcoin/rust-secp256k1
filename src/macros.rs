@@ -143,51 +143,6 @@ macro_rules! impl_array_newtype {
                 self[..].encode(s)
             }
         }
-
-        impl ::serde::Deserialize for $thing {
-            fn deserialize<D>(d: &mut D) -> Result<$thing, D::Error>
-                where D: ::serde::Deserializer
-            {
-                // We have to define the Visitor struct inside the function
-                // to make it local ... all we really need is that it's
-                // local to the macro, but this works too :)
-                struct Visitor {
-                    marker: ::std::marker::PhantomData<$thing>,
-                }
-                impl ::serde::de::Visitor for Visitor {
-                    type Value = $thing;
-
-                    #[inline]
-                    fn visit_seq<V>(&mut self, mut v: V) -> Result<$thing, V::Error>
-                        where V: ::serde::de::SeqVisitor
-                    {
-                        unsafe {
-                            use std::mem;
-                            let mut ret: [$ty; $len] = mem::uninitialized();
-                            for i in 0..$len {
-                                ret[i] = match try!(v.visit()) {
-                                    Some(c) => c,
-                                    None => return Err(::serde::de::Error::end_of_stream())
-                                };
-                            }
-                            try!(v.end());
-                            Ok($thing(ret))
-                        }
-                    }
-                }
-
-                // Begin actual function
-                d.deserialize(Visitor { marker: ::std::marker::PhantomData })
-            }
-        }
-
-        impl ::serde::Serialize for $thing {
-            fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
-                where S: ::serde::Serializer
-            {
-                (&self.0[..]).serialize(s)
-            }
-        }
     }
 }
 
