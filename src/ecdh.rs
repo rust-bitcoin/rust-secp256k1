@@ -24,6 +24,7 @@ use ffi;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[repr(C)]
 pub struct SharedSecret(ffi::SharedSecret);
 
 impl SharedSecret {
