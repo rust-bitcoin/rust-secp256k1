@@ -26,6 +26,7 @@ use constants;
 use ffi;
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
+#[repr(C)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
