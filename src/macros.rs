@@ -115,34 +115,6 @@ macro_rules! impl_array_newtype {
                 &dat[..]
             }
         }
-
-        impl ::serialize::Decodable for $thing {
-            fn decode<D: ::serialize::Decoder>(d: &mut D) -> Result<$thing, D::Error> {
-                use serialize::Decodable;
-
-                d.read_seq(|d, len| {
-                    if len != $len {
-                        Err(d.error("Invalid length"))
-                    } else {
-                        unsafe {
-                            use std::mem;
-                            let mut ret: [$ty; $len] = mem::uninitialized();
-                            for i in 0..len {
-                                ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
-                            }
-                            Ok($thing(ret))
-                        }
-                    }
-                })
-            }
-        }
-
-        impl ::serialize::Encodable for $thing {
-            fn encode<S: ::serialize::Encoder>(&self, s: &mut S)
-                                               -> Result<(), S::Error> {
-                self[..].encode(s)
-            }
-        }
     }
 }
 
