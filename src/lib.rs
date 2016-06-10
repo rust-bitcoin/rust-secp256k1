@@ -109,8 +109,8 @@ impl Signature {
     pub fn from_der_lax(secp: &Secp256k1, data: &[u8]) -> Result<Signature, Error> {
         unsafe {
             let mut ret = ffi::Signature::blank();
-            if ffi::secp256k1_ecdsa_signature_parse_der_lax_(secp.ctx, &mut ret,
-                                                             data.as_ptr(), data.len() as libc::size_t) == 1 {
+            if ffi::ecdsa_signature_parse_der_lax(secp.ctx, &mut ret,
+                                                  data.as_ptr(), data.len() as libc::size_t) == 1 {
                 Ok(Signature(ret))
             } else {
                 Err(Error::InvalidSignature)
