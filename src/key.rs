@@ -30,6 +30,12 @@ pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
 
+impl From<[u8; constants::SECRET_KEY_SIZE]> for SecretKey {
+	fn from(raw: [u8; constants::SECRET_KEY_SIZE]) -> Self {
+		SecretKey(raw)
+	}
+}
+
 /// The number 1 encoded as a secret key
 pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                        0, 0, 0, 0, 0, 0, 0, 0,
@@ -39,7 +45,6 @@ pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::PublicKey);
-
 
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
