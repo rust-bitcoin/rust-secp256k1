@@ -108,6 +108,19 @@ impl SecretKey {
             }
         }
     }
+
+    #[inline]
+    /// Multiplies one secret key by another, modulo the curve order
+    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+                     -> Result<(), Error> {
+        unsafe {
+            if ffi::secp256k1_ec_privkey_tweak_mul(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
+                Err(InvalidSecretKey)
+            } else {
+                Ok(())
+            }
+        }
+    }
 }
 
 impl PublicKey {
@@ -193,6 +206,23 @@ impl PublicKey {
         }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
+                                                  other.as_ptr()) == 1 {
+                Ok(())
+            } else {
+                Err(InvalidSecretKey)
+            }
+        }
+    }
+
+    #[inline]
+    /// Muliplies the pk `self` in place by the scalar `other`
+    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+                         -> Result<(), Error> {
+        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
+            return Err(IncapableContext);
+        }
+        unsafe {
+            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
                 Ok(())
             } else {
@@ -620,6 +650,24 @@ mod test {
         assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+    }
+
+    #[test]
+    fn test_multiplication() {
+        let s = Secp256k1::new();
+
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert!(sk1.mul_assign(&s, &sk2).is_ok());
+        assert!(pk1.mul_assign(&s, &sk2).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert!(sk2.mul_assign(&s, &sk1).is_ok());
+        assert!(pk2.mul_assign(&s, &sk1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
     }
 
