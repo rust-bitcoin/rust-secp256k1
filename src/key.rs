@@ -203,6 +203,26 @@ impl PublicKey {
             }
         }
     }
+
+    #[inline]
+    /// Adds another point on the curve in place
+    pub fn add_assign(&mut self, secp: &Secp256k1, other: &PublicKey) -> Result<(), Error> {
+        let mut public = ffi::PublicKey::new();
+        let res = unsafe {
+            if ffi::secp256k1_ec_pubkey_combine(
+                secp.ctx,
+                &mut public as *mut _,
+                [other.as_ptr(), self.as_ptr()].as_ptr(),
+                2) == 1
+            {
+                Ok(())
+            } else {
+                Err(InvalidSecretKey)
+            }
+        };
+        if res.is_ok() { self.0 = public }
+        res
+    }
 }
 
 /// Creates a new public key from a FFI public key
@@ -434,6 +454,17 @@ mod test {
             set.insert(hash);
         }).count();
         assert_eq!(count, COUNT);
+    }
+
+    #[test]
+    fn pubkey_add() {
+        let s = Secp256k1::new();
+        let (_, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (_, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let result = pk1.add_assign(&s, &pk2);
+
+        assert!(result.is_ok());
     }
 }
 
