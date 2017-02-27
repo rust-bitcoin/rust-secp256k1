@@ -35,3 +35,26 @@ int secp256k1_ecdh_raw(const secp256k1_context* ctx, unsigned char *result, cons
 	secp256k1_scalar_clear(&s);
 	return ret;
 }
+
+/// Returns inverse (1 / n) of secret key `seckey`
+int secp256k1_ec_privkey_inverse(const secp256k1_context* ctx, unsigned char *inversed, const unsigned char* seckey) {
+	secp256k1_scalar inv;
+	secp256k1_scalar sec;
+	int ret = 0;
+	int overflow = 0;
+	VERIFY_CHECK(ctx != NULL);
+	ARG_CHECK(inversed != NULL);
+	ARG_CHECK(seckey != NULL);
+
+	secp256k1_scalar_set_b32(&sec, seckey, NULL);
+	ret = !overflow;
+	if (ret) {
+		memset(inversed, 0, 32);
+		secp256k1_scalar_inverse(&inv, &sec);
+		secp256k1_scalar_get_b32(inversed, &inv);
+	}
+
+	secp256k1_scalar_clear(&inv);
+	secp256k1_scalar_clear(&sec);
+	return ret;
+}

@@ -55,6 +55,12 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 1]);
 
+/// The number -1 encoded as a secret key
+pub const MINUS_ONE_KEY: SecretKey = SecretKey([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                                                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+                                                0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+                                                0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x40]);
+
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::PublicKey);
@@ -105,6 +111,32 @@ impl SecretKey {
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
+                Err(InvalidSecretKey)
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[inline]
+    /// Multiplies one secret key to another, modulo the curve order
+    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+                     -> Result<(), Error> {
+        unsafe {
+            if ffi::secp256k1_ec_privkey_tweak_mul(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
+                Err(InvalidSecretKey)
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[inline]
+    /// Inverts (1 / self) this secret key.
+    pub fn inv_assign(&mut self, secp: &Secp256k1) -> Result<(), Error> {
+        let original = self.clone();
+        unsafe {
+            if ffi::secp256k1_ec_privkey_inverse(secp.ctx, self.as_mut_ptr(), original.as_ptr()) != 1 {
                 Err(InvalidSecretKey)
             } else {
                 Ok(())
@@ -222,6 +254,22 @@ impl PublicKey {
         };
         if res.is_ok() { self.0 = public }
         res
+    }
+
+    #[inline]
+    /// Multiplies this point by `secret` scalar
+    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey) -> Result<(), Error> {
+        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
+            return Err(IncapableContext);
+        }
+        unsafe {
+            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
+                                                  other.as_ptr()) == 1 {
+                Ok(())
+            } else {
+                Err(InvalidSecretKey)
+            }
+        }
     }
 }
 
@@ -463,6 +511,38 @@ mod test {
         let (_, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
 
         let result = pk1.add_assign(&s, &pk2);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn pubkey_mul() {
+        let s = Secp256k1::new();
+        let (_, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk2, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let result = pk1.mul_assign(&s, &sk2);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn skey_mul() {
+        let s = Secp256k1::new();
+        let (mut sk1, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk2, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let result = sk1.mul_assign(&s, &sk2);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn skey_inv() {
+        let s = Secp256k1::new();
+        let (mut sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let result = sk.inv_assign(&s);
 
         assert!(result.is_ok());
     }
