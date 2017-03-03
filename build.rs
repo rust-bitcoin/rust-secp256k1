@@ -24,6 +24,7 @@
 extern crate gcc;
 
 use std::env;
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 const ANDROID_AARCH64_COMPILER: &'static str = "toolchains/aarch64-linux-android-4.9/prebuilt/darwin-x86_64/bin";
@@ -38,14 +39,14 @@ fn concat_paths(first: &str, second: &str) -> PathBuf {
 }
 
 fn setup_android(config: &mut gcc::Config) {
-	let path = env::var_os("PATH").unwrap();
+	let path = env::var_os("PATH").unwrap_or_else(OsString::new);
 	let ndk_home = env::var("NDK_HOME").expect("NDK_HOME is not set");
 	let mut paths = env::split_paths(&path).collect::<Vec<_>>();
 	paths.push(concat_paths(&ndk_home, ANDROID_AARCH64_COMPILER));
 	paths.push(concat_paths(&ndk_home, ANDROID_ARM_COMPILER));
 	paths.push(concat_paths(&ndk_home, ANDROID_I686_COMPILER));
 
-	let new_path = env::join_paths(paths).unwrap();
+	let new_path = env::join_paths(paths).expect("all paths were created using PathBuf's; qed");
 	env::set_var("PATH", new_path);
 
 	config.include(&concat_paths(&ndk_home, ANDROID_INCLUDE));
@@ -57,7 +58,7 @@ fn main() {
 		.include("depend/secp256k1/include")
 		.include("depend/secp256k1/src");
 
-	let target = env::var("TARGET").unwrap();
+	let target = env::var("TARGET").expect("TARGET env variable is set by cargo; qed");
 	if target.contains("android") {
 		setup_android(&mut base_config);
 	}
