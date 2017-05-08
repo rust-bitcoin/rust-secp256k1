@@ -25,6 +25,7 @@ use ffi;
 use key::{SecretKey, PublicKey};
 
 use std::{mem, ptr};
+use std::convert::From;
 
 /// A Schnorr signature.
 pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
@@ -35,23 +36,14 @@ impl Signature {
     /// Deserializes a signature from a 64-byte vector
     pub fn deserialize(data: &[u8]) -> Signature {
         assert_eq!(data.len(), constants::SCHNORR_SIGNATURE_SIZE);
-        unsafe {
-            let mut ret: Signature = mem::uninitialized();
-            ptr::copy_nonoverlapping(data.as_ptr(), ret.as_mut_ptr(),
-                                     constants::SCHNORR_SIGNATURE_SIZE);
-            ret
-        }
+        let mut ret = [0; constants::SCHNORR_SIGNATURE_SIZE];
+        ret[..].copy_from_slice(data);
+        Signature(ret)
     }
 
     /// Serializes a signature to a 64-byte vector
     pub fn serialize(&self) -> Vec<u8> {
-        let mut ret = Vec::with_capacity(constants::SCHNORR_SIGNATURE_SIZE);
-        unsafe {
-            ptr::copy_nonoverlapping(self.as_ptr(), ret.as_mut_ptr(),
-                                     constants::SCHNORR_SIGNATURE_SIZE);
-            ret.set_len(constants::SCHNORR_SIGNATURE_SIZE);
-        }
-        ret
+        Vec::from(&self.0[..])
     }
 }
 
