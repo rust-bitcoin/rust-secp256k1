@@ -24,14 +24,14 @@ use ffi;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub struct SharedSecret(ffi::SharedSecret);
+pub struct SharedSecret(ffi::secp256k1_shared_secret);
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key
     #[inline]
     pub fn new(secp: &Secp256k1, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
-            let mut ss = ffi::SharedSecret::blank();
+            let mut ss = ffi::secp256k1_shared_secret::blank();
             let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
@@ -40,15 +40,15 @@ impl SharedSecret {
 
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
-    pub fn as_ptr(&self) -> *const ffi::SharedSecret {
+    pub fn as_ptr(&self) -> *const ffi::secp256k1_shared_secret {
         &self.0 as *const _
     }
 }
 
 /// Creates a new shared secret from a FFI shared secret
-impl From<ffi::SharedSecret> for SharedSecret {
+impl From<ffi::secp256k1_shared_secret> for SharedSecret {
     #[inline]
-    fn from(ss: ffi::SharedSecret) -> SharedSecret {
+    fn from(ss: ffi::secp256k1_shared_secret) -> SharedSecret {
         SharedSecret(ss)
     }
 }

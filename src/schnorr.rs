@@ -98,7 +98,7 @@ impl Secp256k1 {
             return Err(Error::IncapableContext);
         }
 
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = unsafe { ffi::secp256k1_pubkey::blank() };
         unsafe {
             if ffi::secp256k1_schnorr_recover(self.ctx, &mut pk,
                                               sig.as_ptr(), msg.as_ptr()) != 1 {
