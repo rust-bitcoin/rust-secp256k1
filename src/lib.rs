@@ -310,7 +310,8 @@ pub enum Error {
     IncapableContext,
     /// Signature failed verification
     IncorrectSignature,
-    /// Badly sized message
+    /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
+    /// constant)
     InvalidMessage,
     /// Bad public key
     InvalidPublicKey,
