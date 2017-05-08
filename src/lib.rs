@@ -302,6 +302,13 @@ impl Message {
     }
 }
 
+/// Creates a message from a `MESSAGE_SIZE` byte array
+impl From<[u8; constants::MESSAGE_SIZE]> for Message {
+    fn from(buf: [u8; constants::MESSAGE_SIZE]) -> Message {
+        Message(buf)
+    }
+}
+
 /// An ECDSA error
 #[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Error {
