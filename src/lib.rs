@@ -104,6 +104,23 @@ impl Signature {
         }
     }
 
+    /// Converts a 64-byte compact-encoded byte slice to a signature
+    pub fn from_compact(secp: &Secp256k1, data: &[u8]) -> Result<Signature, Error> {
+        let mut ret = unsafe { ffi::Signature::blank() };
+        if data.len() != 64 {
+            return Err(Error::InvalidSignature)
+        }
+
+        unsafe {
+            if ffi::secp256k1_ecdsa_signature_parse_compact(secp.ctx, &mut ret,
+                                                            data.as_ptr()) == 1 {
+                Ok(Signature(ret))
+            } else {
+                Err(Error::InvalidSignature)
+            }
+        }
+    }
+
     /// Converts a "lax DER"-encoded byte slice to a signature. This is basically
     /// only useful for validating signatures in the Bitcoin blockchain from before
     /// 2016. It should never be used in new applications. This library does not
@@ -168,6 +185,18 @@ impl Signature {
                                                                    &mut len, self.as_ptr());
             debug_assert!(err == 1);
             ret.set_len(len as usize);
+        }
+        ret
+    }
+
+    #[inline]
+    /// Serializes the signature in compact format
+    pub fn serialize_compact(&self, secp: &Secp256k1) -> [u8; 64] {
+        let mut ret = [0; 64];
+        unsafe {
+            let err = ffi::secp256k1_ecdsa_signature_serialize_compact(secp.ctx, ret.as_mut_ptr(),
+                                                                       self.as_ptr());
+            debug_assert!(err == 1);
         }
         ret
     }
@@ -650,7 +679,7 @@ mod tests {
     }
 
     #[test]
-    fn signature_der_roundtrip() {
+    fn signature_serialize_roundtrip() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
 
@@ -664,6 +693,15 @@ mod tests {
             let der = sig1.serialize_der(&s);
             let sig2 = Signature::from_der(&s, &der[..]).unwrap();
             assert_eq!(sig1, sig2);
+
+            let compact = sig1.serialize_compact(&s);
+            let sig2 = Signature::from_compact(&s, &compact[..]).unwrap();
+            assert_eq!(sig1, sig2);
+
+            assert!(Signature::from_compact(&s, &der[..]).is_err());
+            assert!(Signature::from_compact(&s, &compact[0..4]).is_err());
+            assert!(Signature::from_der(&s, &compact[..]).is_err());
+            assert!(Signature::from_der(&s, &der[0..4]).is_err());
          }
     }
 

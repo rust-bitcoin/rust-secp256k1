@@ -150,6 +150,10 @@ extern "C" {
                                                input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
+    pub fn secp256k1_ecdsa_signature_parse_compact(cx: *const Context, sig: *mut Signature,
+                                                   input64: *const c_uchar)
+                                                   -> c_int;
+
     pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
                                          input: *const c_uchar, in_len: size_t)
                                          -> c_int;
@@ -157,6 +161,10 @@ extern "C" {
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *const c_uchar,
                                                    out_len: *mut size_t, sig: *const Signature)
                                                    -> c_int;
+
+    pub fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
+                                                       sig: *const Signature)
+                                                       -> c_int;
 
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
                                                                input64: *const c_uchar, recid: c_int)
