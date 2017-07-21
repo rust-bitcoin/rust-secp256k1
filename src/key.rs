@@ -520,6 +520,27 @@ mod test {
         let mut json = json::de::Deserializer::from_str(zero32);
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_ok());
 
+        let zero33 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+        let mut json = json::de::Deserializer::from_str(zero33);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
+        let mut json = json::de::Deserializer::from_str(zero33);
+        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
+
+        let trailing66 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
+                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
+                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
+                        209,89,236,213,206,17]";
+        let mut json = json::de::Deserializer::from_str(trailing66);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
+
+        // The first 65 bytes of trailing66 are valid
+        let valid65 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
+                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
+                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
+                        209,89,236,213,206]";
+        let mut json = json::de::Deserializer::from_str(valid65);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_ok());
+
         // All zeroes pk is invalid
         let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
         let mut json = json::de::Deserializer::from_str(zero65);
