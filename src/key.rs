@@ -559,28 +559,11 @@ mod test {
 
     #[test]
     fn test_serialize_serde() {
-        use serde::{Serialize, Deserialize};
-        use json;
-
-        macro_rules! round_trip (
-            ($var:ident) => ({
-                let start = $var;
-                let mut encoded = Vec::new();
-                {
-                    let mut serializer = json::ser::Serializer::new(&mut encoded);
-                    start.serialize(&mut serializer).unwrap();
-                }
-                let mut deserializer = json::de::Deserializer::from_slice(&encoded);
-                let decoded = Deserialize::deserialize(&mut deserializer);
-                assert_eq!(Some(start), decoded.ok());
-            })
-        );
-
         let s = Secp256k1::new();
         for _ in 0..500 {
             let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-            round_trip!(sk);
-            round_trip!(pk);
+            round_trip_serde!(sk);
+            round_trip_serde!(pk);
         }
     }
 
