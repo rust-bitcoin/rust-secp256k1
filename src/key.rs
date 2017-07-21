@@ -274,20 +274,20 @@ impl Encodable for PublicKey {
     }
 }
 
-impl Deserialize for PublicKey {
-    fn deserialize<D>(d: &mut D) -> Result<PublicKey, D::Error>
-        where D: Deserializer
+impl<'de> Deserialize<'de> for PublicKey {
+    fn deserialize<D>(d: D) -> Result<PublicKey, D::Error>
+        where D: Deserializer<'de>
     {
         use serde::de;
         struct Visitor {
             marker: marker::PhantomData<PublicKey>,
         }
-        impl de::Visitor for Visitor {
+        impl<'de> de::Visitor<'de> for Visitor {
             type Value = PublicKey;
 
             #[inline]
-            fn visit_seq<V>(&mut self, mut v: V) -> Result<PublicKey, V::Error>
-                where V: de::SeqVisitor
+            fn visit_seq<A>(self, mut a: A) -> Result<PublicKey, A::Error>
+                where A: de::SeqAccess<'de>
             {
                 debug_assert!(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE >= constants::COMPRESSED_PUBLIC_KEY_SIZE);
 
@@ -298,27 +298,44 @@ impl Deserialize for PublicKey {
 
                     let mut read_len = 0;
                     while read_len < constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
-                        let read_ch = match try!(v.visit()) {
+                        let read_ch = match try!(a.next_element()) {
                             Some(c) => c,
                             None => break
                         };
                         ret[read_len] = read_ch;
                         read_len += 1;
                     }
-                    try!(v.end());
+                    let one_after_last : Option<u8> = try!(a.next_element());
+                    if one_after_last.is_some() {
+                        return Err(de::Error::invalid_length(read_len + 1, &self));
+                    }
 
-                    PublicKey::from_slice(&s, &ret[..read_len]).map_err(|e| de::Error::syntax(&e.to_string()))
+                    match read_len {
+                        constants::UNCOMPRESSED_PUBLIC_KEY_SIZE | constants::COMPRESSED_PUBLIC_KEY_SIZE
+                            => PublicKey::from_slice(&s, &ret[..read_len]).map_err(
+                                |e| match e {
+                                        InvalidPublicKey => de::Error::invalid_value(de::Unexpected::Seq, &self),
+                                        _ => de::Error::custom(&e.to_string()),
+                                    }
+                                ),
+                        _ => Err(de::Error::invalid_length(read_len, &self)),
+                    }
                 }
+            }
+
+            fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                write!(f, "a sequence of {} or {} bytes representing a valid compressed or uncompressed public key",
+                       constants::COMPRESSED_PUBLIC_KEY_SIZE, constants::UNCOMPRESSED_PUBLIC_KEY_SIZE)
             }
         }
 
         // Begin actual function
-        d.visit(Visitor { marker: ::std::marker::PhantomData })
+        d.deserialize_seq(Visitor { marker: ::std::marker::PhantomData })
     }
 }
 
 impl Serialize for PublicKey {
-    fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
         let secp = Secp256k1::with_caps(::ContextFlag::None);
@@ -491,30 +508,51 @@ mod test {
         use json;
 
         // Invalid length
-        let zero31 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c)));
+        let zero31 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+        let mut json = json::de::Deserializer::from_str(zero31);
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero31.iter().map(|c| Ok(*c)));
+        let mut json = json::de::Deserializer::from_str(zero31);
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
 
-        let zero32 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c)));
+        let zero32 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+        let mut json = json::de::Deserializer::from_str(zero32);
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero32.iter().map(|c| Ok(*c)));
+        let mut json = json::de::Deserializer::from_str(zero32);
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_ok());
 
-        // All zeroes pk is invalid
-        let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c)));
+        let zero33 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+        let mut json = json::de::Deserializer::from_str(zero33);
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(zero65.iter().map(|c| Ok(*c)));
+        let mut json = json::de::Deserializer::from_str(zero33);
+        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
+
+        let trailing66 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
+                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
+                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
+                        209,89,236,213,206,17]";
+        let mut json = json::de::Deserializer::from_str(trailing66);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
+
+        // The first 65 bytes of trailing66 are valid
+        let valid65 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
+                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
+                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
+                        209,89,236,213,206]";
+        let mut json = json::de::Deserializer::from_str(valid65);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_ok());
+
+        // All zeroes pk is invalid
+        let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+        let mut json = json::de::Deserializer::from_str(zero65);
+        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
+        let mut json = json::de::Deserializer::from_str(zero65);
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
 
         // Syntax error
-        let string = "\"my key\"".as_bytes();
-        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c)));
+        let string = "\"my key\"";
+        let mut json = json::de::Deserializer::from_str(string);
         assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::new(string.iter().map(|c| Ok(*c)));
+        let mut json = json::de::Deserializer::from_str(string);
         assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
     }
 
@@ -532,7 +570,7 @@ mod test {
                     let mut serializer = json::ser::Serializer::new(&mut encoded);
                     start.serialize(&mut serializer).unwrap();
                 }
-                let mut deserializer = json::de::Deserializer::new(encoded.iter().map(|c| Ok(*c)));
+                let mut deserializer = json::de::Deserializer::from_slice(&encoded);
                 let decoded = Deserialize::deserialize(&mut deserializer);
                 assert_eq!(Some(start), decoded.ok());
             })

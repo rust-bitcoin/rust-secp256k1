@@ -144,9 +144,9 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl ::serde::Deserialize for $thing {
-            fn deserialize<D>(d: &mut D) -> Result<$thing, D::Error>
-                where D: ::serde::Deserializer
+        impl<'de> ::serde::Deserialize<'de> for $thing {
+            fn deserialize<D>(d: D) -> Result<$thing, D::Error>
+                where D: ::serde::Deserializer<'de>
             {
                 // We have to define the Visitor struct inside the function
                 // to make it local ... all we really need is that it's
@@ -154,35 +154,42 @@ macro_rules! impl_array_newtype {
                 struct Visitor {
                     marker: ::std::marker::PhantomData<$thing>,
                 }
-                impl ::serde::de::Visitor for Visitor {
+                impl<'de> ::serde::de::Visitor<'de> for Visitor {
                     type Value = $thing;
 
                     #[inline]
-                    fn visit_seq<V>(&mut self, mut v: V) -> Result<$thing, V::Error>
-                        where V: ::serde::de::SeqVisitor
+                    fn visit_seq<A>(self, mut a: A) -> Result<$thing, A::Error>
+                        where A: ::serde::de::SeqAccess<'de>
                     {
                         unsafe {
                             use std::mem;
                             let mut ret: [$ty; $len] = mem::uninitialized();
                             for i in 0..$len {
-                                ret[i] = match try!(v.visit()) {
+                                ret[i] = match try!(a.next_element()) {
                                     Some(c) => c,
-                                    None => return Err(::serde::de::Error::end_of_stream())
+                                    None => return Err(::serde::de::Error::invalid_length(i, &self))
                                 };
                             }
-                            try!(v.end());
+                            let one_after_last : Option<u8> = try!(a.next_element());
+                            if one_after_last.is_some() {
+                                return Err(::serde::de::Error::invalid_length($len + 1, &self));
+                            }
                             Ok($thing(ret))
                         }
+                    }
+
+                    fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                        write!(f, "a sequence of {} elements", $len)
                     }
                 }
 
                 // Begin actual function
-                d.visit(Visitor { marker: ::std::marker::PhantomData })
+                d.deserialize_seq(Visitor { marker: ::std::marker::PhantomData })
             }
         }
 
         impl ::serde::Serialize for $thing {
-            fn serialize<S>(&self, s: &mut S) -> Result<(), S::Error>
+            fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
                 where S: ::serde::Serializer
             {
                 (&self.0[..]).serialize(s)
