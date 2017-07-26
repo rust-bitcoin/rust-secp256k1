@@ -202,6 +202,66 @@ impl Signature {
     }
 }
 
+impl serde::Serialize for Signature {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+        where S: serde::Serializer
+    {
+        let secp = Secp256k1::with_caps(::ContextFlag::None);
+        (&self.serialize_compact(&secp)[..]).serialize(s)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Signature {
+    fn deserialize<D>(d: D) -> Result<Signature, D::Error>
+        where D: serde::Deserializer<'de>
+    {
+        use serde::de;
+        struct Visitor {
+            marker: std::marker::PhantomData<Signature>,
+        }
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = Signature;
+
+            #[inline]
+            fn visit_seq<A>(self, mut a: A) -> Result<Signature, A::Error>
+                where A: de::SeqAccess<'de>
+            {
+                let s = Secp256k1::with_caps(::ContextFlag::None);
+                unsafe {
+                    use std::mem;
+                    let mut ret: [u8; constants::COMPACT_SIGNATURE_SIZE] = mem::uninitialized();
+
+                    for i in 0..constants::COMPACT_SIGNATURE_SIZE {
+                        ret[i] = match try!(a.next_element()) {
+                            Some(c) => c,
+                            None => return Err(::serde::de::Error::invalid_length(i, &self))
+                        };
+                    }
+                    let one_after_last : Option<u8> = try!(a.next_element());
+                    if one_after_last.is_some() {
+                        return Err(serde::de::Error::invalid_length(constants::COMPACT_SIGNATURE_SIZE + 1, &self));
+                    }
+
+                    Signature::from_compact(&s, &ret).map_err(
+                        |e| match e {
+                            Error::InvalidSignature => de::Error::invalid_value(de::Unexpected::Seq, &self),
+                            _ => de::Error::custom(&e.to_string()),
+                        }
+                    )
+                }
+            }
+
+            fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                write!(f, "a sequence of {} bytes representing a syntactically well-formed compact signature",
+                       constants::COMPACT_SIGNATURE_SIZE)
+            }
+        }
+
+        // Begin actual function
+        d.deserialize_seq(Visitor { marker: std::marker::PhantomData })
+    }
+}
+
 /// Creates a new signature from a FFI signature
 impl From<ffi::Signature> for Signature {
     #[inline]
@@ -697,6 +757,8 @@ mod tests {
             let compact = sig1.serialize_compact(&s);
             let sig2 = Signature::from_compact(&s, &compact[..]).unwrap();
             assert_eq!(sig1, sig2);
+
+            round_trip_serde!(sig1);
 
             assert!(Signature::from_compact(&s, &der[..]).is_err());
             assert!(Signature::from_compact(&s, &compact[0..4]).is_err());
