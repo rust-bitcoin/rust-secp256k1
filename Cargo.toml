@@ -1,12 +1,12 @@
 [package]
 
 name = "eth-secp256k1"
-version = "0.5.6"
+version = "0.5.7"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
-homepage = "https://github.com/arkpar/rust-secp256k1/"
-repository = "https://github.com/arkpar/rust-secp256k1/"
+homepage = "https://github.com/paritytech/rust-secp256k1/"
+repository = "https://github.com/paritytech/rust-secp256k1/"
 documentation = "https://www.wpsoftware.net/rustdoc/secp256k1/"
 description = "Fork of Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
