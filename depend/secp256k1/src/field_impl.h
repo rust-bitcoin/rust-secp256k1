@@ -4,8 +4,8 @@
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
  **********************************************************************/
 
-#ifndef _SECP256K1_FIELD_IMPL_H_
-#define _SECP256K1_FIELD_IMPL_H_
+#ifndef SECP256K1_FIELD_IMPL_H
+#define SECP256K1_FIELD_IMPL_H
 
 #if defined HAVE_CONFIG_H
 #include "libsecp256k1-config.h"
@@ -260,7 +260,7 @@ static void secp256k1_fe_inv_var(secp256k1_fe *r, const secp256k1_fe *a) {
 #endif
 }
 
-static void secp256k1_fe_inv_all_var(size_t len, secp256k1_fe *r, const secp256k1_fe *a) {
+static void secp256k1_fe_inv_all_var(secp256k1_fe *r, const secp256k1_fe *a, size_t len) {
     secp256k1_fe u;
     size_t i;
     if (len < 1) {
@@ -312,4 +312,4 @@ static int secp256k1_fe_is_quad_var(const secp256k1_fe *a) {
 #endif
 }
 
-#endif
+#endif /* SECP256K1_FIELD_IMPL_H */
