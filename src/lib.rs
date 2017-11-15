@@ -288,15 +288,18 @@ impl Message {
         match data.len() {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0; constants::MESSAGE_SIZE];
-                unsafe {
-                    ptr::copy_nonoverlapping(data.as_ptr(),
-                                             ret.as_mut_ptr(),
-                                             data.len());
-                }
+                ret[..].copy_from_slice(data);
                 Ok(Message(ret))
             }
             _ => Err(Error::InvalidMessage)
         }
+    }
+}
+
+/// Creates a message from a `MESSAGE_SIZE` byte array
+impl From<[u8; constants::MESSAGE_SIZE]> for Message {
+    fn from(buf: [u8; constants::MESSAGE_SIZE]) -> Message {
+        Message(buf)
     }
 }
 
@@ -308,7 +311,8 @@ pub enum Error {
     IncapableContext,
     /// Signature failed verification
     IncorrectSignature,
-    /// Badly sized message
+    /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
+    /// constant)
     InvalidMessage,
     /// Bad public key
     InvalidPublicKey,
@@ -536,7 +540,6 @@ impl Secp256k1 {
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
-    use std::ptr;
     use serialize::hex::FromHex;
 
     use key::{SecretKey, PublicKey};
@@ -709,20 +712,14 @@ mod tests {
 
         wild_keys[0][0] = 1;
         wild_msgs[1][0] = 1;
-        unsafe {
-            use constants;
-            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                     wild_keys[1].as_mut_ptr(),
-                                     32);
-            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                     wild_msgs[1].as_mut_ptr(),
-                                     32);
-            ptr::copy_nonoverlapping(constants::CURVE_ORDER.as_ptr(),
-                                     wild_msgs[2].as_mut_ptr(),
-                                     32);
-            wild_keys[1][0] -= 1;
-            wild_msgs[1][0] -= 1;
-        }
+
+        use constants;
+        wild_keys[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
+        wild_msgs[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
+        wild_msgs[2][..].copy_from_slice(&constants::CURVE_ORDER[..]);
+
+        wild_keys[1][0] -= 1;
+        wild_msgs[1][0] -= 1;
 
         for key in wild_keys.iter().map(|k| SecretKey::from_slice(&s, &k[..]).unwrap()) {
             for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
