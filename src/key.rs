@@ -15,7 +15,6 @@
 
 //! # Public and secret keys
 
-use std::intrinsics::copy_nonoverlapping;
 use arrayvec::ArrayVec;
 use rand::Rng;
 
@@ -95,10 +94,8 @@ impl SecretKey {
                     if ffi::secp256k1_ec_seckey_verify(secp.ctx, data.as_ptr()) == 0 {
                         return Err(InvalidSecretKey);
                     }
-                    copy_nonoverlapping(data.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        data.len());
                 }
+                ret[..].copy_from_slice(data);
                 Ok(SecretKey(ret))
             }
             _ => Err(InvalidSecretKey)
@@ -119,7 +116,7 @@ impl SecretKey {
     }
 
     #[inline]
-    /// Multiplies one secret key to another, modulo the curve order
+    /// Multiplies one secret key by another, modulo the curve order
     pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
                      -> Result<(), Error> {
         unsafe {
@@ -393,12 +390,7 @@ mod test {
                     0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
                     0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41];
                 assert_eq!(data.len(), 32);
-                unsafe {
-                    use std::intrinsics::copy_nonoverlapping;
-                    copy_nonoverlapping(group_order.as_ptr(),
-                                        data.as_mut_ptr(),
-                                        32);
-                }
+                data.copy_from_slice(&group_order[..]);
                 data[31] = self.0;
                 self.0 -= 1;
             }
@@ -482,12 +474,31 @@ mod test {
     }
 
     #[test]
+    fn test_multiplication() {
+        let s = Secp256k1::new();
+
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert!(sk1.mul_assign(&s, &sk2).is_ok());
+        assert!(pk1.mul_assign(&s, &sk2).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert!(sk2.mul_assign(&s, &sk1).is_ok());
+        assert!(pk2.mul_assign(&s, &sk1).is_ok());
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+    }
+
+    #[test]
     fn pubkey_hash() {
-        use std::hash::{Hash, SipHasher, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         use std::collections::HashSet;
 
         fn hash<T: Hash>(t: &T) -> u64 {
-            let mut s = SipHasher::new();
+            let mut s = DefaultHasher::new();
             t.hash(&mut s);
             s.finish()
         }

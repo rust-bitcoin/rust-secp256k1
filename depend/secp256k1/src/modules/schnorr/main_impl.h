@@ -11,7 +11,7 @@
 #include "modules/schnorr/schnorr_impl.h"
 
 static void secp256k1_schnorr_msghash_sha256(unsigned char *h32, const unsigned char *r32, const unsigned char *msg32) {
-    secp256k1_sha256_t sha;
+    secp256k1_sha256 sha;
     secp256k1_sha256_initialize(&sha);
     secp256k1_sha256_write(&sha, r32, 32);
     secp256k1_sha256_write(&sha, msg32, 32);
