@@ -21,7 +21,7 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-extern crate gcc;
+extern crate cc;
 
 use std::env;
 use std::ffi::OsString;
@@ -54,7 +54,7 @@ fn concat_paths(first: &str, second: &str) -> PathBuf {
 	path
 }
 
-fn setup_android(config: &mut gcc::Build) {
+fn setup_android(config: &mut cc::Build) {
 	let path = env::var_os("PATH").unwrap_or_else(OsString::new);
 	let ndk_home = env::var("NDK_HOME").expect("NDK_HOME is not set");
 	let mut paths = env::split_paths(&path).collect::<Vec<_>>();
@@ -69,7 +69,7 @@ fn setup_android(config: &mut gcc::Build) {
 }
 
 fn main() {
-	let mut base_config = gcc::Build::new();
+	let mut base_config = cc::Build::new();
 	base_config.include("depend/secp256k1/")
 		.include("depend/secp256k1/include")
 		.include("depend/secp256k1/src");
