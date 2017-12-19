@@ -38,18 +38,16 @@
 
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
-
-extern crate arrayvec;
-extern crate rustc_serialize as serialize;
-extern crate serde;
-extern crate serde_json as json;
+#[cfg(any(test, feature = "serde"))] extern crate serde;
+#[cfg(test)] extern crate serde_json as json;
+#[cfg(any(test, feature = "rand"))] extern crate rand;
+#[cfg(any(test, feature = "rustc-serialize"))] extern crate rustc_serialize as serialize;
 
 extern crate libc;
-extern crate rand;
 
 use libc::size_t;
 use std::{error, fmt, ops, ptr};
-use rand::Rng;
+#[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 #[macro_use]
 mod macros;
@@ -202,6 +200,7 @@ impl Signature {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl serde::Serialize for Signature {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
@@ -211,6 +210,7 @@ impl serde::Serialize for Signature {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl<'de> serde::Deserialize<'de> for Signature {
     fn deserialize<D>(d: D) -> Result<Signature, D::Error>
         where D: serde::Deserializer<'de>
@@ -520,6 +520,7 @@ impl Secp256k1 {
 
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistence;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell
+    #[cfg(any(test, feature = "rand"))]
     pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
         let mut seed = [0; 32];
         rng.fill_bytes(&mut seed);
@@ -541,6 +542,7 @@ impl Secp256k1 {
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation. Requires a signing-capable context.
     #[inline]
+    #[cfg(any(test, feature = "rand"))]
     pub fn generate_keypair<R: Rng>(&self, rng: &mut R)
                                    -> Result<(key::SecretKey, key::PublicKey), Error> {
         let sk = key::SecretKey::new(self, rng);
@@ -690,7 +692,7 @@ mod tests {
         assert_eq!(full.recover(&msg, &sigr), Ok(pk));
 
         // Check that we can produce keys from slices with no precomputation
-        let (pk_slice, sk_slice) = (&pk.serialize_vec(&none, true), &sk[..]);
+        let (pk_slice, sk_slice) = (&pk.serialize(), &sk[..]);
         let new_pk = PublicKey::from_slice(&none, pk_slice).unwrap();
         let new_sk = SecretKey::from_slice(&none, sk_slice).unwrap();
         assert_eq!(sk, new_sk);

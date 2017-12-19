@@ -116,6 +116,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(any(test, feature = "rustc-serialize"))]
         impl ::serialize::Decodable for $thing {
             fn decode<D: ::serialize::Decoder>(d: &mut D) -> Result<$thing, D::Error> {
                 use serialize::Decodable;
@@ -137,6 +138,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(any(test, feature = "rustc-serialize"))]
         impl ::serialize::Encodable for $thing {
             fn encode<S: ::serialize::Encoder>(&self, s: &mut S)
                                                -> Result<(), S::Error> {
@@ -144,6 +146,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(any(test, feature = "serde"))]
         impl<'de> ::serde::Deserialize<'de> for $thing {
             fn deserialize<D>(d: D) -> Result<$thing, D::Error>
                 where D: ::serde::Deserializer<'de>
@@ -188,6 +191,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(any(test, feature = "serde"))]
         impl ::serde::Serialize for $thing {
             fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
                 where S: ::serde::Serializer

@@ -140,7 +140,7 @@ extern "C" {
                                      input: *const c_uchar, in_len: size_t)
                                      -> c_int;
 
-    pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *const c_uchar,
+    pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *mut c_uchar,
                                          out_len: *mut size_t, pk: *const PublicKey
 ,                                        compressed: c_uint)
                                          -> c_int;
