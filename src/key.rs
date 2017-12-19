@@ -16,7 +16,7 @@
 //! # Public and secret keys
 
 use std::marker;
-use rand::Rng;
+#[cfg(any(test, feature = "rand"))] use rand::Rng;
 use serialize::{Decoder, Decodable, Encoder, Encodable};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
@@ -54,6 +54,7 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 pub struct PublicKey(ffi::PublicKey);
 
 
+#[cfg(any(test, feature = "rand"))]
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
     rng.fill_bytes(&mut ret);
@@ -63,6 +64,7 @@ fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
 impl SecretKey {
     /// Creates a new random secret key
     #[inline]
+    #[cfg(any(test, feature = "rand"))]
     pub fn new<R: Rng>(secp: &Secp256k1, rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
