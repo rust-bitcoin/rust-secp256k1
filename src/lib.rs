@@ -40,8 +40,8 @@
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(test)] extern crate serde_json as json;
 #[cfg(any(test, feature = "rand"))] extern crate rand;
+#[cfg(any(test, feature = "rustc-serialize"))] extern crate rustc_serialize as serialize;
 
-extern crate rustc_serialize as serialize;
 extern crate serde;
 
 extern crate libc;

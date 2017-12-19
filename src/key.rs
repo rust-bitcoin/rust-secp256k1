@@ -17,7 +17,7 @@
 
 use std::marker;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
-use serialize::{Decoder, Decodable, Encoder, Encodable};
+#[cfg(any(test, feature = "rustc-serialize"))] use serialize::{Decoder, Decodable, Encoder, Encodable};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 use super::{Secp256k1, ContextFlag};
@@ -254,6 +254,7 @@ impl PublicKey {
     }
 }
 
+#[cfg(any(test, feature = "rustc-serialize"))]
 impl Decodable for PublicKey {
     fn decode<D: Decoder>(d: &mut D) -> Result<PublicKey, D::Error> {
         d.read_seq(|d, len| {
@@ -292,6 +293,7 @@ impl From<ffi::PublicKey> for PublicKey {
 }
 
 
+#[cfg(any(test, feature = "rustc-serialize"))]
 impl Encodable for PublicKey {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         self.serialize().encode(s)

@@ -27,13 +27,17 @@ default = []
 [dev-dependencies]
 serde_json = "1.0"
 rand = "0.3"
+rustc-serialize = "0.3"
 
 [dependencies]
 libc = "0.2"
-rustc-serialize = "0.3"
 serde = "1.0"
 
 [dependencies.rand]
+version = "0.3"
+optional = true
+
+[dependencies.rustc-serialize]
 version = "0.3"
 optional = true
 
