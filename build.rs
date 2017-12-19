@@ -24,7 +24,7 @@
 extern crate gcc;
 
 fn main() {
-    let mut base_config = gcc::Config::new();
+    let mut base_config = gcc::Build::new();
     base_config.include("depend/secp256k1/")
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
