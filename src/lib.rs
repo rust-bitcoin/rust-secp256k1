@@ -38,11 +38,10 @@
 
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
+#[cfg(any(test, feature = "serde"))] extern crate serde;
 #[cfg(test)] extern crate serde_json as json;
 #[cfg(any(test, feature = "rand"))] extern crate rand;
 #[cfg(any(test, feature = "rustc-serialize"))] extern crate rustc_serialize as serialize;
-
-extern crate serde;
 
 extern crate libc;
 
@@ -201,6 +200,7 @@ impl Signature {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl serde::Serialize for Signature {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer
@@ -210,6 +210,7 @@ impl serde::Serialize for Signature {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl<'de> serde::Deserialize<'de> for Signature {
     fn deserialize<D>(d: D) -> Result<Signature, D::Error>
         where D: serde::Deserializer<'de>

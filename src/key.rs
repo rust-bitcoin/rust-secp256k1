@@ -15,10 +15,10 @@
 
 //! # Public and secret keys
 
-use std::marker;
+#[cfg(any(test, feature = "serde"))] use std::marker;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "rustc-serialize"))] use serialize::{Decoder, Decodable, Encoder, Encodable};
-use serde::{Serialize, Deserialize, Serializer, Deserializer};
+#[cfg(any(test, feature = "serde"))] use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 use super::{Secp256k1, ContextFlag};
 use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
@@ -300,6 +300,7 @@ impl Encodable for PublicKey {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl<'de> Deserialize<'de> for PublicKey {
     fn deserialize<D>(d: D) -> Result<PublicKey, D::Error>
         where D: Deserializer<'de>
@@ -360,6 +361,7 @@ impl<'de> Deserialize<'de> for PublicKey {
     }
 }
 
+#[cfg(any(test, feature = "serde"))]
 impl Serialize for PublicKey {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer
