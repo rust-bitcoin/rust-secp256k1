@@ -57,6 +57,9 @@ pub mod ffi;
 pub mod key;
 pub mod schnorr;
 
+pub use key::SecretKey;
+pub use key::PublicKey;
+
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoveryId(i32);
