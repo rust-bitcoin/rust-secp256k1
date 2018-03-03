@@ -189,7 +189,7 @@ impl PublicKey {
         let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             if ffi::secp256k1_ec_pubkey_parse(secp.ctx, &mut pk, data.as_ptr(),
-                                              data.len() as ::libc::size_t) == 1 {
+                                              data.len() as usize) == 1 {
                 Ok(PublicKey(pk))
             } else {
                 Err(InvalidPublicKey)
@@ -205,7 +205,7 @@ impl PublicKey {
         let mut ret = ArrayVec::new();
 
         unsafe {
-            let mut ret_len = constants::PUBLIC_KEY_SIZE as ::libc::size_t;
+            let mut ret_len = constants::PUBLIC_KEY_SIZE as usize;
             let compressed = if compressed { ffi::SECP256K1_SER_COMPRESSED } else { ffi::SECP256K1_SER_UNCOMPRESSED };
             let err = ffi::secp256k1_ec_pubkey_serialize(secp.ctx, ret.as_ptr(),
                                                          &mut ret_len, self.as_ptr(),

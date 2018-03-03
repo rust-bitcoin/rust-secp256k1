@@ -18,8 +18,7 @@
 //! not be needed for most users.
 use std::mem;
 use std::hash;
-
-use libc::{c_int, c_uchar, c_uint, c_void, size_t};
+use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = (1 << 0) | 0;
@@ -137,25 +136,25 @@ extern "C" {
 
     // Pubkeys
     pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
-                                     input: *const c_uchar, in_len: size_t)
+                                     input: *const c_uchar, in_len: usize)
                                      -> c_int;
 
     pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *const c_uchar,
-                                         out_len: *mut size_t, pk: *const PublicKey
-,                                        compressed: c_uint)
+                                         out_len: *mut usize, pk: *const PublicKey,
+                                         compressed: c_uint)
                                          -> c_int;
 
     // Signatures
     pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
-                                               input: *const c_uchar, in_len: size_t)
+                                               input: *const c_uchar, in_len: usize)
                                                -> c_int;
 
     pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                         input: *const c_uchar, in_len: size_t)
+                                         input: *const c_uchar, in_len: usize)
                                          -> c_int;
 
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *const c_uchar,
-                                                   out_len: *mut size_t, sig: *const Signature)
+                                                   out_len: *mut usize, sig: *const Signature)
                                                    -> c_int;
 
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
