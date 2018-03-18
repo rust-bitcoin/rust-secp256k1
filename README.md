@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/apoelstra/rust-secp256k1.png?branch=master)](https://travis-ci.org/apoelstra/rust-secp256k1)
+[![Build Status](https://travis-ci.org/rust-bitcoin/rust-secp256k1.png?branch=master)](https://travis-ci.org/rust-bitcoin/rust-secp256k1)
 
 ### rust-secp256k1
 
-`rust-secp256k1` is a wrapper around ![libsecp256k1](https://github.com/bitcoin/secp256k1),
+`rust-secp256k1` is a wrapper around ![libsecp256k1](https://github.com/bitcoin-core/secp256k1),
 a C library by Peter Wuille for producing ECDSA signatures using the SECG curve
 `secp256k1`. This library
 * exposes type-safe Rust bindings for all `libsecp256k1` functions
