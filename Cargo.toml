@@ -23,6 +23,7 @@ path = "src/lib.rs"
 [features]
 unstable = []
 default = []
+fuzztarget = []
 
 [dev-dependencies]
 serde = "1.0"
