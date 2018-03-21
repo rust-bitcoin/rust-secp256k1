@@ -278,7 +278,7 @@ extern "C" {
 
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
-    use libc::{c_int, c_uchar, c_uint, c_void};
+    use libc::{c_int, c_uchar, c_uint, c_void, size_t};
     use ffi::*;
     use std::ptr;
 
