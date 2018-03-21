@@ -38,10 +38,7 @@
 
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
-#[cfg(any(test, feature = "serde"))] extern crate serde;
-#[cfg(test)] extern crate serde_json as json;
 #[cfg(any(test, feature = "rand"))] extern crate rand;
-#[cfg(any(test, feature = "rustc-serialize"))] extern crate rustc_serialize as serialize;
 
 extern crate libc;
 
@@ -200,68 +197,6 @@ impl Signature {
             debug_assert!(err == 1);
         }
         ret
-    }
-}
-
-#[cfg(any(test, feature = "serde"))]
-impl serde::Serialize for Signature {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-        where S: serde::Serializer
-    {
-        let secp = Secp256k1::with_caps(::ContextFlag::None);
-        (&self.serialize_compact(&secp)[..]).serialize(s)
-    }
-}
-
-#[cfg(any(test, feature = "serde"))]
-impl<'de> serde::Deserialize<'de> for Signature {
-    fn deserialize<D>(d: D) -> Result<Signature, D::Error>
-        where D: serde::Deserializer<'de>
-    {
-        use serde::de;
-        struct Visitor {
-            marker: std::marker::PhantomData<Signature>,
-        }
-        impl<'de> de::Visitor<'de> for Visitor {
-            type Value = Signature;
-
-            #[inline]
-            fn visit_seq<A>(self, mut a: A) -> Result<Signature, A::Error>
-                where A: de::SeqAccess<'de>
-            {
-                let s = Secp256k1::with_caps(::ContextFlag::None);
-                unsafe {
-                    use std::mem;
-                    let mut ret: [u8; constants::COMPACT_SIGNATURE_SIZE] = mem::uninitialized();
-
-                    for i in 0..constants::COMPACT_SIGNATURE_SIZE {
-                        ret[i] = match try!(a.next_element()) {
-                            Some(c) => c,
-                            None => return Err(::serde::de::Error::invalid_length(i, &self))
-                        };
-                    }
-                    let one_after_last : Option<u8> = try!(a.next_element());
-                    if one_after_last.is_some() {
-                        return Err(serde::de::Error::invalid_length(constants::COMPACT_SIGNATURE_SIZE + 1, &self));
-                    }
-
-                    Signature::from_compact(&s, &ret).map_err(
-                        |e| match e {
-                            Error::InvalidSignature => de::Error::invalid_value(de::Unexpected::Seq, &self),
-                            _ => de::Error::custom(&e.to_string()),
-                        }
-                    )
-                }
-            }
-
-            fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                write!(f, "a sequence of {} bytes representing a syntactically well-formed compact signature",
-                       constants::COMPACT_SIGNATURE_SIZE)
-            }
-        }
-
-        // Begin actual function
-        d.deserialize_seq(Visitor { marker: std::marker::PhantomData })
     }
 }
 
@@ -636,7 +571,6 @@ impl Secp256k1 {
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
-    use serialize::hex::FromHex;
 
     use key::{SecretKey, PublicKey};
     use super::constants;
@@ -644,7 +578,28 @@ mod tests {
     use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature,
                        IncapableContext};
 
-    macro_rules! hex (($hex:expr) => ($hex.from_hex().unwrap()));
+    macro_rules! hex {
+        ($hex:expr) => {
+            {
+                let mut vec = Vec::new();
+                let mut b = 0;
+                for (idx, c) in $hex.as_bytes().iter().enumerate() {
+                    b <<= 4;
+                    match *c {
+                        b'A'...b'F' => b |= c - b'A' + 10,
+                        b'a'...b'f' => b |= c - b'a' + 10,
+                        b'0'...b'9' => b |= c - b'0',
+                        _ => panic!("Bad hex"),
+                    }
+                    if (idx & 1) == 1 {
+                        vec.push(b);
+                        b = 0;
+                    }
+                }
+                vec
+            }
+        }
+    }
 
     #[test]
     fn capabilities() {
@@ -762,8 +717,6 @@ mod tests {
             let compact = sig1.serialize_compact(&s);
             let sig2 = Signature::from_compact(&s, &compact[..]).unwrap();
             assert_eq!(sig1, sig2);
-
-            round_trip_serde!(sig1);
 
             assert!(Signature::from_compact(&s, &der[..]).is_err());
             assert!(Signature::from_compact(&s, &compact[0..4]).is_err());

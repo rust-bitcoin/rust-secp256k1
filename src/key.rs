@@ -15,10 +15,7 @@
 
 //! # Public and secret keys
 
-#[cfg(any(test, feature = "serde"))] use std::marker;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
-#[cfg(any(test, feature = "rustc-serialize"))] use serialize::{Decoder, Decodable, Encoder, Encodable};
-#[cfg(any(test, feature = "serde"))] use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 use std::mem;
 
@@ -271,119 +268,11 @@ impl PublicKey {
     }
 }
 
-#[cfg(any(test, feature = "rustc-serialize"))]
-impl Decodable for PublicKey {
-    fn decode<D: Decoder>(d: &mut D) -> Result<PublicKey, D::Error> {
-        d.read_seq(|d, len| {
-            let s = Secp256k1::with_caps(::ContextFlag::None);
-            if len == constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
-                unsafe {
-                    use std::mem;
-                    let mut ret: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
-                    for i in 0..len {
-                        ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
-                    }
-                    PublicKey::from_slice(&s, &ret).map_err(|_| d.error("invalid public key"))
-                }
-            } else if len == constants::PUBLIC_KEY_SIZE {
-                unsafe {
-                    use std::mem;
-                    let mut ret: [u8; constants::PUBLIC_KEY_SIZE] = mem::uninitialized();
-                    for i in 0..len {
-                        ret[i] = try!(d.read_seq_elt(i, |d| Decodable::decode(d)));
-                    }
-                    PublicKey::from_slice(&s, &ret).map_err(|_| d.error("invalid public key"))
-                }
-            } else {
-                Err(d.error("Invalid length"))
-            }
-        })
-    }
-}
-
 /// Creates a new public key from a FFI public key
 impl From<ffi::PublicKey> for PublicKey {
     #[inline]
     fn from(pk: ffi::PublicKey) -> PublicKey {
         PublicKey(pk)
-    }
-}
-
-
-#[cfg(any(test, feature = "rustc-serialize"))]
-impl Encodable for PublicKey {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        self.serialize().encode(s)
-    }
-}
-
-#[cfg(any(test, feature = "serde"))]
-impl<'de> Deserialize<'de> for PublicKey {
-    fn deserialize<D>(d: D) -> Result<PublicKey, D::Error>
-        where D: Deserializer<'de>
-    {
-        use serde::de;
-        struct Visitor {
-            marker: marker::PhantomData<PublicKey>,
-        }
-        impl<'de> de::Visitor<'de> for Visitor {
-            type Value = PublicKey;
-
-            #[inline]
-            fn visit_seq<A>(self, mut a: A) -> Result<PublicKey, A::Error>
-                where A: de::SeqAccess<'de>
-            {
-                debug_assert!(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE >= constants::PUBLIC_KEY_SIZE);
-
-                let s = Secp256k1::with_caps(::ContextFlag::None);
-                unsafe {
-                    use std::mem;
-                    let mut ret: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] = mem::uninitialized();
-
-                    let mut read_len = 0;
-                    while read_len < constants::UNCOMPRESSED_PUBLIC_KEY_SIZE {
-                        let read_ch = match try!(a.next_element()) {
-                            Some(c) => c,
-                            None => break
-                        };
-                        ret[read_len] = read_ch;
-                        read_len += 1;
-                    }
-                    let one_after_last : Option<u8> = try!(a.next_element());
-                    if one_after_last.is_some() {
-                        return Err(de::Error::invalid_length(read_len + 1, &self));
-                    }
-
-                    match read_len {
-                        constants::UNCOMPRESSED_PUBLIC_KEY_SIZE | constants::PUBLIC_KEY_SIZE
-                            => PublicKey::from_slice(&s, &ret[..read_len]).map_err(
-                                |e| match e {
-                                        InvalidPublicKey => de::Error::invalid_value(de::Unexpected::Seq, &self),
-                                        _ => de::Error::custom(&e.to_string()),
-                                    }
-                                ),
-                        _ => Err(de::Error::invalid_length(read_len, &self)),
-                    }
-                }
-            }
-
-            fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                write!(f, "a sequence of {} or {} bytes representing a valid compressed or uncompressed public key",
-                       constants::PUBLIC_KEY_SIZE, constants::UNCOMPRESSED_PUBLIC_KEY_SIZE)
-            }
-        }
-
-        // Begin actual function
-        d.deserialize_seq(Visitor { marker: ::std::marker::PhantomData })
-    }
-}
-
-#[cfg(any(test, feature = "serde"))]
-impl Serialize for PublicKey {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
-    {
-        self.serialize().serialize(s)
     }
 }
 
@@ -394,10 +283,30 @@ mod test {
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
-    use serialize::hex::FromHex;
     use rand::{Rng, thread_rng};
 
-    macro_rules! hex (($hex:expr) => (FromHex::from_hex($hex).unwrap()));
+    macro_rules! hex {
+        ($hex:expr) => {
+            {
+                let mut vec = Vec::new();
+                let mut b = 0;
+                for (idx, c) in $hex.as_bytes().iter().enumerate() {
+                    b <<= 4;
+                    match *c {
+                        b'A'...b'F' => b |= c - b'A' + 10,
+                        b'a'...b'f' => b |= c - b'a' + 10,
+                        b'0'...b'9' => b |= c - b'0',
+                        _ => panic!("Bad hex"),
+                    }
+                    if (idx & 1) == 1 {
+                        vec.push(b);
+                        b = 0;
+                    }
+                }
+                vec
+            }
+        }
+    }
 
     #[test]
     fn skey_from_slice() {
@@ -484,134 +393,6 @@ mod test {
 
         let s = Secp256k1::with_caps(ContextFlag::None);
         assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
-    }
-
-    #[test]
-    fn test_bad_deserialize() {
-        use std::io::Cursor;
-        use serialize::{json, Decodable};
-
-        let zero31 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let json31 = json::Json::from_reader(&mut Cursor::new(zero31)).unwrap();
-        let zero32 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let json32 = json::Json::from_reader(&mut Cursor::new(zero32)).unwrap();
-        let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]".as_bytes();
-        let json65 = json::Json::from_reader(&mut Cursor::new(zero65)).unwrap();
-        let string = "\"my key\"".as_bytes();
-        let json = json::Json::from_reader(&mut Cursor::new(string)).unwrap();
-
-        // Invalid length
-        let mut decoder = json::Decoder::new(json31.clone());
-        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_err());
-        let mut decoder = json::Decoder::new(json31.clone());
-        assert!(<SecretKey as Decodable>::decode(&mut decoder).is_err());
-        let mut decoder = json::Decoder::new(json32.clone());
-        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_err());
-        let mut decoder = json::Decoder::new(json32.clone());
-        assert!(<SecretKey as Decodable>::decode(&mut decoder).is_ok());
-        let mut decoder = json::Decoder::new(json65.clone());
-        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_err());
-        let mut decoder = json::Decoder::new(json65.clone());
-        assert!(<SecretKey as Decodable>::decode(&mut decoder).is_err());
-
-        // Syntax error
-        let mut decoder = json::Decoder::new(json.clone());
-        assert!(<PublicKey as Decodable>::decode(&mut decoder).is_err());
-        let mut decoder = json::Decoder::new(json.clone());
-        assert!(<SecretKey as Decodable>::decode(&mut decoder).is_err());
-    }
-
-    #[test]
-    fn test_serialize() {
-        use std::io::Cursor;
-        use serialize::{json, Decodable, Encodable};
-
-        macro_rules! round_trip (
-            ($var:ident) => ({
-                let start = $var;
-                let mut encoded = String::new();
-                {
-                    let mut encoder = json::Encoder::new(&mut encoded);
-                    start.encode(&mut encoder).unwrap();
-                }
-                let json = json::Json::from_reader(&mut Cursor::new(encoded.as_bytes())).unwrap();
-                let mut decoder = json::Decoder::new(json);
-                let decoded = Decodable::decode(&mut decoder);
-                assert_eq!(Ok(Some(start)), decoded);
-            })
-        );
-
-        let s = Secp256k1::new();
-        for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-            round_trip!(sk);
-            round_trip!(pk);
-        }
-    }
-
-    #[test]
-    fn test_bad_serde_deserialize() {
-        use serde::Deserialize;
-        use json;
-
-        // Invalid length
-        let zero31 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-        let mut json = json::de::Deserializer::from_str(zero31);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::from_str(zero31);
-        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
-
-        let zero32 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-        let mut json = json::de::Deserializer::from_str(zero32);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::from_str(zero32);
-        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_ok());
-
-        let zero33 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-        let mut json = json::de::Deserializer::from_str(zero33);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::from_str(zero33);
-        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
-
-        let trailing66 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
-                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
-                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
-                        209,89,236,213,206,17]";
-        let mut json = json::de::Deserializer::from_str(trailing66);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-
-        // The first 65 bytes of trailing66 are valid
-        let valid65 = "[4,149,16,196,140,38,92,239,179,65,59,224,230,183,91,238,240,46,186,252,
-                        175,102,52,249,98,178,123,72,50,171,196,254,236,1,189,143,242,227,16,87,
-                        247,183,162,68,237,140,92,205,151,129,166,58,111,96,123,64,180,147,51,12,
-                        209,89,236,213,206]";
-        let mut json = json::de::Deserializer::from_str(valid65);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_ok());
-
-        // All zeroes pk is invalid
-        let zero65 = "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-        let mut json = json::de::Deserializer::from_str(zero65);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::from_str(zero65);
-        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
-
-        // Syntax error
-        let string = "\"my key\"";
-        let mut json = json::de::Deserializer::from_str(string);
-        assert!(<PublicKey as Deserialize>::deserialize(&mut json).is_err());
-        let mut json = json::de::Deserializer::from_str(string);
-        assert!(<SecretKey as Deserialize>::deserialize(&mut json).is_err());
-    }
-
-
-    #[test]
-    fn test_serialize_serde() {
-        let s = Secp256k1::new();
-        for _ in 0..500 {
-            let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-            round_trip_serde!(sk);
-            round_trip_serde!(pk);
-        }
     }
 
     #[test]
