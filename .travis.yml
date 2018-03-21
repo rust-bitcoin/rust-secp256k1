@@ -1,23 +1,18 @@
 language: rust
-sudo: false
-
-matrix:
-  include:
-    - rust: stable
-    - rust: beta
-    - rust: nightly
-
-install:
-  - |
-      pip install 'travis-cargo<0.2' --user &&
-      export PATH=$HOME/.local/bin:$PATH
+rust:
+  - stable
+  - beta
+  - nightly
+  - 1.14.0
+cache: cargo
 
 script:
-  - |
-      travis-cargo build &&
-      travis-cargo build -- --release &&
-      travis-cargo test &&
-      travis-cargo test -- --release &&
-      travis-cargo bench &&
-      travis-cargo --only stable doc
-
+  - cargo build --verbose --features=fuzztarget
+  - cargo build --verbose --features=rand
+  - cargo test --verbose --features=rand
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo build --release
+  - cargo test --release
+  - cargo bench
+  - if [ "$(rustup show | grep default | grep stable)" != "" ]; then cargo doc; fi

@@ -11,5 +11,5 @@ a C library by Peter Wuille for producing ECDSA signatures using the SECG curve
 * implements many unit tests, adding to those already present in `libsecp256k1`
 * makes no allocations (except in unit tests) for efficiency and use in freestanding implementations
 
-[Full documentation](https://docs.rs/secp256k1/0.8.3/secp256k1/)
+[Full documentation](https://docs.rs/secp256k1/)
 
