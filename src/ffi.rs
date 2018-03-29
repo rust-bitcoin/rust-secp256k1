@@ -327,7 +327,7 @@ mod fuzz_dummy {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         match in_len {
             33 => {
-                if *input != 2 && *input != 3 {
+                if (*input.offset(1) > 0x7f && *input != 2) || (*input.offset(1) <= 0x7f && *input != 3) {
                     0
                 } else {
                     ptr::copy(input.offset(1), (*pk).0[0..32].as_mut_ptr(), 32);
