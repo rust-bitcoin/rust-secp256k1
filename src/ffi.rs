@@ -395,10 +395,42 @@ mod fuzz_dummy {
         unimplemented!();
     }
 
+    /// Copies up to 72 bytes into output from sig
     pub unsafe fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
                                                           out_len: *mut size_t, sig: *const Signature)
                                                           -> c_int {
-        unimplemented!();
+        assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
+
+        let mut len_r = 33;
+        if *(*sig).0.as_ptr().offset(0) < 0x80 {
+            len_r -= 1;
+        }
+        let mut len_s = 33;
+        if *(*sig).0.as_ptr().offset(32) < 0x80 {
+            len_s -= 1;
+        }
+
+        assert!(*out_len >= (6 + len_s + len_r) as size_t);
+
+        *output.offset(0) = 0x30;
+        *output.offset(1) = 4 + len_r + len_s;
+        *output.offset(2) = 0x02;
+        *output.offset(3) = len_r;
+        if len_r == 33 {
+            *output.offset(4) = 0;
+            ptr::copy((*sig).0[..].as_ptr(), output.offset(5), 32);
+        } else {
+            ptr::copy((*sig).0[..].as_ptr(), output.offset(4), 32);
+        }
+        *output.offset(4 + len_r as isize) = 0x02;
+        *output.offset(5 + len_r as isize) = len_s;
+        if len_s == 33 {
+            *output.offset(6 + len_r as isize) = 0;
+            ptr::copy((*sig).0[..].as_ptr().offset(32), output.offset(7 + len_r as isize), 32);
+        } else {
+            ptr::copy((*sig).0[..].as_ptr().offset(32), output.offset(6 + len_r as isize), 32);
+        }
+        1
     }
 
     /// Copies sig to output64
