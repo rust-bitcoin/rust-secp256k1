@@ -49,9 +49,8 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// A Secp256k1 public key, used for verification of signatures
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct PublicKey(ffi::PublicKey);
-
 
 #[cfg(any(test, feature = "rand"))]
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
