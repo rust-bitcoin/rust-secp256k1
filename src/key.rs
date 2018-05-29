@@ -558,6 +558,31 @@ mod test {
         assert_eq!(sum1, sum2);
         assert_eq!(sum1.unwrap(), exp_sum);
     }
+
+    #[test]
+    fn pubkey_equal() {
+        let s = Secp256k1::new();
+        let pk1 = PublicKey::from_slice(
+            &s,
+            &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
+        ).unwrap();
+        let pk2 = pk1.clone();
+        let pk3 = PublicKey::from_slice(
+            &s,
+            &hex!("02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443"),
+        ).unwrap();
+
+        assert!(pk1 == pk2);
+        assert!(pk1 <= pk2);
+        assert!(pk2 <= pk1);
+        assert!(!(pk2 < pk1));
+        assert!(!(pk1 < pk2));
+        
+        assert!(pk3 < pk1);
+        assert!(pk1 > pk3);
+        assert!(pk3 <= pk1);
+        assert!(pk1 >= pk3);
+    }
 }
 
 
