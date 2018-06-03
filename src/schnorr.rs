@@ -15,7 +15,6 @@
 
 //! # Schnorr signatures
 
-use ContextFlag;
 use Error;
 use Message;
 use Secp256k1;
@@ -106,10 +105,8 @@ impl<C: Verification> Secp256k1<C> {
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
-    use ContextFlag;
     use Message;
     use Secp256k1;
-    use Error::IncapableContext;
     use super::Signature;
 
     #[test]

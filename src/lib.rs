@@ -336,9 +336,6 @@ impl From<[u8; constants::MESSAGE_SIZE]> for Message {
 /// An ECDSA error
 #[derive(Copy, PartialEq, Eq, Clone, Debug)]
 pub enum Error {
-    /// A `Secp256k1` was used for an operation, but it was not created to
-    /// support this (so necessary precomputations have not been done)
-    IncapableContext,
     /// Signature failed verification
     IncorrectSignature,
     /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
@@ -366,7 +363,6 @@ impl error::Error for Error {
 
     fn description(&self) -> &str {
         match *self {
-            Error::IncapableContext => "secp: context does not have sufficient capabilities",
             Error::IncorrectSignature => "secp: signature failed verification",
             Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
             Error::InvalidPublicKey => "secp: malformed public key",
@@ -399,28 +395,6 @@ pub struct Secp256k1<C> {
 
 unsafe impl<C> Send for Secp256k1<C> {}
 unsafe impl<C> Sync for Secp256k1<C> {}
-
-/// Flags used to determine the capabilities of a `Secp256k1` object;
-/// the more capabilities, the more expensive it is to create.
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub enum ContextFlag {
-    /// Can neither sign nor verify signatures (cheapest to create, useful
-    /// for cases not involving signatures, such as creating keys from slices)
-    None,
-    /// Can sign but not verify signatures
-    SignOnly,
-    /// Can verify but not create signatures
-    VerifyOnly,
-    /// Can verify and create signatures
-    Full
-}
-
-// Passthrough Debug to Display, since caps should be user-visible
-impl fmt::Display for ContextFlag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        fmt::Debug::fmt(self, f)
-    }
-}
 
 impl<C> Clone for Secp256k1<C> {
     fn clone(&self) -> Secp256k1<C> {
@@ -586,8 +560,7 @@ mod tests {
     use key::{SecretKey, PublicKey};
     use super::constants;
     use super::{Secp256k1, Signature, RecoverableSignature, Message, RecoveryId};
-    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature,
-                       IncapableContext};
+    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature};
 
     macro_rules! hex {
         ($hex:expr) => {

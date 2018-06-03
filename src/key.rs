@@ -19,8 +19,8 @@
 
 use std::mem;
 
-use super::{Secp256k1, ContextFlag};
-use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
+use super::{Secp256k1};
+use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
 use Signing;
 use Verification;
 use constants;
@@ -270,8 +270,8 @@ impl From<ffi::PublicKey> for PublicKey {
 
 #[cfg(test)]
 mod test {
-    use super::super::{Secp256k1, ContextFlag};
-    use super::super::Error::{InvalidPublicKey, InvalidSecretKey, IncapableContext};
+    use super::super::{Secp256k1};
+    use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
