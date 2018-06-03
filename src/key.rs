@@ -21,6 +21,8 @@ use std::mem;
 
 use super::{Secp256k1, ContextFlag};
 use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
+use Signing;
+use Verification;
 use constants;
 use ffi;
 
@@ -63,7 +65,7 @@ impl SecretKey {
     /// Creates a new random secret key
     #[inline]
     #[cfg(any(test, feature = "rand"))]
-    pub fn new<R: Rng>(secp: &Secp256k1, rng: &mut R) -> SecretKey {
+    pub fn new<R: Rng, C>(secp: &Secp256k1<C>, rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(secp.ctx, data.as_ptr()) == 0 {
@@ -75,7 +77,7 @@ impl SecretKey {
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8])
+    pub fn from_slice<C>(secp: &Secp256k1<C>, data: &[u8])
                         -> Result<SecretKey, Error> {
         match data.len() {
             constants::SECRET_KEY_SIZE => {
@@ -94,7 +96,7 @@ impl SecretKey {
 
     #[inline]
     /// Adds one secret key to another, modulo the curve order
-    pub fn add_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn add_assign<C>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -107,7 +109,7 @@ impl SecretKey {
 
     #[inline]
     /// Multiplies one secret key by another, modulo the curve order
-    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn mul_assign<C>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_mul(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -142,12 +144,9 @@ impl PublicKey {
 
     /// Creates a new public key from a secret key.
     #[inline]
-    pub fn from_secret_key(secp: &Secp256k1,
+    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
                            -> Result<PublicKey, Error> {
-        if secp.caps == ContextFlag::VerifyOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
         let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -160,7 +159,7 @@ impl PublicKey {
 
     /// Creates a public key directly from a slice
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8])
+    pub fn from_slice<C>(secp: &Secp256k1<C>, data: &[u8])
                       -> Result<PublicKey, Error> {
 
         let mut pk = unsafe { ffi::PublicKey::blank() };
@@ -179,7 +178,7 @@ impl PublicKey {
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
-        let secp = Secp256k1::with_caps(ContextFlag::None);
+        let secp = Secp256k1::without_caps();
         let mut ret = [0; constants::PUBLIC_KEY_SIZE];
 
         unsafe {
@@ -199,7 +198,7 @@ impl PublicKey {
 
     /// Serialize the key as a byte-encoded pair of values, in uncompressed form
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
-        let secp = Secp256k1::with_caps(ContextFlag::None);
+        let secp = Secp256k1::without_caps();
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
         unsafe {
@@ -219,11 +218,8 @@ impl PublicKey {
 
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
-    pub fn add_exp_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn add_exp_assign<C: Verification>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                          -> Result<(), Error> {
-        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
@@ -236,11 +232,8 @@ impl PublicKey {
 
     #[inline]
     /// Muliplies the pk `self` in place by the scalar `other`
-    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn mul_assign<C: Verification>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                          -> Result<(), Error> {
-        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
@@ -254,7 +247,7 @@ impl PublicKey {
     /// Adds a second key to this one, returning the sum. Returns an error if
     /// the result would be the point at infinity, i.e. we are adding this point
     /// to its own negation
-    pub fn combine(&self, secp: &Secp256k1, other: &PublicKey) -> Result<PublicKey, Error> {
+    pub fn combine<C>(&self, secp: &Secp256k1<C>, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
             let mut ret = mem::uninitialized();
             let ptrs = [self.as_ptr(), other.as_ptr()];
@@ -577,7 +570,7 @@ mod test {
         assert!(pk2 <= pk1);
         assert!(!(pk2 < pk1));
         assert!(!(pk1 < pk2));
-        
+
         assert!(pk3 < pk1);
         assert!(pk1 > pk3);
         assert!(pk3 <= pk1);
