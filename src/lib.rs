@@ -474,7 +474,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
-                -> Result<Signature, Error> {
+                -> Signature {
 
         let mut ret = unsafe { ffi::Signature::blank() };
         unsafe {
@@ -484,13 +484,14 @@ impl<C: Signing> Secp256k1<C> {
                                                  sk.as_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                  ptr::null()), 1);
         }
-        Ok(Signature::from(ret))
+
+        Signature::from(ret)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
-                            -> Result<RecoverableSignature, Error> {
+                            -> RecoverableSignature {
 
         let mut ret = unsafe { ffi::RecoverableSignature::blank() };
         unsafe {
@@ -500,7 +501,8 @@ impl<C: Signing> Secp256k1<C> {
                                                              sk.as_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                              ptr::null()), 1);
         }
-        Ok(RecoverableSignature::from(ret))
+
+        RecoverableSignature::from(ret)
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
@@ -509,10 +511,10 @@ impl<C: Signing> Secp256k1<C> {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     pub fn generate_keypair<R: Rng>(&self, rng: &mut R)
-                                    -> Result<(key::SecretKey, key::PublicKey), Error> {
+                                    -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(self, rng);
-        let pk = try!(key::PublicKey::from_secret_key(self, &sk));
-        Ok((sk, pk))
+        let pk = key::PublicKey::from_secret_key(self, &sk);
+        (sk, pk)
     }
 }
 
@@ -597,19 +599,13 @@ mod tests {
         let msg = Message::from_slice(&msg).unwrap();
 
         // Try key generation
-        assert!(sign.generate_keypair(&mut thread_rng()).is_ok());
-        assert!(full.generate_keypair(&mut thread_rng()).is_ok());
-        let (sk, pk) = full.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
 
         // Try signing
-        assert!(sign.sign(&msg, &sk).is_ok());
-        assert!(full.sign(&msg, &sk).is_ok());
-        assert!(sign.sign_recoverable(&msg, &sk).is_ok());
-        assert!(full.sign_recoverable(&msg, &sk).is_ok());
         assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
         assert_eq!(sign.sign_recoverable(&msg, &sk), full.sign_recoverable(&msg, &sk));
-        let sig = full.sign(&msg, &sk).unwrap();
-        let sigr = full.sign_recoverable(&msg, &sk).unwrap();
+        let sig = full.sign(&msg, &sk);
+        let sigr = full.sign_recoverable(&msg, &sk);
 
         // Try verifying
         assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
@@ -659,7 +655,7 @@ mod tests {
         let sk = SecretKey::from_slice(&s, &one).unwrap();
         let msg = Message::from_slice(&one).unwrap();
 
-        let sig = s.sign_recoverable(&msg, &sk).unwrap();
+        let sig = s.sign_recoverable(&msg, &sk);
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&s, &[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
             0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
@@ -682,8 +678,8 @@ mod tests {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
-            let sig1 = s.sign(&msg, &sk).unwrap();
+            let (sk, _) = s.generate_keypair(&mut thread_rng());
+            let sig1 = s.sign(&msg, &sk);
             let der = sig1.serialize_der(&s);
             let sig2 = Signature::from_der(&s, &der[..]).unwrap();
             assert_eq!(sig1, sig2);
@@ -728,8 +724,8 @@ mod tests {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-            let sig = s.sign(&msg, &sk).unwrap();
+            let (sk, pk) = s.generate_keypair(&mut thread_rng());
+            let sig = s.sign(&msg, &sk);
             assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
          }
     }
@@ -757,8 +753,8 @@ mod tests {
 
         for key in wild_keys.iter().map(|k| SecretKey::from_slice(&s, &k[..]).unwrap()) {
             for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
-                let sig = s.sign(&msg, &key).unwrap();
-                let pk = PublicKey::from_secret_key(&s, &key).unwrap();
+                let sig = s.sign(&msg, &key);
+                let pk = PublicKey::from_secret_key(&s, &key);
                 assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
             }
         }
@@ -773,9 +769,9 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let sigr = s.sign_recoverable(&msg, &sk).unwrap();
+        let sigr = s.sign_recoverable(&msg, &sk);
         let sig = sigr.to_standard(&s);
 
         let mut msg = [0u8; 32];
@@ -796,9 +792,9 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let sig = s.sign_recoverable(&msg, &sk).unwrap();
+        let sig = s.sign_recoverable(&msg, &sk);
 
         assert_eq!(s.recover(&msg, &sig), Ok(pk));
     }
@@ -929,7 +925,7 @@ mod benches {
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
         bh.iter( || {
-            let (sk, pk) = s.generate_keypair(&mut r).unwrap();
+            let (sk, pk) = s.generate_keypair(&mut r);
             black_box(sk);
             black_box(pk);
         });
@@ -941,10 +937,10 @@ mod benches {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng());
 
         bh.iter(|| {
-            let sig = s.sign(&msg, &sk).unwrap();
+            let sig = s.sign(&msg, &sk);
             black_box(sig);
         });
     }
@@ -955,8 +951,8 @@ mod benches {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let sig = s.sign(&msg, &sk).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let sig = s.sign(&msg, &sk);
 
         bh.iter(|| {
             let res = s.verify(&msg, &sig, &pk).unwrap();
@@ -970,8 +966,8 @@ mod benches {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let sig = s.sign_recoverable(&msg, &sk).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng());
+        let sig = s.sign_recoverable(&msg, &sk);
 
         bh.iter(|| {
             let res = s.recover(&msg, &sig).unwrap();

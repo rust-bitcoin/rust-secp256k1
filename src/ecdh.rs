@@ -99,8 +99,8 @@ mod tests {
     #[test]
     fn ecdh() {
         let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
 
         let sec1 = SharedSecret::new(&s, &pk1, &sk2);
         let sec2 = SharedSecret::new(&s, &pk2, &sk1);
@@ -121,7 +121,7 @@ mod benches {
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
         let s = Secp256k1::signing_only();
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
         let s = Secp256k1::new();
         bh.iter( || {

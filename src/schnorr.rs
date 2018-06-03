@@ -119,7 +119,7 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = full.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
 
         // Try signing
         assert!(sign.sign_schnorr(&msg, &sk).is_ok());
@@ -149,7 +149,7 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
         let sig = s.sign_schnorr(&msg, &sk).unwrap();
         assert!(s.verify_schnorr(&msg, &sig, &pk).is_ok());
@@ -164,7 +164,7 @@ mod tests {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, _) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk, _) = s.generate_keypair(&mut thread_rng());
 
         let sig1 = s.sign_schnorr(&msg, &sk).unwrap();
         let sig2 = Signature::deserialize(&sig1.serialize());

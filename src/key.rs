@@ -146,7 +146,7 @@ impl PublicKey {
     #[inline]
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
-                           -> Result<PublicKey, Error> {
+                           -> PublicKey {
         let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -154,7 +154,7 @@ impl PublicKey {
             let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_ptr());
             debug_assert_eq!(res, 1);
         }
-        Ok(PublicKey(pk))
+        PublicKey(pk)
     }
 
     /// Creates a public key directly from a slice
@@ -327,7 +327,7 @@ mod test {
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         assert_eq!(SecretKey::from_slice(&s, &sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&s, &pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&s, &pk1.serialize_uncompressed()[..]), Ok(pk1));
@@ -377,7 +377,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        s.generate_keypair(&mut BadRng(0xff)).unwrap();
+        s.generate_keypair(&mut BadRng(0xff));
     }
 
     #[test]
@@ -411,7 +411,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut DumbRng(0)).unwrap();
+        let (sk, _) = s.generate_keypair(&mut DumbRng(0));
 
         assert_eq!(&format!("{:?}", sk),
                    "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
@@ -428,7 +428,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (_, pk1) = s.generate_keypair(&mut DumbRng(0)).unwrap();
+        let (_, pk1) = s.generate_keypair(&mut DumbRng(0));
         assert_eq!(&pk1.serialize_uncompressed()[..],
                    &[4, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236, 1, 189, 143, 242, 227, 16, 87, 247, 183, 162, 68, 237, 140, 92, 205, 151, 129, 166, 58, 111, 96, 123, 64, 180, 147, 51, 12, 209, 89, 236, 213, 206][..]);
         assert_eq!(&pk1.serialize()[..],
@@ -439,36 +439,36 @@ mod test {
     fn test_addition() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
         assert!(sk1.add_assign(&s, &sk2).is_ok());
         assert!(pk1.add_exp_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
     #[test]
     fn test_multiplication() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
         assert!(sk1.mul_assign(&s, &sk2).is_ok());
         assert!(pk1.mul_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
         assert!(sk2.mul_assign(&s, &sk1).is_ok());
         assert!(pk2.mul_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
     #[test]
@@ -487,7 +487,7 @@ mod test {
         let mut set = HashSet::new();
         const COUNT : usize = 1024;
         let count = (0..COUNT).map(|_| {
-            let (_, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+            let (_, pk) = s.generate_keypair(&mut thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
