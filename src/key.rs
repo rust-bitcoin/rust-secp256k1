@@ -355,39 +355,6 @@ mod test {
     }
 
     #[test]
-    fn test_pubkey_from_slice_bad_context() {
-        let s = Secp256k1::without_caps();
-        let sk = SecretKey::new(&s, &mut thread_rng());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
-        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::Full);
-        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
-    }
-
-    #[test]
-    fn test_add_exp_bad_context() {
-        let s = Secp256k1::with_caps(ContextFlag::Full);
-        let (sk, mut pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-
-        assert!(pk.add_exp_assign(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
-        assert!(pk.add_exp_assign(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
-        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::None);
-        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
-    }
-
-    #[test]
     fn test_out_of_range() {
 
         struct BadRng(u8);
@@ -530,7 +497,7 @@ mod test {
 
     #[test]
     fn pubkey_combine() {
-        let s = Secp256k1::with_caps(ContextFlag::None);
+        let s = Secp256k1::without_caps();
         let compressed1 = PublicKey::from_slice(
             &s,
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),

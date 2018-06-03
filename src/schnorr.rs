@@ -114,10 +114,9 @@ mod tests {
 
     #[test]
     fn capabilities() {
-        let none = Secp256k1::with_caps(ContextFlag::None);
-        let sign = Secp256k1::with_caps(ContextFlag::SignOnly);
-        let vrfy = Secp256k1::with_caps(ContextFlag::VerifyOnly);
-        let full = Secp256k1::with_caps(ContextFlag::Full);
+        let sign = Secp256k1::signing_only();
+        let vrfy = Secp256k1::verification_only();
+        let full = Secp256k1::new();
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
@@ -126,22 +125,16 @@ mod tests {
         let (sk, pk) = full.generate_keypair(&mut thread_rng()).unwrap();
 
         // Try signing
-        assert_eq!(none.sign_schnorr(&msg, &sk), Err(IncapableContext));
-        assert_eq!(vrfy.sign_schnorr(&msg, &sk), Err(IncapableContext));
         assert!(sign.sign_schnorr(&msg, &sk).is_ok());
         assert!(full.sign_schnorr(&msg, &sk).is_ok());
         assert_eq!(sign.sign_schnorr(&msg, &sk), full.sign_schnorr(&msg, &sk));
         let sig = full.sign_schnorr(&msg, &sk).unwrap();
 
         // Try verifying
-        assert_eq!(none.verify_schnorr(&msg, &sig, &pk), Err(IncapableContext));
-        assert_eq!(sign.verify_schnorr(&msg, &sig, &pk), Err(IncapableContext));
         assert!(vrfy.verify_schnorr(&msg, &sig, &pk).is_ok());
         assert!(full.verify_schnorr(&msg, &sig, &pk).is_ok());
 
         // Try pk recovery
-        assert_eq!(none.recover_schnorr(&msg, &sig), Err(IncapableContext));
-        assert_eq!(sign.recover_schnorr(&msg, &sig), Err(IncapableContext));
         assert!(vrfy.recover_schnorr(&msg, &sig).is_ok());
         assert!(full.recover_schnorr(&msg, &sig).is_ok());
 

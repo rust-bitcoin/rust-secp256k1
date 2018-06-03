@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn ecdh() {
-        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
+        let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
 
@@ -120,7 +120,7 @@ mod benches {
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
-        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
+        let s = Secp256k1::signing_only();
         let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
 
         let s = Secp256k1::new();
