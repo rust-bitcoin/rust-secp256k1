@@ -373,12 +373,22 @@ impl error::Error for Error {
     }
 }
 
+/// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
 pub trait Signing {}
+
+/// Marker trait for indicating that an instance of `Secp256k1` can be used for verification.
 pub trait Verification {}
 
+/// Represents the empty set of capabilities.
 pub struct None {}
+
+/// Represents the set of capabilities needed for signing.
 pub struct SignOnly {}
+
+/// Represents the set of capabilities needed for verification.
 pub struct VerifyOnly {}
+
+/// Represents the set of all capabilities.
 pub struct All {}
 
 impl Signing for SignOnly {}
@@ -406,7 +416,7 @@ impl<C> Clone for Secp256k1<C> {
 }
 
 impl<C> PartialEq for Secp256k1<C> {
-    fn eq(&self, other: &Secp256k1<C>) -> bool { true }
+    fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
 
 impl<C> Eq for Secp256k1<C> { }
@@ -425,21 +435,21 @@ impl Secp256k1<None> {
 }
 
 impl Secp256k1<All> {
-    /// Creates a new Secp256k1 context
+    /// Creates a new Secp256k1 context with all capabilities
     pub fn new() -> Secp256k1<All> {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
     }
 }
 
 impl Secp256k1<SignOnly> {
-
+    /// Creates a new Secp256k1 context that can only be used for signing
     pub fn signing_only() -> Secp256k1<SignOnly> {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN) }, phantom: PhantomData }
     }
 }
 
 impl Secp256k1<VerifyOnly> {
-
+    /// Creates a new Secp256k1 context that can only be used for verification
     pub fn verification_only() -> Secp256k1<VerifyOnly> {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
     }
