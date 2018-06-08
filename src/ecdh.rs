@@ -29,7 +29,7 @@ pub struct SharedSecret(ffi::SharedSecret);
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key
     #[inline]
-    pub fn new(secp: &Secp256k1, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
+    pub fn new<C>(secp: &Secp256k1<C>, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
             let mut ss = ffi::SharedSecret::blank();
             let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
@@ -98,9 +98,9 @@ mod tests {
 
     #[test]
     fn ecdh() {
-        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let s = Secp256k1::signing_only();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
 
         let sec1 = SharedSecret::new(&s, &pk1, &sk2);
         let sec2 = SharedSecret::new(&s, &pk2, &sk1);
@@ -120,8 +120,8 @@ mod benches {
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
-        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
-        let (sk, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let s = Secp256k1::signing_only();
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
         let s = Secp256k1::new();
         bh.iter( || {

@@ -19,8 +19,10 @@
 
 use std::mem;
 
-use super::{Secp256k1, ContextFlag};
-use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
+use super::{Secp256k1};
+use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
+use Signing;
+use Verification;
 use constants;
 use ffi;
 
@@ -63,7 +65,7 @@ impl SecretKey {
     /// Creates a new random secret key
     #[inline]
     #[cfg(any(test, feature = "rand"))]
-    pub fn new<R: Rng>(secp: &Secp256k1, rng: &mut R) -> SecretKey {
+    pub fn new<R: Rng, C>(secp: &Secp256k1<C>, rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(secp.ctx, data.as_ptr()) == 0 {
@@ -75,7 +77,7 @@ impl SecretKey {
 
     /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8])
+    pub fn from_slice<C>(secp: &Secp256k1<C>, data: &[u8])
                         -> Result<SecretKey, Error> {
         match data.len() {
             constants::SECRET_KEY_SIZE => {
@@ -94,7 +96,7 @@ impl SecretKey {
 
     #[inline]
     /// Adds one secret key to another, modulo the curve order
-    pub fn add_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn add_assign<C>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -107,7 +109,7 @@ impl SecretKey {
 
     #[inline]
     /// Multiplies one secret key by another, modulo the curve order
-    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn mul_assign<C>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                      -> Result<(), Error> {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_mul(secp.ctx, self.as_mut_ptr(), other.as_ptr()) != 1 {
@@ -142,12 +144,9 @@ impl PublicKey {
 
     /// Creates a new public key from a secret key.
     #[inline]
-    pub fn from_secret_key(secp: &Secp256k1,
+    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
-                           -> Result<PublicKey, Error> {
-        if secp.caps == ContextFlag::VerifyOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
+                           -> PublicKey {
         let mut pk = unsafe { ffi::PublicKey::blank() };
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -155,12 +154,12 @@ impl PublicKey {
             let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_ptr());
             debug_assert_eq!(res, 1);
         }
-        Ok(PublicKey(pk))
+        PublicKey(pk)
     }
 
     /// Creates a public key directly from a slice
     #[inline]
-    pub fn from_slice(secp: &Secp256k1, data: &[u8])
+    pub fn from_slice<C>(secp: &Secp256k1<C>, data: &[u8])
                       -> Result<PublicKey, Error> {
 
         let mut pk = unsafe { ffi::PublicKey::blank() };
@@ -179,7 +178,7 @@ impl PublicKey {
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
-        let secp = Secp256k1::with_caps(ContextFlag::None);
+        let secp = Secp256k1::without_caps();
         let mut ret = [0; constants::PUBLIC_KEY_SIZE];
 
         unsafe {
@@ -199,7 +198,7 @@ impl PublicKey {
 
     /// Serialize the key as a byte-encoded pair of values, in uncompressed form
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
-        let secp = Secp256k1::with_caps(ContextFlag::None);
+        let secp = Secp256k1::without_caps();
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
         unsafe {
@@ -219,11 +218,8 @@ impl PublicKey {
 
     #[inline]
     /// Adds the pk corresponding to `other` to the pk `self` in place
-    pub fn add_exp_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn add_exp_assign<C: Verification>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                          -> Result<(), Error> {
-        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
@@ -236,11 +232,8 @@ impl PublicKey {
 
     #[inline]
     /// Muliplies the pk `self` in place by the scalar `other`
-    pub fn mul_assign(&mut self, secp: &Secp256k1, other: &SecretKey)
+    pub fn mul_assign<C: Verification>(&mut self, secp: &Secp256k1<C>, other: &SecretKey)
                          -> Result<(), Error> {
-        if secp.caps == ContextFlag::SignOnly || secp.caps == ContextFlag::None {
-            return Err(IncapableContext);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
                                                   other.as_ptr()) == 1 {
@@ -254,7 +247,7 @@ impl PublicKey {
     /// Adds a second key to this one, returning the sum. Returns an error if
     /// the result would be the point at infinity, i.e. we are adding this point
     /// to its own negation
-    pub fn combine(&self, secp: &Secp256k1, other: &PublicKey) -> Result<PublicKey, Error> {
+    pub fn combine<C>(&self, secp: &Secp256k1<C>, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
             let mut ret = mem::uninitialized();
             let ptrs = [self.as_ptr(), other.as_ptr()];
@@ -277,8 +270,8 @@ impl From<ffi::PublicKey> for PublicKey {
 
 #[cfg(test)]
 mod test {
-    use super::super::{Secp256k1, ContextFlag};
-    use super::super::Error::{InvalidPublicKey, InvalidSecretKey, IncapableContext};
+    use super::super::{Secp256k1};
+    use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
@@ -334,7 +327,7 @@ mod test {
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         assert_eq!(SecretKey::from_slice(&s, &sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&s, &pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&s, &pk1.serialize_uncompressed()[..]), Ok(pk1));
@@ -362,39 +355,6 @@ mod test {
     }
 
     #[test]
-    fn test_pubkey_from_slice_bad_context() {
-        let s = Secp256k1::without_caps();
-        let sk = SecretKey::new(&s, &mut thread_rng());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
-        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::Full);
-        assert!(PublicKey::from_secret_key(&s, &sk).is_ok());
-    }
-
-    #[test]
-    fn test_add_exp_bad_context() {
-        let s = Secp256k1::with_caps(ContextFlag::Full);
-        let (sk, mut pk) = s.generate_keypair(&mut thread_rng()).unwrap();
-
-        assert!(pk.add_exp_assign(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::VerifyOnly);
-        assert!(pk.add_exp_assign(&s, &sk).is_ok());
-
-        let s = Secp256k1::with_caps(ContextFlag::SignOnly);
-        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
-
-        let s = Secp256k1::with_caps(ContextFlag::None);
-        assert_eq!(pk.add_exp_assign(&s, &sk), Err(IncapableContext));
-    }
-
-    #[test]
     fn test_out_of_range() {
 
         struct BadRng(u8);
@@ -417,7 +377,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        s.generate_keypair(&mut BadRng(0xff)).unwrap();
+        s.generate_keypair(&mut BadRng(0xff));
     }
 
     #[test]
@@ -451,7 +411,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut DumbRng(0)).unwrap();
+        let (sk, _) = s.generate_keypair(&mut DumbRng(0));
 
         assert_eq!(&format!("{:?}", sk),
                    "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
@@ -468,7 +428,7 @@ mod test {
         }
 
         let s = Secp256k1::new();
-        let (_, pk1) = s.generate_keypair(&mut DumbRng(0)).unwrap();
+        let (_, pk1) = s.generate_keypair(&mut DumbRng(0));
         assert_eq!(&pk1.serialize_uncompressed()[..],
                    &[4, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236, 1, 189, 143, 242, 227, 16, 87, 247, 183, 162, 68, 237, 140, 92, 205, 151, 129, 166, 58, 111, 96, 123, 64, 180, 147, 51, 12, 209, 89, 236, 213, 206][..]);
         assert_eq!(&pk1.serialize()[..],
@@ -479,36 +439,36 @@ mod test {
     fn test_addition() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
         assert!(sk1.add_assign(&s, &sk2).is_ok());
         assert!(pk1.add_exp_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
         assert!(sk2.add_assign(&s, &sk1).is_ok());
         assert!(pk2.add_exp_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
     #[test]
     fn test_multiplication() {
         let s = Secp256k1::new();
 
-        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
-        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
+        let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
         assert!(sk1.mul_assign(&s, &sk2).is_ok());
         assert!(pk1.mul_assign(&s, &sk2).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk1).unwrap(), pk1);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
         assert!(sk2.mul_assign(&s, &sk1).is_ok());
         assert!(pk2.mul_assign(&s, &sk1).is_ok());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk2).unwrap(), pk2);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
     #[test]
@@ -527,7 +487,7 @@ mod test {
         let mut set = HashSet::new();
         const COUNT : usize = 1024;
         let count = (0..COUNT).map(|_| {
-            let (_, pk) = s.generate_keypair(&mut thread_rng()).unwrap();
+            let (_, pk) = s.generate_keypair(&mut thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
@@ -537,7 +497,7 @@ mod test {
 
     #[test]
     fn pubkey_combine() {
-        let s = Secp256k1::with_caps(ContextFlag::None);
+        let s = Secp256k1::without_caps();
         let compressed1 = PublicKey::from_slice(
             &s,
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -577,7 +537,7 @@ mod test {
         assert!(pk2 <= pk1);
         assert!(!(pk2 < pk1));
         assert!(!(pk1 < pk2));
-        
+
         assert!(pk3 < pk1);
         assert!(pk1 > pk3);
         assert!(pk3 <= pk1);
