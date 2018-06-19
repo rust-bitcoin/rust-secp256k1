@@ -138,7 +138,7 @@ impl Signature {
 
     /// Normalizes a signature to a "low S" form. In ECDSA, signatures are
     /// of the form (r, s) where r and s are numbers lying in some finite
-    /// field. The verification equation will pass for (r, s) iff it passes
+    /// field. The verification equation will pass for (r, s) if it passes
     /// for (r, -s), so it is possible to ``modify'' signatures in transit
     /// by flipping the sign of s. This does not constitute a forgery since
     /// the signed message still cannot be changed, but for some applications,
@@ -457,7 +457,7 @@ impl Secp256k1<VerifyOnly> {
 
 impl<C> Secp256k1<C> {
 
-    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistence;
+    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell
     #[cfg(any(test, feature = "rand"))]
     pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
@@ -468,7 +468,7 @@ impl<C> Secp256k1<C> {
             // This function cannot fail; it has an error return for future-proofing.
             // We do not expose this error since it is impossible to hit, and we have
             // precedent for not exposing impossible errors (for example in
-            // `PublicKey::from_secret_key` where it is impossble to create an invalid
+            // `PublicKey::from_secret_key` where it is impossible to create an invalid
             // secret key through the API.)
             // However, if this DOES fail, the result is potentially weaker side-channel
             // resistance, which is deadly and undetectable, so we take out the entire
