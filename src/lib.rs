@@ -52,7 +52,6 @@ pub mod constants;
 pub mod ecdh;
 pub mod ffi;
 pub mod key;
-pub mod schnorr;
 
 pub use key::SecretKey;
 pub use key::PublicKey;

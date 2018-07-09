@@ -212,27 +212,6 @@ extern "C" {
                                    msg32: *const c_uchar)
                                    -> c_int;
 
-    // Schnorr
-    pub fn secp256k1_schnorr_sign(cx: *const Context,
-                                  sig64: *mut c_uchar,
-                                  msg32: *const c_uchar,
-                                  sk: *const c_uchar,
-                                  noncefn: NonceFn,
-                                  noncedata: *const c_void)
-                                  -> c_int;
-
-    pub fn secp256k1_schnorr_verify(cx: *const Context,
-                                    sig64: *const c_uchar,
-                                    msg32: *const c_uchar,
-                                    pk: *const PublicKey)
-                                    -> c_int;
-
-    pub fn secp256k1_schnorr_recover(cx: *const Context,
-                                     pk: *mut PublicKey,
-                                     sig64: *const c_uchar,
-                                     msg32: *const c_uchar)
-                                     -> c_int;
-
     // EC
     pub fn secp256k1_ec_seckey_verify(cx: *const Context,
                                       sk: *const c_uchar) -> c_int;
@@ -530,33 +509,6 @@ mod fuzz_dummy {
                                           sig: *const RecoverableSignature,
                                           msg32: *const c_uchar)
                                           -> c_int {
-        unimplemented!();
-    }
-
-    // Schnorr
-    pub unsafe fn secp256k1_schnorr_sign(cx: *const Context,
-                                         sig64: *mut c_uchar,
-                                         msg32: *const c_uchar,
-                                         sk: *const c_uchar,
-                                         _noncefn: NonceFn,
-                                         _noncedata: *const c_void)
-                                         -> c_int {
-        unimplemented!();
-    }
-
-    pub unsafe fn secp256k1_schnorr_verify(cx: *const Context,
-                                           sig64: *const c_uchar,
-                                           msg32: *const c_uchar,
-                                           pk: *const PublicKey)
-                                           -> c_int {
-        unimplemented!();
-    }
-
-    pub unsafe fn secp256k1_schnorr_recover(cx: *const Context,
-                                            pk: *mut PublicKey,
-                                            sig64: *const c_uchar,
-                                            msg32: *const c_uchar)
-                                            -> c_int {
         unimplemented!();
     }
 
