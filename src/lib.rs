@@ -402,7 +402,9 @@ pub struct Secp256k1<C> {
     phantom: PhantomData<C>
 }
 
+// The underlying secp context does not contain any references to memory it does not own
 unsafe impl<C> Send for Secp256k1<C> {}
+// The API does not permit any mutation of `Secp256k1` objects except through `&mut` references
 unsafe impl<C> Sync for Secp256k1<C> {}
 
 impl<C> Clone for Secp256k1<C> {
