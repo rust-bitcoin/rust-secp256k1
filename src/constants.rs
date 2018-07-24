@@ -31,9 +31,6 @@ pub const UNCOMPRESSED_PUBLIC_KEY_SIZE: usize = 65;
 /// The maximum size of a signature
 pub const MAX_SIGNATURE_SIZE: usize = 72;
 
-/// The size of a Schnorr signature
-pub const SCHNORR_SIGNATURE_SIZE: usize = 64;
-
 /// The maximum size of a compact signature
 pub const COMPACT_SIGNATURE_SIZE: usize = 64;
 
