@@ -29,6 +29,8 @@ fn main() {
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
                .flag("-g")
+               .flag("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
+               .define("SECP256K1_BUILD", Some("1"))
                // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
                .define("USE_NUM_NONE", Some("1"))
                .define("USE_FIELD_INV_BUILTIN", Some("1"))
