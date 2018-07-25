@@ -402,7 +402,9 @@ pub struct Secp256k1<C> {
     phantom: PhantomData<C>
 }
 
+// The underlying secp context does not contain any references to memory it does not own
 unsafe impl<C> Send for Secp256k1<C> {}
+// The API does not permit any mutation of `Secp256k1` objects except through `&mut` references
 unsafe impl<C> Sync for Secp256k1<C> {}
 
 impl<C> Clone for Secp256k1<C> {
@@ -456,7 +458,7 @@ impl Secp256k1<VerifyOnly> {
 
 impl<C> Secp256k1<C> {
 
-    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistence;
+    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell
     #[cfg(any(test, feature = "rand"))]
     pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
@@ -467,7 +469,7 @@ impl<C> Secp256k1<C> {
             // This function cannot fail; it has an error return for future-proofing.
             // We do not expose this error since it is impossible to hit, and we have
             // precedent for not exposing impossible errors (for example in
-            // `PublicKey::from_secret_key` where it is impossble to create an invalid
+            // `PublicKey::from_secret_key` where it is impossible to create an invalid
             // secret key through the API.)
             // However, if this DOES fail, the result is potentially weaker side-channel
             // resistance, which is deadly and undetectable, so we take out the entire
