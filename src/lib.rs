@@ -554,14 +554,12 @@ impl<C: Verification> Secp256k1<C> {
     /// verify-capable context.
     #[inline]
     pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
-
-        if !pk.is_valid() {
-            Err(Error::InvalidPublicKey)
-        } else if unsafe { ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_ptr(), msg.as_ptr(),
-                                                       pk.as_ptr()) } == 0 {
-            Err(Error::IncorrectSignature)
-        } else {
-            Ok(())
+        unsafe {
+            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_ptr(), msg.as_ptr(), pk.as_ptr()) == 0 {
+                Err(Error::IncorrectSignature)
+            } else {
+                Ok(())
+            }
         }
     }
 }
@@ -573,7 +571,7 @@ mod tests {
     use key::{SecretKey, PublicKey};
     use super::constants;
     use super::{Secp256k1, Signature, RecoverableSignature, Message, RecoveryId};
-    use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature};
+    use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
 
     macro_rules! hex {
         ($hex:expr) => {
@@ -642,18 +640,6 @@ mod tests {
     fn recid_sanity_check() {
         let one = RecoveryId(1);
         assert_eq!(one, one.clone());
-    }
-
-    #[test]
-    fn invalid_pubkey() {
-        let s = Secp256k1::new();
-        let sig = RecoverableSignature::from_compact(&s, &[1; 64], RecoveryId(0)).unwrap();
-        let pk = PublicKey::new();
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
-
-        assert_eq!(s.verify(&msg, &sig.to_standard(&s), &pk), Err(InvalidPublicKey));
     }
 
     #[test]

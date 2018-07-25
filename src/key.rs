@@ -122,20 +122,6 @@ impl SecretKey {
 }
 
 impl PublicKey {
-    /// Creates a new zeroed out public key
-    #[inline]
-    pub fn new() -> PublicKey {
-        PublicKey(ffi::PublicKey::new())
-    }
-
-    /// Determines whether a pubkey is valid
-    #[inline]
-    pub fn is_valid(&self) -> bool {
-        // The only invalid pubkey the API should be able to create is
-        // the zero one.
-        self.0[..].iter().any(|&x| x != 0)
-    }
-
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
