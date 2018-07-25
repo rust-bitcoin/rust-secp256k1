@@ -39,6 +39,8 @@
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] extern crate rand;
+#[cfg(feature = "serde")] extern crate serde;
+#[cfg(all(test, feature = "serde"))] extern crate serde_test;
 
 extern crate libc;
 
@@ -302,6 +304,25 @@ impl ops::Index<ops::RangeFull> for Signature {
     #[inline]
     fn index(&self, _: ops::RangeFull) -> &[u8] {
         &self.0[..]
+    }
+}
+
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for Signature {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        let secp = Secp256k1::without_caps();
+        s.serialize_bytes(&self.serialize_der(&secp))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for Signature {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Signature, D::Error> {
+        use ::serde::de::Error;
+
+        let secp = Secp256k1::without_caps();
+        let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
+        Signature::from_der(&secp, sl).map_err(D::Error::custom)
     }
 }
 
@@ -902,6 +923,27 @@ mod tests {
         // after normalization it should pass
         sig.normalize_s(&secp);
         assert_eq!(secp.verify(&msg, &sig, &pk), Ok(()));
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_signature_serde() {
+        use serde_test::{Token, assert_tokens};
+
+        let s = Secp256k1::new();
+
+        let msg = Message::from_slice(&[1; 32]).unwrap();
+        let sk = SecretKey::from_slice(&s, &[2; 32]).unwrap();
+        let sig = s.sign(&msg, &sk);
+        static SIG_BYTES: [u8; 71] = [
+            48, 69, 2, 33, 0, 157, 11, 173, 87, 103, 25, 211, 42, 231, 107, 237,
+            179, 76, 119, 72, 102, 103, 60, 189, 227, 244, 225, 41, 81, 85, 92, 148,
+            8, 230, 206, 119, 75, 2, 32, 40, 118, 231, 16, 47, 32, 79, 107, 254,
+            226, 108, 150, 124, 57, 38, 206, 112, 44, 249, 125, 75, 1, 0, 98, 225,
+            147, 247, 99, 25, 15, 103, 118
+        ];
+
+        assert_tokens(&sig, &[Token::BorrowedBytes(&SIG_BYTES[..])]);
     }
 }
 
