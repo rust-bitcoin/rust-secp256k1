@@ -121,6 +121,31 @@ impl SecretKey {
     }
 }
 
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for SecretKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_bytes(&self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for SecretKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<SecretKey, D::Error> {
+        use ::serde::de::Error;
+
+        // serde can actually deserialize a 32-byte array directly rather than deserializing
+        // a byte slice and copying, but it has special code for byte-slices and no special
+        // code for byte-arrays, meaning this is actually simpler and more efficient
+        let mut arr = [0; 32];
+        let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
+        if sl.len() != constants::SECRET_KEY_SIZE {
+            return Err(D::Error::invalid_length(sl.len(), &"32"));
+        }
+        arr.copy_from_slice(sl);
+        Ok(SecretKey(arr))
+    }
+}
+
 impl PublicKey {
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
@@ -251,6 +276,24 @@ impl From<ffi::PublicKey> for PublicKey {
     #[inline]
     fn from(pk: ffi::PublicKey) -> PublicKey {
         PublicKey(pk)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for PublicKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_bytes(&self.serialize())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for PublicKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
+        use ::serde::de::Error;
+
+        let secp = Secp256k1::without_caps();
+        let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
+        PublicKey::from_slice(&secp, sl).map_err(D::Error::custom)
     }
 }
 
@@ -528,6 +571,33 @@ mod test {
         assert!(pk1 > pk3);
         assert!(pk3 <= pk1);
         assert!(pk1 >= pk3);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_signature_serde() {
+        use serde_test::{Token, assert_tokens};
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static PK_BYTES: [u8; 33] = [
+            0x02,
+            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
+            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
+            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
+            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
+        ];
+
+        let s = Secp256k1::new();
+
+        let sk = SecretKey::from_slice(&s, &SK_BYTES).unwrap();
+        let pk = PublicKey::from_secret_key(&s, &sk);
+
+        assert_tokens(&sk, &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&pk, &[Token::BorrowedBytes(&PK_BYTES[..])]);
     }
 }
 
