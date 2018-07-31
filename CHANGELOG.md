@@ -1,6 +1,8 @@
 
 # [Unreleased]
 
+* Update `rand` to 0.4 and `gcc` 0.3 to `cc` 1.0. (`rand` 0.5 exists but has a lot of breaking changes and no longer compiles with 1.14.0.)
+
 # 0.10.0 - 2018-07-25
 
 * A [complete API overhaul](https://github.com/rust-bitcoin/rust-secp256k1/pull/27) to move many runtime errors into compiletime errors
