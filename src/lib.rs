@@ -449,6 +449,30 @@ impl<C> Drop for Secp256k1<C> {
     }
 }
 
+impl fmt::Debug for Secp256k1<None> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<secp256k1 context {:?}, no capabilities>", self.ctx)
+    }
+}
+
+impl fmt::Debug for Secp256k1<SignOnly> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<secp256k1 context {:?}, signing only>", self.ctx)
+    }
+}
+
+impl fmt::Debug for Secp256k1<VerifyOnly> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<secp256k1 context {:?}, verification only>", self.ctx)
+    }
+}
+
+impl fmt::Debug for Secp256k1<All> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<secp256k1 context {:?}, all capabilities>", self.ctx)
+    }
+}
+
 impl Secp256k1<None> {
     /// Creates a new Secp256k1 context with no capabilities (just de/serialization)
     pub fn without_caps() -> Secp256k1<None> {
