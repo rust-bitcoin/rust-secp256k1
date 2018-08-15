@@ -145,7 +145,7 @@ impl Signature {
     /// the signed message still cannot be changed, but for some applications,
     /// changing even the signature itself can be a problem. Such applications
     /// require a "strong signature". It is believed that ECDSA is a strong
-    /// signature except for this ambiguity in the sign of s, so to accomodate
+    /// signature except for this ambiguity in the sign of s, so to accommodate
     /// these applications libsecp256k1 will only accept signatures for which
     /// s is in the lower half of the field range. This eliminates the
     /// ambiguity.
