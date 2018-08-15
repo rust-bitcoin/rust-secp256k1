@@ -205,6 +205,14 @@ fn from_str(s: &str) -> Result<Signature, Error> {
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
+/// Trait describing something that promises to be a 32-byte random number; in particular,
+/// it has negligible probability of being zero or overflowing the group order. Such objects
+/// may be converted to `Message`s without any error paths.
+pub trait ThirtyTwoByteHash {
+    /// Converts the object into a 32-byte array
+    fn into_32(self) -> [u8; 32];
+}
+
 impl RecoveryId {
 #[inline]
 /// Allows library users to create valid recovery IDs from i32.
@@ -516,6 +524,13 @@ impl Message {
             }
             _ => Err(Error::InvalidMessage)
         }
+    }
+}
+
+impl<T: ThirtyTwoByteHash> From<T> for Message {
+    /// Converts a 32-byte hash directly to a message without error paths
+    fn from(t: T) -> Message {
+        Message(t.into_32())
     }
 }
 
