@@ -535,6 +535,8 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad recovery id
     InvalidRecoveryId,
+    /// Invalid tweak for add_*_assign or mul_*_assign
+    InvalidTweak,
 }
 
 // Passthrough Debug to Display, since errors should be user-visible
@@ -554,7 +556,8 @@ impl error::Error for Error {
             Error::InvalidPublicKey => "secp: malformed public key",
             Error::InvalidSignature => "secp: malformed signature",
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
-            Error::InvalidRecoveryId => "secp: bad recovery id"
+            Error::InvalidRecoveryId => "secp: bad recovery id",
+            Error::InvalidTweak => "secp: bad tweak",
         }
     }
 }
