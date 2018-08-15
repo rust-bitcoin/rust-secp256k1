@@ -254,21 +254,6 @@ impl PublicKey {
             }
         }
     }
-
-    /// Adds a second key to this one, returning the sum. Returns an error if
-    /// the result would be the point at infinity, i.e. we are adding this point
-    /// to its own negation
-    pub fn combine<C>(&self, secp: &Secp256k1<C>, other: &PublicKey) -> Result<PublicKey, Error> {
-        unsafe {
-            let mut ret = mem::uninitialized();
-            let ptrs = [self.as_ptr(), other.as_ptr()];
-            if ffi::secp256k1_ec_pubkey_combine(secp.ctx, &mut ret, ptrs.as_ptr(), 2) == 1 {
-                Ok(PublicKey(ret))
-            } else {
-                Err(InvalidPublicKey)
-            }
-        }
-    }
 }
 
 /// Creates a new public key from a FFI public key
@@ -522,30 +507,6 @@ mod test {
             set.insert(hash);
         }).count();
         assert_eq!(count, COUNT);
-    }
-
-    #[test]
-    fn pubkey_combine() {
-        let s = Secp256k1::without_caps();
-        let compressed1 = PublicKey::from_slice(
-            &s,
-            &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
-        ).unwrap();
-        let compressed2 = PublicKey::from_slice(
-            &s,
-            &hex!("02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443"),
-        ).unwrap();
-        let exp_sum = PublicKey::from_slice(
-            &s,
-            &hex!("0384526253c27c7aef56c7b71a5cd25bebb66dddda437826defc5b2568bde81f07"),
-        ).unwrap();
-
-        let sum1 = compressed1.combine(&s, &compressed2);
-        assert!(sum1.is_ok());
-        let sum2 = compressed2.combine(&s, &compressed1);
-        assert!(sum2.is_ok());
-        assert_eq!(sum1, sum2);
-        assert_eq!(sum1.unwrap(), exp_sum);
     }
 
     #[test]

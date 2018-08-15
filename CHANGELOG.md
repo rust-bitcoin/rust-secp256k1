@@ -2,6 +2,7 @@
 # [Unreleased]
 
 * Update `rand` to 0.4 and `gcc` 0.3 to `cc` 1.0. (`rand` 0.5 exists but has a lot of breaking changes and no longer compiles with 1.14.0.)
+* Remove `PublicKey::combine` from API since it cannot be used with anything else in the API
 
 # 0.10.0 - 2018-07-25
 
