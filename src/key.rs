@@ -62,7 +62,7 @@ fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
 }
 
 impl SecretKey {
-    /// Creates a new random secret key
+    /// Creates a new random secret key. Requires compilation with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     pub fn new<R: Rng, C>(secp: &Secp256k1<C>, rng: &mut R) -> SecretKey {
