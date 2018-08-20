@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use std::mem;
+use std::{fmt, mem};
 
 use super::{Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
@@ -30,6 +30,15 @@ use ffi;
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
+
+impl fmt::Display for SecretKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for ch in &self.0[..] {
+            write!(f, "{:02x}", *ch)?;
+        }
+        Ok(())
+    }
+}
 
 /// The number 1 encoded as a secret key
 /// Deprecated; `static` is not what I want; use `ONE_KEY` instead
@@ -53,6 +62,16 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct PublicKey(ffi::PublicKey);
+
+impl fmt::Display for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let ser = self.serialize();
+        for ch in &ser[..] {
+            write!(f, "{:02x}", *ch)?;
+        }
+        Ok(())
+    }
+}
 
 #[cfg(any(test, feature = "rand"))]
 fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
@@ -444,6 +463,29 @@ mod test {
 
         assert_eq!(&format!("{:?}", sk),
                    "SecretKey(0200000001000000040000000300000006000000050000000800000007000000)");
+    }
+
+    #[test]
+    fn test_display_output() {
+        static SK_BYTES: [u8; 32] = [
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
+            0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
+        ];
+
+        let s = Secp256k1::signing_only();
+        let sk = SecretKey::from_slice(&s, &SK_BYTES).expect("sk");
+        let pk = PublicKey::from_secret_key(&s, &sk);
+
+        assert_eq!(
+            sk.to_string(),
+            "01010101010101010001020304050607ffff0000ffff00006363636363636363"
+        );
+        assert_eq!(
+            pk.to_string(),
+            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166"
+        );
     }
 
     #[test]
