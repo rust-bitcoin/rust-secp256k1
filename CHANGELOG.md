@@ -1,6 +1,7 @@
 
-# [Unreleased]
+# 0.11.0 - 2018-08-20
 
+* Add `Debug` impl to `Secp256k1` and `Display` impl to `SecretKey` and `PublicKey`
 * Update `rand` to 0.4 and `gcc` 0.3 to `cc` 1.0. (`rand` 0.5 exists but has a lot of breaking changes and no longer compiles with 1.14.0.)
 
 # 0.10.0 - 2018-07-25
