@@ -23,14 +23,23 @@
 
 extern crate cc;
 
+use std::io::{self, Write};
+
 fn main() {
     // Check whether we can use 64-bit compilation
     #[cfg(target_pointer_width = "64")]
     let use_64bit_compilation = {
-        cc::Build::new().file("depend/check_uint128_t.c")
-                        .cargo_metadata(false)
-                        .try_compile("check_uint128_t")
-                        .is_ok()
+        let check = cc::Build::new().file("depend/check_uint128_t.c")
+                                    .cargo_metadata(false)
+                                    .try_compile("check_uint128_t")
+                                    .is_ok();
+        if !check {
+            writeln!(
+                &mut io::stderr(),
+                "Warning: Compiling in 32-bit mode on a 64-bit architecture due to lack of uint128_t support."
+            ).expect("print to stderr")
+        }
+        check
     };
     #[cfg(not(target_pointer_width = "64"))]
     let use_64bit_compilation = false;
