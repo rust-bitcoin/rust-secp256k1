@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use std::fmt;
+use std::{fmt, mem};
 
 use super::{Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
