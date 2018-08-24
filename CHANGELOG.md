@@ -1,3 +1,7 @@
+# (Unreleased)
+
+* Remove `ops::Index` implementations for `Signature`
+
 # 0.11.4 - 2018-11-04
 
 * Add `FromStr` and `Display` for `Signature` and both key types

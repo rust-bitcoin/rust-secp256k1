@@ -142,7 +142,7 @@
 pub extern crate libc;
 
 use libc::size_t;
-use std::{error, fmt, ops, ptr, str};
+use std::{error, fmt, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 #[macro_use]
@@ -439,42 +439,6 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
     #[inline]
     fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
         RecoverableSignature(sig)
-    }
-}
-
-impl ops::Index<usize> for Signature {
-    type Output = u8;
-
-    #[inline]
-    fn index(&self, index: usize) -> &u8 {
-        &self.0[index]
-    }
-}
-
-impl ops::Index<ops::Range<usize>> for Signature {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::Range<usize>) -> &[u8] {
-        &self.0[index]
-    }
-}
-
-impl ops::Index<ops::RangeFrom<usize>> for Signature {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, index: ops::RangeFrom<usize>) -> &[u8] {
-        &self.0[index.start..]
-    }
-}
-
-impl ops::Index<ops::RangeFull> for Signature {
-    type Output = [u8];
-
-    #[inline]
-    fn index(&self, _: ops::RangeFull) -> &[u8] {
-        &self.0[..]
     }
 }
 
