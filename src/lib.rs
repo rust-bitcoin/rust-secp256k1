@@ -142,7 +142,7 @@
 extern crate libc;
 
 use libc::size_t;
-use std::{error, fmt, ops, ptr};
+use std::{error, fmt, ops, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 #[macro_use]
@@ -163,6 +163,35 @@ pub struct RecoveryId(i32);
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Signature(ffi::Signature);
+
+impl fmt::Display for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut v = [0; 72];
+        let mut len = v.len() as size_t;
+        let secp = Secp256k1::without_caps();
+        unsafe {
+            let err = ffi::secp256k1_ecdsa_signature_serialize_der(secp.ctx, v.as_mut_ptr(),
+                                                                   &mut len, self.as_ptr());
+            debug_assert!(err == 1);
+        }
+        for ch in &v[..] {
+            write!(f, "{:02x}", *ch)?;
+        }
+        Ok(())
+    }
+}
+
+impl str::FromStr for Signature {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Signature, Error> {
+        let secp = Secp256k1::without_caps();
+        let mut res = [0; 72];
+        match from_hex(s, &mut res) {
+            Ok(x) => Signature::from_der(&secp, &res[0..x]),
+            _ => Err(Error::InvalidSignature),
+        }
+    }
+}
 
 /// An ECDSA signature with a recovery ID for pubkey recovery
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -739,6 +768,7 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
+    use std::str::FromStr;
 
     use key::{SecretKey, PublicKey};
     use super::from_hex;
@@ -848,6 +878,42 @@ mod tests {
             assert!(Signature::from_der(&s, &compact[..]).is_err());
             assert!(Signature::from_der(&s, &der[0..4]).is_err());
          }
+    }
+
+    #[test]
+    fn signature_display() {
+        let secp = Secp256k1::without_caps();
+        let hex_str = "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45";
+        let byte_str = hex!(hex_str);
+
+        assert_eq!(
+            Signature::from_der(&secp, &byte_str).expect("byte str decode"),
+            Signature::from_str(&hex_str).expect("byte str decode")
+        );
+
+        let sig = Signature::from_str(&hex_str).expect("byte str decode");
+        assert_eq!(&sig.to_string(), hex_str);
+
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab4"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eabxx"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45"
+        ).is_err());
     }
 
     #[test]
