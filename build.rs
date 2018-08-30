@@ -16,7 +16,7 @@ use std::process::Command;
 use std::path::PathBuf;
 
 fn main() {
-    let src = env::current_dir().unwrap().join("depend/secp256k1");
+    let src = env::current_dir().unwrap().join("vendor");
 
     let dst = PathBuf::from("/tmp/secp256k1");
     let _ = fs::create_dir_all(&dst).unwrap();
