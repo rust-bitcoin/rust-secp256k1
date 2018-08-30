@@ -117,11 +117,12 @@
 //! to generate a context would simply not compile.
 //!
 
-#![crate_type = "lib"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
+//! SGX needs a static library
+//#![crate_type = "lib"]
+//#![crate_type = "rlib"]
+//#![crate_type = "dylib"]
+#![crate_type = "staticlib"]
 #![crate_name = "secp256k1"]
-
 // Coding conventions
 #![deny(non_upper_case_globals)]
 #![deny(non_camel_case_types)]
@@ -129,15 +130,23 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-#![cfg_attr(feature = "dev", allow(unstable_features))]
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
+//! disable unsupported crates
+//#![cfg_attr(feature = "dev", allow(unstable_features))]
+//#![cfg_attr(feature = "dev", feature(plugin))]
+//#![cfg_attr(feature = "dev", plugin(clippy))]
+//#![cfg_attr(all(test, feature = "unstable"), feature(test))]
+//#[cfg(all(test, feature = "unstable"))] extern crate test;
+//#[cfg(any(test, feature = "rand"))] extern crate rand;
+//#[cfg(feature = "serde")] extern crate serde;
+//#[cfg(all(test, feature = "serde"))] extern crate serde_test;
 
-#![cfg_attr(all(test, feature = "unstable"), feature(test))]
-#[cfg(all(test, feature = "unstable"))] extern crate test;
-#[cfg(any(test, feature = "rand"))] extern crate rand;
-#[cfg(feature = "serde")] extern crate serde;
-#[cfg(all(test, feature = "serde"))] extern crate serde_test;
+#![cfg_attr(not(target_env = "sgx"), no_std)]
+#![cfg_attr(target_env = "sgx", feature(rustc_private))]
+#[cfg(not(target_env = "sgx"))]
+#[macro_use]
+extern crate sgx_tstd as std;
+#[cfg(not(target_env = "sgx"))]
+use std::prelude::v1::Vec;
 
 extern crate libc;
 
