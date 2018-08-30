@@ -1,14 +1,12 @@
 [package]
 
-name = "secp256k1"
+name = "secp256k1-sgx"
 version = "0.11.1"
-authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
-            "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
+authors = [ "Fan Zhang <fanz@cs.cornell.edu>" ]
 license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
-repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
-documentation = "https://docs.rs/secp256k1/"
-description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
+homepage = "https://github.com/bl4ck5un/rust-secp256k1-sgx/"
+repository = "https://github.com/bl4ck5un/rust-secp256k1-sgx/"
+description = "SGX Port of the crate `secp256k1`, Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 build = "build.rs"
