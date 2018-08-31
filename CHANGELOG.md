@@ -1,3 +1,7 @@
+# port 0.1.0 - 2018-08-31
+
+- based on `rust-bitcoin/rust-secp256k1` commit `2f8855f8fd7643a8661a12eb3a92723bb002e0b5`.
+- support Rust nightly-2018-08-25.
 
 # 0.11.1 - 2018-08-22
 

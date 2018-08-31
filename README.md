@@ -1,6 +1,13 @@
-[![Build Status](https://travis-ci.org/rust-bitcoin/rust-secp256k1.png?branch=master)](https://travis-ci.org/rust-bitcoin/rust-secp256k1)
+# SGX port of rust-secp256k1
 
-[Full documentation](https://docs.rs/secp256k1/)
+This is a port of [rust-secp256k1]() to SGX environment based on [Rust SGX SDK](https://github.com/baidu/rust-sgx-sdk). Features include: 
+
+- supports basic APIs and the `rand` feature (see [upstream doc](https://docs.rs/secp256k1/) for a complete list of APIs).
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
+
+
+# Upstream README
 
 ### rust-secp256k1
 
