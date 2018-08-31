@@ -19,6 +19,8 @@
 #include "hash_impl.h"
 #include "scratch_impl.h"
 
+#include "ocalls.h"
+
 #define ARG_CHECK(cond) do { \
     if (EXPECT(!(cond), 0)) { \
         secp256k1_callback_call(&ctx->illegal_callback, #cond); \
@@ -28,8 +30,7 @@
 
 static void default_illegal_callback_fn(const char* str, void* data) {
     (void)data;
-    fprintf(stderr, "[libsecp256k1] illegal argument: %s\n", str);
-    abort();
+    LL_DEBUG("[libsecp256k1] illegal argument: %s", str);
 }
 
 static const secp256k1_callback default_illegal_callback = {
@@ -39,8 +40,7 @@ static const secp256k1_callback default_illegal_callback = {
 
 static void default_error_callback_fn(const char* str, void* data) {
     (void)data;
-    fprintf(stderr, "[libsecp256k1] internal consistency check failed: %s\n", str);
-    abort();
+    LL_DEBUG("[libsecp256k1] internal consistency check failed: %s", str);
 }
 
 static const secp256k1_callback default_error_callback = {
