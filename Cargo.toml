@@ -11,12 +11,6 @@ keywords = [ "SGX", "no_std", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 build = "build.rs"
 
-# Should make docs.rs show all functions, even those behind non-default features
-[package.metadata.docs.rs]
-rustdoc-args = [
-    "--features \"rand serde\""
-]
-
 [lib]
 name = "secp256k1"
 path = "src/lib.rs"
@@ -32,5 +26,7 @@ cc = "1.0.23"
 libc = {version = "0.2", default-features = false}
 
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
+#sgx_tstd = { version = "1.0.1" }
+#sgx_rand = { version = "1.0.1", optional = true }
 sgx_tstd = { git = "https://github.com/baidu/rust-sgx-sdk" }
 sgx_rand = { git = "https://github.com/baidu/rust-sgx-sdk", optional = true }
