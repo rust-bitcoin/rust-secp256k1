@@ -152,6 +152,7 @@ extern crate libc;
 
 use libc::size_t;
 use std::{error, fmt, ops, ptr};
+#[cfg(any(test, feature = "rand"))] extern crate sgx_rand as rand;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 #[macro_use]
