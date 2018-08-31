@@ -61,6 +61,12 @@ fn main() {
                .define("ENABLE_MODULE_ECDH", Some("1"))
                .define("ENABLE_MODULE_RECOVERY", Some("1"));
 
+    if let Ok(target_endian) = std::env::var("CARGO_CFG_TARGET_ENDIAN") {
+        if target_endian == "big" {
+            base_config.define("WORDS_BIGENDIAN", Some("1"));
+        }
+    }
+
     if use_64bit_compilation {
         base_config.define("USE_FIELD_5X52", Some("1"))
                    .define("USE_SCALAR_4X64", Some("1"))
