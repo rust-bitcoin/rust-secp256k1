@@ -1,4 +1,8 @@
 
+# 0.11.2 - 2018-09-11
+
+* Correct endianness issue in RFC6979 nonce generation
+
 # 0.11.1 - 2018-08-22
 
 * Put `PublicKey::combine` back because it is currently needed to implement Lightning BOLT 3
