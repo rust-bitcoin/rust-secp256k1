@@ -40,7 +40,8 @@
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 
 extern crate arrayvec;
-extern crate rand;
+
+pub extern crate rand;
 
 use std::{error, fmt, ops, ptr};
 use rand::Rng;
