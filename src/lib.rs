@@ -347,6 +347,25 @@ impl RecoverableSignature {
         (RecoveryId(recid), ret)
     }
 
+    #[inline]
+    /// Converts a compact-encoded byte slice from Bitcoin Core to a recoverable signature.
+    pub fn from_bitcoin_compact<C>(
+        secp: &Secp256k1<C>,
+        data: &[u8],
+    ) -> Result<RecoverableSignature, Error> {
+        if data.len() != 65 {
+            return Err(Error::InvalidSignature);
+        }
+
+        // Bitcoin Core sets the first byte to `27 + rec + (fCompressed ? 4 : 0)`.
+        let rec_id = RecoveryId::from_i32(if data[0] >= 31 {
+            (data[0] - 31) as i32
+        } else {
+            (data[0] - 27) as i32
+        })?;
+        RecoverableSignature::from_compact(secp, &data[1..], rec_id)
+    }
+
     /// Converts a recoverable signature to a non-recoverable one (this is needed
     /// for verification
     #[inline]
@@ -1011,6 +1030,22 @@ mod tests {
         let (recid_out, bytes_out) = sig.serialize_compact(&s);
         assert_eq!(recid_in, recid_out);
         assert_eq!(&bytes_in[..], &bytes_out[..]);
+    }
+
+    #[test]
+    fn test_recov_sig_from_bitcoin_compact() {
+        let s = Secp256k1::new();
+        let bytes_in = &[
+            0x20, 0x5d, 0xbb, 0xdd, 0xda, 0x71, 0x77, 0x2d, 0x95, 0xce, 0x91, 0xcd, 0x2d, 0x14,
+            0xb5, 0x92, 0xcf, 0xbc, 0x1d, 0xd0, 0xaa, 0xbd, 0x6a, 0x39, 0x4b, 0x6c, 0x2d, 0x37,
+            0x7b, 0xbe, 0x59, 0xd3, 0x1d, 0x14, 0xdd, 0xda, 0x21, 0x49, 0x4a, 0x4e, 0x22, 0x1f,
+            0x08, 0x24, 0xf0, 0xb8, 0xb9, 0x24, 0xc4, 0x3f, 0xa4, 0x3c, 0x0a, 0xd5, 0x7d, 0xcc,
+            0xda, 0xa1, 0x1f, 0x81, 0xa6, 0xbd, 0x45, 0x82, 0xf6,
+        ];
+        let sig = RecoverableSignature::from_bitcoin_compact(&s, bytes_in).unwrap();
+        let (rec_id, reg_bytes) = sig.serialize_compact(&s);
+        assert_eq!(1, rec_id.to_i32());
+        assert_eq!(&bytes_in[1..], &reg_bytes[..])
     }
 
     #[test]
