@@ -161,8 +161,14 @@ use std::marker::PhantomData;
 pub struct RecoveryId(i32);
 
 /// An ECDSA signature
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Signature(ffi::Signature);
+
+impl fmt::Debug for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
 
 impl fmt::Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -893,6 +899,7 @@ mod tests {
 
         let sig = Signature::from_str(&hex_str).expect("byte str decode");
         assert_eq!(&sig.to_string(), hex_str);
+        assert_eq!(&format!("{:?}", sig), hex_str);
 
         assert!(Signature::from_str(
             "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
