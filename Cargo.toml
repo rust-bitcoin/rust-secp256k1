@@ -15,7 +15,7 @@ readme = "README.md"
 build = "build.rs"
 [build-dependencies]
 cc = "1.0"
-cfg-if = "*"
+cfg-if = "0.1"
 
 [lib]
 name = "secp256k1"
