@@ -21,18 +21,27 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+#[macro_use]
+extern crate cfg_if;
+
 extern crate cc;
 
 use std::env;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-#[cfg(target_os = "macos")]
-const OS: &'static str = "darwin";
-#[cfg(target_os = "linux")]
-const OS: &'static str = "linux";
-#[cfg(target_os = "windows")]
-const OS: &'static str = "windows";
+cfg_if! {
+	if #[cfg(target_os = "macos")] {
+		const OS: &'static str = "darwin";
+	} else if #[cfg(target_os = "linux")] {
+		const OS: &'static str = "linux";
+	} else if #[cfg(target_os = "windows")] {
+		const OS: &'static str = "windows";
+	} else {
+		// all other OS without android support
+		const OS: &'static str = "unknown";
+	}
+}
 
 const ANDROID_INCLUDE: &'static str = "platforms/android-21/arch-arm64/usr/include";
 
@@ -55,6 +64,7 @@ fn concat_paths(first: &str, second: &str) -> PathBuf {
 }
 
 fn setup_android(config: &mut cc::Build) {
+	assert_ne!(OS, "unknown", "unsupported android toolchain");
 	let path = env::var_os("PATH").unwrap_or_else(OsString::new);
 	let ndk_home = env::var("NDK_HOME").expect("NDK_HOME is not set");
 	let mut paths = env::split_paths(&path).collect::<Vec<_>>();
