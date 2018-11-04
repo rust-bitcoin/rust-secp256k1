@@ -142,7 +142,7 @@
 extern crate libc;
 
 use libc::size_t;
-use std::{error, fmt, ops, ptr};
+use std::{error, fmt, ops, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 #[macro_use]
@@ -161,8 +161,43 @@ use std::marker::PhantomData;
 pub struct RecoveryId(i32);
 
 /// An ECDSA signature
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Signature(ffi::Signature);
+
+impl fmt::Debug for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl fmt::Display for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut v = [0; 72];
+        let mut len = v.len() as size_t;
+        let secp = Secp256k1::without_caps();
+        unsafe {
+            let err = ffi::secp256k1_ecdsa_signature_serialize_der(secp.ctx, v.as_mut_ptr(),
+                                                                   &mut len, self.as_ptr());
+            debug_assert!(err == 1);
+        }
+        for ch in &v[..] {
+            write!(f, "{:02x}", *ch)?;
+        }
+        Ok(())
+    }
+}
+
+impl str::FromStr for Signature {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Signature, Error> {
+        let secp = Secp256k1::without_caps();
+        let mut res = [0; 72];
+        match from_hex(s, &mut res) {
+            Ok(x) => Signature::from_der(&secp, &res[0..x]),
+            _ => Err(Error::InvalidSignature),
+        }
+    }
+}
 
 /// An ECDSA signature with a recovery ID for pubkey recovery
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -708,36 +743,51 @@ impl<C: Verification> Secp256k1<C> {
     }
 }
 
+/// Utility function used to parse hex into a target u8 buffer. Returns
+/// the number of bytes converted or an error if it encounters an invalid
+/// character or unexpected end of string.
+fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
+    if hex.len() % 2 == 1 || hex.len() > target.len() * 2 {
+        return Err(());
+    }
+
+    let mut b = 0;
+    let mut idx = 0;
+    for c in hex.bytes() {
+        b <<= 4;
+        match c {
+            b'A'...b'F' => b |= c - b'A' + 10,
+            b'a'...b'f' => b |= c - b'a' + 10,
+            b'0'...b'9' => b |= c - b'0',
+            _ => return Err(()),
+        }
+        if (idx & 1) == 1 {
+            target[idx / 2] = b;
+            b = 0;
+        }
+        idx += 1;
+    }
+    Ok(idx / 2)
+}
+
+
 #[cfg(test)]
 mod tests {
     use rand::{Rng, thread_rng};
+    use std::str::FromStr;
 
     use key::{SecretKey, PublicKey};
+    use super::from_hex;
     use super::constants;
     use super::{Secp256k1, Signature, RecoverableSignature, Message, RecoveryId};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
 
     macro_rules! hex {
-        ($hex:expr) => {
-            {
-                let mut vec = Vec::new();
-                let mut b = 0;
-                for (idx, c) in $hex.as_bytes().iter().enumerate() {
-                    b <<= 4;
-                    match *c {
-                        b'A'...b'F' => b |= c - b'A' + 10,
-                        b'a'...b'f' => b |= c - b'a' + 10,
-                        b'0'...b'9' => b |= c - b'0',
-                        _ => panic!("Bad hex"),
-                    }
-                    if (idx & 1) == 1 {
-                        vec.push(b);
-                        b = 0;
-                    }
-                }
-                vec
-            }
-        }
+        ($hex:expr) => ({
+            let mut result = vec![0; $hex.len() / 2];
+            from_hex($hex, &mut result).expect("valid hex string");
+            result
+        });
     }
 
     #[test]
@@ -834,6 +884,43 @@ mod tests {
             assert!(Signature::from_der(&s, &compact[..]).is_err());
             assert!(Signature::from_der(&s, &der[0..4]).is_err());
          }
+    }
+
+    #[test]
+    fn signature_display() {
+        let secp = Secp256k1::without_caps();
+        let hex_str = "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45";
+        let byte_str = hex!(hex_str);
+
+        assert_eq!(
+            Signature::from_der(&secp, &byte_str).expect("byte str decode"),
+            Signature::from_str(&hex_str).expect("byte str decode")
+        );
+
+        let sig = Signature::from_str(&hex_str).expect("byte str decode");
+        assert_eq!(&sig.to_string(), hex_str);
+        assert_eq!(&format!("{:?}", sig), hex_str);
+
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab4"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eabxx"
+        ).is_err());
+        assert!(Signature::from_str(
+            "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
+             72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45"
+        ).is_err());
     }
 
     #[test]

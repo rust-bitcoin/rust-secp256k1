@@ -17,9 +17,9 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use std::{fmt, mem};
+use std::{fmt, mem, str};
 
-use super::{Secp256k1};
+use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
 use Signing;
 use Verification;
@@ -37,6 +37,17 @@ impl fmt::Display for SecretKey {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl str::FromStr for SecretKey {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<SecretKey, Error> {
+        let mut res = [0; constants::SECRET_KEY_SIZE];
+        match from_hex(s, &mut res) {
+            Ok(constants::SECRET_KEY_SIZE) => Ok(SecretKey(res)),
+            _ => Err(Error::InvalidSecretKey)
+        }
     }
 }
 
@@ -70,6 +81,26 @@ impl fmt::Display for PublicKey {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl str::FromStr for PublicKey {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<PublicKey, Error> {
+        let secp = Secp256k1::without_caps();
+        let mut res = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        match from_hex(s, &mut res) {
+            Ok(constants::PUBLIC_KEY_SIZE) => {
+                PublicKey::from_slice(
+                    &secp,
+                    &res[0..constants::PUBLIC_KEY_SIZE]
+                )
+            }
+            Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) => {
+                PublicKey::from_slice(&secp, &res)
+            }
+            _ => Err(Error::InvalidPublicKey)
+        }
     }
 }
 
@@ -318,34 +349,22 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
 
 #[cfg(test)]
 mod test {
-    use super::super::{Secp256k1};
+    use Secp256k1;
+    use from_hex;
     use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
     use rand::{Rng, thread_rng};
+    use std::iter;
+    use std::str::FromStr;
 
     macro_rules! hex {
-        ($hex:expr) => {
-            {
-                let mut vec = Vec::new();
-                let mut b = 0;
-                for (idx, c) in $hex.as_bytes().iter().enumerate() {
-                    b <<= 4;
-                    match *c {
-                        b'A'...b'F' => b |= c - b'A' + 10,
-                        b'a'...b'f' => b |= c - b'a' + 10,
-                        b'0'...b'9' => b |= c - b'0',
-                        _ => panic!("Bad hex"),
-                    }
-                    if (idx & 1) == 1 {
-                        vec.push(b);
-                        b = 0;
-                    }
-                }
-                vec
-            }
-        }
+        ($hex:expr) => ({
+            let mut result = vec![0; $hex.len() / 2];
+            from_hex($hex, &mut result).expect("valid hex string");
+            result
+        });
     }
 
     #[test]
@@ -483,9 +502,39 @@ mod test {
             "01010101010101010001020304050607ffff0000ffff00006363636363636363"
         );
         assert_eq!(
+            SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363").unwrap(),
+            sk
+        );
+        assert_eq!(
             pk.to_string(),
             "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166"
         );
+        assert_eq!(
+            PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166").unwrap(),
+            pk
+        );
+        assert_eq!(
+            PublicKey::from_str("04\
+                18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+                84B84DB303A340CD7D6823EE88174747D12A67D2F8F2F9BA40846EE5EE7A44F6"
+            ).unwrap(),
+            pk
+        );
+
+        assert!(SecretKey::from_str("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").is_err());
+        assert!(SecretKey::from_str("01010101010101010001020304050607ffff0000ffff0000636363636363636363").is_err());
+        assert!(SecretKey::from_str("01010101010101010001020304050607ffff0000ffff0000636363636363636").is_err());
+        assert!(SecretKey::from_str("01010101010101010001020304050607ffff0000ffff000063636363636363").is_err());
+        assert!(SecretKey::from_str("01010101010101010001020304050607ffff0000ffff000063636363636363xx").is_err());
+        assert!(PublicKey::from_str("0300000000000000000000000000000000000000000000000000000000000000000").is_err());
+        assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16601").is_err());
+        assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16").is_err());
+        assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
+        assert!(PublicKey::from_str("xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
+
+        let long_str: String = iter::repeat('a').take(1024 * 1024).collect();
+        assert!(SecretKey::from_str(&long_str).is_err());
+        assert!(PublicKey::from_str(&long_str).is_err());
     }
 
     #[test]
