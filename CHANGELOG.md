@@ -1,3 +1,12 @@
+# 0.11.4 - 2018-11-04
+
+* Add `FromStr` and `Display` for `Signature` and both key types
+* Fix `build.rs` for Windows and rustfmt configuration for docs.rs
+* Correct endianness issue for `Signature` `Debug` output
+
+# 0.11.3 - 2018-10-28
+
+* No changes, just fixed docs.rs configuration
 
 # 0.11.2 - 2018-09-11
 
