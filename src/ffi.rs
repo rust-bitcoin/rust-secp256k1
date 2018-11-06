@@ -129,6 +129,8 @@ extern "C" {
 
     pub static secp256k1_nonce_function_default: NonceFn;
 
+    pub static secp256k1_context_no_precomp: *const Context;
+
     // Contexts
     pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
 
@@ -278,6 +280,7 @@ mod fuzz_dummy {
     extern "C" {
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
         pub static secp256k1_nonce_function_rfc6979: NonceFn;
+        pub static secp256k1_context_no_precomp: *const Context;
     }
 
     // Contexts
