@@ -46,6 +46,14 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
+/// Hash function to use to post-process an ECDH point to get
+/// a shared secret.
+pub type EcdhHashFn = unsafe extern "C" fn(
+    output: *mut c_uchar,
+    x: *const c_uchar,
+    y: *const c_uchar,
+    data: *const c_void,
+);
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
@@ -114,6 +122,9 @@ impl SharedSecret {
 
 #[cfg(not(feature = "fuzztarget"))]
 extern "C" {
+    /// Default ECDH hash function
+    pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
+
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
 
     pub static secp256k1_nonce_function_default: NonceFn;
@@ -248,11 +259,14 @@ extern "C" {
                                        n: c_int)
                                        -> c_int;
 
-    pub fn secp256k1_ecdh(cx: *const Context,
-                          out: *mut SharedSecret,
-                          point: *const PublicKey,
-                          scalar: *const c_uchar)
-                          -> c_int;
+    pub fn secp256k1_ecdh(
+        cx: *const Context,
+        output: *mut SharedSecret,
+        pubkey: *const PublicKey,
+        privkey: *const c_uchar,
+        hashfp: EcdhHashFn,
+        data: *mut c_void,
+    ) -> c_int;
 }
 
 #[cfg(feature = "fuzztarget")]
@@ -262,6 +276,7 @@ mod fuzz_dummy {
     use std::ptr;
 
     extern "C" {
+        pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
         pub static secp256k1_nonce_function_rfc6979: NonceFn;
     }
 
@@ -618,11 +633,14 @@ mod fuzz_dummy {
     }
 
     /// Sets out to point[0..16]||scalar[0..16]
-    pub unsafe fn secp256k1_ecdh(cx: *const Context,
-                                 out: *mut SharedSecret,
-                                 point: *const PublicKey,
-                                 scalar: *const c_uchar)
-                                 -> c_int {
+    pub unsafe fn secp256k1_ecdh(
+        cx: *const Context,
+        out: *mut SharedSecret,
+        point: *const PublicKey,
+        scalar: *const c_uchar,
+        hashfp: EcdhHashFn,
+        data: *mut c_void,
+    ) -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         assert!((*cx).0 as u32 & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, scalar) != 1 { return 0; }

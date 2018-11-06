@@ -16,7 +16,7 @@
 //! Support for shared secret computations
 //!
 
-use std::ops;
+use std::{ops, ptr};
 
 use super::Secp256k1;
 use key::{SecretKey, PublicKey};
@@ -32,7 +32,14 @@ impl SharedSecret {
     pub fn new<C>(secp: &Secp256k1<C>, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
             let mut ss = ffi::SharedSecret::blank();
-            let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
+            let res = ffi::secp256k1_ecdh(
+                secp.ctx,
+                &mut ss,
+                point.as_ptr(),
+                scalar.as_ptr(),
+                ffi::secp256k1_ecdh_hash_function_default,
+                ptr::null_mut(),
+            );
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
         }
