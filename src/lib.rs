@@ -135,11 +135,11 @@
 
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
-#[cfg(any(test, feature = "rand"))] extern crate rand;
-#[cfg(feature = "serde")] extern crate serde;
+#[cfg(any(test, feature = "rand"))] pub extern crate rand;
+#[cfg(feature = "serde")] pub extern crate serde;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 
-extern crate libc;
+pub extern crate libc;
 
 use libc::size_t;
 use std::{error, fmt, ops, ptr, str};
