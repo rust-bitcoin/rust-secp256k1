@@ -16,9 +16,8 @@
 //! Support for shared secret computations
 //!
 
-use std::ops;
+use std::{ops, ptr};
 
-use super::Secp256k1;
 use key::{SecretKey, PublicKey};
 use ffi;
 
@@ -29,10 +28,17 @@ pub struct SharedSecret(ffi::SharedSecret);
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key
     #[inline]
-    pub fn new<C>(secp: &Secp256k1<C>, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
+    pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
             let mut ss = ffi::SharedSecret::blank();
-            let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
+            let res = ffi::secp256k1_ecdh(
+                ffi::secp256k1_context_no_precomp,
+                &mut ss,
+                point.as_ptr(),
+                scalar.as_ptr(),
+                ffi::secp256k1_ecdh_hash_function_default,
+                ptr::null_mut(),
+            );
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
         }
@@ -102,9 +108,9 @@ mod tests {
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
 
-        let sec1 = SharedSecret::new(&s, &pk1, &sk2);
-        let sec2 = SharedSecret::new(&s, &pk2, &sk1);
-        let sec_odd = SharedSecret::new(&s, &pk1, &sk1);
+        let sec1 = SharedSecret::new(&pk1, &sk2);
+        let sec2 = SharedSecret::new(&pk2, &sk1);
+        let sec_odd = SharedSecret::new(&pk1, &sk1);
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
     }
@@ -125,7 +131,7 @@ mod benches {
 
         let s = Secp256k1::new();
         bh.iter( || {
-            let res = SharedSecret::new(&s, &pk, &sk);
+            let res = SharedSecret::new(&pk, &sk);
             black_box(res);
         });
     }
