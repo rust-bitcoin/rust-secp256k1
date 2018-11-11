@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use std::{fmt, mem, str};
+use std::{fmt, mem, str, io};
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
@@ -250,7 +250,6 @@ impl PublicKey {
         }
     }
 
-    #[inline]
     /// Serialize the key as a byte-encoded pair of values. In compressed form
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
@@ -272,7 +271,7 @@ impl PublicKey {
         ret
     }
 
-    /// Serialize the key as a byte-encoded pair of values, in uncompressed form
+    /// Serialize the key as a byte-encoded pair of values, in uncompressed form.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
@@ -289,6 +288,18 @@ impl PublicKey {
             debug_assert_eq!(ret_len, ret.len());
         }
         ret
+    }
+
+    /// Writes the key as a byte-encoded pair of values. In compressed form
+    /// the y-coordinate is represented by only a single bit, as x determines
+    /// it up to one bit.
+    pub fn write_compressed<W: io::Write>(&self, writer: &mut W) -> io::Result<()>{
+        writer.write_all(&self.serialize())
+    }
+
+    /// Writes the key as a byte-encoded pair of values, in uncompressed form.
+    pub fn write_uncompressed<W: io::Write>(&self, writer: &mut W) -> io::Result<()>{
+        writer.write_all(&self.serialize_uncompressed())
     }
 
     #[inline]
