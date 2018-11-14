@@ -427,6 +427,35 @@ mod test {
     }
 
     #[test]
+    fn pubkey_write_round_trip() {
+        let s = Secp256k1::new();
+
+        let (_, pk1) = s.generate_keypair(&mut thread_rng());
+
+        let mut compressed_vec = Vec::new();
+        assert!(pk1.write(&mut compressed_vec).is_ok());
+        assert_eq!(PublicKey::from_slice(&compressed_vec), Ok(pk1));
+
+        let mut compressed_buf = [0 as u8; constants::PUBLIC_KEY_SIZE];
+        {
+            let mut compressed_slice: &mut [u8] = &mut compressed_buf;
+            assert!(pk1.write(&mut compressed_slice).is_ok());
+        }
+        assert_eq!(PublicKey::from_slice(&compressed_buf), Ok(pk1));
+
+        let mut uncompressed_vec = Vec::new();
+        assert!(pk1.write_uncompressed(&mut uncompressed_vec).is_ok());
+        assert_eq!(PublicKey::from_slice(&uncompressed_vec), Ok(pk1));
+
+        let mut uncompressed_buf = [0 as u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        {
+            let mut uncompressed_slice: &mut [u8] = &mut uncompressed_buf;
+            assert!(pk1.write_uncompressed(&mut uncompressed_slice).is_ok());
+        }
+        assert_eq!(PublicKey::from_slice(&uncompressed_buf), Ok(pk1));
+    }
+
+    #[test]
     fn invalid_secret_key() {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
@@ -591,6 +620,34 @@ mod test {
                    &[4, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236, 1, 189, 143, 242, 227, 16, 87, 247, 183, 162, 68, 237, 140, 92, 205, 151, 129, 166, 58, 111, 96, 123, 64, 180, 147, 51, 12, 209, 89, 236, 213, 206][..]);
         assert_eq!(&pk1.serialize()[..],
                    &[2, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236][..]);
+    }
+
+    #[test]
+    fn test_pubkey_write() {
+        struct DumbRng(u32);
+        impl Rng for DumbRng {
+            fn next_u32(&mut self) -> u32 {
+                self.0 = self.0.wrapping_add(1);
+                self.0
+            }
+        }
+
+        let s = Secp256k1::new();
+        let (_, pk1) = s.generate_keypair(&mut DumbRng(0));
+
+        let mut uncompressed_buf = [0 as u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        {
+            let mut uncompressed_slice: &mut [u8] = &mut uncompressed_buf;
+            assert!(pk1.write_uncompressed(&mut uncompressed_slice).is_ok());
+        }
+        assert_eq!(&uncompressed_buf[..], &[4, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236, 1, 189, 143, 242, 227, 16, 87, 247, 183, 162, 68, 237, 140, 92, 205, 151, 129, 166, 58, 111, 96, 123, 64, 180, 147, 51, 12, 209, 89, 236, 213, 206][..]);
+
+        let mut compressed_buf = [0 as u8; constants::PUBLIC_KEY_SIZE];
+        {
+            let mut compressed_slice: &mut [u8] = &mut compressed_buf;
+            assert!(pk1.write(&mut compressed_slice).is_ok());
+        }
+        assert_eq!(&compressed_buf[..], &[2, 149, 16, 196, 140, 38, 92, 239, 179, 65, 59, 224, 230, 183, 91, 238, 240, 46, 186, 252, 175, 102, 52, 249, 98, 178, 123, 72, 50, 171, 196, 254, 236][..]);
     }
 
     #[test]
