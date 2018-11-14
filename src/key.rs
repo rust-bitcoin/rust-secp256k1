@@ -250,9 +250,8 @@ impl PublicKey {
         }
     }
 
-    /// Serialize the key as a byte-encoded pair of values. In compressed form
-    /// the y-coordinate is represented by only a single bit, as x determines
-    /// it up to one bit.
+    /// Serialize the key in compressed form. The y-coordinate is represented by
+    /// only a single bit, as x determines it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
         let mut ret = [0; constants::PUBLIC_KEY_SIZE];
 
@@ -271,7 +270,7 @@ impl PublicKey {
         ret
     }
 
-    /// Serialize the key as a byte-encoded pair of values, in uncompressed form.
+    /// Serialize the key in uncompressed form as a byte-encoded pair of values.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
@@ -290,14 +289,13 @@ impl PublicKey {
         ret
     }
 
-    /// Writes the key as a byte-encoded pair of values. In compressed form
-    /// the y-coordinate is represented by only a single bit, as x determines
-    /// it up to one bit.
-    pub fn write_compressed<W: io::Write>(&self, writer: &mut W) -> io::Result<()>{
+    /// Writes the key in compressed form. The y-coordinate is represented by
+    /// only a single bit, as x determines it up to one bit.
+    pub fn write<W: io::Write>(&self, writer: &mut W) -> io::Result<()>{
         writer.write_all(&self.serialize())
     }
 
-    /// Writes the key as a byte-encoded pair of values, in uncompressed form.
+    /// Writes the key in uncompressed form as a byte-encoded pair of values.
     pub fn write_uncompressed<W: io::Write>(&self, writer: &mut W) -> io::Result<()>{
         writer.write_all(&self.serialize_uncompressed())
     }
