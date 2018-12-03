@@ -52,19 +52,6 @@ impl str::FromStr for SecretKey {
 }
 
 /// The number 1 encoded as a secret key
-/// Deprecated; `static` is not what I want; use `ONE_KEY` instead
-pub static ONE: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 0,
-                                       0, 0, 0, 0, 0, 0, 0, 1]);
-
-/// The number 0 encoded as a secret key
-pub const ZERO_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0]);
-
-/// The number 1 encoded as a secret key
 pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
