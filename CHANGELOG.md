@@ -1,6 +1,14 @@
-# (Unreleased)
+# 0.12.0 - 2018-12-03
 
+* **Overhaul API to remove context object when no precomputation is needed**
+* Add `ThirtyTwoByteHash` trait which allows infallible conversions to `Message`s
+* Disallow 0-valued `Message` objects since signatures on them are forgeable for all keys
 * Remove `ops::Index` implementations for `Signature`
+* Remove depecated constants and unsafe `ZERO_KEY` constant
+
+# 0.11.5 - 2018-11-09
+
+* Use `pub extern crate` to export dependencies whose types are exported
 
 # 0.11.4 - 2018-11-04
 
