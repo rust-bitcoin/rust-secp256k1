@@ -205,6 +205,14 @@ fn from_str(s: &str) -> Result<Signature, Error> {
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
+/// Trait describing something that promises to be a 32-byte random number; in particular,
+/// it has negligible probability of being zero or overflowing the group order. Such objects
+/// may be converted to `Message`s without any error paths.
+pub trait ThirtyTwoByteHash {
+    /// Converts the object into a 32-byte array
+    fn into_32(self) -> [u8; 32];
+}
+
 impl RecoveryId {
 #[inline]
 /// Allows library users to create valid recovery IDs from i32.
@@ -504,6 +512,10 @@ impl Message {
     /// Converts a `MESSAGE_SIZE`-byte slice to a message object
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
+        if data == &[0; constants::MESSAGE_SIZE] {
+            return Err(Error::InvalidMessage);
+        }
+
         match data.len() {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0; constants::MESSAGE_SIZE];
@@ -515,10 +527,10 @@ impl Message {
     }
 }
 
-/// Creates a message from a `MESSAGE_SIZE` byte array
-impl From<[u8; constants::MESSAGE_SIZE]> for Message {
-    fn from(buf: [u8; constants::MESSAGE_SIZE]) -> Message {
-        Message(buf)
+impl<T: ThirtyTwoByteHash> From<T> for Message {
+    /// Converts a 32-byte hash directly to a message without error paths
+    fn from(t: T) -> Message {
+        Message(t.into_32())
     }
 }
 
@@ -538,6 +550,8 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad recovery id
     InvalidRecoveryId,
+    /// Invalid tweak for add_*_assign or mul_*_assign
+    InvalidTweak,
 }
 
 // Passthrough Debug to Display, since errors should be user-visible
@@ -557,7 +571,8 @@ impl error::Error for Error {
             Error::InvalidPublicKey => "secp: malformed public key",
             Error::InvalidSignature => "secp: malformed signature",
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
-            Error::InvalidRecoveryId => "secp: bad recovery id"
+            Error::InvalidRecoveryId => "secp: bad recovery id",
+            Error::InvalidTweak => "secp: bad tweak",
         }
     }
 }
@@ -990,17 +1005,16 @@ mod tests {
         s.randomize(&mut thread_rng());
 
         // Wild keys: 1, CURVE_ORDER - 1
-        // Wild msgs: 0, 1, CURVE_ORDER - 1, CURVE_ORDER
+        // Wild msgs: 1, CURVE_ORDER - 1
         let mut wild_keys = [[0; 32]; 2];
-        let mut wild_msgs = [[0; 32]; 4];
+        let mut wild_msgs = [[0; 32]; 2];
 
         wild_keys[0][0] = 1;
-        wild_msgs[1][0] = 1;
+        wild_msgs[0][0] = 1;
 
         use constants;
         wild_keys[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
         wild_msgs[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
-        wild_msgs[2][..].copy_from_slice(&constants::CURVE_ORDER[..]);
 
         wild_keys[1][0] -= 1;
         wild_msgs[1][0] -= 1;
@@ -1079,7 +1093,11 @@ mod tests {
                    Err(InvalidMessage));
         assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE + 1]),
                    Err(InvalidMessage));
-        assert!(Message::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
+        assert_eq!(
+            Message::from_slice(&[0; constants::MESSAGE_SIZE]),
+            Err(InvalidMessage)
+        );
+        assert!(Message::from_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
     }
 
     #[test]
