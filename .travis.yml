@@ -1,10 +1,14 @@
 language: rust
+cache: cargo
+
 rust:
   - stable
   - beta
   - nightly
   - 1.14.0
-cache: cargo
+os:
+ - linux
+ - windows
 
 script:
   - cargo build --verbose --features=fuzztarget
