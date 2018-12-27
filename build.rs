@@ -27,7 +27,7 @@ use std::env;
 
 fn main() {
     // Check whether we can use 64-bit compilation
-    let use_64bit_compilation = if env::var("CARGO_CFG_TARGET_POINTER_WIDTH").as_ref().map(|s| s.as_str()) == Ok("64") {
+    let use_64bit_compilation = if env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() == "64" {
         let check = cc::Build::new().file("depend/check_uint128_t.c")
                                     .cargo_metadata(false)
                                     .try_compile("check_uint128_t")
