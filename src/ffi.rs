@@ -18,8 +18,7 @@
 //! not be needed for most users.
 use std::mem;
 use std::hash;
-
-use libc::{c_int, c_uchar, c_uint, c_void, size_t};
+use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = (1 << 0) | 0;
@@ -151,17 +150,17 @@ extern "C" {
 
     // Pubkeys
     pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
-                                     input: *const c_uchar, in_len: size_t)
+                                     input: *const c_uchar, in_len: usize)
                                      -> c_int;
 
     pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *mut c_uchar,
-                                         out_len: *mut size_t, pk: *const PublicKey,
+                                         out_len: *mut usize, pk: *const PublicKey,
                                          compressed: c_uint)
                                          -> c_int;
 
     // Signatures
     pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
-                                               input: *const c_uchar, in_len: size_t)
+                                               input: *const c_uchar, in_len: usize)
                                                -> c_int;
 
     pub fn secp256k1_ecdsa_signature_parse_compact(cx: *const Context, sig: *mut Signature,
@@ -169,11 +168,11 @@ extern "C" {
                                                    -> c_int;
 
     pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                         input: *const c_uchar, in_len: size_t)
+                                         input: *const c_uchar, in_len: usize)
                                          -> c_int;
 
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
-                                                   out_len: *mut size_t, sig: *const Signature)
+                                                   out_len: *mut usize, sig: *const Signature)
                                                    -> c_int;
 
     pub fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
@@ -273,7 +272,7 @@ extern "C" {
 
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
-    use libc::{c_int, c_uchar, c_uint, c_void, size_t};
+    use std::os::raw::{c_int, c_uchar, c_uint, c_void};
     use ffi::*;
     use std::ptr;
 
@@ -319,7 +318,7 @@ mod fuzz_dummy {
     // Pubkeys
     /// Parse 33/65 byte pubkey into PublicKey, losing compressed information
     pub unsafe fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
-                                            input: *const c_uchar, in_len: size_t)
+                                            input: *const c_uchar, in_len: usize)
                                             -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         match in_len {
@@ -346,7 +345,7 @@ mod fuzz_dummy {
 
     /// Serialize PublicKey back to 33/65 byte pubkey
     pub unsafe fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *mut c_uchar,
-                                                out_len: *mut size_t, pk: *const PublicKey,
+                                                out_len: *mut usize, pk: *const PublicKey,
                                                 compressed: c_uint)
                                                 -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
@@ -371,7 +370,7 @@ mod fuzz_dummy {
 
     // Signatures
     pub unsafe fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
-                                                      input: *const c_uchar, in_len: size_t)
+                                                      input: *const c_uchar, in_len: usize)
                                                       -> c_int {
         unimplemented!();
     }
@@ -387,14 +386,14 @@ mod fuzz_dummy {
     }
 
     pub unsafe fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                                input: *const c_uchar, in_len: size_t)
+                                                input: *const c_uchar, in_len: usize)
                                                 -> c_int {
         unimplemented!();
     }
 
     /// Copies up to 72 bytes into output from sig
     pub unsafe fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
-                                                          out_len: *mut size_t, sig: *const Signature)
+                                                          out_len: *mut usize, sig: *const Signature)
                                                           -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
 
@@ -407,7 +406,7 @@ mod fuzz_dummy {
             len_s -= 1;
         }
 
-        assert!(*out_len >= (6 + len_s + len_r) as size_t);
+        assert!(*out_len >= (6 + len_s + len_r) as usize);
 
         *output.offset(0) = 0x30;
         *output.offset(1) = 4 + len_r + len_s;
