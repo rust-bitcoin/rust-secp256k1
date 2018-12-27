@@ -139,9 +139,6 @@
 #[cfg(feature = "serde")] pub extern crate serde;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 
-pub extern crate libc;
-
-use libc::size_t;
 use std::{error, fmt, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
@@ -173,7 +170,7 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Display for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let mut v = [0; 72];
-    let mut len = v.len() as size_t;
+    let mut len = v.len() as usize;
     unsafe {
         let err = ffi::secp256k1_ecdsa_signature_serialize_der(
             ffi::secp256k1_context_no_precomp,
@@ -241,7 +238,7 @@ impl Signature {
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_ptr(),
-                data.len() as libc::size_t,
+                data.len() as usize,
             ) == 1
             {
                 Ok(Signature(ret))
@@ -283,7 +280,7 @@ impl Signature {
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_ptr(),
-                data.len() as libc::size_t,
+                data.len() as usize,
             ) == 1
             {
                 Ok(Signature(ret))
@@ -338,7 +335,7 @@ impl Signature {
     /// Serializes the signature in DER format
     pub fn serialize_der(&self) -> Vec<u8> {
         let mut ret = Vec::with_capacity(72);
-        let mut len: size_t = ret.capacity() as size_t;
+        let mut len: usize = ret.capacity() as usize;
         unsafe {
             let err = ffi::secp256k1_ecdsa_signature_serialize_der(
                 ffi::secp256k1_context_no_precomp,

@@ -243,7 +243,7 @@ impl PublicKey {
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
                 data.as_ptr(),
-                data.len() as ::libc::size_t,
+                data.len() as usize,
             ) == 1
             {
                 Ok(PublicKey(pk))
@@ -261,7 +261,7 @@ impl PublicKey {
         let mut ret = [0; constants::PUBLIC_KEY_SIZE];
 
         unsafe {
-            let mut ret_len = constants::PUBLIC_KEY_SIZE as ::libc::size_t;
+            let mut ret_len = constants::PUBLIC_KEY_SIZE as usize;
             let err = ffi::secp256k1_ec_pubkey_serialize(
                 ffi::secp256k1_context_no_precomp,
                 ret.as_mut_ptr(),
@@ -280,7 +280,7 @@ impl PublicKey {
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
         unsafe {
-            let mut ret_len = constants::UNCOMPRESSED_PUBLIC_KEY_SIZE as ::libc::size_t;
+            let mut ret_len = constants::UNCOMPRESSED_PUBLIC_KEY_SIZE as usize;
             let err = ffi::secp256k1_ec_pubkey_serialize(
                 ffi::secp256k1_context_no_precomp,
                 ret.as_mut_ptr(),
