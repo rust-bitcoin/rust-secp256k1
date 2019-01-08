@@ -572,7 +572,7 @@ mod fuzz_dummy {
                                                  -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
-        ptr::copy(tweak, sk.offset(16), 16);
+        ptr::copy(tweak.offset(16), sk.offset(16), 16);
         *sk.offset(24) = 0x7f; // Ensure sk remains valid no matter what tweak was
         1
     }
@@ -584,8 +584,8 @@ mod fuzz_dummy {
                                                 -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if test_pk_validate(cx, pk) != 1 { return 0; }
-        ptr::copy(tweak, (*pk).0[16..32].as_mut_ptr(), 16);
-        ptr::copy(tweak, (*pk).0[16+32..64].as_mut_ptr(), 16);
+        ptr::copy(tweak.offset(16), (*pk).0[16..32].as_mut_ptr(), 16);
+        ptr::copy(tweak.offset(16), (*pk).0[16+32..64].as_mut_ptr(), 16);
         (*pk).0[24] = 0x7f; // Ensure pk remains valid no matter what tweak was
         (*pk).0[24+32] = 0x7f; // Ensure pk remains valid no matter what tweak was
         1
@@ -629,8 +629,8 @@ mod fuzz_dummy {
             (*out).0[(i*32/n) as usize..((i+1)*32/n) as usize].copy_from_slice(&(**ins.offset(i as isize)).0[(i*32/n) as usize..((i+1)*32/n) as usize]);
         }
         ptr::copy((*out).0[0..32].as_ptr(), (*out).0[32..64].as_mut_ptr(), 32);
-        (*out).0[24] = 0x0d; // pk should always be valid
-        (*out).0[24+32] = 0x0d; // pk should always be valid
+        (*out).0[24] = 0x7f; // pk should always be valid
+        (*out).0[24+32] = 0x7f; // pk should always be valid
         test_pk_validate(cx, out)
     }
 
