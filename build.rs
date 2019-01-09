@@ -23,27 +23,22 @@
 
 extern crate cc;
 
-use std::io::{self, Write};
+use std::env;
 
 fn main() {
     // Check whether we can use 64-bit compilation
-    #[cfg(target_pointer_width = "64")]
-    let use_64bit_compilation = {
+    let use_64bit_compilation = if env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() == "64" {
         let check = cc::Build::new().file("depend/check_uint128_t.c")
                                     .cargo_metadata(false)
                                     .try_compile("check_uint128_t")
                                     .is_ok();
         if !check {
-            writeln!(
-                &mut io::stderr(),
-                "Warning: Compiling in 32-bit mode on a 64-bit architecture due to lack of uint128_t support."
-            ).expect("print to stderr")
+            println!("cargo:warning=Compiling in 32-bit mode on a 64-bit architecture due to lack of uint128_t support.");
         }
         check
+    } else {
+        false
     };
-    #[cfg(not(target_pointer_width = "64"))]
-    let use_64bit_compilation = false;
-
 
     // Actual build
     let mut base_config = cc::Build::new();
@@ -61,7 +56,7 @@ fn main() {
                .define("ENABLE_MODULE_ECDH", Some("1"))
                .define("ENABLE_MODULE_RECOVERY", Some("1"));
 
-    if let Ok(target_endian) = std::env::var("CARGO_CFG_TARGET_ENDIAN") {
+    if let Ok(target_endian) = env::var("CARGO_CFG_TARGET_ENDIAN") {
         if target_endian == "big" {
             base_config.define("WORDS_BIGENDIAN", Some("1"));
         }
