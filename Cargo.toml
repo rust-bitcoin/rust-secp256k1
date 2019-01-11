@@ -31,11 +31,12 @@ default = []
 fuzztarget = []
 
 [dev-dependencies]
-rand = "0.4"
+rand = "0.6"
+rand_core = "0.4"
 serde_test = "1.0"
 
 [dependencies.rand]
-version = "0.4"
+version = "0.6"
 optional = true
 
 [dependencies.serde]

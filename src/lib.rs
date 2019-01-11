@@ -136,6 +136,7 @@
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
+#[cfg(any(test))] extern crate rand_core;
 #[cfg(feature = "serde")] pub extern crate serde;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 
@@ -778,7 +779,7 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 
 #[cfg(test)]
 mod tests {
-    use rand::{Rng, thread_rng};
+    use rand::{RngCore, thread_rng};
     use std::str::FromStr;
 
     use key::{SecretKey, PublicKey};
@@ -1227,4 +1228,3 @@ mod benches {
         });
     }
 }
-
