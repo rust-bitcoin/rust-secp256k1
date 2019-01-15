@@ -1,3 +1,9 @@
+# 0.12.1 - 2019-01-15
+
+* Minor bug fixes
+* Fixed `cc` crate version to maintain minimum compiler version without breakage
+* Removed `libc` dependency as it our uses have been subsumed into stdlib
+
 # 0.12.0 - 2018-12-03
 
 * **Overhaul API to remove context object when no precomputation is needed**
