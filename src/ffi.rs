@@ -644,7 +644,6 @@ mod fuzz_dummy {
         data: *mut c_void,
     ) -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
-        assert!((*cx).0 as u32 & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, scalar) != 1 { return 0; }
 
         let mut scalar_prefix = [0; 16];
