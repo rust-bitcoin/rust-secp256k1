@@ -1,3 +1,7 @@
+# 0.12.2 - 2019-01-18
+
+* Fuzzer bug fix
+
 # 0.12.1 - 2019-01-15
 
 * Minor bug fixes
