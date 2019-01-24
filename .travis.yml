@@ -30,3 +30,4 @@ script:
   - cargo test --release
   - cargo bench
   - if [ "$(rustup show | grep default | grep stable)" != "" ]; then cargo doc; fi
+  - if [ "$(rustup show | grep default | grep stable)" != "" -a "$TRAVIS_OS_NAME" = "linux" ]; then cargo install --force cargo-web && cargo web build --target=asmjs-unknown-emscripten && cargo web test --target=asmjs-unknown-emscripten --nodejs; fi
