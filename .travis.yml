@@ -11,10 +11,10 @@ os:
  - windows
 
 matrix:
-  # rand 0.4 actually needs Rust 1.22, which leads to build failures on Rust 1.14 on Windows.
-  # This is not a problem, because
-  #  - we insist on rust 1.14 only for Debian, and
-  #  - "rand" is only an optional dependency.
+  # rand 0.6 actually needs Rust 1.22, which leads to build failures on Rust 1.14 on Windows.
+  # This is a problem, because
+  #  - we insist on rust 1.22 since #92
+  #  - but "rand" is only an optional dependency.
   exclude:
   - rust: 1.22.0
     os: windows

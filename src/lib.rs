@@ -223,7 +223,7 @@ pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
 
 #[inline]
 /// Allows library users to convert recovery IDs to i32.
-pub fn to_i32(&self) -> i32 {
+pub fn to_i32(self) -> i32 {
     self.0
 }
 }
@@ -474,7 +474,7 @@ impl Message {
     /// Converts a `MESSAGE_SIZE`-byte slice to a message object
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
-        if data == &[0; constants::MESSAGE_SIZE] {
+        if data == [0; constants::MESSAGE_SIZE] {
             return Err(Error::InvalidMessage);
         }
 
@@ -614,6 +614,12 @@ impl Secp256k1<All> {
     /// Creates a new Secp256k1 context with all capabilities
     pub fn new() -> Secp256k1<All> {
         Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
+    }
+}
+
+impl Default for Secp256k1<All> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

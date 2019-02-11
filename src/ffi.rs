@@ -21,13 +21,13 @@ use std::hash;
 use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
 /// Flag for context to enable no precomputation
-pub const SECP256K1_START_NONE: c_uint = (1 << 0) | 0;
+pub const SECP256K1_START_NONE: c_uint = 1;
 /// Flag for context to enable verification precomputation
-pub const SECP256K1_START_VERIFY: c_uint = (1 << 0) | (1 << 8);
+pub const SECP256K1_START_VERIFY: c_uint = 1 | (1 << 8);
 /// Flag for context to enable signing precomputation
-pub const SECP256K1_START_SIGN: c_uint = (1 << 0) | (1 << 9);
+pub const SECP256K1_START_SIGN: c_uint = 1 | (1 << 9);
 /// Flag for keys to indicate uncompressed serialization format
-pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1) | 0;
+pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1);
 /// Flag for keys to indicate compressed serialization format
 pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 
@@ -74,6 +74,12 @@ impl PublicKey {
     pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
 }
 
+impl Default for PublicKey {
+    fn default() -> Self {
+        PublicKey::new()
+    }
+}
+
 impl hash::Hash for PublicKey {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         state.write(&self.0)
@@ -99,11 +105,23 @@ impl Signature {
     pub unsafe fn blank() -> Signature { mem::uninitialized() }
 }
 
+impl Default for Signature {
+    fn default() -> Self {
+        Signature::new()
+    }
+}
+
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
     pub unsafe fn blank() -> RecoverableSignature { mem::uninitialized() }
+}
+
+impl Default for RecoverableSignature {
+    fn default() -> Self {
+        RecoverableSignature::new()
+    }
 }
 
 /// Library-internal representation of an ECDH shared secret
@@ -117,6 +135,12 @@ impl SharedSecret {
     pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
     pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
+}
+
+impl Default for SharedSecret {
+    fn default() -> Self {
+        SharedSecret::new()
+    }
 }
 
 #[cfg(not(feature = "fuzztarget"))]
@@ -369,8 +393,8 @@ mod fuzz_dummy {
      }
 
     // Signatures
-    pub unsafe fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
-                                                      input: *const c_uchar, in_len: usize)
+    pub unsafe fn secp256k1_ecdsa_signature_parse_der(_cx: *const Context, _sig: *mut Signature,
+                                                      _input: *const c_uchar, _in_len: usize)
                                                       -> c_int {
         unimplemented!();
     }
@@ -385,8 +409,8 @@ mod fuzz_dummy {
         1
     }
 
-    pub unsafe fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                                input: *const c_uchar, in_len: usize)
+    pub unsafe fn ecdsa_signature_parse_der_lax(_cx: *const Context, _sig: *mut Signature,
+                                                _input: *const c_uchar, _in_len: usize)
                                                 -> c_int {
         unimplemented!();
     }
@@ -438,26 +462,26 @@ mod fuzz_dummy {
         1
     }
 
-    pub unsafe fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
-                                                                      input64: *const c_uchar, recid: c_int)
+    pub unsafe fn secp256k1_ecdsa_recoverable_signature_parse_compact(_cx: *const Context, _sig: *mut RecoverableSignature,
+                                                                      _input64: *const c_uchar, _recid: c_int)
                                                                       -> c_int {
         unimplemented!();
     }
 
-    pub unsafe fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
-                                                                          recid: *mut c_int, sig: *const RecoverableSignature)
+    pub unsafe fn secp256k1_ecdsa_recoverable_signature_serialize_compact(_cx: *const Context, _output64: *const c_uchar,
+                                                                          _recid: *mut c_int, _sig: *const RecoverableSignature)
                                                                           -> c_int {
         unimplemented!();
     }
 
-    pub unsafe fn secp256k1_ecdsa_recoverable_signature_convert(cx: *const Context, sig: *mut Signature,
-                                                                input: *const RecoverableSignature)
+    pub unsafe fn secp256k1_ecdsa_recoverable_signature_convert(_cx: *const Context, _sig: *mut Signature,
+                                                                _input: *const RecoverableSignature)
                                                                 -> c_int {
         unimplemented!();
     }
 
-    pub unsafe fn secp256k1_ecdsa_signature_normalize(cx: *const Context, out_sig: *mut Signature,
-                                                      in_sig: *const Signature)
+    pub unsafe fn secp256k1_ecdsa_signature_normalize(_cx: *const Context, _out_sig: *mut Signature,
+                                                      _in_sig: *const Signature)
                                                       -> c_int {
         unimplemented!();
     }
@@ -521,10 +545,10 @@ mod fuzz_dummy {
         1
     }
 
-    pub unsafe fn secp256k1_ecdsa_recover(cx: *const Context,
-                                          pk: *mut PublicKey,
-                                          sig: *const RecoverableSignature,
-                                          msg32: *const c_uchar)
+    pub unsafe fn secp256k1_ecdsa_recover(_cx: *const Context,
+                                          _pk: *mut PublicKey,
+                                          _sig: *const RecoverableSignature,
+                                          _msg32: *const c_uchar)
                                           -> c_int {
         unimplemented!();
     }
@@ -640,8 +664,8 @@ mod fuzz_dummy {
         out: *mut SharedSecret,
         point: *const PublicKey,
         scalar: *const c_uchar,
-        hashfp: EcdhHashFn,
-        data: *mut c_void,
+        _hashfp: EcdhHashFn,
+        _data: *mut c_void,
     ) -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, scalar) != 1 { return 0; }
