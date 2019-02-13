@@ -14,7 +14,7 @@
 //
 
 //! # Secp256k1
-//! Rust bindings for Pieter Wuille's secp256k1 library, which is used for
+//! Rust bindings for Pieter Wuille's secp256k1-zkp library, which is used for
 //! fast and accurate manipulation of ECDSA signatures on the secp256k1
 //! curve. Such signatures are used extensively by the Bitcoin network
 //! and its derivatives.
@@ -32,12 +32,12 @@
 //! care about signing, only care about verification, or only care about
 //! parsing. In the upstream library, if you attempt to sign a message using
 //! a context that does not support this, it will trigger an assertion
-//! failure and terminate the program. In `rust-secp256k1`, this is caught
+//! failure and terminate the program. In `rust-secp256k1-zkp`, this is caught
 //! at compile-time; in fact, it is impossible to compile code that will
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! extern crate secp256k1;
+//! extern crate secp256k1_zkp;
 //! # #[cfg(feature="rand")]
 //! extern crate rand;
 //!
@@ -45,7 +45,7 @@
 //! # fn main() {
 //! # #[cfg(feature="rand")] {
 //! use rand::OsRng;
-//! use secp256k1::{Secp256k1, Message};
+//! use secp256k1_zkp::{Secp256k1, Message};
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
@@ -57,13 +57,13 @@
 //! # } }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand`
+//! The above code requires `rust-secp256k1-zkp` to be compiled with the `rand`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys can be parsed from slices, like
 //!
 //! ```rust
 //! # fn main() {
-//! use self::secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
+//! use self::secp256k1_zkp::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
@@ -79,7 +79,7 @@
 //!
 //! ```rust
 //! # fn main() {
-//! use secp256k1::{Secp256k1, Message, Signature, PublicKey};
+//! use secp256k1_zkp::{Secp256k1, Message, Signature, PublicKey};
 //!
 //! let secp = Secp256k1::verification_only();
 //!
@@ -120,7 +120,7 @@
 #![crate_type = "lib"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
-#![crate_name = "secp256k1"]
+#![crate_name = "secp256k1_zkp"]
 
 // Coding conventions
 #![deny(non_upper_case_globals)]

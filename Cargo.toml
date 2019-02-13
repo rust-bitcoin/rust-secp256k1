@@ -1,15 +1,15 @@
 [package]
 
-name = "secp256k1"
+name = "secp256k1_zkp"
 version = "0.12.2"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
-repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
-documentation = "https://docs.rs/secp256k1/"
-description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
-keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
+homepage = "https://github.com/rust-bitcoin/rust-secp256k1-zkp/"
+repository = "https://github.com/rust-bitcoin/rust-secp256k1-zkp/"
+documentation = "https://docs.rs/secp256k1-zkp/"
+description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1-zkp and related utilities."
+keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "secp256k1-zkp", "libsecp256k1-zkp", "bitcoin" ]
 readme = "README.md"
 build = "build.rs"
 
@@ -22,7 +22,7 @@ all-features = true
 cc = "=1.0.26"
 
 [lib]
-name = "secp256k1"
+name = "secp256k1_zkp"
 path = "src/lib.rs"
 
 [features]
