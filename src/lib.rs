@@ -146,6 +146,7 @@ use std::{error, fmt, ptr, str};
 mod macros;
 pub mod constants;
 pub mod ecdh;
+pub mod schnorrsig;
 pub mod ffi;
 pub mod key;
 

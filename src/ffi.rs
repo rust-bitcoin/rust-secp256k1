@@ -119,6 +119,19 @@ impl SharedSecret {
     pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
 }
 
+/// Library-internal representation of a Secp256k1 Schnorr signature
+#[repr(C)]
+pub struct SchnorrSignature([c_uchar; 64]);
+impl_array_newtype!(SchnorrSignature, c_uchar, 64);
+impl_raw_debug!(SchnorrSignature);
+
+impl SchnorrSignature {
+    /// Create a new (zeroed) signature usable for the FFI interface
+    pub fn new() -> SchnorrSignature { SchnorrSignature([0; 64]) }
+    /// Create a new (uninitialized) signature usable for the FFI interface
+    pub unsafe fn blank() -> SchnorrSignature { mem::uninitialized() }
+}
+
 #[cfg(not(feature = "fuzztarget"))]
 extern "C" {
     /// Default ECDH hash function
@@ -267,6 +280,35 @@ extern "C" {
         privkey: *const c_uchar,
         hashfp: EcdhHashFn,
         data: *mut c_void,
+    ) -> c_int;
+
+    pub fn secp256k1_schnorrsig_parse(
+        cx: *const Context,
+        sig: *mut SchnorrSignature,
+        in64: *const c_uchar,
+    ) -> c_int;
+
+    pub fn secp256k1_schnorrsig_serialize(
+        cx: *const Context,
+        out64: *mut c_uchar,
+        sig: *const SchnorrSignature,
+    ) -> c_int;
+
+    pub fn secp256k1_schnorrsig_sign(
+        cx: *const Context,
+        sig: *mut SchnorrSignature,
+        nonce_is_negated: *mut c_int,
+        msg32: *const c_uchar,
+        sk: *const c_uchar,
+        noncefn: NonceFn,
+        noncedata: *mut c_void,
+    ) -> c_int;
+
+    pub fn secp256k1_schnorrsig_verify(
+        cx: *const Context,
+        sig: *const SchnorrSignature,
+        msg32: *const c_uchar,
+        pk: *const PublicKey,
     ) -> c_int;
 }
 

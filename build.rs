@@ -54,7 +54,8 @@ fn main() {
                .define("USE_SCALAR_INV_BUILTIN", Some("1"))
                .define("USE_ENDOMORPHISM", Some("1"))
                .define("ENABLE_MODULE_ECDH", Some("1"))
-               .define("ENABLE_MODULE_RECOVERY", Some("1"));
+               .define("ENABLE_MODULE_RECOVERY", Some("1"))
+               .define("ENABLE_MODULE_SCHNORRSIG", Some("1"));
 
     if let Ok(target_endian) = env::var("CARGO_CFG_TARGET_ENDIAN") {
         if target_endian == "big" {
