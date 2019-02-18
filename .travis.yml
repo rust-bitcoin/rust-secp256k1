@@ -24,6 +24,10 @@ script:
   - cargo build --verbose --features=rand
   - cargo test --verbose --features=rand
   - cargo test --verbose --features="rand serde"
+  - cargo build --verbose --no-default-features
+  - cargo build --verbose --no-default-features --features="serde"
+  - cargo build --verbose --no-default-features --features="rand"
+  - cargo build --verbose --no-default-features --features="rand serde"
   - cargo build --verbose
   - cargo test --verbose
   - cargo build --release
