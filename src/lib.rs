@@ -519,10 +519,9 @@ pub enum Error {
     InvalidTweak,
 }
 
-// Passthrough Debug to Display, since errors should be user-visible
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let res = match *self {
+impl Error {
+    fn as_str(&self) -> &str {
+        match *self {
             Error::IncorrectSignature => "secp: signature failed verification",
             Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
             Error::InvalidPublicKey => "secp: malformed public key",
@@ -530,13 +529,21 @@ impl fmt::Display for Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
-        };
-        f.write_str(res)
+        }
+    }
+}
+
+// Passthrough Debug to Display, since errors should be user-visible
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str(self.as_str())
     }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn description(&self) -> &str { self.as_str() }
+}
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
 pub trait Signing {}

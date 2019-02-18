@@ -17,7 +17,6 @@
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
 use core::{mem, hash};
-use core::ffi::c_void;
 use types::*;
 // use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
