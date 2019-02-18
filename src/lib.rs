@@ -133,15 +133,17 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
 #[cfg(feature = "serde")] pub extern crate serde;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
-
-use std::{error, fmt, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
+#[cfg(any(test, feature = "std"))] extern crate core;
+
+use core::{fmt, ptr, str};
 
 #[macro_use]
 mod macros;
@@ -152,7 +154,7 @@ pub mod key;
 
 pub use key::SecretKey;
 pub use key::PublicKey;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -519,15 +521,7 @@ pub enum Error {
 // Passthrough Debug to Display, since errors should be user-visible
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(error::Error::description(self))
-    }
-}
-
-impl error::Error for Error {
-    fn cause(&self) -> Option<&error::Error> { None }
-
-    fn description(&self) -> &str {
-        match *self {
+        let res = match *self {
             Error::IncorrectSignature => "secp: signature failed verification",
             Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
             Error::InvalidPublicKey => "secp: malformed public key",
@@ -535,9 +529,13 @@ impl error::Error for Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
-        }
+        };
+        f.write_str(res)
     }
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
 pub trait Signing {}
