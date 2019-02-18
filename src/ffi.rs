@@ -18,7 +18,7 @@
 //! not be needed for most users.
 use core::{mem, hash};
 use core::ffi::c_void;
-use crate::types::*;
+use types::*;
 // use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
 
