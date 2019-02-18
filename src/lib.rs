@@ -147,6 +147,7 @@ use core::{fmt, ptr, str};
 
 #[macro_use]
 mod macros;
+mod types;
 pub mod constants;
 pub mod ecdh;
 pub mod ffi;
