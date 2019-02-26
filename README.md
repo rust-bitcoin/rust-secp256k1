@@ -20,5 +20,4 @@ Contributions to this library are welcome. A few guidelines:
 * Any breaking changes must have an accompanied entry in CHANGELOG.md
 * No new dependencies, please.
 * No crypto should be implemented in Rust, with the possible exception of hash functions. Cryptographic contributions should be directed upstream to libsecp256k1.
-* This library should always compile with any combination of features on **Rust 1.14**, which is the currently shipping compiler on Debian.
-
+* This library should always compile with any combination of features on **Rust 1.22**.
