@@ -17,6 +17,9 @@
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
         impl Copy for $thing {}
+        impl_array_newtype!($thing, $ty, $len, !Copy);
+    };
+    ($thing:ident, $ty:ty, $len:expr, !Copy) => {
 
         impl $thing {
             #[inline]

@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use std::{fmt, mem, str};
+use std::{fmt, mem, str, ptr};
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
@@ -28,7 +28,7 @@ use ffi;
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
+impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE, !Copy);
 impl_pretty_debug!(SecretKey);
 
 impl fmt::Display for SecretKey {
@@ -183,6 +183,14 @@ impl SecretKey {
             } else {
                 Ok(())
             }
+        }
+    }
+}
+
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+         unsafe {
+            ptr::write_volatile(&mut self.0, [0u8; constants::SECRET_KEY_SIZE]);
         }
     }
 }

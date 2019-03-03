@@ -16,8 +16,7 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use std::mem;
-use std::hash;
+use std::{mem, hash, ptr};
 use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
 /// Flag for context to enable no precomputation
@@ -127,7 +126,7 @@ impl Default for RecoverableSignature {
 /// Library-internal representation of an ECDH shared secret
 #[repr(C)]
 pub struct SharedSecret([c_uchar; 32]);
-impl_array_newtype!(SharedSecret, c_uchar, 32);
+impl_array_newtype!(SharedSecret, c_uchar, 32, !Copy);
 impl_raw_debug!(SharedSecret);
 
 impl SharedSecret {
@@ -135,6 +134,14 @@ impl SharedSecret {
     pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
     pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
+}
+
+impl Drop for SharedSecret {
+    fn drop(&mut self) {
+         unsafe {
+            ptr::write_volatile(&mut self.0, [0; 32]);
+        }
+    }
 }
 
 impl Default for SharedSecret {
