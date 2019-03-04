@@ -639,6 +639,14 @@ impl Secp256k1<VerifyOnly> {
 
 impl<C> Secp256k1<C> {
 
+    /// Getter for the raw pointer to the underlying secp256k1 context. This
+    /// shouldn't be needed with normal usage of the library. It enables
+    /// extending the Secp256k1 with more cryptographic algorithms outside of
+    /// this crate.
+    pub fn ctx(&self) -> &*mut ffi::Context {
+        &self.ctx
+    }
+
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell. Requires
     /// compilation with "rand" feature.
