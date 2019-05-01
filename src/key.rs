@@ -213,10 +213,16 @@ impl<'de> ::serde::Deserialize<'de> for SecretKey {
 }
 
 impl PublicKey {
-    /// Obtains a raw pointer suitable for use with FFI functions
+    /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
         &self.0 as *const _
+    }
+
+    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey {
+        &mut self.0 as *mut _
     }
 
     /// Creates a new public key from a secret key.
