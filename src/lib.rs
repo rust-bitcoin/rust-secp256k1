@@ -651,7 +651,7 @@ impl<C> Secp256k1<C> {
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell. Requires
     /// compilation with "rand" feature.
     #[cfg(any(test, feature = "rand"))]
-    pub fn randomize<R: Rng>(&mut self, rng: &mut R) {
+    pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0; 32];
         rng.fill_bytes(&mut seed);
         unsafe {
@@ -720,7 +720,7 @@ impl<C: Signing> Secp256k1<C> {
     /// with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
-    pub fn generate_keypair<R: Rng>(&self, rng: &mut R)
+    pub fn generate_keypair<R: Rng + ?Sized>(&self, rng: &mut R)
                                     -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(rng);
         let pk = key::PublicKey::from_secret_key(self, &sk);

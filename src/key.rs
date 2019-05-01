@@ -90,7 +90,7 @@ impl str::FromStr for PublicKey {
 }
 
 #[cfg(any(test, feature = "rand"))]
-fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
+fn random_32_bytes<R: Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
     rng.fill_bytes(&mut ret);
     ret
@@ -100,7 +100,7 @@ impl SecretKey {
     /// Creates a new random secret key. Requires compilation with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
-    pub fn new<R: Rng>(rng: &mut R) -> SecretKey {
+    pub fn new<R: Rng + ?Sized>(rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(
