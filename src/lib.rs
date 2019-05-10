@@ -133,18 +133,21 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
 #[cfg(feature = "serde")] pub extern crate serde;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
-
-use std::{error, fmt, ptr, str};
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
+#[cfg(any(test, feature = "std"))] extern crate core;
+
+use core::{fmt, ptr, str};
 
 #[macro_use]
 mod macros;
+mod types;
 pub mod constants;
 pub mod ecdh;
 pub mod ffi;
@@ -152,7 +155,8 @@ pub mod key;
 
 pub use key::SecretKey;
 pub use key::PublicKey;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
+use core::ops::Deref;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -161,6 +165,13 @@ pub struct RecoveryId(i32);
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Signature(ffi::Signature);
+
+/// A DER serialized Signature
+#[derive(Copy, Clone)]
+pub struct SerializedSignature {
+    data: [u8; 72],
+    len: usize,
+}
 
 impl fmt::Debug for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -226,6 +237,40 @@ pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
 pub fn to_i32(self) -> i32 {
     self.0
 }
+}
+
+impl SerializedSignature {
+    /// Get a pointer to the underlying data with the specified capacity.
+    pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
+        self.data.as_mut_ptr()
+    }
+
+    /// Get the capacity of the underlying data buffer.
+    pub fn capacity(&self) -> usize {
+        self.data.len()
+    }
+
+    /// Get the len of the used data.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Set the length of the object.
+    pub(crate) fn set_len(&mut self, len: usize) {
+        self.len = len;
+    }
+
+    /// Convert the serialized signature into the Signature struct.
+    /// (This DER deserializes it)
+    pub fn to_signature(&self) -> Result<Signature, Error> {
+        Signature::from_der(&self)
+    }
+
+    /// Create a SerializedSignature from a Signature.
+    /// (this DER serializes it)
+    pub fn from_signature(sig: &Signature) -> SerializedSignature {
+        sig.serialize_der()
+    }
 }
 
 impl Signature {
@@ -334,18 +379,18 @@ impl Signature {
 
     #[inline]
     /// Serializes the signature in DER format
-    pub fn serialize_der(&self) -> Vec<u8> {
-        let mut ret = Vec::with_capacity(72);
-        let mut len: usize = ret.capacity() as usize;
+    pub fn serialize_der(&self) -> SerializedSignature {
+        let mut ret = SerializedSignature::default();
+        let mut len: usize = ret.capacity();
         unsafe {
             let err = ffi::secp256k1_ecdsa_signature_serialize_der(
                 ffi::secp256k1_context_no_precomp,
-                ret.as_mut_ptr(),
+                ret.get_data_mut_ptr(),
                 &mut len,
                 self.as_ptr(),
             );
             debug_assert!(err == 1);
-            ret.set_len(len as usize);
+            ret.set_len(len);
         }
         ret
     }
@@ -516,17 +561,8 @@ pub enum Error {
     InvalidTweak,
 }
 
-// Passthrough Debug to Display, since errors should be user-visible
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(error::Error::description(self))
-    }
-}
-
-impl error::Error for Error {
-    fn cause(&self) -> Option<&error::Error> { None }
-
-    fn description(&self) -> &str {
+impl Error {
+    fn as_str(&self) -> &str {
         match *self {
             Error::IncorrectSignature => "secp: signature failed verification",
             Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
@@ -537,6 +573,18 @@ impl error::Error for Error {
             Error::InvalidTweak => "secp: bad tweak",
         }
     }
+}
+
+// Passthrough Debug to Display, since errors should be user-visible
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str(self.as_str())
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn description(&self) -> &str { self.as_str() }
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -583,6 +631,36 @@ impl<C> Clone for Secp256k1<C> {
 impl<C> PartialEq for Secp256k1<C> {
     fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
+
+impl Default for SerializedSignature {
+    fn default() -> SerializedSignature {
+        SerializedSignature {
+            data: [0u8; 72],
+            len: 0,
+        }
+    }
+}
+
+impl PartialEq for SerializedSignature {
+    fn eq(&self, other: &SerializedSignature) -> bool {
+        &self.data[..self.len] == &other.data[..other.len]
+    }
+}
+
+impl AsRef<[u8]> for SerializedSignature {
+    fn as_ref(&self) -> &[u8] {
+        &self.data[..self.len]
+    }
+}
+
+impl Deref for SerializedSignature {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        &self.data[..self.len]
+    }
+}
+
+impl Eq for SerializedSignature {}
 
 impl<C> Eq for Secp256k1<C> { }
 

@@ -16,9 +16,10 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use std::mem;
-use std::hash;
-use std::os::raw::{c_int, c_uchar, c_uint, c_void};
+use core::{mem, hash};
+use types::*;
+// use std::os::raw::{c_int, c_uchar, c_uint, c_void};
+
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = 1;

@@ -16,7 +16,7 @@
 //! Support for shared secret computations
 //!
 
-use std::{ops, ptr};
+use core::{ops, ptr};
 
 use key::{SecretKey, PublicKey};
 use ffi;
