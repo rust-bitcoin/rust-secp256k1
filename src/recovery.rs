@@ -174,7 +174,7 @@ impl<C: Verification> Secp256k1<C> {
 mod tests {
     use rand::{RngCore, thread_rng};
 
-    use key::{SecretKey, PublicKey};
+    use key::SecretKey;
     use super::{RecoveryId, RecoverableSignature};
     use super::super::{Secp256k1, Message};
     use super::super::Error::{IncorrectSignature, InvalidSignature};

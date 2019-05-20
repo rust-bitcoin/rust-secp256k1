@@ -152,6 +152,7 @@ pub mod constants;
 pub mod ecdh;
 pub mod ffi;
 pub mod key;
+#[cfg(feature = "recovery")]
 pub mod recovery;
 
 pub use key::SecretKey;
