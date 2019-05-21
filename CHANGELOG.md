@@ -1,3 +1,14 @@
+# 0.13.0 - 2019-05-21
+
+* Update minimum supported rust compiler 1.22.
+* Replace `serialize_der` function with `SerializedSignature` struct.
+* Allow building without a standard library (`no_std`). `std` feature is on by default.
+* Add human readable serialization to `Signatures` and `SecretKeys`.
+* Stop displaying 0 bytes if a `Signature` is less than 72 bytes.
+* Only compile recovery module if feature `recovery` is set (non-default).
+* Updat `rand` dependency from 0.4 to 0.6 and add `rand_core` 0.4 dependency.
+* Relax `cc` dependency requirements.
+
 # 0.12.2 - 2019-01-18
 
 * Fuzzer bug fix
