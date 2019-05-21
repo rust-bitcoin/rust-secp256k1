@@ -29,6 +29,7 @@ script:
   - cargo build --verbose --no-default-features --features="serde"
   - cargo build --verbose --no-default-features --features="rand"
   - cargo build --verbose --no-default-features --features="rand serde recovery"
+  - cargo build --verbose --no-default-features --features="fuzztarget recovery"
   - cargo build --verbose
   - cargo test --verbose
   - cargo build --release

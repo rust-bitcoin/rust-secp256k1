@@ -60,6 +60,13 @@ pub type EcdhHashFn = unsafe extern "C" fn(
 #[derive(Clone, Debug)]
 #[repr(C)] pub struct Context(c_int);
 
+#[cfg(feature = "fuzztarget")]
+impl Context {
+    pub fn flags(&self) -> u32 {
+        self.0 as u32
+    }
+}
+
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
 pub struct PublicKey([c_uchar; 64]);
@@ -250,9 +257,11 @@ extern "C" {
 
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
-    use std::os::raw::{c_int, c_uchar, c_uint, c_void};
+    extern crate std;
+    use types::*;
     use ffi::*;
-    use std::ptr;
+    use self::std::ptr;
+    use self::std::boxed::Box;
 
     extern "C" {
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;

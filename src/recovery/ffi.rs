@@ -69,6 +69,12 @@ extern "C" {
 
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
+    extern crate std;
+    use types::*;
+    use ffi::*;
+    use self::std::ptr;
+    use super::RecoverableSignature;
+
     pub unsafe fn secp256k1_ecdsa_recoverable_signature_parse_compact(_cx: *const Context, _sig: *mut RecoverableSignature,
                                                                       _input64: *const c_uchar, _recid: c_int)
                                                                       -> c_int {
@@ -95,8 +101,8 @@ mod fuzz_dummy {
                                                    _noncefn: NonceFn,
                                                    _noncedata: *const c_void)
                                                    -> c_int {
-        assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
-        assert!((*cx).0 as u32 & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
+        assert!(!cx.is_null() && (*cx).flags() & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
+        assert!((*cx).flags() & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         if *sk.offset(0) > 0x7f {
             (*sig).0[0] = 2;
@@ -116,3 +122,5 @@ mod fuzz_dummy {
         unimplemented!();
     }
 }
+#[cfg(feature = "fuzztarget")]
+pub use self::fuzz_dummy::*;
