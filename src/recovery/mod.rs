@@ -1,4 +1,3 @@
-// TODO header
 // Bitcoin secp256k1 bindings
 // Written in 2014 by
 //   Dawid Ciężarkiewicz
@@ -19,11 +18,13 @@
 //! signature.
 
 use core::ptr;
-use ffi;
 use key;
 use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
+use super::ffi as super_ffi;
 pub use key::SecretKey;
 pub use key::PublicKey;
+
+mod ffi;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -36,7 +37,6 @@ pub struct RecoverableSignature(ffi::RecoverableSignature);
 impl RecoveryId {
 #[inline]
 /// Allows library users to create valid recovery IDs from i32.
-/// TODO
 pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
     match id {
         0 | 1 | 2 | 3 => Ok(RecoveryId(id)),
@@ -63,7 +63,7 @@ impl RecoverableSignature {
             if data.len() != 64 {
                 Err(Error::InvalidSignature)
             } else if ffi::secp256k1_ecdsa_recoverable_signature_parse_compact(
-                ffi::secp256k1_context_no_precomp,
+                super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_ptr(),
                 recid.0,
@@ -89,7 +89,7 @@ impl RecoverableSignature {
         let mut recid = 0i32;
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
-                ffi::secp256k1_context_no_precomp,
+                super_ffi::secp256k1_context_no_precomp,
                 ret.as_mut_ptr(),
                 &mut recid,
                 self.as_ptr(),
@@ -103,10 +103,10 @@ impl RecoverableSignature {
     /// for verification
     #[inline]
     pub fn to_standard(&self) -> Signature {
-        let mut ret = unsafe { ffi::Signature::blank() };
+        let mut ret = unsafe { super_ffi::Signature::blank() };
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_convert(
-                ffi::secp256k1_context_no_precomp,
+                super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 self.as_ptr(),
             );
@@ -140,7 +140,7 @@ impl<C: Signing> Secp256k1<C> {
                     &mut ret,
                     msg.as_ptr(),
                     sk.as_ptr(),
-                    ffi::secp256k1_nonce_function_rfc6979,
+                    super_ffi::secp256k1_nonce_function_rfc6979,
                     ptr::null()
                 ),
                 1
@@ -157,7 +157,7 @@ impl<C: Verification> Secp256k1<C> {
     pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
                    -> Result<key::PublicKey, Error> {
 
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = unsafe { super_ffi::PublicKey::blank() };
 
         unsafe {
             if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
