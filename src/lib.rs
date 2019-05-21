@@ -192,8 +192,8 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         );
         debug_assert!(err == 1);
     }
-    for ch in &v[..] {
-        write!(f, "{:02x}", *ch)?;
+    for i in 0..len {
+        write!(f, "{:02x}", v[i])?;
     }
     Ok(())
 }
@@ -1017,6 +1017,11 @@ mod tests {
              72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45\
              72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45"
         ).is_err());
+
+        // 71 byte signature
+        let hex_str = "30450221009d0bad576719d32ae76bedb34c774866673cbde3f4e12951555c9408e6ce774b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776";
+        let sig = Signature::from_str(&hex_str).expect("byte str decode");
+        assert_eq!(&format!("{}", sig), hex_str);
     }
 
     #[test]
