@@ -496,7 +496,12 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 #[cfg(feature = "serde")]
 impl ::serde::Serialize for Signature {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_bytes(&self.serialize_der())
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize_der())
+        }
+
     }
 }
 
@@ -504,9 +509,14 @@ impl ::serde::Serialize for Signature {
 impl<'de> ::serde::Deserialize<'de> for Signature {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Signature, D::Error> {
         use ::serde::de::Error;
-
-        let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
-        Signature::from_der(sl).map_err(D::Error::custom)
+        use str::FromStr;
+        if d.is_human_readable() {
+            let sl: &str = ::serde::Deserialize::deserialize(d)?;
+            Signature::from_str(sl).map_err(D::Error::custom)
+        } else {
+            let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
+            Signature::from_der(sl).map_err(D::Error::custom)
+        }
     }
 }
 
@@ -1239,7 +1249,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_signature_serde() {
-        use serde_test::{Token, assert_tokens};
+        use serde_test::{Configure, Token, assert_tokens};
 
         let s = Secp256k1::new();
 
@@ -1253,8 +1263,13 @@ mod tests {
             226, 108, 150, 124, 57, 38, 206, 112, 44, 249, 125, 75, 1, 0, 98, 225,
             147, 247, 99, 25, 15, 103, 118
         ];
+        static SIG_STR: &'static str = "\
+            30450221009d0bad576719d32ae76bedb34c774866673cbde3f4e12951555c9408e6ce77\
+            4b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776\
+        ";
 
-        assert_tokens(&sig, &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
     }
 }
 
