@@ -179,19 +179,9 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
 impl fmt::Display for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let mut v = [0; 72];
-    let mut len = v.len() as usize;
-    unsafe {
-        let err = ffi::secp256k1_ecdsa_signature_serialize_der(
-            ffi::secp256k1_context_no_precomp,
-            v.as_mut_ptr(),
-            &mut len,
-            self.as_ptr()
-        );
-        debug_assert!(err == 1);
-    }
-    for i in 0..len {
-        write!(f, "{:02x}", v[i])?;
+    let sig = self.serialize_der();
+    for v in sig.iter() {
+        write!(f, "{:02x}", v)?;
     }
     Ok(())
 }
