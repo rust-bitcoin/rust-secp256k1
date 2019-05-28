@@ -144,9 +144,15 @@ extern "C" {
     // Contexts
     pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
 
+    pub fn secp256k1_context_preallocated_size(flags: c_uint) -> usize;
+
+    pub fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context;
+
     pub fn secp256k1_context_clone(cx: *mut Context) -> *mut Context;
 
     pub fn secp256k1_context_destroy(cx: *mut Context);
+
+    pub fn secp256k1_context_preallocated_destroy(cx: *mut Context);
 
     pub fn secp256k1_context_randomize(cx: *mut Context,
                                        seed32: *const c_uchar)
