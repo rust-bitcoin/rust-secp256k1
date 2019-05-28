@@ -159,6 +159,8 @@ pub use key::SecretKey;
 pub use key::PublicKey;
 use core::marker::PhantomData;
 use core::ops::Deref;
+use self::types::c_uint;
+use types::c_void;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -463,6 +465,8 @@ pub enum Error {
     InvalidRecoveryId,
     /// Invalid tweak for add_*_assign or mul_*_assign
     InvalidTweak,
+    /// Didn't pass enough memory to `new_preallocated_internal`
+    NotEnoughMemory,
 }
 
 impl Error {
@@ -475,6 +479,7 @@ impl Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
+            Error::NotEnoughMemory => "secp: not enough memory allocated",
         }
     }
 }
@@ -513,26 +518,29 @@ impl Verification for VerifyOnly {}
 impl Verification for All {}
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1<C> {
+pub struct Secp256k1<'buf, C> {
     ctx: *mut ffi::Context,
-    phantom: PhantomData<C>
+    phantom: PhantomData<C>,
+    _buf: Option<&'buf [u8]>,
 }
 
 // The underlying secp context does not contain any references to memory it does not own
-unsafe impl<C> Send for Secp256k1<C> {}
+unsafe impl<'buf, C> Send for Secp256k1<'buf, C> {}
 // The API does not permit any mutation of `Secp256k1` objects except through `&mut` references
-unsafe impl<C> Sync for Secp256k1<C> {}
+unsafe impl<'buf, C> Sync for Secp256k1<'buf, C> {}
 
-impl<C> Clone for Secp256k1<C> {
-    fn clone(&self) -> Secp256k1<C> {
+#[cfg(feature = "std")]
+impl<'buf, C> Clone for Secp256k1<'buf, C> {
+    fn clone(&self) -> Secp256k1<'static, C> {
         Secp256k1 {
             ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) },
-            phantom: self.phantom
+            phantom: self.phantom,
+            _buf: None,
         }
     }
 }
 
-impl<C> PartialEq for Secp256k1<C> {
+impl<'buf, C> PartialEq for Secp256k1<'buf, C> {
     fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
 
@@ -566,60 +574,90 @@ impl Deref for SerializedSignature {
 
 impl Eq for SerializedSignature {}
 
-impl<C> Eq for Secp256k1<C> { }
+impl<'buf, C> Eq for Secp256k1<'buf, C> { }
 
-impl<C> Drop for Secp256k1<C> {
+impl<'buf, C> Drop for Secp256k1<'buf, C> {
     fn drop(&mut self) {
-        unsafe { ffi::secp256k1_context_destroy(self.ctx); }
+        match self._buf {
+            None => unsafe { ffi::secp256k1_context_destroy(self.ctx) },
+            Some(_) => unsafe { ffi::secp256k1_context_preallocated_destroy(self.ctx) },
+        }
     }
 }
 
-impl fmt::Debug for Secp256k1<SignOnly> {
+impl<'buf> fmt::Debug for Secp256k1<'buf, SignOnly> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<secp256k1 context {:?}, signing only>", self.ctx)
     }
 }
 
-impl fmt::Debug for Secp256k1<VerifyOnly> {
+impl<'buf> fmt::Debug for Secp256k1<'buf, VerifyOnly> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<secp256k1 context {:?}, verification only>", self.ctx)
     }
 }
 
-impl fmt::Debug for Secp256k1<All> {
+impl<'buf> fmt::Debug for Secp256k1<'buf, All> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<secp256k1 context {:?}, all capabilities>", self.ctx)
     }
 }
 
-impl Secp256k1<All> {
+impl<'buf> Secp256k1<'buf, All> {
+    const FLAGS: c_uint = ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY;
     /// Creates a new Secp256k1 context with all capabilities
-    pub fn new() -> Secp256k1<All> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
+    pub fn new() -> Secp256k1<'buf, All> {
+        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(Self::FLAGS) }, phantom: PhantomData, _buf: None }
+    }
+
+    pub fn get_preallocated_size() -> usize {
+        Self::get_preallocated_size_internal(Self::FLAGS)
+    }
+
+    pub fn new_preallocated(buf: &'buf mut [u8]) ->  Result<Secp256k1<'buf, All>, Error> {
+        Self::new_preallocated_internal(buf, Self::FLAGS)
     }
 }
 
-impl Default for Secp256k1<All> {
+impl<'buf> Default for Secp256k1<'buf, All> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Secp256k1<SignOnly> {
+impl<'buf> Secp256k1<'buf, SignOnly> {
+    const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     /// Creates a new Secp256k1 context that can only be used for signing
-    pub fn signing_only() -> Secp256k1<SignOnly> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN) }, phantom: PhantomData }
+    pub fn signing_only() -> Secp256k1<'buf, SignOnly> {
+        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(Self::FLAGS) }, phantom: PhantomData, _buf: None }
+    }
+
+    pub fn get_preallocated_signing_only_size() -> usize {
+        Self::get_preallocated_size_internal(Self::FLAGS)
+    }
+
+    pub fn new_preallocated_signing_only(buf: &'buf mut [u8]) ->  Result<Secp256k1<'buf, SignOnly>, Error>{
+        Self::new_preallocated_internal(buf, Self::FLAGS)
     }
 }
 
-impl Secp256k1<VerifyOnly> {
+impl<'buf> Secp256k1<'buf, VerifyOnly> {
+    const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     /// Creates a new Secp256k1 context that can only be used for verification
-    pub fn verification_only() -> Secp256k1<VerifyOnly> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
+    pub fn verification_only() -> Secp256k1<'buf, VerifyOnly> {
+        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(Self::FLAGS) }, phantom: PhantomData, _buf: None }
+    }
+
+    pub fn get_preallocated_verification_only_size() -> usize {
+        Self::get_preallocated_size_internal(Self::FLAGS)
+    }
+
+    pub fn new_preallocated_verification_only(buf: &'buf mut [u8]) ->  Result<Secp256k1<'buf, VerifyOnly>, Error>{
+        Self::new_preallocated_internal(buf, Self::FLAGS)
     }
 }
 
-impl<C> Secp256k1<C> {
+impl<'buf, C> Secp256k1<'buf, C> {
 
     /// Getter for the raw pointer to the underlying secp256k1 context. This
     /// shouldn't be needed with normal usage of the library. It enables
@@ -650,9 +688,25 @@ impl<C> Secp256k1<C> {
         }
     }
 
+    pub(crate) fn get_preallocated_size_internal(flags: c_uint) -> usize {
+        unsafe { ffi::secp256k1_context_preallocated_size(flags) }
+    }
+
+    pub(crate) fn new_preallocated_internal(buf: &'buf mut [u8], flags: c_uint) -> Result<Secp256k1<'buf, C>, Error> {
+        if buf.len() < Self::get_preallocated_size_internal(flags) {
+            return Err(Error::NotEnoughMemory);
+        }
+
+        Ok(Secp256k1 {
+            ctx: unsafe { ffi::secp256k1_context_preallocated_create(buf.as_mut_ptr() as *mut c_void, flags) },
+            phantom: PhantomData,
+            _buf: Some(buf)
+        })
+    }
+
 }
 
-impl<C: Signing> Secp256k1<C> {
+impl<'buf, C: Signing> Secp256k1<'buf, C> {
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
@@ -685,7 +739,7 @@ impl<C: Signing> Secp256k1<C> {
     }
 }
 
-impl<C: Verification> Secp256k1<C> {
+impl<'buf, C: Verification> Secp256k1<'buf, C> {
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
     /// key `pubkey`. Returns `Ok(true)` on success. Note that this function cannot
     /// be used for Bitcoin consensus checking since there may exist signatures
@@ -741,6 +795,7 @@ mod tests {
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
+    use ::{SignOnly, VerifyOnly, All};
 
     macro_rules! hex {
         ($hex:expr) => ({
@@ -756,6 +811,23 @@ mod tests {
         let vrfy = Secp256k1::verification_only();
         let full = Secp256k1::new();
 
+        capabilities_internal(sign, vrfy, full);
+
+    }
+
+    #[test]
+    fn preallocated_capabilities() {
+        let mut sign_buf = vec![0u8; Secp256k1::get_preallocated_signing_only_size()];
+        let mut verify_buf = vec![0u8; Secp256k1::get_preallocated_verification_only_size()];
+        let mut all_buf = vec![0u8; Secp256k1::get_preallocated_size()];
+        let sign: Secp256k1<SignOnly> = Secp256k1::new_preallocated_signing_only(&mut sign_buf).unwrap();
+        let vrfy: Secp256k1<VerifyOnly> = Secp256k1::new_preallocated_verification_only(&mut verify_buf).unwrap();
+        let full: Secp256k1<All> = Secp256k1::new_preallocated(&mut all_buf).unwrap();
+
+        capabilities_internal(sign, vrfy, full);
+    }
+
+    fn capabilities_internal(sign: Secp256k1<SignOnly>, vrfy: Secp256k1<VerifyOnly>, full: Secp256k1<All>) {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
