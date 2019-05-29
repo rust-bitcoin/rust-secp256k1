@@ -133,7 +133,7 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+#![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
