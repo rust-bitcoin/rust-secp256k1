@@ -15,7 +15,7 @@ build = "build.rs"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "rand", "serde", "recovery" ]
+features = [ "rand", "serde", "recovery", "endomorphism" ]
 all-features = true
 
 [build-dependencies]
@@ -31,6 +31,7 @@ default = ["std"]
 fuzztarget = []
 std = []
 recovery = []
+endomorphism = []
 
 [dev-dependencies]
 rand = "0.6"
