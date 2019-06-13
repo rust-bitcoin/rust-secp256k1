@@ -275,9 +275,11 @@ extern "C" {
 ///
 /// See also secp256k1_default_error_callback_fn.
 ///
-pub extern "C" fn secp256k1_default_illegal_callback_fn(_message: *const c_char, _data: *mut c_void) {
-    // Do we need to deref the message and print it? if so without std we'll need to use `strlen`
-    panic!("[libsecp256k1] illegal argument.");
+pub unsafe extern "C" fn secp256k1_default_illegal_callback_fn(message: *const c_char, _data: *mut c_void) {
+    use core::{str, slice};
+    let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
+    let msg = str::from_utf8_unchecked(msg_slice);
+    panic!("[libsecp256k1] illegal argument. {}", msg);
 }
 
 #[no_mangle]
@@ -295,9 +297,21 @@ pub extern "C" fn secp256k1_default_illegal_callback_fn(_message: *const c_char,
 ///
 /// See also secp256k1_default_illegal_callback_fn.
 ///
-pub extern "C" fn secp256k1_default_error_callback_fn(_message: *const c_char, _data: *mut c_void) {
-    // Do we need to deref the message and print it? if so without std we'll need to use `strlen`
-    panic!("[libsecp256k1] internal consistency check failed.");
+pub unsafe extern "C" fn secp256k1_default_error_callback_fn(message: *const c_char, _data: *mut c_void) {
+    use core::{str, slice};
+    let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
+    let msg = str::from_utf8_unchecked(msg_slice);
+    panic!("[libsecp256k1] internal consistency check failed {}", msg);
+}
+
+
+unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
+    let mut ctr = 0;
+    while *str_ptr != '\0' as c_char {
+        ctr += 1;
+        str_ptr = str_ptr.offset(1);
+    }
+    ctr
 }
 
 
@@ -648,3 +662,18 @@ mod fuzz_dummy {
 }
 #[cfg(feature = "fuzztarget")]
 pub use self::fuzz_dummy::*;
+
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::CString;
+    use super::strlen;
+
+    #[test]
+    fn test_strlen() {
+        let orig = "test strlen \t \n";
+        let test = CString::new(orig).unwrap();
+
+        assert_eq!(orig.len(), unsafe {strlen(test.as_ptr())});
+    }
+}
