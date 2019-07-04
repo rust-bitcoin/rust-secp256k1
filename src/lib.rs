@@ -570,7 +570,7 @@ impl<C: Context> Secp256k1<C> {
     }
 
     /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
-    pub fn preallocate_size() -> usize {
+    pub(crate) fn preallocate_size_gen() -> usize {
         unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) }
     }
 
@@ -693,6 +693,30 @@ mod tests {
             from_hex($hex, &mut result).expect("valid hex string");
             result
         });
+    }
+
+    #[test]
+    fn test_preallocation() {
+        let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
+        let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
+        let mut buf_vfy = vec![0u8; Secp256k1::preallocate_verification_size()];
+//
+        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
+        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
+        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();
+
+//        drop(buf_vfy); // The buffer can't get dropped before the context.
+//        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
+
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        // Try signing
+        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+        let sig = full.sign(&msg, &sk);
+
+        // Try verifying
+        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+        assert!(full.verify(&msg, &sig, &pk).is_ok());
     }
 
     #[test]
