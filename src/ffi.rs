@@ -255,6 +255,66 @@ extern "C" {
     ) -> c_int;
 }
 
+
+#[no_mangle]
+/// **This function is an override for the C function, this is the an edited version of the original description:**
+///
+/// A callback function to be called when an illegal argument is passed to
+/// an API call. It will only trigger for violations that are mentioned
+/// explicitly in the header. **This will cause a panic**.
+///
+/// The philosophy is that these shouldn't be dealt with through a
+/// specific return value, as calling code should not have branches to deal with
+/// the case that this code itself is broken.
+///
+/// On the other hand, during debug stage, one would want to be informed about
+/// such mistakes, and the default (crashing) may be inadvisable.
+/// When this callback is triggered, the API function called is guaranteed not
+/// to cause a crash, though its return value and output arguments are
+/// undefined.
+///
+/// See also secp256k1_default_error_callback_fn.
+///
+pub unsafe extern "C" fn secp256k1_default_illegal_callback_fn(message: *const c_char, _data: *mut c_void) {
+    use core::{str, slice};
+    let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
+    let msg = str::from_utf8_unchecked(msg_slice);
+    panic!("[libsecp256k1] illegal argument. {}", msg);
+}
+
+#[no_mangle]
+/// **This function is an override for the C function, this is the an edited version of the original description:**
+///
+/// A callback function to be called when an internal consistency check
+/// fails. **This will cause a panic**.
+///
+/// This can only trigger in case of a hardware failure, miscompilation,
+/// memory corruption, serious bug in the library, or other error would can
+/// otherwise result in undefined behaviour. It will not trigger due to mere
+/// incorrect usage of the API (see secp256k1_default_illegal_callback_fn
+/// for that). After this callback returns, anything may happen, including
+/// crashing.
+///
+/// See also secp256k1_default_illegal_callback_fn.
+///
+pub unsafe extern "C" fn secp256k1_default_error_callback_fn(message: *const c_char, _data: *mut c_void) {
+    use core::{str, slice};
+    let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
+    let msg = str::from_utf8_unchecked(msg_slice);
+    panic!("[libsecp256k1] internal consistency check failed {}", msg);
+}
+
+
+unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
+    let mut ctr = 0;
+    while *str_ptr != '\0' as c_char {
+        ctr += 1;
+        str_ptr = str_ptr.offset(1);
+    }
+    ctr
+}
+
+
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
     extern crate std;
@@ -602,3 +662,18 @@ mod fuzz_dummy {
 }
 #[cfg(feature = "fuzztarget")]
 pub use self::fuzz_dummy::*;
+
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::CString;
+    use super::strlen;
+
+    #[test]
+    fn test_strlen() {
+        let orig = "test strlen \t \n";
+        let test = CString::new(orig).unwrap();
+
+        assert_eq!(orig.len(), unsafe {strlen(test.as_ptr())});
+    }
+}

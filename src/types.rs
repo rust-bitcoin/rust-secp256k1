@@ -5,6 +5,10 @@ pub type c_int = i32;
 pub type c_uchar = u8;
 pub type c_uint = u32;
 
+/// This might not match C's `c_char` exactly.
+/// The way we use it makes it fine either way but this type shouldn't be used outside of the library.
+pub type c_char = i8;
+
 /// This is an exact copy of https://doc.rust-lang.org/core/ffi/enum.c_void.html
 /// It should be Equivalent to C's void type when used as a pointer.
 /// 
