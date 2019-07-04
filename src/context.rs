@@ -123,12 +123,12 @@ mod std_only {
 
     impl<C: Context> Clone for Secp256k1<C> {
         fn clone(&self) -> Secp256k1<C> {
-            let buf = vec![0u8; unsafe { (&*self.buf).len() }].into_boxed_slice();
-            let ptr = Box::into_raw(buf);
+            let clone_size = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx)};
+            let ptr_buf = Box::into_raw(vec![0u8; clone_size].into_boxed_slice());
             Secp256k1 {
-                ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
+                ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr_buf as *mut c_void) },
                 phantom: PhantomData,
-                buf: ptr,
+                buf: ptr_buf,
             }
         }
     }
