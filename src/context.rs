@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use {ffi, types::{c_uint, c_void}, Error, Secp256k1, };
+use {ffi, types::{c_uint, c_void}, Error, Secp256k1};
 
 #[cfg(feature = "std")]
 pub use self::std_only::*;
@@ -21,6 +21,20 @@ pub trait Signing: Context {}
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for verification.
 pub trait Verification: Context {}
 
+/// Represents the set of capabilities needed for signing with a user preallocated memory.
+pub struct SignOnlyPreallocated<'buf> {
+    phantom: PhantomData<&'buf ()>,
+}
+
+/// Represents the set of capabilities needed for verification with a user preallocated memory.
+pub struct VerifyOnlyPreallocated<'buf> {
+    phantom: PhantomData<&'buf ()>,
+}
+
+/// Represents the set of all capabilities with a user preallocated memory.
+pub struct AllPreallocated<'buf> {
+    phantom: PhantomData<&'buf ()>,
+}
 
 #[cfg(feature = "std")]
 mod std_only {
@@ -119,4 +133,75 @@ mod std_only {
         }
     }
 
+}
+
+impl<'buf> Signing for SignOnlyPreallocated<'buf> {}
+impl<'buf> Signing for AllPreallocated<'buf> {}
+
+impl<'buf> Verification for VerifyOnlyPreallocated<'buf> {}
+impl<'buf> Verification for AllPreallocated<'buf> {}
+
+unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
+    const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
+    const DESCRIPTION: &'static str = "signing only";
+
+    fn deallocate(ptr: *mut [u8]) {
+        let _ = ptr;
+    }
+}
+
+unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
+    const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
+    const DESCRIPTION: &'static str = "verification only";
+
+    fn deallocate(ptr: *mut [u8]) {
+        let _ = ptr;
+    }
+}
+
+unsafe impl<'buf> Context for AllPreallocated<'buf> {
+    const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
+    const DESCRIPTION: &'static str = "all capabilities";
+
+    fn deallocate(ptr: *mut [u8]) {
+        let _ = ptr;
+    }
+}
+
+impl<'buf, C: Context + 'buf> Secp256k1<C> {
+    fn preallocated_gen_new(buf: &'buf mut [u8]) -> Result<Secp256k1<C>, Error> {
+        if buf.len() < Self::preallocate_size() {
+            return Err(Error::NotEnoughMemory);
+        }
+        Ok(Secp256k1 {
+            ctx: unsafe {
+                ffi::secp256k1_context_preallocated_create(
+                    buf.as_mut_ptr() as *mut c_void,
+                    AllPreallocated::FLAGS)
+            },
+            phantom: PhantomData,
+            buf: buf as *mut [u8],
+        })
+    }
+}
+
+impl<'buf> Secp256k1<AllPreallocated<'buf>> {
+    /// Creates a new Secp256k1 context with all capabilities
+    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
+        Secp256k1::preallocated_gen_new(buf)
+    }
+}
+
+impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
+    /// Creates a new Secp256k1 context that can only be used for signing
+    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
+        Secp256k1::preallocated_gen_new(buf)
+    }
+}
+
+impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
+    /// Creates a new Secp256k1 context that can only be used for verification
+    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
+        Secp256k1::preallocated_gen_new(buf)
+    }
 }
