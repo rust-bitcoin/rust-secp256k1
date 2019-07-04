@@ -1,5 +1,8 @@
 use core::marker::PhantomData;
-use {ffi, types::{c_uint, c_void}, Error, Secp256k1};
+use ffi;
+use types::{c_uint, c_void};
+use Error;
+use Secp256k1;
 
 #[cfg(feature = "std")]
 pub use self::std_only::*;

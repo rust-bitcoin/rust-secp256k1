@@ -324,7 +324,7 @@ mod fuzz_dummy {
     extern crate std;
     use types::*;
     use ffi::*;
-    use self::std::ptr;
+    use self::std::{ptr, mem};
     use self::std::boxed::Box;
 
     extern "C" {
@@ -335,20 +335,31 @@ mod fuzz_dummy {
 
     // Contexts
     /// Creates a dummy context, tracking flags to ensure proper calling semantics
-    pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
+    pub unsafe fn secp256k1_context_preallocated_create(_ptr: *mut c_void, flags: c_uint) -> *mut Context {
         let b = Box::new(Context(flags as i32));
         Box::into_raw(b)
     }
 
-    /// Copies a dummy context
-    pub unsafe fn secp256k1_context_clone(cx: *mut Context) -> *mut Context {
-        let b = Box::new(Context((*cx).0));
-        Box::into_raw(b)
+    /// Return dummy size of context struct.
+    pub unsafe fn secp256k1_context_preallocated_size(_flags: c_uint) -> usize {
+        mem::size_of::<Context>()
     }
 
-    /// Frees a dummy context
-    pub unsafe fn secp256k1_context_destroy(cx: *mut Context) {
-        Box::from_raw(cx);
+    /// Return dummy size of context struct.
+    pub unsafe fn secp256k1_context_preallocated_clone_size(cx: *mut Context) -> usize {
+        mem::size_of::<Context>()
+    }
+
+    /// Copies a dummy context
+    pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
+        let ret = prealloc as *mut Context;
+        *ret = (*cx).clone();
+        ret
+    }
+
+    /// "Destroys" a dummy context
+    pub unsafe fn secp256k1_context_preallocated_destroy(cx: *mut Context) {
+        (*cx).0 = 0;
     }
 
     /// Asserts that cx is properly initialized
