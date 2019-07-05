@@ -570,8 +570,8 @@ impl<C: Context> Secp256k1<C> {
         &self.ctx
     }
 
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
-    pub(crate) fn preallocate_size_gen() -> usize {
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    pub fn preallocate_size_gen() -> usize {
         unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) }
     }
 
