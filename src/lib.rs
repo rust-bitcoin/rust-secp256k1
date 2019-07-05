@@ -148,6 +148,7 @@ use core::{fmt, ptr, str};
 #[macro_use]
 mod macros;
 mod types;
+mod context;
 pub mod constants;
 pub mod ecdh;
 pub mod ffi;
@@ -157,6 +158,7 @@ pub mod recovery;
 
 pub use key::SecretKey;
 pub use key::PublicKey;
+pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
 
@@ -463,6 +465,9 @@ pub enum Error {
     InvalidRecoveryId,
     /// Invalid tweak for add_*_assign or mul_*_assign
     InvalidTweak,
+    /// Didn't pass enough memory to context creation with preallocated memory
+    NotEnoughMemory,
+
 }
 
 impl Error {
@@ -475,6 +480,7 @@ impl Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
+            Error::NotEnoughMemory => "secp: not enough memory allocated",
         }
     }
 }
@@ -491,48 +497,21 @@ impl std::error::Error for Error {
     fn description(&self) -> &str { self.as_str() }
 }
 
-/// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
-pub trait Signing {}
-
-/// Marker trait for indicating that an instance of `Secp256k1` can be used for verification.
-pub trait Verification {}
-
-/// Represents the set of capabilities needed for signing.
-pub struct SignOnly {}
-
-/// Represents the set of capabilities needed for verification.
-pub struct VerifyOnly {}
-
-/// Represents the set of all capabilities.
-pub struct All {}
-
-impl Signing for SignOnly {}
-impl Signing for All {}
-
-impl Verification for VerifyOnly {}
-impl Verification for All {}
 
 /// The secp256k1 engine, used to execute all signature operations
-pub struct Secp256k1<C> {
+pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
-    phantom: PhantomData<C>
+    phantom: PhantomData<C>,
+    buf: *mut [u8],
 }
 
 // The underlying secp context does not contain any references to memory it does not own
-unsafe impl<C> Send for Secp256k1<C> {}
+unsafe impl<C: Context> Send for Secp256k1<C> {}
 // The API does not permit any mutation of `Secp256k1` objects except through `&mut` references
-unsafe impl<C> Sync for Secp256k1<C> {}
+unsafe impl<C: Context> Sync for Secp256k1<C> {}
 
-impl<C> Clone for Secp256k1<C> {
-    fn clone(&self) -> Secp256k1<C> {
-        Secp256k1 {
-            ctx: unsafe { ffi::secp256k1_context_clone(self.ctx) },
-            phantom: self.phantom
-        }
-    }
-}
 
-impl<C> PartialEq for Secp256k1<C> {
+impl<C: Context> PartialEq for Secp256k1<C> {
     fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
 
@@ -566,60 +545,22 @@ impl Deref for SerializedSignature {
 
 impl Eq for SerializedSignature {}
 
-impl<C> Eq for Secp256k1<C> { }
+impl<C: Context> Eq for Secp256k1<C> { }
 
-impl<C> Drop for Secp256k1<C> {
+impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
-        unsafe { ffi::secp256k1_context_destroy(self.ctx); }
+        unsafe { ffi::secp256k1_context_preallocated_destroy(self.ctx) };
+        C::deallocate(self.buf);
     }
 }
 
-impl fmt::Debug for Secp256k1<SignOnly> {
+impl<C: Context> fmt::Debug for Secp256k1<C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<secp256k1 context {:?}, signing only>", self.ctx)
+        write!(f, "<secp256k1 context {:?}, {}>", self.ctx, C::DESCRIPTION)
     }
 }
 
-impl fmt::Debug for Secp256k1<VerifyOnly> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<secp256k1 context {:?}, verification only>", self.ctx)
-    }
-}
-
-impl fmt::Debug for Secp256k1<All> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<secp256k1 context {:?}, all capabilities>", self.ctx)
-    }
-}
-
-impl Secp256k1<All> {
-    /// Creates a new Secp256k1 context with all capabilities
-    pub fn new() -> Secp256k1<All> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN | ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
-    }
-}
-
-impl Default for Secp256k1<All> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Secp256k1<SignOnly> {
-    /// Creates a new Secp256k1 context that can only be used for signing
-    pub fn signing_only() -> Secp256k1<SignOnly> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_SIGN) }, phantom: PhantomData }
-    }
-}
-
-impl Secp256k1<VerifyOnly> {
-    /// Creates a new Secp256k1 context that can only be used for verification
-    pub fn verification_only() -> Secp256k1<VerifyOnly> {
-        Secp256k1 { ctx: unsafe { ffi::secp256k1_context_create(ffi::SECP256K1_START_VERIFY) }, phantom: PhantomData }
-    }
-}
-
-impl<C> Secp256k1<C> {
+impl<C: Context> Secp256k1<C> {
 
     /// Getter for the raw pointer to the underlying secp256k1 context. This
     /// shouldn't be needed with normal usage of the library. It enables
@@ -627,6 +568,11 @@ impl<C> Secp256k1<C> {
     /// this crate.
     pub fn ctx(&self) -> &*mut ffi::Context {
         &self.ctx
+    }
+
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    pub fn preallocate_size_gen() -> usize {
+        unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) }
     }
 
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
@@ -748,6 +694,30 @@ mod tests {
             from_hex($hex, &mut result).expect("valid hex string");
             result
         });
+    }
+
+    #[test]
+    fn test_preallocation() {
+        let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
+        let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
+        let mut buf_vfy = vec![0u8; Secp256k1::preallocate_verification_size()];
+//
+        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
+        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
+        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();
+
+//        drop(buf_vfy); // The buffer can't get dropped before the context.
+//        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
+
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        // Try signing
+        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+        let sig = full.sign(&msg, &sk);
+
+        // Try verifying
+        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+        assert!(full.verify(&msg, &sig, &pk).is_ok());
     }
 
     #[test]
