@@ -1,3 +1,13 @@
+# 0.14.0 - 2019-07-08
+
+* [Feature-gate endormorphism optimization](https://github.com/rust-bitcoin/rust-secp256k1/pull/120)
+  because of a lack of clarity with respect to patents
+* Got full no-std support including eliminating all use of libc in C bindings.
+  [PR 1](https://github.com/rust-bitcoin/rust-secp256k1/pull/115)
+  [PR 2](https://github.com/rust-bitcoin/rust-secp256k1/pull/125).
+  This library should be usable in bare-metal environments and with rust-wasm.
+  Thanks to Elichai Turkel for driving this forward!
+
 # 0.13.0 - 2019-05-21
 
 * Update minimum supported rust compiler 1.22.
