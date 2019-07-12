@@ -12,6 +12,7 @@ description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Impleme
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 build = "build.rs"
+links = "secp256k1"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
