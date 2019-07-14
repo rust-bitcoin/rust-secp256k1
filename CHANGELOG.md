@@ -1,3 +1,7 @@
+# 0.14.1 - 2019-07-14
+
+* Implemented FFI functions: `secp256k1_context_create` and `secp256k1_context_destroy` in rust.
+
 # 0.14.0 - 2019-07-08
 
 * [Feature-gate endormorphism optimization](https://github.com/rust-bitcoin/rust-secp256k1/pull/120)

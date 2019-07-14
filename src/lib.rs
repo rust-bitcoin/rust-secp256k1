@@ -681,12 +681,15 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 mod tests {
     use rand::{RngCore, thread_rng};
     use std::str::FromStr;
+    use std::marker::PhantomData;
 
     use key::{SecretKey, PublicKey};
     use super::from_hex;
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
+    use ffi;
+    use context::*;
 
     macro_rules! hex {
         ($hex:expr) => ({
@@ -694,6 +697,35 @@ mod tests {
             from_hex($hex, &mut result).expect("valid hex string");
             result
         });
+    }
+
+
+    #[test]
+    fn test_manual_create_destroy() {
+        let ctx_full = unsafe { ffi::secp256k1_context_create(AllPreallocated::FLAGS) };
+        let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
+        let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
+
+        let buf: *mut [u8] = &mut [0u8;0] as _;
+        let full: Secp256k1<AllPreallocated> = Secp256k1{ctx: ctx_full, phantom: PhantomData, buf};
+        let sign: Secp256k1<SignOnlyPreallocated> = Secp256k1{ctx: ctx_sign, phantom: PhantomData, buf};
+        let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, buf};
+
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        // Try signing
+        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+        let sig = full.sign(&msg, &sk);
+
+        // Try verifying
+        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+        assert!(full.verify(&msg, &sig, &pk).is_ok());
+
+        drop(full);drop(sign);drop(vrfy);
+
+        unsafe { ffi::secp256k1_context_destroy(ctx_vrfy) };
+        unsafe { ffi::secp256k1_context_destroy(ctx_sign) };
+        unsafe { ffi::secp256k1_context_destroy(ctx_full) };
     }
 
     #[test]
