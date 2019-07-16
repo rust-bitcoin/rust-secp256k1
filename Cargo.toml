@@ -19,7 +19,7 @@ features = [ "rand", "serde", "recovery", "endomorphism" ]
 all-features = true
 
 [build-dependencies]
-cc = ">= 1.0.28, <= 1.0.35"
+cc = ">= 1.0.28"
 
 [lib]
 name = "secp256k1"
