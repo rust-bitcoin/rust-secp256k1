@@ -66,34 +66,34 @@ fn main() {
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
-               .define("SECP256K1_BUILD", Some("1"))
-               .define("ENABLE_MODULE_ECDH", Some("1"))
-               .define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
+               .define("SECP256K1_BUILD", "1")
+               .define("ENABLE_MODULE_ECDH", "1")
+               .define("USE_EXTERNAL_DEFAULT_CALLBACKS", "1");
 
     if cfg!(feature = "lowmemory") {
-        base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume neglible memory
+        base_config.define("ECMULT_WINDOW_SIZE", "4"); // A low-enough value to consume neglible memory
     } else {
-        base_config.define("ECMULT_WINDOW_SIZE", Some("15")); // This is the default in the configure file (`auto`)
+        base_config.define("ECMULT_WINDOW_SIZE", "15"); // This is the default in the configure file (`auto`)
     }
     base_config.define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
     #[cfg(feature = "endomorphism")]
-    base_config.define("USE_ENDOMORPHISM", Some("1"));
+    base_config.define("USE_ENDOMORPHISM", "1");
     #[cfg(feature = "recovery")]
-    base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
+    base_config.define("ENABLE_MODULE_RECOVERY", "1");
 
     if let Ok(target_endian) = env::var("CARGO_CFG_TARGET_ENDIAN") {
         if target_endian == "big" {
-            base_config.define("WORDS_BIGENDIAN", Some("1"));
+            base_config.define("WORDS_BIGENDIAN", "1");
         }
     }
 
     if use_64bit_compilation {
-        base_config.define("USE_FIELD_5X52", Some("1"))
-                   .define("USE_SCALAR_4X64", Some("1"))
-                   .define("HAVE___INT128", Some("1"));
+        base_config.define("USE_FIELD_5X52", "1")
+                   .define("USE_SCALAR_4X64", "1")
+                   .define("HAVE___INT128", "1");
     } else {
-        base_config.define("USE_FIELD_10X26", Some("1"))
-                   .define("USE_SCALAR_8X32", Some("1"));
+        base_config.define("USE_FIELD_10X26", "1")
+                   .define("USE_SCALAR_8X32", "1");
     }
 
     if env::var("TARGET").unwrap() == "wasm32-unknown-unknown" {
@@ -101,19 +101,19 @@ fn main() {
     }
 
     if has_gmp {
-        base_config.define("HAVE_LIBGMP", Some("1"))
-                   .define("USE_NUM_GMP", Some("1"))
-                   .define("USE_FIELD_INV_NUM", Some("1"))
-                   .define("USE_SCALAR_INV_NUM", Some("1"))
+        base_config.define("HAVE_LIBGMP", "1")
+                   .define("USE_NUM_GMP", "1")
+                   .define("USE_FIELD_INV_NUM", "1")
+                   .define("USE_SCALAR_INV_NUM", "1")
                    .flag("-lgmp")
                    .flag(&format!("-L{}", DEFAULT_LIBS_PATHS.join(" -L")));
         for include in DEFAULT_INCLUDE_PATHS.iter() {
             base_config.include(include);
         }
     } else {
-        base_config.define("USE_NUM_NONE", Some("1"))
-                   .define("USE_FIELD_INV_BUILTIN", Some("1"))
-                   .define("USE_SCALAR_INV_BUILTIN", Some("1"));
+        base_config.define("USE_NUM_NONE", "1")
+                   .define("USE_FIELD_INV_BUILTIN", "1")
+                   .define("USE_SCALAR_INV_BUILTIN", "1");
     }
 
     // secp256k1
