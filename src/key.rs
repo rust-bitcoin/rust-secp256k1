@@ -31,12 +31,18 @@ pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
 
-impl fmt::Display for SecretKey {
+impl fmt::LowerHex for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for ch in &self.0[..] {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for SecretKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::LowerHex::fmt(self, f)
     }
 }
 
@@ -61,13 +67,19 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct PublicKey(ffi::PublicKey);
 
-impl fmt::Display for PublicKey {
+impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ser = self.serialize();
         for ch in &ser[..] {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::LowerHex::fmt(self, f)
     }
 }
 
