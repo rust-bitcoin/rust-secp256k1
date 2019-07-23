@@ -25,6 +25,10 @@ extern crate cc;
 
 use std::env;
 
+const DEFAULT_LIBS_PATHS: &[&str] = &["/usr/lib", "/usr/local/lib", "/usr/x86_64-pc-linux-gnu/lib", "/usr/x86_64-pc-linux-gnu/lib", "/usr/i686-pc-linux-gnu/lib", "/usr/x86_64-pc-linux-gnu/lib64"];
+const DEFAULT_INCLUDE_PATHS: &[&str] = &["/usr/local/include", "/usr/include"];
+const SUPPORTED_GMP_TARGETS: &[&str] = &["i686-apple-darwin", "x86_64-apple-darwin", "i686-unknown-linux-gnu", "x86_64-unknown-linux-gnu", "i686-pc-windows-gnu", "x86_64-pc-windows-gnu"];
+
 fn main() {
     if cfg!(feature = "external-symbols") {
         println!("cargo:rustc-link-lib=static=secp256k1");
@@ -45,6 +49,17 @@ fn main() {
         false
     };
 
+    let has_gmp = if SUPPORTED_GMP_TARGETS.contains(&env::var("TARGET").unwrap().as_str()) {
+        cc::Build::new().file("depend/check_gmp.c")
+                        .flag("-lgmp")
+                        .flag(&format!("-L{}", DEFAULT_LIBS_PATHS.join(" -L")))
+                        .cargo_metadata(false)
+                        .try_compile("check_gmp")
+                        .is_ok()
+    } else {
+        false
+    };
+
     // Actual build
     let mut base_config = cc::Build::new();
     base_config.include("depend/secp256k1/")
@@ -52,11 +67,8 @@ fn main() {
                .include("depend/secp256k1/src")
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
                .define("SECP256K1_BUILD", Some("1"))
-               // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
-               .define("USE_NUM_NONE", Some("1"))
-               .define("USE_FIELD_INV_BUILTIN", Some("1"))
-               .define("USE_SCALAR_INV_BUILTIN", Some("1"))
-               .define("ENABLE_MODULE_ECDH", Some("1"));
+               .define("ENABLE_MODULE_ECDH", Some("1"))
+               .define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
 
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume neglible memory
@@ -88,9 +100,31 @@ fn main() {
         base_config.include("wasm-sysroot");
     }
 
+    if has_gmp {
+        base_config.define("HAVE_LIBGMP", Some("1"))
+                   .define("USE_NUM_GMP", Some("1"))
+                   .define("USE_FIELD_INV_NUM", Some("1"))
+                   .define("USE_SCALAR_INV_NUM", Some("1"))
+                   .flag("-lgmp")
+                   .flag(&format!("-L{}", DEFAULT_LIBS_PATHS.join(" -L")));
+        for include in DEFAULT_INCLUDE_PATHS.iter() {
+            base_config.include(include);
+        }
+    } else {
+        base_config.define("USE_NUM_NONE", Some("1"))
+                   .define("USE_FIELD_INV_BUILTIN", Some("1"))
+                   .define("USE_SCALAR_INV_BUILTIN", Some("1"));
+    }
+
     // secp256k1
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
                .file("depend/secp256k1/src/secp256k1.c")
                .compile("libsecp256k1.a");
-}
 
+    if has_gmp {
+        for path in DEFAULT_LIBS_PATHS.iter() {
+            println!("cargo:rustc-link-search=native={}", path);
+        }
+        println!("cargo:rustc-link-lib=dylib=gmp");
+    }
+}
