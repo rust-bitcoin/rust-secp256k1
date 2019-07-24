@@ -31,12 +31,18 @@ pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
 
-impl fmt::Display for SecretKey {
+impl fmt::LowerHex for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for ch in &self.0[..] {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for SecretKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::LowerHex::fmt(self, f)
     }
 }
 
@@ -61,13 +67,19 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct PublicKey(ffi::PublicKey);
 
-impl fmt::Display for PublicKey {
+impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ser = self.serialize();
         for ch in &ser[..] {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::LowerHex::fmt(self, f)
     }
 }
 
@@ -354,17 +366,66 @@ impl From<ffi::PublicKey> for PublicKey {
 #[cfg(feature = "serde")]
 impl ::serde::Serialize for PublicKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_bytes(&self.serialize())
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize())
+        }
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'de> ::serde::Deserialize<'de> for PublicKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
-        use ::serde::de::Error;
+        if d.is_human_readable() {
+            struct HexVisitor;
 
-        let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
-        PublicKey::from_slice(sl).map_err(D::Error::custom)
+            impl<'de> ::serde::de::Visitor<'de> for HexVisitor {
+                type Value = PublicKey;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("an ASCII hex string")
+                }
+
+                fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    if let Ok(hex) = str::from_utf8(v) {
+                        str::FromStr::from_str(hex).map_err(E::custom)
+                    } else {
+                        Err(E::invalid_value(::serde::de::Unexpected::Bytes(v), &self))
+                    }
+                }
+
+                fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    str::FromStr::from_str(v).map_err(E::custom)
+                }
+            }
+            d.deserialize_str(HexVisitor)
+        } else {
+            struct BytesVisitor;
+
+            impl<'de> ::serde::de::Visitor<'de> for BytesVisitor {
+                type Value = PublicKey;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a bytestring")
+                }
+
+                fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    PublicKey::from_slice(v).map_err(E::custom)
+                }
+            }
+
+            d.deserialize_bytes(BytesVisitor)
+        }
     }
 }
 
@@ -733,6 +794,9 @@ mod test {
             0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
             0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
         ];
+        static PK_STR: &'static str = "\
+            0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+        ";
 
         let s = Secp256k1::new();
 
@@ -741,6 +805,7 @@ mod test {
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
-        assert_tokens(&pk, &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
     }
 }
