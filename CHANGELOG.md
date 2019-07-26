@@ -1,3 +1,10 @@
+# 0.15.0 - 2019-07-25
+
+* Implement hex human-readable serde for PublicKey
+* Implement fmt::LowerHex for SecretKey and PublicKey
+* Relax `cc` dependency requirements
+* Add links manifest key to prevent cross-version linkage
+
 # 0.14.1 - 2019-07-14
 
 * Implemented FFI functions: `secp256k1_context_create` and `secp256k1_context_destroy` in rust.
