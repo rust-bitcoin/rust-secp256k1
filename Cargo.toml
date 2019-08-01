@@ -17,7 +17,6 @@ links = "secp256k1"
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
 features = [ "rand", "serde", "recovery", "endomorphism" ]
-all-features = true
 
 [build-dependencies]
 cc = ">= 1.0.28"
