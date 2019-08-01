@@ -30,7 +30,7 @@ path = "src/lib.rs"
 unstable = []
 default = ["std"]
 fuzztarget = []
-std = []
+std = ["rand/std"]
 recovery = []
 endomorphism = []
 
