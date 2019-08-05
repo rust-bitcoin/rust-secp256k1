@@ -27,7 +27,7 @@
 * Add human readable serialization to `Signatures` and `SecretKeys`.
 * Stop displaying 0 bytes if a `Signature` is less than 72 bytes.
 * Only compile recovery module if feature `recovery` is set (non-default).
-* Updat `rand` dependency from 0.4 to 0.6 and add `rand_core` 0.4 dependency.
+* Update `rand` dependency from 0.4 to 0.6 and add `rand_core` 0.4 dependency.
 * Relax `cc` dependency requirements.
 
 # 0.12.2 - 2019-01-18
