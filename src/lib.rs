@@ -247,6 +247,8 @@ impl Signature {
 #[inline]
     /// Converts a DER-encoded byte slice to a signature
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         let mut ret = ffi::Signature::new();
 
         unsafe {
@@ -290,6 +292,8 @@ impl Signature {
     /// 2016. It should never be used in new applications. This library does not
     /// support serializing to this "format"
     pub fn from_der_lax(data: &[u8]) -> Result<Signature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         unsafe {
             let mut ret = ffi::Signature::new();
             if ffi::ecdsa_signature_parse_der_lax(

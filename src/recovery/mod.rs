@@ -58,6 +58,8 @@ impl RecoverableSignature {
     /// representation is nonstandard and defined by the libsecp256k1
     /// library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         let mut ret = ffi::RecoverableSignature::new();
 
         unsafe {

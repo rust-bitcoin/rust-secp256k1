@@ -232,6 +232,8 @@ impl PublicKey {
     /// Creates a public key directly from a slice
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
+        if data.is_empty() {return Err(Error::InvalidPublicKey);}
+
         let mut pk = ffi::PublicKey::new();
         unsafe {
             if ffi::secp256k1_ec_pubkey_parse(
