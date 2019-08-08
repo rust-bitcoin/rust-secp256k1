@@ -218,7 +218,18 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     pub fn preallocated_new(buf: &'buf mut [AlignType]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    ///
+    /// Notice that the memory returned is in [AlignType](type.AlignType.html)
+    ///
+    /// ## Examples
+    /// ```rust
+    /// # use secp256k1::*;
+    /// let buf_size = Secp256k1::preallocate_size();
+    /// let mut buf = vec![0; buf_size];
+    /// let secp = Secp256k1::preallocated_new(&mut buf).unwrap();
+    ///
+    /// ```
     pub fn preallocate_size() -> usize {
         Self::preallocate_size_gen()
     }
@@ -249,7 +260,18 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    ///
+    /// Notice that the memory returned is in [AlignType](type.AlignType.html)
+    ///
+    /// ## Examples
+    /// ```rust
+    /// # use secp256k1::*;
+    /// let buf_size = Secp256k1::preallocate_signing_size();
+    /// let mut buf = vec![0; buf_size];
+    /// let secp = Secp256k1::preallocated_signing_only(&mut buf).unwrap();
+    ///
+    /// ```
     #[inline]
     pub fn preallocate_signing_size() -> usize {
         Self::preallocate_size_gen()
@@ -281,7 +303,18 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    /// 
+    /// Notice that the memory returned is in [AlignType](type.AlignType.html)
+    ///
+    /// ## Examples
+    /// ```rust
+    /// # use secp256k1::*;
+    /// let buf_size = Secp256k1::preallocate_verification_size();
+    /// let mut buf = vec![0; buf_size];
+    /// let secp = Secp256k1::preallocated_verification_only(&mut buf).unwrap();
+    ///
+    /// ```
     #[inline]
     pub fn preallocate_verification_size() -> usize {
         Self::preallocate_size_gen()

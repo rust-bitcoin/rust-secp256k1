@@ -82,9 +82,9 @@ impl RngCore for FakeRng {
 
 #[start]
 fn start(_argc: isize, _argv: *const *const u8) -> isize {
-    let mut buf = [0u8; 600_000];
+    let mut buf = [0; 75_000];
     let size = Secp256k1::preallocate_size();
-    unsafe { libc::printf("needed size: %d\n\0".as_ptr() as _, size) };
+    unsafe { libc::printf("needed size: %zu\n\0".as_ptr() as _, size) };
 
     let mut secp = Secp256k1::preallocated_new(&mut buf).unwrap();
     secp.randomize(&mut FakeRng);

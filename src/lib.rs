@@ -603,6 +603,9 @@ impl<C: Context> Secp256k1<C> {
     }
 
     /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    ///
+    /// Notice that the memory returned is in [AlignType](type.AlignType.html)
+    ///
     pub fn preallocate_size_gen() -> usize {
         assert!(mem::align_of::<AlignType>() >= mem::align_of::<u8>());
         assert!(mem::align_of::<AlignType>() >= mem::align_of::<usize>());
@@ -728,7 +731,7 @@ mod tests {
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
-    use ffi;
+    use ffi::{self, AlignType};
     use context::*;
 
     macro_rules! hex {
@@ -746,7 +749,7 @@ mod tests {
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
         let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
 
-        let buf: *mut [u8] = &mut [0u8;0] as _;
+        let buf: *mut [AlignType] = &mut [0 as AlignType;0] as _;
         let full: Secp256k1<AllPreallocated> = Secp256k1{ctx: ctx_full, phantom: PhantomData, buf};
         let sign: Secp256k1<SignOnlyPreallocated> = Secp256k1{ctx: ctx_sign, phantom: PhantomData, buf};
         let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, buf};
@@ -805,10 +808,10 @@ mod tests {
 
     #[test]
     fn test_preallocation() {
-        let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
-        let mut buf_vfy = vec![0u8; Secp256k1::preallocate_verification_size()];
-//
+        let mut buf_ful = vec![0; Secp256k1::preallocate_size()];
+        let mut buf_sign = vec![0; Secp256k1::preallocate_signing_size()];
+        let mut buf_vfy = vec![0; Secp256k1::preallocate_verification_size()];
+
         let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
         let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
         let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();

@@ -39,9 +39,15 @@ pub mod recovery;
 use core::{hash, slice, ptr};
 use types::*;
 
+/// A type that represents the type with the biggest alignment we can get in rust.
+/// Trying to match what `malloc` does in C, this should be aligned enough to contain pointers too.
+/// This type can have different size/alignment depending on the architecture.
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "16", target_pointer_width = "8"))]
 pub type AlignType = u64;
 
+/// A type that represents the type with the biggest alignment we can get in rust.
+/// Trying to match what `malloc` does in C, this should be aligned enough to contain pointers too.
+/// This type can have different size/alignment depending on the architecture.
 #[cfg(not(any(target_pointer_width = "32", target_pointer_width = "16", target_pointer_width = "8")))]
 pub type AlignType = usize;
 
