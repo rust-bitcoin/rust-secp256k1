@@ -68,15 +68,8 @@ macro_rules! impl_array_newtype {
         impl Clone for $thing {
             #[inline]
             fn clone(&self) -> $thing {
-                unsafe {
-                    use core::intrinsics::copy_nonoverlapping;
-                    use core::mem;
-                    let mut ret: $thing = mem::uninitialized();
-                    copy_nonoverlapping(self.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        $len);
-                    ret
-                }
+                let &$thing(ref dat) = self;
+                $thing(dat.clone())
             }
         }
 

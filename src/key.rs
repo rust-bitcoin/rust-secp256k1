@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use core::{fmt, mem, str};
+use core::{fmt, str};
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
@@ -338,7 +338,7 @@ impl PublicKey {
     /// to its own negation
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
-            let mut ret = mem::uninitialized();
+            let mut ret = ffi::PublicKey::new();
             let ptrs = [self.as_ptr(), other.as_ptr()];
             if ffi::secp256k1_ec_pubkey_combine(
                 ffi::secp256k1_context_no_precomp,

@@ -77,7 +77,8 @@ impl PublicKey {
     /// Create a new (zeroed) public key usable for the FFI interface
     pub fn new() -> PublicKey { PublicKey([0; 64]) }
     /// Create a new (uninitialized) public key usable for the FFI interface
-    pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
+    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
+    pub unsafe fn blank() -> PublicKey { PublicKey::new() }
 }
 
 impl Default for PublicKey {
@@ -102,7 +103,8 @@ impl Signature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> Signature { Signature([0; 64]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> Signature { mem::uninitialized() }
+    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
+    pub unsafe fn blank() -> Signature { Signature::new() }
 }
 
 impl Default for Signature {
@@ -121,7 +123,8 @@ impl SharedSecret {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
     /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
+    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
+    pub unsafe fn blank() -> SharedSecret { SharedSecret::new() }
 }
 
 impl Default for SharedSecret {
