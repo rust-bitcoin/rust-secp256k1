@@ -57,7 +57,7 @@ impl RecoverableSignature {
     /// representation is nonstandard and defined by the libsecp256k1
     /// library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
-        let mut ret = unsafe { ffi::RecoverableSignature::blank() };
+        let mut ret = ffi::RecoverableSignature::new();
 
         unsafe {
             if data.len() != 64 {
@@ -103,7 +103,7 @@ impl RecoverableSignature {
     /// for verification
     #[inline]
     pub fn to_standard(&self) -> Signature {
-        let mut ret = unsafe { super_ffi::Signature::blank() };
+        let mut ret = super_ffi::Signature::new();
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_convert(
                 super_ffi::secp256k1_context_no_precomp,
@@ -130,7 +130,7 @@ impl<C: Signing> Secp256k1<C> {
     pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
                             -> RecoverableSignature {
 
-        let mut ret = unsafe { ffi::RecoverableSignature::blank() };
+        let mut ret = ffi::RecoverableSignature::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
@@ -157,7 +157,7 @@ impl<C: Verification> Secp256k1<C> {
     pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
                    -> Result<key::PublicKey, Error> {
 
-        let mut pk = unsafe { super_ffi::PublicKey::blank() };
+        let mut pk = super_ffi::PublicKey::new();
 
         unsafe {
             if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
