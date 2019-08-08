@@ -39,6 +39,12 @@ pub mod recovery;
 use core::{hash, slice, ptr};
 use types::*;
 
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "16", target_pointer_width = "8"))]
+pub type AlignType = u64;
+
+#[cfg(not(any(target_pointer_width = "32", target_pointer_width = "16", target_pointer_width = "8")))]
+pub type AlignType = usize;
+
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = 1;
 /// Flag for context to enable verification precomputation
@@ -300,14 +306,18 @@ pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_create(flags: c_uint) -> *
     use std::mem;
     assert!(mem::align_of::<usize>() >= mem::align_of::<u8>());
     assert_eq!(mem::size_of::<usize>(), mem::size_of::<&usize>());
+    assert!(mem::align_of::<AlignType>() >= mem::align_of::<u8>());
+    assert!(mem::align_of::<AlignType>() >= mem::align_of::<usize>());
+    assert!(mem::size_of::<AlignType>() >= mem::size_of::<usize>());
+    assert!(mem::align_of::<AlignType>() >= mem::align_of::<&AlignType>());
 
-    let word_size = mem::size_of::<usize>();
+    let word_size = mem::size_of::<AlignType>();
     let n_words = (secp256k1_context_preallocated_size(flags) + word_size - 1) / word_size;
 
-    let buf = vec![0usize; n_words + 1].into_boxed_slice();
-    let ptr = Box::into_raw(buf) as *mut usize;
-    ::core::ptr::write(ptr, n_words);
-    let ptr: *mut usize = ptr.offset(1);
+    let buf = vec![0 as AlignType; n_words + 1].into_boxed_slice();
+    let ptr: *mut AlignType = Box::into_raw(buf) as *mut AlignType;
+    ::core::ptr::write(ptr, n_words as AlignType);
+    let ptr: *mut AlignType = ptr.offset(1);
 
     secp256k1_context_preallocated_create(ptr as *mut c_void, flags)
 }
@@ -327,12 +337,12 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_destroy(ctx: *mut Context) {
     secp256k1_context_preallocated_destroy(ctx);
-    let ctx: *mut usize = ctx as *mut usize;
+    let ctx: *mut AlignType = ctx as *mut AlignType;
 
-    let n_words_ptr: *mut usize = ctx.offset(-1);
-    let n_words: usize = ::core::ptr::read(n_words_ptr);
-    let slice: &mut [usize] = slice::from_raw_parts_mut(n_words_ptr , n_words+1);
-    let _ = Box::from_raw(slice as *mut [usize]);
+    let n_words_ptr: *mut AlignType = ctx.offset(-1);
+    let n_words: AlignType = ::core::ptr::read(n_words_ptr);
+    let slice: &mut [AlignType] = slice::from_raw_parts_mut(n_words_ptr , (n_words+1) as usize);
+    let _ = Box::from_raw(slice as *mut [AlignType]);
 }
 
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]

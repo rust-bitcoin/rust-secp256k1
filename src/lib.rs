@@ -155,7 +155,9 @@ pub use secp256k1_sys as ffi;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
 
-use core::{fmt, ptr, str};
+use core::{fmt, mem, ptr, str};
+
+pub use ffi::AlignType;
 
 #[macro_use]
 mod macros;
@@ -530,7 +532,7 @@ impl std::error::Error for Error {
 pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
     phantom: PhantomData<C>,
-    buf: *mut [u8],
+    buf: *mut [AlignType],
 }
 
 // The underlying secp context does not contain any references to memory it does not own
@@ -602,7 +604,15 @@ impl<C: Context> Secp256k1<C> {
 
     /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
     pub fn preallocate_size_gen() -> usize {
-        unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) }
+        assert!(mem::align_of::<AlignType>() >= mem::align_of::<u8>());
+        assert!(mem::align_of::<AlignType>() >= mem::align_of::<usize>());
+        assert!(mem::size_of::<AlignType>() >= mem::size_of::<usize>());
+        assert!(mem::align_of::<AlignType>() >= mem::align_of::<&AlignType>());
+
+        let bytes_size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
+        let word_size = mem::size_of::<AlignType>();
+        let n_words = (bytes_size + word_size - 1) / word_size;
+        n_words
     }
 
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
