@@ -1,0 +1,113 @@
+os: Visual Studio 2017
+
+environment:
+  matrix:
+
+### MSVC Toolchains ###
+
+  # Stable 64-bit MSVC
+    - channel: stable
+      target: x86_64-pc-windows-msvc
+  # Stable 32-bit MSVC
+    - channel: stable
+      target: i686-pc-windows-msvc
+  # Beta 64-bit MSVC
+    - channel: beta
+      target: x86_64-pc-windows-msvc
+  # Beta 32-bit MSVC
+    - channel: beta
+      target: i686-pc-windows-msvc
+  # Nightly 64-bit MSVC
+    - channel: nightly
+      target: x86_64-pc-windows-msvc
+  # Nightly 32-bit MSVC
+    - channel: nightly
+      target: i686-pc-windows-msvc
+
+  # 1.22.0 64-bit MSVC
+    - channel: 1.22.0
+      target: x86_64-pc-windows-msvc
+  # 1.22.0 32-bit MSVC
+    - channel: 1.22.0
+      target: i686-pc-windows-msvc
+
+### GNU Toolchains ###
+
+  # Stable 64-bit GNU
+    - channel: stable
+      target: x86_64-pc-windows-gnu
+      MSYS_BITS: 64
+  # Stable 32-bit GNU
+    - channel: stable
+      target: i686-pc-windows-gnu
+      MSYS_BITS: 32
+  # Beta 64-bit GNU
+    - channel: beta
+      target: x86_64-pc-windows-gnu
+      MSYS_BITS: 64
+  # Beta 32-bit GNU
+    - channel: beta
+      target: i686-pc-windows-gnu
+      MSYS_BITS: 32
+  # Nightly 64-bit GNU
+    - channel: nightly
+      target: x86_64-pc-windows-gnu
+      MSYS_BITS: 64
+  # Nightly 32-bit GNU
+    - channel: nightly
+      target: i686-pc-windows-gnu
+      MSYS_BITS: 32
+  # 1.22.0 64-bit GNU
+    - channel: 1.22.0
+      target: x86_64-pc-windows-gnu
+      MSYS_BITS: 64
+  # 1.22.0 32-bit GNU
+    - channel: 1.22.0
+      target: i686-pc-windows-gnu
+      MSYS_BITS: 32
+
+install:
+  - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init -yv --default-toolchain %channel% --default-host %target%
+  - cmd: |
+      choco install gtools
+      refreshenv
+      pathed /user /add "%USERPROFILE%\.cargo\bin"
+      if defined MSYS_BITS pathed /user /add "C:\msys64\mingw%MSYS_BITS%\bin"
+      if defined MSYS_BITS pathed /user /add "C:\mingw%MSYS_BITS%\bin"
+      refreshenv
+  - rustc -vV
+  - cargo -vV
+
+build: false
+
+test_script:
+  - cargo build --verbose --no-default-features
+  - cargo build --verbose --no-default-features --features="serde"
+  - cargo build --verbose --no-default-features --features="lowmemory"
+  - cargo build --verbose --no-default-features --features="rand"
+  - cargo build --verbose --no-default-features --features="rand serde recovery endomorphism"
+  - cargo build --verbose --no-default-features --features="fuzztarget recovery"
+  - cargo build --verbose --features=fuzztarget
+  - cargo build --verbose --features=rand
+  - cargo test --verbose --features=rand
+  - cargo test --verbose --features="rand serde"
+  - cargo test --verbose --features="rand serde recovery endomorphism"
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo build --verbose --release
+  - cargo test --verbose --release
+  - if "%channel%"=="nightly" (cargo test --benches --features=unstable)
+  - if "%channel%"=="stable" (
+    git clone https://github.com/emscripten-core/emsdk.git && cd emsdk && emsdk install latest && emsdk activate latest --global && emsdk_env.bat && cd .. &&
+    set "CARGO_TARGET_DIR=cargo_web" &&
+    cargo install --force --verbose cargo-web &&
+    set "CARGO_TARGET_DIR=" &&
+    cargo web build --verbose --target=asmjs-unknown-emscripten &&
+    cargo web test --verbose --target=asmjs-unknown-emscripten --nodejs)
+
+cache:
+  - 'C:\Users\appveyor\.cargo'
+  - 'C:\Users\appveyor\.rustup'
+  - 'target'
+  - 'cargo_web'
