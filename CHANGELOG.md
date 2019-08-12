@@ -1,3 +1,10 @@
+# 0.15.2 - 2019-08-08
+
+- Add feature `lowmemory` that reduces the EC mult window size to require
+  significantly less memory for the validation context (~680B instead of
+  ~520kB), at the cost of slower validation. It does not affect the speed of
+  signing, nor the size of the signing context.
+
 # 0.15.0 - 2019-07-25
 
 * Implement hex human-readable serde for PublicKey
