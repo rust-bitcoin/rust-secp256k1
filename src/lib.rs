@@ -999,17 +999,36 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
-    use rand::{Rng, thread_rng};
+    use rand::{thread_rng, RngCore};
     use test::{Bencher, black_box};
 
     use super::{Secp256k1, Message};
 
     #[bench]
     pub fn generate(bh: &mut Bencher) {
-        struct CounterRng(u32);
-        impl Rng for CounterRng {
-            fn next_u32(&mut self) -> u32 { self.0 += 1; self.0 }
+        struct CounterRng(u64);
+        impl RngCore for CounterRng {
+            fn next_u32(&mut self) -> u32 {
+                self.next_u64() as u32
+            }
+
+            fn next_u64(&mut self) -> u64 {
+                self.0 += 1;
+                self.0
+            }
+
+            fn fill_bytes(&mut self, dest: &mut [u8]) {
+                for chunk in dest.chunks_mut(64/8) {
+                    let rand: [u8; 64/8] = unsafe {std::mem::transmute(self.next_u64())};
+                    chunk.copy_from_slice(&rand[..chunk.len()]);
+                }
+            }
+
+            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+                Ok(self.fill_bytes(dest))
+            }
         }
+
 
         let s = Secp256k1::new();
         let mut r = CounterRng(0);
