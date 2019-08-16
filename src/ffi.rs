@@ -366,6 +366,38 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
 }
 
 
+pub(crate) static EMPTY: [u8; 1] = [0];
+/// A trait for producing pointers that will always be valid in C.
+/// Rust doesn't promise what pointers does it give to ZST (https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
+/// This trait will give a pointer to a static variable in case the type is empty.
+pub(crate) trait CPtr {
+    type Target;
+    fn as_c_ptr(&self) -> *const Self::Target;
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target;
+}
+
+impl<T> CPtr for [T] {
+    type Target = T;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        if self.is_empty() {
+            EMPTY.as_ptr() as *const _
+        } else {
+            self.as_ptr()
+        }
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        if self.is_empty() {
+            EMPTY.as_ptr() as *mut _
+        } else {
+            self.as_mut_ptr()
+        }
+    }
+}
+
+
+
+
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
     extern crate std;

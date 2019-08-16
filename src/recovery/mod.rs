@@ -23,6 +23,7 @@ use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
 use super::ffi as super_ffi;
 pub use key::SecretKey;
 pub use key::PublicKey;
+use self::super_ffi::CPtr;
 
 mod ffi;
 
@@ -82,6 +83,12 @@ impl RecoverableSignature {
         &self.0 as *const _
     }
 
+    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
+        &mut self.0 as *mut _
+    }
+
     #[inline]
     /// Serializes the recoverable signature in compact format
     pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
@@ -113,6 +120,18 @@ impl RecoverableSignature {
             assert!(err == 1);
         }
         Signature(ret)
+    }
+}
+
+
+impl CPtr for RecoverableSignature {
+    type Target = ffi::RecoverableSignature;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
     }
 }
 

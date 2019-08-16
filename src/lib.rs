@@ -161,6 +161,7 @@ pub use key::PublicKey;
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
+use ffi::CPtr;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -377,6 +378,17 @@ impl Signature {
             debug_assert!(err == 1);
         }
         ret
+    }
+}
+
+impl CPtr for Signature {
+    type Target = ffi::Signature;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
     }
 }
 
