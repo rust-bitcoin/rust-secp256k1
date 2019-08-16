@@ -24,7 +24,7 @@ use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
 use Signing;
 use Verification;
 use constants;
-use ffi;
+use ffi::{self, CPtr};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
@@ -354,6 +354,18 @@ impl PublicKey {
         }
     }
 }
+
+impl CPtr for PublicKey {
+    type Target = ffi::PublicKey;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
+    }
+}
+
 
 /// Creates a new public key from a FFI public key
 impl From<ffi::PublicKey> for PublicKey {
