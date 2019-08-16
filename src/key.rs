@@ -117,7 +117,7 @@ impl SecretKey {
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(
                 ffi::secp256k1_context_no_precomp,
-                data.as_ptr(),
+                data.as_c_ptr(),
             ) == 0
             {
                 data = random_32_bytes(rng);
@@ -135,7 +135,7 @@ impl SecretKey {
                 unsafe {
                     if ffi::secp256k1_ec_seckey_verify(
                         ffi::secp256k1_context_no_precomp,
-                        data.as_ptr(),
+                        data.as_c_ptr(),
                     ) == 0
                     {
                         return Err(InvalidSecretKey);
@@ -162,8 +162,8 @@ impl SecretKey {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_add(
                 ffi::secp256k1_context_no_precomp,
-                self.as_mut_ptr(),
-                other.as_ptr(),
+                self.as_mut_c_ptr(),
+                other.as_c_ptr(),
             ) != 1
             {
                 Err(Error::InvalidTweak)
@@ -187,8 +187,8 @@ impl SecretKey {
         unsafe {
             if ffi::secp256k1_ec_privkey_tweak_mul(
                 ffi::secp256k1_context_no_precomp,
-                self.as_mut_ptr(),
-                other.as_ptr(),
+                self.as_mut_c_ptr(),
+                other.as_c_ptr(),
             ) != 1
             {
                 Err(Error::InvalidTweak)
@@ -223,7 +223,7 @@ impl PublicKey {
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
-            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_ptr());
+            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_c_ptr());
             debug_assert_eq!(res, 1);
         }
         PublicKey(pk)
@@ -237,7 +237,7 @@ impl PublicKey {
             if ffi::secp256k1_ec_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
-                data.as_ptr(),
+                data.as_c_ptr(),
                 data.len() as usize,
             ) == 1
             {
@@ -259,9 +259,9 @@ impl PublicKey {
             let mut ret_len = constants::PUBLIC_KEY_SIZE as usize;
             let err = ffi::secp256k1_ec_pubkey_serialize(
                 ffi::secp256k1_context_no_precomp,
-                ret.as_mut_ptr(),
+                ret.as_mut_c_ptr(),
                 &mut ret_len,
-                self.as_ptr(),
+                self.as_c_ptr(),
                 ffi::SECP256K1_SER_COMPRESSED,
             );
             debug_assert_eq!(err, 1);
@@ -278,9 +278,9 @@ impl PublicKey {
             let mut ret_len = constants::UNCOMPRESSED_PUBLIC_KEY_SIZE as usize;
             let err = ffi::secp256k1_ec_pubkey_serialize(
                 ffi::secp256k1_context_no_precomp,
-                ret.as_mut_ptr(),
+                ret.as_mut_c_ptr(),
                 &mut ret_len,
-                self.as_ptr(),
+                self.as_c_ptr(),
                 ffi::SECP256K1_SER_UNCOMPRESSED,
             );
             debug_assert_eq!(err, 1);
@@ -303,7 +303,7 @@ impl PublicKey {
         }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
-                                                  other.as_ptr()) == 1 {
+                                                  other.as_c_ptr()) == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidTweak)
@@ -325,7 +325,7 @@ impl PublicKey {
         }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
-                                                  other.as_ptr()) == 1 {
+                                                  other.as_c_ptr()) == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidTweak)
@@ -339,11 +339,11 @@ impl PublicKey {
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
             let mut ret = ffi::PublicKey::new();
-            let ptrs = [self.as_ptr(), other.as_ptr()];
+            let ptrs = [self.as_c_ptr(), other.as_c_ptr()];
             if ffi::secp256k1_ec_pubkey_combine(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                ptrs.as_ptr(),
+                ptrs.as_c_ptr(),
                 2
             ) == 1
             {
