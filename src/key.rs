@@ -17,7 +17,7 @@
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
-use core::{fmt, mem, str};
+use core::{fmt, str};
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
@@ -219,7 +219,7 @@ impl PublicKey {
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
                            -> PublicKey {
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = ffi::PublicKey::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
@@ -232,7 +232,7 @@ impl PublicKey {
     /// Creates a public key directly from a slice
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = ffi::PublicKey::new();
         unsafe {
             if ffi::secp256k1_ec_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
@@ -338,7 +338,7 @@ impl PublicKey {
     /// to its own negation
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
-            let mut ret = mem::uninitialized();
+            let mut ret = ffi::PublicKey::new();
             let ptrs = [self.as_ptr(), other.as_ptr()];
             if ffi::secp256k1_ec_pubkey_combine(
                 ffi::secp256k1_context_no_precomp,

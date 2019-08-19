@@ -246,7 +246,7 @@ impl Signature {
 #[inline]
     /// Converts a DER-encoded byte slice to a signature
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
-        let mut ret = unsafe { ffi::Signature::blank() };
+        let mut ret = ffi::Signature::new();
 
         unsafe {
             if ffi::secp256k1_ecdsa_signature_parse_der(
@@ -265,7 +265,7 @@ impl Signature {
 
     /// Converts a 64-byte compact-encoded byte slice to a signature
     pub fn from_compact(data: &[u8]) -> Result<Signature, Error> {
-        let mut ret = unsafe { ffi::Signature::blank() };
+        let mut ret = ffi::Signature::new();
         if data.len() != 64 {
             return Err(Error::InvalidSignature)
         }
@@ -290,7 +290,7 @@ impl Signature {
     /// support serializing to this "format"
     pub fn from_der_lax(data: &[u8]) -> Result<Signature, Error> {
         unsafe {
-            let mut ret = ffi::Signature::blank();
+            let mut ret = ffi::Signature::new();
             if ffi::ecdsa_signature_parse_der_lax(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
@@ -605,7 +605,7 @@ impl<C: Signing> Secp256k1<C> {
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
                 -> Signature {
 
-        let mut ret = unsafe { ffi::Signature::blank() };
+        let mut ret = ffi::Signature::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
