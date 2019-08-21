@@ -576,6 +576,36 @@ mod test {
             PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
         );
+        assert_eq!(
+            PublicKey::from_slice(&[]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn test_seckey_from_bad_slice() {
+        // Bad sizes
+        assert_eq!(
+            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
+            Err(InvalidSecretKey)
+        );
+        assert_eq!(
+            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
+            Err(InvalidSecretKey)
+        );
+        // Bad parse
+        assert_eq!(
+            SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]),
+            Err(InvalidSecretKey)
+        );
+        assert_eq!(
+            SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]),
+            Err(InvalidSecretKey)
+        );
+        assert_eq!(
+            SecretKey::from_slice(&[]),
+            Err(InvalidSecretKey)
+        );
     }
 
     #[test]
