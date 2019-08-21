@@ -161,6 +161,7 @@ pub use key::PublicKey;
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
+use ffi::CPtr;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -246,13 +247,15 @@ impl Signature {
 #[inline]
     /// Converts a DER-encoded byte slice to a signature
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         let mut ret = ffi::Signature::new();
 
         unsafe {
             if ffi::secp256k1_ecdsa_signature_parse_der(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                data.as_ptr(),
+                data.as_c_ptr(),
                 data.len() as usize,
             ) == 1
             {
@@ -274,7 +277,7 @@ impl Signature {
             if ffi::secp256k1_ecdsa_signature_parse_compact(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                data.as_ptr(),
+                data.as_c_ptr(),
             ) == 1
             {
                 Ok(Signature(ret))
@@ -289,12 +292,14 @@ impl Signature {
     /// 2016. It should never be used in new applications. This library does not
     /// support serializing to this "format"
     pub fn from_der_lax(data: &[u8]) -> Result<Signature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         unsafe {
             let mut ret = ffi::Signature::new();
             if ffi::ecdsa_signature_parse_der_lax(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                data.as_ptr(),
+                data.as_c_ptr(),
                 data.len() as usize,
             ) == 1
             {
@@ -328,8 +333,8 @@ impl Signature {
             // was already normalized. We don't care.
             ffi::secp256k1_ecdsa_signature_normalize(
                 ffi::secp256k1_context_no_precomp,
-                self.as_mut_ptr(),
-                self.as_ptr(),
+                self.as_mut_c_ptr(),
+                self.as_c_ptr(),
             );
         }
     }
@@ -356,7 +361,7 @@ impl Signature {
                 ffi::secp256k1_context_no_precomp,
                 ret.get_data_mut_ptr(),
                 &mut len,
-                self.as_ptr(),
+                self.as_c_ptr(),
             );
             debug_assert!(err == 1);
             ret.set_len(len);
@@ -371,12 +376,23 @@ impl Signature {
         unsafe {
             let err = ffi::secp256k1_ecdsa_signature_serialize_compact(
                 ffi::secp256k1_context_no_precomp,
-                ret.as_mut_ptr(),
-                self.as_ptr(),
+                ret.as_mut_c_ptr(),
+                self.as_c_ptr(),
             );
             debug_assert!(err == 1);
         }
         ret
+    }
+}
+
+impl CPtr for Signature {
+    type Target = ffi::Signature;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
     }
 }
 
@@ -583,7 +599,7 @@ impl<C: Context> Secp256k1<C> {
         let mut seed = [0; 32];
         rng.fill_bytes(&mut seed);
         unsafe {
-            let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_ptr());
+            let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_c_ptr());
             // This function cannot fail; it has an error return for future-proofing.
             // We do not expose this error since it is impossible to hit, and we have
             // precedent for not exposing impossible errors (for example in
@@ -609,8 +625,8 @@ impl<C: Signing> Secp256k1<C> {
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_ptr(),
-                                                 sk.as_ptr(), ffi::secp256k1_nonce_function_rfc6979,
+            assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
+                                                 sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                  ptr::null()), 1);
         }
 
@@ -640,7 +656,7 @@ impl<C: Verification> Secp256k1<C> {
     #[inline]
     pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
         unsafe {
-            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_ptr(), msg.as_ptr(), pk.as_ptr()) == 0 {
+            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_c_ptr(), msg.as_c_ptr(), pk.as_c_ptr()) == 0 {
                 Err(Error::IncorrectSignature)
             } else {
                 Ok(())

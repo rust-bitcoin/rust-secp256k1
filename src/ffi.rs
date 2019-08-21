@@ -16,7 +16,7 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use core::{mem, hash, slice};
+use core::{mem, hash, slice, ptr};
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -357,6 +357,38 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
     }
     ctr
 }
+
+
+/// A trait for producing pointers that will always be valid in C. (assuming NULL pointer is a valid no-op)
+/// Rust doesn't promise what pointers does it give to ZST (https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
+/// In case the type is empty this trait will give a NULL pointer, which should be handled in C.
+/// 
+pub(crate) trait CPtr {
+    type Target;
+    fn as_c_ptr(&self) -> *const Self::Target;
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target;
+}
+
+impl<T> CPtr for [T] {
+    type Target = T;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        if self.is_empty() {
+            ptr::null()
+        } else {
+            self.as_ptr()
+        }
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        if self.is_empty() {
+            ptr::null::<Self::Target>() as *mut _
+        } else {
+            self.as_mut_ptr()
+        }
+    }
+}
+
+
 
 
 #[cfg(feature = "fuzztarget")]

@@ -23,6 +23,7 @@ use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
 use super::ffi as super_ffi;
 pub use key::SecretKey;
 pub use key::PublicKey;
+use self::super_ffi::CPtr;
 
 mod ffi;
 
@@ -57,6 +58,8 @@ impl RecoverableSignature {
     /// representation is nonstandard and defined by the libsecp256k1
     /// library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
+        if data.is_empty() {return Err(Error::InvalidSignature);}
+
         let mut ret = ffi::RecoverableSignature::new();
 
         unsafe {
@@ -65,7 +68,7 @@ impl RecoverableSignature {
             } else if ffi::secp256k1_ecdsa_recoverable_signature_parse_compact(
                 super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                data.as_ptr(),
+                data.as_c_ptr(),
                 recid.0,
             ) == 1
             {
@@ -82,6 +85,12 @@ impl RecoverableSignature {
         &self.0 as *const _
     }
 
+    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
+        &mut self.0 as *mut _
+    }
+
     #[inline]
     /// Serializes the recoverable signature in compact format
     pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
@@ -90,9 +99,9 @@ impl RecoverableSignature {
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
                 super_ffi::secp256k1_context_no_precomp,
-                ret.as_mut_ptr(),
+                ret.as_mut_c_ptr(),
                 &mut recid,
-                self.as_ptr(),
+                self.as_c_ptr(),
             );
             assert!(err == 1);
         }
@@ -108,11 +117,23 @@ impl RecoverableSignature {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_convert(
                 super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
-                self.as_ptr(),
+                self.as_c_ptr(),
             );
             assert!(err == 1);
         }
         Signature(ret)
+    }
+}
+
+
+impl CPtr for RecoverableSignature {
+    type Target = ffi::RecoverableSignature;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
     }
 }
 
@@ -138,8 +159,8 @@ impl<C: Signing> Secp256k1<C> {
                 ffi::secp256k1_ecdsa_sign_recoverable(
                     self.ctx,
                     &mut ret,
-                    msg.as_ptr(),
-                    sk.as_ptr(),
+                    msg.as_c_ptr(),
+                    sk.as_c_ptr(),
                     super_ffi::secp256k1_nonce_function_rfc6979,
                     ptr::null()
                 ),
@@ -161,7 +182,7 @@ impl<C: Verification> Secp256k1<C> {
 
         unsafe {
             if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
-                                            sig.as_ptr(), msg.as_ptr()) != 1 {
+                                            sig.as_c_ptr(), msg.as_c_ptr()) != 1 {
                 return Err(Error::InvalidSignature);
             }
         };

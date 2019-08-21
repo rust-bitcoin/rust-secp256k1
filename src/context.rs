@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use ffi;
+use ffi::{self, CPtr};
 use types::{c_uint, c_void};
 use Error;
 use Secp256k1;
@@ -181,7 +181,7 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
         Ok(Secp256k1 {
             ctx: unsafe {
                 ffi::secp256k1_context_preallocated_create(
-                    buf.as_mut_ptr() as *mut c_void,
+                    buf.as_mut_c_ptr() as *mut c_void,
                     C::FLAGS)
             },
             phantom: PhantomData,

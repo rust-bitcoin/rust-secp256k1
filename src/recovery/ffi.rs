@@ -17,7 +17,7 @@
 
 use core::mem;
 use types::*;
-use ffi::{Context, NonceFn, PublicKey, Signature};
+use ffi::{Context, NonceFn, PublicKey, Signature, CPtr};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
