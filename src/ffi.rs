@@ -159,13 +159,6 @@ extern "C" {
                                        seed32: *const c_uchar)
                                        -> c_int;
 
-    // TODO secp256k1_context_set_illegal_callback
-    // TODO secp256k1_context_set_error_callback
-    // (Actually, I don't really want these exposed; if either of these
-    // are ever triggered it indicates a bug in rust-secp256k1, since
-    // one goal is to use Rust's type system to eliminate all possible
-    // bad inputs.)
-
     // Pubkeys
     pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
                                      input: *const c_uchar, in_len: usize)
