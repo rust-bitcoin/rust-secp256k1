@@ -30,6 +30,7 @@ script:
   - cargo build --verbose --features=fuzztarget
   - cargo build --verbose --features=rand
   - cargo test --verbose --features=rand
+  - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
   - cargo test --verbose --features="rand serde recovery endomorphism"
   - cargo build --verbose
