@@ -707,7 +707,7 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 }
 
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "fuzztarget")))]
 mod tests {
     use rand::{RngCore, thread_rng};
     use std::str::FromStr;
@@ -1158,5 +1158,84 @@ mod benches {
             let res = s.verify(&msg, &sig, &pk).unwrap();
             black_box(res);
         });
+    }
+}
+
+#[cfg(all(test, feature = "fuzztarget"))]
+mod test_fuzz {
+    use super::*;
+    use std::str::FromStr;
+    use std::panic::{self, UnwindSafe};
+    use std::mem;
+
+
+    pub fn crashed_for_fuzz<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> bool {
+        if let Err(e) = panic::catch_unwind(f) {
+            if let Some(st) = e.downcast_ref::<&str>() {
+                return st.contains(ffi::UNSAFE_CRYPTO_WARNING);
+            }
+        }
+        false
+    }
+
+    fn fuzz_not_set_var() {
+        unsafe {ffi::UNSAFE_CRYPTO_FUZZING = false};
+        let mut raw_fake_context: ffi::Context = unsafe {mem::transmute(VerifyOnly::FLAGS | SignOnly::FLAGS)};
+        let fake_context: Secp256k1<All> = Secp256k1 {
+            ctx: &mut raw_fake_context,
+            phantom: PhantomData,
+            buf: ptr::null_mut::<[u8;0]>() as *mut [u8]
+        };
+        let msg = Message::from_slice(&[1u8; 32]).unwrap();
+        let sec = SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363").unwrap();
+        let sig: Signature = unsafe { std::mem::transmute::<_, ffi::Signature>([3u8; 64]).into() };
+
+        assert!(crashed_for_fuzz(|| SecretKey::from_slice(&[2; 32])));
+        assert!(crashed_for_fuzz(|| PublicKey::from_slice(&[2; 33])));
+        assert!(crashed_for_fuzz(|| Signature::from_compact(&[3; 64])));
+        assert!(crashed_for_fuzz(|| Secp256k1::new()));
+        assert!(crashed_for_fuzz(|| sec.clone().add_assign(&[2u8; 32])));
+        assert!(crashed_for_fuzz(|| sec.clone().mul_assign(&[2u8; 32])));
+        assert!(crashed_for_fuzz(|| sig.serialize_compact()));
+        assert!(crashed_for_fuzz(|| fake_context.sign(&msg, &sec)));
+        #[cfg(feature = "recovery")]
+        {
+            assert!(crashed_for_fuzz(||fake_context.sign_recoverable(&msg, &sec)));
+        }
+        assert!(crashed_for_fuzz(|| drop(fake_context)));
+    }
+
+    fn fuzz_set_var_not_crash() {
+        unsafe {ffi::UNSAFE_CRYPTO_FUZZING = true;}
+        let context = Secp256k1::new();
+        let msg = Message::from_slice(&[1u8; 32]).unwrap();
+        let _ = SecretKey::from_slice(&[2; 32]);
+        let _ = PublicKey::from_slice(&[2; 33]);
+        let _ = Signature::from_compact(&[3; 64]);
+        let _ = Secp256k1::new();
+        let mut sec = SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363").unwrap();
+        let _ = sec.add_assign(&[2u8; 32]);
+        let mut sec = SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363").unwrap();
+        let _ = sec.mul_assign(&[2u8; 32]);
+        let sig: Signature = unsafe { std::mem::transmute::<_, ffi::Signature>([3u8; 64]).into() };
+        let _ = sig.serialize_compact();
+        let pubkey1: PublicKey = unsafe { mem::transmute::<_, ffi::PublicKey>([3u8; 64]).into() };
+        let pubkey2: PublicKey = unsafe { mem::transmute::<_, ffi::PublicKey>([5u8; 64]).into() };
+        let _ = pubkey1.combine(&pubkey2);
+        let sig = context.sign(&msg, &sec);
+        assert_eq!(context.verify(&msg, &sig, &pubkey1).unwrap_err(), Error::IncorrectSignature);
+
+        #[cfg(feature = "recovery")]
+        {
+            let _ = context.sign_recoverable(&msg, &sec);
+        }
+
+        unsafe {ffi::UNSAFE_CRYPTO_FUZZING = false;}
+    }
+
+    #[test]
+    fn test_fuzz_setting_var() {
+        fuzz_not_set_var();
+        fuzz_set_var_not_crash();
     }
 }

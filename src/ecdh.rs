@@ -162,7 +162,7 @@ impl SharedSecret {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "fuzztarget")))]
 mod tests {
     use rand::thread_rng;
     use super::SharedSecret;

@@ -443,7 +443,7 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "fuzztarget")))]
 mod test {
     use Secp256k1;
     use from_hex;

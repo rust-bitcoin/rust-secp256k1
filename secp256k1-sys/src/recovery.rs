@@ -79,9 +79,10 @@ mod fuzz_dummy {
     use self::std::ptr;
     use super::RecoverableSignature;
     use types::*;
-    use ::{Signature, Context, PublicKey, NonceFn, secp256k1_ec_seckey_verify,
-        SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN};
-
+    use ::{
+        secp256k1_ec_seckey_verify, Context, NonceFn, PublicKey, Signature, SECP256K1_START_NONE,
+        SECP256K1_START_SIGN, SECP256K1_START_VERIFY, UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING,
+    };
     pub unsafe fn secp256k1_ecdsa_recoverable_signature_parse_compact(_cx: *const Context, _sig: *mut RecoverableSignature,
                                                                       _input64: *const c_uchar, _recid: c_int)
                                                                       -> c_int {

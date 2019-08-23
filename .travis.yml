@@ -38,6 +38,7 @@ script:
   - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
   - cargo test --verbose --features="rand serde recovery endomorphism"
+  - cargo test --verbose --lib --features=fuzztarget
   - cargo build --verbose
   - cargo test --verbose
   - cargo build --verbose --release

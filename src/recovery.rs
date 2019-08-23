@@ -191,7 +191,7 @@ impl<C: Verification> Secp256k1<C> {
 }
 
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "fuzztarget")))]
 mod tests {
     use rand::{RngCore, thread_rng};
 
