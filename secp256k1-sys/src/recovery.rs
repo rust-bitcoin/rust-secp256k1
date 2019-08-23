@@ -108,6 +108,7 @@ mod fuzz_dummy {
                                                    _noncefn: NonceFn,
                                                    _noncedata: *const c_void)
                                                    -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).flags() & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         assert!((*cx).flags() & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }

@@ -84,6 +84,7 @@ pub type EcdhHashFn = unsafe extern "C" fn(
 #[cfg(feature = "fuzztarget")]
 impl Context {
     pub fn flags(&self) -> u32 {
+        unsafe {assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING); }
         self.0 as u32
     }
 }
@@ -405,7 +406,7 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
 /// A trait for producing pointers that will always be valid in C. (assuming NULL pointer is a valid no-op)
 /// Rust doesn't promise what pointers does it give to ZST (https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 /// In case the type is empty this trait will give a NULL pointer, which should be handled in C.
-/// 
+///
 pub trait CPtr {
     type Target;
     fn as_c_ptr(&self) -> *const Self::Target;
@@ -447,6 +448,9 @@ mod fuzz_dummy {
     #[allow(non_upper_case_globals)]
     pub static secp256k1_context_no_precomp: &Context = &Context(0);
 
+    pub static mut UNSAFE_CRYPTO_FUZZING: bool = false;
+    pub const UNSAFE_CRYPTO_WARNING: &str = "Tried fuzzing without setting the UNSAFE_CRYPTO_FUZZING variable";
+
     extern "C" {
         #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdh_hash_function_default")]
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
@@ -457,22 +461,26 @@ mod fuzz_dummy {
     // Contexts
     /// Creates a dummy context, tracking flags to ensure proper calling semantics
     pub unsafe fn secp256k1_context_preallocated_create(_ptr: *mut c_void, flags: c_uint) -> *mut Context {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         let b = Box::new(Context(flags as i32));
         Box::into_raw(b)
     }
 
     /// Return dummy size of context struct.
     pub unsafe fn secp256k1_context_preallocated_size(_flags: c_uint) -> size_t {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         mem::size_of::<Context>()
     }
 
     /// Return dummy size of context struct.
     pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *mut Context) -> size_t {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         mem::size_of::<Context>()
     }
 
     /// Copies a dummy context
     pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         let ret = prealloc as *mut Context;
         *ret = (*cx).clone();
         ret
@@ -480,6 +488,7 @@ mod fuzz_dummy {
 
     /// "Destroys" a dummy context
     pub unsafe fn secp256k1_context_preallocated_destroy(cx: *mut Context) {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         (*cx).0 = 0;
     }
 
@@ -487,6 +496,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_context_randomize(cx: *mut Context,
                                               _seed32: *const c_uchar)
                                               -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         1
     }
@@ -496,6 +506,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
                                             input: *const c_uchar, in_len: size_t)
                                             -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         match in_len {
             33 => {
@@ -524,6 +535,7 @@ mod fuzz_dummy {
                                                 out_len: *mut size_t, pk: *const PublicKey,
                                                 compressed: c_uint)
                                                 -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if test_pk_validate(cx, pk) != 1 { return 0; }
         if compressed == SECP256K1_SER_COMPRESSED {
@@ -555,6 +567,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ecdsa_signature_parse_compact(cx: *const Context, sig: *mut Signature,
                                                           input64: *const c_uchar)
                                                           -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, input64.offset(32)) != 1 { return 0; } // sig should be msg32||sk
         ptr::copy(input64, (*sig).0[..].as_mut_ptr(), 64);
@@ -571,6 +584,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
                                                           out_len: *mut size_t, sig: *const Signature)
                                                           -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
 
         let mut len_r = 33;
@@ -609,6 +623,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *mut c_uchar,
                                                               sig: *const Signature)
                                                               -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         ptr::copy((*sig).0[..].as_ptr(), output64, 64);
         1
@@ -627,6 +642,7 @@ mod fuzz_dummy {
                                          msg32: *const c_uchar,
                                          pk: *const PublicKey)
                                          -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         assert!((*cx).0 as u32 & SECP256K1_START_VERIFY == SECP256K1_START_VERIFY);
         if test_pk_validate(cx, pk) != 1 { return 0; }
@@ -650,6 +666,7 @@ mod fuzz_dummy {
                                        _noncefn: NonceFn,
                                        _noncedata: *const c_void)
                                        -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         assert!((*cx).0 as u32 & SECP256K1_START_SIGN == SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
@@ -662,6 +679,7 @@ mod fuzz_dummy {
     /// Checks that pk != 0xffff...ffff and pk[0..32] == pk[32..64]
     pub unsafe fn test_pk_validate(cx: *const Context,
                                    pk: *const PublicKey) -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if (*pk).0[0..32] != (*pk).0[32..64] || secp256k1_ec_seckey_verify(cx, (*pk).0[0..32].as_ptr()) == 0 {
             0
@@ -673,6 +691,7 @@ mod fuzz_dummy {
     /// Checks that sk != 0xffff...ffff
     pub unsafe fn secp256k1_ec_seckey_verify(cx: *const Context,
                                              sk: *const c_uchar) -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         let mut res = 0;
         for i in 0..32 {
@@ -684,6 +703,7 @@ mod fuzz_dummy {
     /// Sets pk to sk||sk
     pub unsafe fn secp256k1_ec_pubkey_create(cx: *const Context, pk: *mut PublicKey,
                                              sk: *const c_uchar) -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         ptr::copy(sk, (*pk).0[0..32].as_mut_ptr(), 32);
@@ -699,6 +719,7 @@ mod fuzz_dummy {
                                                  sk: *mut c_uchar,
                                                  tweak: *const c_uchar)
                                                  -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         ptr::copy(tweak.offset(16), sk.offset(16), 16);
@@ -711,6 +732,7 @@ mod fuzz_dummy {
                                                 pk: *mut PublicKey,
                                                 tweak: *const c_uchar)
                                                 -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if test_pk_validate(cx, pk) != 1 { return 0; }
         ptr::copy(tweak.offset(16), (*pk).0[16..32].as_mut_ptr(), 16);
@@ -725,6 +747,7 @@ mod fuzz_dummy {
                                                  sk: *mut c_uchar,
                                                  tweak: *const c_uchar)
                                                  -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         ptr::copy(tweak.offset(16), sk.offset(16), 16);
@@ -737,6 +760,7 @@ mod fuzz_dummy {
                                                 pk: *mut PublicKey,
                                                 tweak: *const c_uchar)
                                                 -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if test_pk_validate(cx, pk) != 1 { return 0; }
         ptr::copy(tweak.offset(16), (*pk).0[16..32].as_mut_ptr(), 16);
@@ -751,6 +775,7 @@ mod fuzz_dummy {
                                               ins: *const *const PublicKey,
                                               n: c_int)
                                               -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         assert!(n <= 32 && n >= 0); //TODO: Remove this restriction?
         for i in 0..n {
@@ -772,6 +797,7 @@ mod fuzz_dummy {
         _hashfp: EcdhHashFn,
         _data: *mut c_void,
     ) -> c_int {
+        assert!(UNSAFE_CRYPTO_FUZZING, UNSAFE_CRYPTO_WARNING);
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, scalar) != 1 { return 0; }
 
