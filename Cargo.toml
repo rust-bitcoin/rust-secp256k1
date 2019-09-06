@@ -19,7 +19,7 @@ links = "secp256k1"
 features = [ "rand", "serde", "recovery", "endomorphism" ]
 
 [build-dependencies]
-cc = ">= 1.0.28"
+cc = ">= 1.0.28, < 1.0.42"
 
 [lib]
 name = "secp256k1"
