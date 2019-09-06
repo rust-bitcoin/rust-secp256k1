@@ -1,3 +1,11 @@
+
+# 0.15.4 - 2019-09-06
+
+- Add `rand-std` feature.
+- Pin the cc build-dep version to `< 1.0.42` to remain
+  compatible with rustc 1.22.0.
+- Changed all `as_*ptr()` to a new safer `CPtr` trait
+
 # 0.15.2 - 2019-08-08
 
 - Add feature `lowmemory` that reduces the EC mult window size to require
