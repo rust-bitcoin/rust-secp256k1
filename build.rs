@@ -100,7 +100,7 @@ fn main() {
         .debug(true)
         .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
         .define("SECP256K1_BUILD", Some("1"))
-        .define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"))
+        // .define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"))
         .define("ECMULT_WINDOW_SIZE", Some("15"))
         .define("ECMULT_GEN_PREC_BITS", Some("8"))
 		// TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
