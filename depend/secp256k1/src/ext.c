@@ -24,7 +24,7 @@ int secp256k1_ecdh_raw(const secp256k1_context* ctx, unsigned char *result, cons
 		ret = 0;
 	else
 	{
-		secp256k1_ecmult_const(&res, &pt, &s);
+		secp256k1_ecmult_const(&res, &pt, &s, 256);
 		secp256k1_ge_set_gej(&pt, &res);
 		secp256k1_fe_normalize(&pt.x);
 		secp256k1_fe_normalize(&pt.y);
