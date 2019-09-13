@@ -111,7 +111,8 @@ fn main() {
 		.define("USE_SCALAR_INV_BUILTIN", Some("1"))
 		.define("USE_ENDOMORPHISM", Some("1"))
 		.define("ENABLE_MODULE_ECDH", Some("1"))
-		.define("ENABLE_MODULE_SCHNORR", Some("1"))
+        // SCHNORR support was removed in the upstream
+		// .define("ENABLE_MODULE_SCHNORR", Some("1"))
 		.define("ENABLE_MODULE_RECOVERY", Some("1"));
 
 	let target = env::var("TARGET").expect("TARGET env variable is set by cargo; qed");
