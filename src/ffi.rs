@@ -51,7 +51,7 @@ pub type EcdhHashFn = unsafe extern "C" fn(
     x: *const c_uchar,
     y: *const c_uchar,
     data: *const c_void,
-);
+) -> c_int;
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these

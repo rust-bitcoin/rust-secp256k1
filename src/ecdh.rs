@@ -17,9 +17,12 @@
 //!
 
 use core::{ops, ptr};
+use core::ops::{FnMut};
+use core::slice::{from_raw_parts, from_raw_parts_mut};
 
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
+use types::{c_int, c_uchar, c_void};
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -41,6 +44,31 @@ impl SharedSecret {
             );
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
+        }
+    }
+
+    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
+    pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, hash: &mut F) -> SharedSecret
+        where F: FnMut(&mut [u8], &[u8], &[u8]) -> i32
+    { 
+        extern "C" fn hash_callback<F>(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, data: *const c_void) -> c_int 
+            where F: FnMut(&mut [u8], &[u8], &[u8]) -> i32
+        {
+            let callback: &mut F = unsafe { &mut *(data as *mut F) };
+            unsafe { (*callback)(from_raw_parts_mut(output, 32), from_raw_parts(x, 32), from_raw_parts(y, 32)) }
+        }
+        unsafe {
+            let mut ss = ffi::SharedSecret::new();
+            let res = ffi::secp256k1_ecdh(
+                ffi::secp256k1_context_no_precomp,
+                &mut ss,
+                point.as_ptr(),
+                scalar.as_ptr(),
+                hash_callback::<F>,
+                hash as *mut F as *mut c_void,
+            );
+            debug_assert_eq!(res, 1);
+            SharedSecret::from(ss)
         }
     }
 
@@ -113,6 +141,36 @@ mod tests {
         let sec_odd = SharedSecret::new(&pk1, &sk1);
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
+    }
+
+    #[test]
+    fn ecdh_with_hash() {
+        let s = Secp256k1::signing_only();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+
+        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, &mut hash);
+        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, &mut hash);
+        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, &mut hash);
+        assert_eq!(sec1, sec2);
+        assert!(sec_odd != sec2);
+    }
+
+    fn hash(output: &mut [u8], x: &[u8], _y: &[u8]) -> i32 {
+        output.copy_from_slice(x); 
+        1
+    }
+
+    #[test]
+    fn ecdh_with_hash_callback() {
+        let s = Secp256k1::signing_only();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let expect_result: &[u8] = &[123u8;32];
+        let result = SharedSecret::new_with_hash(&pk1, &sk1, &mut |output, _, _ | {
+            output.copy_from_slice(expect_result);
+            1
+        });
+        assert_eq!(expect_result, &result[..]);
     }
 }
 
