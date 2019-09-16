@@ -45,7 +45,7 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
-/// A pointer to a function that applies hash function to a point
+/// A pointer to a function that applies a hash function to a point
 ///
 /// Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail
 ///
