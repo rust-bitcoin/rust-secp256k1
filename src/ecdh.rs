@@ -32,8 +32,13 @@ impl SharedSecret {
     #[inline]
     pub fn new(secp: &Secp256k1, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
-            let mut ss = ffi::SharedSecret::blank();
-            let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
+            let mut ss = ffi::SharedSecret::new();
+            let res = ffi::secp256k1_ecdh(secp.ctx,
+                                          &mut ss,
+                                          point.as_ptr(),
+                                          scalar.as_ptr(),
+                                          ffi::secp256k1_ecdh_hash_function_default,
+                                          std::ptr::null_mut());
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
         }

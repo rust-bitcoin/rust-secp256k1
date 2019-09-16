@@ -45,6 +45,22 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         attempt: c_uint,
                                         data: *const c_void);
 
+/// A pointer to a function that applies hash function to a point
+///
+/// Returns: 1 if a point was successfully hashed. 0 will cause ecdh to fail
+///
+/// Out:    output:     pointer to an array to be filled by the function
+/// In:     x:          pointer to a 32-byte x coordinate
+///         y:          pointer to a 32-byte y coordinate
+///         data:       Arbitrary data pointer that is passed through
+///
+pub type EcdhHashFunction = unsafe extern "C" fn(output: *mut c_uchar,
+                                                 x: *const c_uchar,
+                                                 y: *const c_uchar,
+                                                 data: *mut c_void)
+                                                 -> c_int;
+
+
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
@@ -115,6 +131,10 @@ extern "C" {
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
 
     pub static secp256k1_nonce_function_default: NonceFn;
+
+    pub static secp256k1_ecdh_hash_function_sha256: EcdhHashFunction;
+
+    pub static secp256k1_ecdh_hash_function_default: EcdhHashFunction;
 
     // Contexts
     pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
@@ -241,7 +261,9 @@ extern "C" {
     pub fn secp256k1_ecdh(cx: *const Context,
                           out: *mut SharedSecret,
                           point: *const PublicKey,
-                          scalar: *const c_uchar)
+                          scalar: *const c_uchar,
+                          hash_fn: EcdhHashFunction,
+                          data: *mut c_void)
                           -> c_int;
 
     pub fn secp256k1_ecdh_raw(cx: *const Context,
