@@ -42,6 +42,11 @@
 extern crate arrayvec;
 
 pub extern crate rand;
+#[cfg(test)]
+extern crate rand_core;
+#[cfg(test)]
+#[macro_use]
+extern crate hex_literal;
 
 use std::{error, fmt, ops, ptr};
 use rand::Rng;
@@ -52,7 +57,6 @@ pub mod constants;
 pub mod ecdh;
 pub mod ffi;
 pub mod key;
-pub mod schnorr;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -536,16 +540,13 @@ impl Secp256k1 {
 
 #[cfg(test)]
 mod tests {
-    extern crate hex;
-    use rand::{Rng, thread_rng};
+    use rand::{RngCore, thread_rng};
 
     use key::{SecretKey, PublicKey};
     use super::constants;
     use super::{Secp256k1, Signature, RecoverableSignature, Message, RecoveryId, ContextFlag};
     use super::Error::{InvalidMessage, InvalidPublicKey, IncorrectSignature, InvalidSignature,
                        IncapableContext};
-
-    macro_rules! hex (($hex:expr) => (hex::decode($hex).unwrap()));
 
     #[test]
     fn capabilities() {
