@@ -54,11 +54,11 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
 ///         y:          pointer to a 32-byte y coordinate
 ///         data:       Arbitrary data pointer that is passed through
 ///
-pub type EcdhHashFunction = unsafe extern "C" fn(output: *mut c_uchar,
-                                                 x: *const c_uchar,
-                                                 y: *const c_uchar,
-                                                 data: *mut c_void)
-                                                 -> c_int;
+pub type EcdhHashFn = unsafe extern "C" fn(output: *mut c_uchar,
+                                           x: *const c_uchar,
+                                           y: *const c_uchar,
+                                           data: *mut c_void)
+                                           -> c_int;
 
 
 
@@ -132,9 +132,9 @@ extern "C" {
 
     pub static secp256k1_nonce_function_default: NonceFn;
 
-    pub static secp256k1_ecdh_hash_function_sha256: EcdhHashFunction;
+    pub static secp256k1_ecdh_hash_function_sha256: EcdhHashFn;
 
-    pub static secp256k1_ecdh_hash_function_default: EcdhHashFunction;
+    pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
 
     // Contexts
     pub fn secp256k1_context_create(flags: c_uint) -> *mut Context;
@@ -262,7 +262,7 @@ extern "C" {
                           out: *mut SharedSecret,
                           point: *const PublicKey,
                           scalar: *const c_uchar,
-                          hash_fn: EcdhHashFunction,
+                          hash_fn: EcdhHashFn,
                           data: *mut c_void)
                           -> c_int;
 
