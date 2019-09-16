@@ -125,6 +125,19 @@ mod tests {
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
     }
+
+    #[test]
+    fn ecdh_raw() {
+        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let sec1 = SharedSecret::new_raw(&s, &pk1, &sk2);
+        let sec2 = SharedSecret::new_raw(&s, &pk2, &sk1);
+        let sec_odd = SharedSecret::new_raw(&s, &pk1, &sk1);
+        assert_eq!(sec1, sec2);
+        assert!(sec_odd != sec2);
+    }
 }
 
 #[cfg(all(test, feature = "unstable"))]
