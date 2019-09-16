@@ -285,7 +285,7 @@ mod test {
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
-    use rand::{Rng, thread_rng};
+    use rand::{RngCore, thread_rng};
 
     #[test]
     fn skey_from_slice() {
@@ -378,8 +378,9 @@ mod test {
     fn test_out_of_range() {
 
         struct BadRng(u8);
-        impl Rng for BadRng {
+        impl RngCore for BadRng {
             fn next_u32(&mut self) -> u32 { unimplemented!() }
+            fn next_u64(&mut self) -> u64 { unimplemented!() }
             // This will set a secret key to a little over the
             // group order, then decrement with repeated calls
             // until it returns a valid key
@@ -393,6 +394,9 @@ mod test {
                 data.copy_from_slice(&group_order[..]);
                 data[31] = self.0;
                 self.0 -= 1;
+            }
+            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+                Ok(self.fill_bytes(dest))
             }
         }
 
@@ -420,16 +424,28 @@ mod test {
                    Err(InvalidPublicKey));
     }
 
+    struct DumbRng(u32);
+    impl RngCore for DumbRng {
+        fn next_u32(&mut self) -> u32 {
+            self.0 = self.0.wrapping_add(1);
+            self.0
+        }
+        fn next_u64(&mut self) -> u64 {
+            let hi = self.next_u32();
+            let lo = self.next_u32();
+            ((hi as u64) << 32 | lo as u64)
+        }
+        fn fill_bytes(&mut self, data: &mut [u8]) {
+            rand_core::impls::fill_bytes_via_next(self, data);
+        }
+        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+            Ok(self.fill_bytes(dest))
+        }
+    }
+
+
     #[test]
     fn test_debug_output() {
-        struct DumbRng(u32);
-        impl Rng for DumbRng {
-            fn next_u32(&mut self) -> u32 {
-                self.0 = self.0.wrapping_add(1);
-                self.0
-            }
-        }
-
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut DumbRng(0)).unwrap();
 
@@ -439,14 +455,6 @@ mod test {
 
     #[test]
     fn test_pubkey_serialize() {
-        struct DumbRng(u32);
-        impl Rng for DumbRng {
-            fn next_u32(&mut self) -> u32 {
-                self.0 = self.0.wrapping_add(1);
-                self.0
-            }
-        }
-
         let s = Secp256k1::new();
         let (_, pk1) = s.generate_keypair(&mut DumbRng(0)).unwrap();
         assert_eq!(&pk1.serialize_vec(&s, false)[..],

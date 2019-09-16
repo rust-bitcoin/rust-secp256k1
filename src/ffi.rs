@@ -245,10 +245,10 @@ extern "C" {
                           -> c_int;
 
     pub fn secp256k1_ecdh_raw(cx: *const Context,
-                          out: *mut SharedSecret,
-                          point: *const PublicKey,
-                          scalar: *const c_uchar)
-                          -> c_int;
+                              out: *mut SharedSecret,
+                              point: *const PublicKey,
+                              scalar: *const c_uchar)
+                              -> c_int;
 
     pub fn secp256k1_ec_privkey_inverse(cx: *const Context,
                           out: *mut c_uchar,
