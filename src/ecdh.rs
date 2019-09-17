@@ -33,7 +33,12 @@ impl SharedSecret {
     pub fn new(secp: &Secp256k1, point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         unsafe {
             let mut ss = ffi::SharedSecret::blank();
-            let res = ffi::secp256k1_ecdh(secp.ctx, &mut ss, point.as_ptr(), scalar.as_ptr());
+            let res = ffi::secp256k1_ecdh(secp.ctx,
+                                          &mut ss,
+                                          point.as_ptr(),
+                                          scalar.as_ptr(),
+                                          ffi::secp256k1_ecdh_hash_function_default,
+                                          std::ptr::null_mut());
             debug_assert_eq!(res, 1);
             SharedSecret(ss)
         }
@@ -117,6 +122,19 @@ mod tests {
         let sec1 = SharedSecret::new(&s, &pk1, &sk2);
         let sec2 = SharedSecret::new(&s, &pk2, &sk1);
         let sec_odd = SharedSecret::new(&s, &pk1, &sk1);
+        assert_eq!(sec1, sec2);
+        assert!(sec_odd != sec2);
+    }
+
+    #[test]
+    fn ecdh_raw() {
+        let s = Secp256k1::with_caps(::ContextFlag::SignOnly);
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng()).unwrap();
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng()).unwrap();
+
+        let sec1 = SharedSecret::new_raw(&s, &pk1, &sk2);
+        let sec2 = SharedSecret::new_raw(&s, &pk2, &sk1);
+        let sec_odd = SharedSecret::new_raw(&s, &pk1, &sk1);
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
     }
