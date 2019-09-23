@@ -142,6 +142,7 @@
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
+#[cfg(feature = "zeroize")] extern crate zeroize;
 
 use core::{fmt, ptr, str};
 
@@ -164,7 +165,8 @@ use core::ops::Deref;
 use ffi::CPtr;
 
 /// An ECDSA signature
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(not(feature = "zeroize"), derive(Copy))]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Signature(ffi::Signature);
 
 /// A DER serialized Signature

@@ -16,7 +16,16 @@
 // This is a macro that routinely comes in handy
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
+        #[cfg(not(feature = "zeroize"))]
         impl Copy for $thing {}
+
+        #[cfg(feature = "zeroize")]
+        impl zeroize::Zeroize for $thing {
+            fn zeroize(&mut self) {
+                let &mut $thing(ref mut dat) = self;
+                dat.zeroize()
+            }
+        }
 
         impl $thing {
             #[inline]
@@ -62,7 +71,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> ::core::cmp::Ordering {
                 self[..].cmp(&other[..])
-            }            
+            }
         }
 
         impl Clone for $thing {

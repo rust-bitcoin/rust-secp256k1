@@ -57,6 +57,14 @@ impl str::FromStr for SecretKey {
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.zeroize()
+    }
+}
+
 /// The number 1 encoded as a secret key
 pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
@@ -64,7 +72,8 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// A Secp256k1 public key, used for verification of signatures
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[cfg_attr(not(feature = "zeroize"), derive(Copy))]
+#[derive(Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct PublicKey(ffi::PublicKey);
 
 impl fmt::LowerHex for PublicKey {

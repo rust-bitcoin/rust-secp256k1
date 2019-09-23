@@ -48,3 +48,8 @@ default-features = false
 version = "1.0"
 optional = true
 default-features = false
+
+[dependencies.zeroize]
+version = "0.10"
+optional = true
+default-features = false

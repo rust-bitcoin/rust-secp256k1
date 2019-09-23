@@ -22,7 +22,8 @@ use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
 
 /// A tag used for recovering the public key from a compact signature
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(not(feature = "zeroize"), derive(Copy))]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SharedSecret(ffi::SharedSecret);
 
 impl SharedSecret {
