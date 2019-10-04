@@ -18,8 +18,8 @@
 
 use core::{ops, ptr};
 
-use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
+use key::{PublicKey, SecretKey};
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -59,7 +59,6 @@ impl From<ffi::SharedSecret> for SharedSecret {
     }
 }
 
-
 impl ops::Index<usize> for SharedSecret {
     type Output = u8;
 
@@ -98,9 +97,9 @@ impl ops::Index<ops::RangeFull> for SharedSecret {
 
 #[cfg(test)]
 mod tests {
-    use rand::thread_rng;
-    use super::SharedSecret;
     use super::super::Secp256k1;
+    use super::SharedSecret;
+    use rand::thread_rng;
 
     #[test]
     fn ecdh() {
@@ -119,10 +118,10 @@ mod tests {
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
     use rand::thread_rng;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
-    use super::SharedSecret;
     use super::super::Secp256k1;
+    use super::SharedSecret;
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
@@ -130,10 +129,9 @@ mod benches {
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
         let s = Secp256k1::new();
-        bh.iter( || {
+        bh.iter(|| {
             let res = SharedSecret::new(&pk, &sk);
             black_box(res);
         });
     }
 }
-

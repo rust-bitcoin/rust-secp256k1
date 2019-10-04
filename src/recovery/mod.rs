@@ -17,13 +17,13 @@
 //! Provides a signing function that allows recovering the public key from the
 //! signature.
 
+use self::super_ffi::CPtr;
+use super::ffi as super_ffi;
+use super::{Error, Message, Secp256k1, Signature, Signing, Verification};
 use core::ptr;
 use key;
-use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
-use super::ffi as super_ffi;
-pub use key::SecretKey;
 pub use key::PublicKey;
-use self::super_ffi::CPtr;
+pub use key::SecretKey;
 
 mod ffi;
 
@@ -36,20 +36,20 @@ pub struct RecoveryId(i32);
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
 impl RecoveryId {
-#[inline]
-/// Allows library users to create valid recovery IDs from i32.
-pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
-    match id {
-        0 | 1 | 2 | 3 => Ok(RecoveryId(id)),
-        _ => Err(Error::InvalidRecoveryId)
+    #[inline]
+    /// Allows library users to create valid recovery IDs from i32.
+    pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
+        match id {
+            0 | 1 | 2 | 3 => Ok(RecoveryId(id)),
+            _ => Err(Error::InvalidRecoveryId),
+        }
     }
-}
 
-#[inline]
-/// Allows library users to convert recovery IDs to i32.
-pub fn to_i32(self) -> i32 {
-    self.0
-}
+    #[inline]
+    /// Allows library users to convert recovery IDs to i32.
+    pub fn to_i32(self) -> i32 {
+        self.0
+    }
 }
 
 impl RecoverableSignature {
@@ -58,7 +58,9 @@ impl RecoverableSignature {
     /// representation is nonstandard and defined by the libsecp256k1
     /// library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
-        if data.is_empty() {return Err(Error::InvalidSignature);}
+        if data.is_empty() {
+            return Err(Error::InvalidSignature);
+        }
 
         let mut ret = ffi::RecoverableSignature::new();
 
@@ -125,7 +127,6 @@ impl RecoverableSignature {
     }
 }
 
-
 impl CPtr for RecoverableSignature {
     type Target = ffi::RecoverableSignature;
     fn as_c_ptr(&self) -> *const Self::Target {
@@ -148,9 +149,7 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
-    pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
-                            -> RecoverableSignature {
-
+    pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
         let mut ret = ffi::RecoverableSignature::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -175,14 +174,16 @@ impl<C: Signing> Secp256k1<C> {
 impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
-    pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
-                   -> Result<key::PublicKey, Error> {
-
+    pub fn recover(
+        &self,
+        msg: &Message,
+        sig: &RecoverableSignature,
+    ) -> Result<key::PublicKey, Error> {
         let mut pk = super_ffi::PublicKey::new();
 
         unsafe {
-            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
-                                            sig.as_c_ptr(), msg.as_c_ptr()) != 1 {
+            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk, sig.as_c_ptr(), msg.as_c_ptr()) != 1
+            {
                 return Err(Error::InvalidSignature);
             }
         };
@@ -190,15 +191,14 @@ impl<C: Verification> Secp256k1<C> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use rand::{RngCore, thread_rng};
+    use rand::{thread_rng, RngCore};
 
-    use key::SecretKey;
-    use super::{RecoveryId, RecoverableSignature};
-    use super::super::{Secp256k1, Message};
     use super::super::Error::{IncorrectSignature, InvalidSignature};
+    use super::super::{Message, Secp256k1};
+    use super::{RecoverableSignature, RecoveryId};
+    use key::SecretKey;
 
     #[test]
     fn capabilities() {
@@ -214,15 +214,17 @@ mod tests {
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
 
         // Try signing
-        assert_eq!(sign.sign_recoverable(&msg, &sk), full.sign_recoverable(&msg, &sk));
+        assert_eq!(
+            sign.sign_recoverable(&msg, &sk),
+            full.sign_recoverable(&msg, &sk)
+        );
         let sigr = full.sign_recoverable(&msg, &sk);
 
         // Try pk recovery
         assert!(vrfy.recover(&msg, &sigr).is_ok());
         assert!(full.recover(&msg, &sigr).is_ok());
 
-        assert_eq!(vrfy.recover(&msg, &sigr),
-                   full.recover(&msg, &sigr));
+        assert_eq!(vrfy.recover(&msg, &sigr), full.recover(&msg, &sigr));
         assert_eq!(full.recover(&msg, &sigr), Ok(pk));
     }
 
@@ -236,23 +238,28 @@ mod tests {
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
-        let one = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+        let one = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1,
+        ];
 
         let sk = SecretKey::from_slice(&one).unwrap();
         let msg = Message::from_slice(&one).unwrap();
 
         let sig = s.sign_recoverable(&msg, &sk);
-        assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
-            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
-            0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
-            0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
-            0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
-            0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
-            0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
-            0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
-            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89],
-            RecoveryId(1)))
+        assert_eq!(
+            Ok(sig),
+            RecoverableSignature::from_compact(
+                &[
+                    0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f, 0x04, 0x77, 0x2b, 0x6f, 0x92,
+                    0x1f, 0x0b, 0xa6, 0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65, 0xc3, 0x6d,
+                    0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98, 0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad,
+                    0xa8, 0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f, 0xff, 0x20, 0x80, 0xc4,
+                    0xa3, 0x9a, 0xae, 0x06, 0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89
+                ],
+                RecoveryId(1)
+            )
+        )
     }
 
     #[test]
@@ -311,16 +318,17 @@ mod tests {
 
     #[test]
     fn test_debug_output() {
-        let sig = RecoverableSignature::from_compact(&[
-            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
-            0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
-            0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
-            0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
-            0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
-            0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
-            0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
-            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89],
-            RecoveryId(1)).unwrap();
+        let sig = RecoverableSignature::from_compact(
+            &[
+                0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f, 0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f,
+                0x0b, 0xa6, 0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65, 0xc3, 0x6d, 0xed, 0xf4,
+                0x09, 0x2e, 0x88, 0x98, 0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8, 0x80, 0x12,
+                0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f, 0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
+                0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89,
+            ],
+            RecoveryId(1),
+        )
+        .unwrap();
         assert_eq!(&format!("{:?}", sig), "RecoverableSignature(98882e09f4ed6dc3659e43fc771e0cafa60b1f926f2b77041f744721adff7366898cb609d0ee128d06ae9aa3c48020ff9f705e02f80e1280a8ade05216971a4c01)");
     }
 
@@ -328,18 +336,13 @@ mod tests {
     fn test_recov_sig_serialize_compact() {
         let recid_in = RecoveryId(1);
         let bytes_in = &[
-            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
-            0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
-            0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
-            0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
-            0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
-            0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
-            0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
-            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89];
-        let sig = RecoverableSignature::from_compact(
-            bytes_in,
-            recid_in,
-        ).unwrap();
+            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f, 0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f,
+            0x0b, 0xa6, 0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65, 0xc3, 0x6d, 0xed, 0xf4,
+            0x09, 0x2e, 0x88, 0x98, 0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8, 0x80, 0x12,
+            0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f, 0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
+            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89,
+        ];
+        let sig = RecoverableSignature::from_compact(bytes_in, recid_in).unwrap();
         let (recid_out, bytes_out) = sig.serialize_compact();
         assert_eq!(recid_in, recid_out);
         assert_eq!(&bytes_in[..], &bytes_out[..]);
@@ -359,7 +362,6 @@ mod tests {
         assert_eq!(id1.to_i32(), 1);
     }
 }
-
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {

@@ -35,11 +35,15 @@ macro_rules! impl_array_newtype {
 
             #[inline]
             /// Returns the length of the object as an array
-            pub fn len(&self) -> usize { $len }
+            pub fn len(&self) -> usize {
+                $len
+            }
 
             #[inline]
             /// Returns whether the object as an array is empty
-            pub fn is_empty(&self) -> bool { false }
+            pub fn is_empty(&self) -> bool {
+                false
+            }
         }
 
         impl PartialEq for $thing {
@@ -62,7 +66,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> ::core::cmp::Ordering {
                 self[..].cmp(&other[..])
-            }            
+            }
         }
 
         impl Clone for $thing {
@@ -140,7 +144,7 @@ macro_rules! impl_array_newtype {
                 }
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_pretty_debug {
@@ -154,7 +158,7 @@ macro_rules! impl_pretty_debug {
                 write!(f, ")")
             }
         }
-     }
+    };
 }
 
 macro_rules! impl_raw_debug {
@@ -167,10 +171,10 @@ macro_rules! impl_raw_debug {
                 Ok(())
             }
         }
-     }
+    };
 }
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 /// Implements `Serialize` and `Deserialize` for a type `$t` which represents
 /// a newtype over a byte-slice over length `$len`. Type `$t` must implement
 /// the `FromStr` and `Display` trait.
@@ -209,7 +213,7 @@ macro_rules! serde_impl(
     )
 );
 
-#[cfg(not(feature="serde"))]
+#[cfg(not(feature = "serde"))]
 macro_rules! serde_impl(
     ($t:ident, $len:expr) => ()
 );
