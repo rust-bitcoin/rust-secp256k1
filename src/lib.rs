@@ -678,9 +678,9 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
     for c in hex.bytes() {
         b <<= 4;
         match c {
-            b'A'...b'F' => b |= c - b'A' + 10,
-            b'a'...b'f' => b |= c - b'a' + 10,
-            b'0'...b'9' => b |= c - b'0',
+            b'A'..=b'F' => b |= c - b'A' + 10,
+            b'a'..=b'f' => b |= c - b'a' + 10,
+            b'0'..=b'9' => b |= c - b'0',
             _ => return Err(()),
         }
         if (idx & 1) == 1 {

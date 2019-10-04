@@ -16,7 +16,7 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use core::{mem, hash, slice, ptr};
+use core::{hash, slice, ptr};
 use types::*;
 
 /// Flag for context to enable no precomputation
