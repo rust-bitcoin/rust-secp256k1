@@ -17,6 +17,7 @@
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
 use core::{hash, ptr, slice};
+use std::mem;
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -445,7 +446,6 @@ mod fuzz_dummy {
     use self::std::boxed::Box;
     use self::std::{mem, ptr};
     use ffi::*;
-    use types::*;
 
     extern "C" {
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
@@ -469,7 +469,7 @@ mod fuzz_dummy {
     }
 
     /// Return dummy size of context struct.
-    pub unsafe fn secp256k1_context_preallocated_clone_size(cx: *mut Context) -> usize {
+    pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *mut Context) -> usize {
         mem::size_of::<Context>()
     }
 

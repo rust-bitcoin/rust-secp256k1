@@ -117,6 +117,7 @@
 //! to generate a context would simply not compile.
 //!
 
+#![feature(rustc_private)]
 #![crate_type = "lib"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
@@ -133,7 +134,9 @@
 #![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #[cfg(any(test, feature = "rand"))]
-pub extern crate rand;
+pub extern crate getrandom;
+#[cfg(any(test, feature = "rand"))]
+extern crate rand;
 #[cfg(any(test))]
 extern crate rand_core;
 #[cfg(feature = "serde")]
@@ -154,6 +157,7 @@ mod macros;
 pub mod constants;
 mod context;
 pub mod ecdh;
+mod errors;
 pub mod ffi;
 pub mod key;
 #[cfg(feature = "recovery")]
@@ -719,6 +723,7 @@ mod tests {
     use context::*;
     use ffi;
     use key::{PublicKey, SecretKey};
+    use serde_test::Configure;
 
     macro_rules! hex {
         ($hex:expr) => {{
@@ -1033,7 +1038,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_signature_serde() {
-        use serde_test::{assert_tokens, Configure, Token};
+        use serde_test::{assert_tokens, Token};
 
         let s = Secp256k1::new();
 

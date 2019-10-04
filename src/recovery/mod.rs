@@ -17,13 +17,16 @@
 //! Provides a signing function that allows recovering the public key from the
 //! signature.
 
-use self::super_ffi::CPtr;
-use super::ffi as super_ffi;
-use super::{Error, Message, Secp256k1, Signature, Signing, Verification};
 use core::ptr;
+
 use key;
 pub use key::PublicKey;
 pub use key::SecretKey;
+
+use super::ffi as super_ffi;
+use super::{Error, Message, Secp256k1, Signature, Signing, Verification};
+
+use self::super_ffi::CPtr;
 
 mod ffi;
 
@@ -161,7 +164,7 @@ impl<C: Signing> Secp256k1<C> {
                     msg.as_c_ptr(),
                     sk.as_c_ptr(),
                     super_ffi::secp256k1_nonce_function_rfc6979,
-                    ptr::null()
+                    ptr::null(),
                 ),
                 1
             );
@@ -195,10 +198,11 @@ impl<C: Verification> Secp256k1<C> {
 mod tests {
     use rand::{thread_rng, RngCore};
 
+    use key::SecretKey;
+
     use super::super::Error::{IncorrectSignature, InvalidSignature};
     use super::super::{Message, Secp256k1};
     use super::{RecoverableSignature, RecoveryId};
-    use key::SecretKey;
 
     #[test]
     fn capabilities() {
@@ -257,7 +261,7 @@ mod tests {
                     0xa8, 0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f, 0xff, 0x20, 0x80, 0xc4,
                     0xa3, 0x9a, 0xae, 0x06, 0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89
                 ],
-                RecoveryId(1)
+                RecoveryId(1),
             )
         )
     }
@@ -365,6 +369,13 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
+    use std::hint::black_box;
+    use test::Bencher;
+
+    use rand::{thread_rng, RngCore};
+
+    use super::super::{Message, Secp256k1};
+
     #[bench]
     pub fn bench_recover(bh: &mut Bencher) {
         let s = Secp256k1::new();

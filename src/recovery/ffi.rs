@@ -15,8 +15,6 @@
 
 //! # FFI of the recovery module
 
-use core::mem;
-use ffi::{CPtr, Context, NonceFn, PublicKey, Signature};
 use types::*;
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID

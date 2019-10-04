@@ -24,6 +24,7 @@ use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
 use super::{from_hex, Secp256k1};
 use constants;
 use ffi::{self, CPtr};
+use std::str::FromStr;
 use Signing;
 use Verification;
 
@@ -397,7 +398,7 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
                     E: ::serde::de::Error,
                 {
                     if let Ok(hex) = str::from_utf8(v) {
-                        str::FromStr::from_str(hex).map_err(E::custom)
+                        FromStr::from_str(hex).map_err(E::custom)
                     } else {
                         Err(E::invalid_value(::serde::de::Unexpected::Bytes(v), &self))
                     }
@@ -407,7 +408,7 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
                 where
                     E: ::serde::de::Error,
                 {
-                    str::FromStr::from_str(v).map_err(E::custom)
+                    FromStr::from_str(v).map_err(E::custom)
                 }
             }
             d.deserialize_str(HexVisitor)
@@ -442,7 +443,8 @@ mod test {
     use from_hex;
     use Secp256k1;
 
-    use rand::{thread_rng, Error, ErrorKind, RngCore};
+    use errors::UnavailableError;
+    use rand::{thread_rng, Error, RngCore};
     use rand_core::impls;
     use std::iter;
     use std::str::FromStr;
@@ -619,7 +621,7 @@ mod test {
                 self.next_u32() as u64
             }
             fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
+                Err(UnavailableError.into())
             }
 
             fn fill_bytes(&mut self, dest: &mut [u8]) {
@@ -736,7 +738,7 @@ mod test {
                 self.next_u32() as u64
             }
             fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
+                Err(Error::from(UnavailableError))
             }
 
             fn fill_bytes(&mut self, dest: &mut [u8]) {

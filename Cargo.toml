@@ -1,5 +1,4 @@
 [package]
-
 name = "secp256k1"
 version = "0.15.5"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
@@ -19,7 +18,7 @@ links = "secp256k1"
 features = [ "rand", "serde", "recovery", "endomorphism" ]
 
 [build-dependencies]
-cc = ">= 1.0.28, < 1.0.42"
+cc = "1.0.45"
 
 [lib]
 name = "secp256k1"
@@ -27,24 +26,30 @@ path = "src/lib.rs"
 
 [features]
 unstable = []
-default = [] # "std"
+default = ["std"]
 fuzztarget = []
-# std = ["rand/std"]
+std = ["rand/std"]
 recovery = []
 endomorphism = []
 lowmemory = []
 
 [dev-dependencies]
-getrandom = "0.1"
-rand_core = "0.4"
-serde_test = "1.0"
+rand = "0.7.2"
+getrandom = "0.1.12"
+rand_core = "0.5.1"
+serde_test = "1.0.101"
+
+[dependencies.rand]
+version = "0.7.2"
+optional = true
+default-features = false
 
 [dependencies.getrandom]
-version = "0.1"
+version = "0.1.12"
 optional = true
 default-features = false
 
 [dependencies.serde]
-version = "1.0"
+version = "1.0.101"
 optional = true
 default-features = false
