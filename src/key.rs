@@ -16,7 +16,7 @@
 //! # Public and secret keys
 
 use arrayvec::ArrayVec;
-use rand::Rng;
+use rand::RngCore;
 
 use super::{Secp256k1, ContextFlag};
 use super::Error::{self, IncapableContext, InvalidPublicKey, InvalidSecretKey};
@@ -64,7 +64,7 @@ pub const MINUS_ONE_KEY: SecretKey = SecretKey([0xff, 0xff, 0xff, 0xff, 0xff, 0x
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::PublicKey);
 
-fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
+fn random_32_bytes<R: RngCore>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
     rng.fill_bytes(&mut ret);
     ret
@@ -73,7 +73,7 @@ fn random_32_bytes<R: Rng>(rng: &mut R) -> [u8; 32] {
 impl SecretKey {
     /// Creates a new random secret key
     #[inline]
-    pub fn new<R: Rng>(secp: &Secp256k1, rng: &mut R) -> SecretKey {
+    pub fn new<R: RngCore>(secp: &Secp256k1, rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(secp.ctx, data.as_ptr()) == 0 {
