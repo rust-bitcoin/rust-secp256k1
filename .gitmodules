@@ -1,0 +1,3 @@
+[submodule "depend/secp256k1"]
+	path = depend/secp256k1
+	url = https://github.com/bitcoin/secp256k1
