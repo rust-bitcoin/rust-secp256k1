@@ -14,23 +14,23 @@
 
 typedef struct {
     /* For accelerating the computation of a*P + b*G: */
-    secp256k1_ge_storage (*pre_g)[];    /* odd multiples of the generator */
+    rustsecp256k1_v0_1_0_ge_storage (*pre_g)[];    /* odd multiples of the generator */
 #ifdef USE_ENDOMORPHISM
-    secp256k1_ge_storage (*pre_g_128)[]; /* odd multiples of 2^128*generator */
+    rustsecp256k1_v0_1_0_ge_storage (*pre_g_128)[]; /* odd multiples of 2^128*generator */
 #endif
-} secp256k1_ecmult_context;
+} rustsecp256k1_v0_1_0_ecmult_context;
 
 static const size_t SECP256K1_ECMULT_CONTEXT_PREALLOCATED_SIZE;
-static void secp256k1_ecmult_context_init(secp256k1_ecmult_context *ctx);
-static void secp256k1_ecmult_context_build(secp256k1_ecmult_context *ctx, void **prealloc);
-static void secp256k1_ecmult_context_finalize_memcpy(secp256k1_ecmult_context *dst, const secp256k1_ecmult_context *src);
-static void secp256k1_ecmult_context_clear(secp256k1_ecmult_context *ctx);
-static int secp256k1_ecmult_context_is_built(const secp256k1_ecmult_context *ctx);
+static void rustsecp256k1_v0_1_0_ecmult_context_init(rustsecp256k1_v0_1_0_ecmult_context *ctx);
+static void rustsecp256k1_v0_1_0_ecmult_context_build(rustsecp256k1_v0_1_0_ecmult_context *ctx, void **prealloc);
+static void rustsecp256k1_v0_1_0_ecmult_context_finalize_memcpy(rustsecp256k1_v0_1_0_ecmult_context *dst, const rustsecp256k1_v0_1_0_ecmult_context *src);
+static void rustsecp256k1_v0_1_0_ecmult_context_clear(rustsecp256k1_v0_1_0_ecmult_context *ctx);
+static int rustsecp256k1_v0_1_0_ecmult_context_is_built(const rustsecp256k1_v0_1_0_ecmult_context *ctx);
 
 /** Double multiply: R = na*A + ng*G */
-static void secp256k1_ecmult(const secp256k1_ecmult_context *ctx, secp256k1_gej *r, const secp256k1_gej *a, const secp256k1_scalar *na, const secp256k1_scalar *ng);
+static void rustsecp256k1_v0_1_0_ecmult(const rustsecp256k1_v0_1_0_ecmult_context *ctx, rustsecp256k1_v0_1_0_gej *r, const rustsecp256k1_v0_1_0_gej *a, const rustsecp256k1_v0_1_0_scalar *na, const rustsecp256k1_v0_1_0_scalar *ng);
 
-typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge *pt, size_t idx, void *data);
+typedef int (rustsecp256k1_v0_1_0_ecmult_multi_callback)(rustsecp256k1_v0_1_0_scalar *sc, rustsecp256k1_v0_1_0_ge *pt, size_t idx, void *data);
 
 /**
  * Multi-multiply: R = inp_g_sc * G + sum_i ni * Ai.
@@ -43,6 +43,6 @@ typedef int (secp256k1_ecmult_multi_callback)(secp256k1_scalar *sc, secp256k1_ge
  *          0 if there is not enough scratch space for a single point or
  *          callback returns 0
  */
-static int secp256k1_ecmult_multi_var(const secp256k1_callback* error_callback, const secp256k1_ecmult_context *ctx, secp256k1_scratch *scratch, secp256k1_gej *r, const secp256k1_scalar *inp_g_sc, secp256k1_ecmult_multi_callback cb, void *cbdata, size_t n);
+static int rustsecp256k1_v0_1_0_ecmult_multi_var(const rustsecp256k1_v0_1_0_callback* error_callback, const rustsecp256k1_v0_1_0_ecmult_context *ctx, rustsecp256k1_v0_1_0_scratch *scratch, rustsecp256k1_v0_1_0_gej *r, const rustsecp256k1_v0_1_0_scalar *inp_g_sc, rustsecp256k1_v0_1_0_ecmult_multi_callback cb, void *cbdata, size_t n);
 
 #endif /* SECP256K1_ECMULT_H */
