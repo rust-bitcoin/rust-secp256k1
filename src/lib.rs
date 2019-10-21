@@ -139,8 +139,14 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
+
 #![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
+
+#[macro_use]
+pub extern crate secp256k1_sys;
+pub use secp256k1_sys as ffi;
+
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
@@ -153,11 +159,9 @@ use core::{fmt, ptr, str};
 
 #[macro_use]
 mod macros;
-mod types;
 mod context;
 pub mod constants;
 pub mod ecdh;
-pub mod ffi;
 pub mod key;
 #[cfg(feature = "recovery")]
 pub mod recovery;

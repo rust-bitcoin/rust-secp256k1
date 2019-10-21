@@ -12,11 +12,31 @@
 // along with this software.
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
-
-//! # FFI bindings
+//! # secp256k1-sys FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use core::{mem, hash, slice, ptr};
+
+#![crate_type = "lib"]
+#![crate_type = "rlib"]
+#![crate_type = "dylib"]
+#![crate_name = "secp256k1_sys"]
+
+#![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
+#![cfg_attr(feature = "dev", allow(unstable_features))]
+#![cfg_attr(feature = "dev", feature(plugin))]
+#![cfg_attr(feature = "dev", plugin(clippy))]
+
+#[cfg(any(test, feature = "std"))]
+extern crate core;
+
+#[macro_use]
+mod macros;
+pub mod types;
+
+#[cfg(feature = "recovery")]
+pub mod recovery;
+
+use core::{hash, slice, ptr};
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -268,6 +288,7 @@ extern "C" {
 // Returns: a newly created context object.
 //  In:      flags: which parts of the context to initialize.
 pub unsafe extern "C" fn secp256k1_context_create(flags: c_uint) -> *mut Context {
+    use std::mem;
     assert!(mem::align_of::<usize>() >= mem::align_of::<u8>());
     assert_eq!(mem::size_of::<usize>(), mem::size_of::<&usize>());
 
@@ -366,7 +387,7 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
 /// Rust doesn't promise what pointers does it give to ZST (https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 /// In case the type is empty this trait will give a NULL pointer, which should be handled in C.
 /// 
-pub(crate) trait CPtr {
+pub trait CPtr {
     type Target;
     fn as_c_ptr(&self) -> *const Self::Target;
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target;
@@ -397,10 +418,12 @@ impl<T> CPtr for [T] {
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
     extern crate std;
-    use types::*;
-    use ffi::*;
     use self::std::{ptr, mem};
     use self::std::boxed::Box;
+    use types::*;
+    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey, SharedSecret,
+        SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
+        SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
     extern "C" {
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
@@ -421,7 +444,7 @@ mod fuzz_dummy {
     }
 
     /// Return dummy size of context struct.
-    pub unsafe fn secp256k1_context_preallocated_clone_size(cx: *mut Context) -> usize {
+    pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *mut Context) -> usize {
         mem::size_of::<Context>()
     }
 
@@ -767,3 +790,4 @@ mod tests {
         assert_eq!(orig.len(), unsafe {strlen(test.as_ptr())});
     }
 }
+

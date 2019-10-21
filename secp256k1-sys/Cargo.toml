@@ -1,0 +1,38 @@
+[package]
+name = "secp256k1-sys"
+version = "0.1.0"
+authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
+            "Andrew Poelstra <apoelstra@wpsoftware.net>",
+            "Steven Roose <steven@stevenroose.org>" ]
+license = "CC0-1.0"
+homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
+repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
+documentation = "https://docs.rs/secp256k1-sys/"
+description = "FFI for Pieter Wuille's `libsecp256k1` library."
+keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin", "ffi" ]
+readme = "README.md"
+build = "build.rs"
+links = "secp256k1"
+
+# Should make docs.rs show all functions, even those behind non-default features
+[package.metadata.docs.rs]
+features = [ "recovery", "endomorphism", "lowmemory" ]
+
+[build-dependencies]
+cc = ">= 1.0.28, <= 1.0.41"
+
+[lib]
+name = "secp256k1_sys"
+path = "src/lib.rs"
+
+[features]
+default = ["std"]
+recovery = []
+endomorphism = []
+lowmemory = []
+std = []
+
+# Do not use this feature! HAZMAT. (meant for Bitcoin Core only)
+dont_replace_c_symbols = []
+# Do not use this feature! HAZMAT. (meant for Fuzzing only. this is *BROKEN CRYPTOGRAPHY*)
+fuzztarget = []

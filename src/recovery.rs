@@ -25,7 +25,7 @@ pub use key::SecretKey;
 pub use key::PublicKey;
 use self::super_ffi::CPtr;
 
-mod ffi;
+use ffi::recovery as ffi;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

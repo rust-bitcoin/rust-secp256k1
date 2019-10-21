@@ -15,9 +15,9 @@
 
 //! # FFI of the recovery module
 
-use core::mem;
-use types::*;
-use ffi::{Context, NonceFn, PublicKey, Signature, CPtr};
+use ::types::*;
+#[cfg(not(feature = "fuzztarget"))]
+use ::{Context, Signature, NonceFn, PublicKey};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
@@ -71,10 +71,11 @@ extern "C" {
 #[cfg(feature = "fuzztarget")]
 mod fuzz_dummy {
     extern crate std;
-    use types::*;
-    use ffi::*;
     use self::std::ptr;
     use super::RecoverableSignature;
+    use types::*;
+    use ::{Signature, Context, PublicKey, NonceFn, secp256k1_ec_seckey_verify,
+        SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN};
 
     pub unsafe fn secp256k1_ecdsa_recoverable_signature_parse_compact(_cx: *const Context, _sig: *mut RecoverableSignature,
                                                                       _input64: *const c_uchar, _recid: c_int)
@@ -125,3 +126,4 @@ mod fuzz_dummy {
 }
 #[cfg(feature = "fuzztarget")]
 pub use self::fuzz_dummy::*;
+
