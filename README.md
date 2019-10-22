@@ -1,4 +1,7 @@
 [![Build Status](https://travis-ci.org/apoelstra/rust-secp256k1.png?branch=master)](https://travis-ci.org/apoelstra/rust-secp256k1)
+![crates.io](https://img.shields.io/crates/v/parity-secp256k1.svg)
+[![](https://tokei.rs/b1/github/paritytech/rust-secp256k1)](https://github.com/paritytech/rust-secp256k1)
+
 
 ### parity-secp256k1
 
