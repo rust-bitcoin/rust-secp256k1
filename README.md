@@ -1,5 +1,5 @@
 [![Build Status](https://gitlab.parity.io/parity/rust-secp256k1/badges/master/build.svg)](https://gitlab.parity.io/parity/rust-secp256k1/commits/master)
-![crates.io](https://img.shields.io/crates/v/parity-secp256k1.svg)
+[![crates.io](https://img.shields.io/crates/v/parity-secp256k1.svg)](https://crates.io/crates/parity-secp256k1)
 [![](https://tokei.rs/b1/github/paritytech/rust-secp256k1)](https://github.com/paritytech/rust-secp256k1)
 
 
