@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/apoelstra/rust-secp256k1.png?branch=master)](https://travis-ci.org/apoelstra/rust-secp256k1)
+[![Build Status](https://gitlab.parity.io/parity/rust-secp256k1/badges/master/build.svg)](https://gitlab.parity.io/parity/rust-secp256k1/commits/master)
 ![crates.io](https://img.shields.io/crates/v/parity-secp256k1.svg)
 [![](https://tokei.rs/b1/github/paritytech/rust-secp256k1)](https://github.com/paritytech/rust-secp256k1)
 
@@ -16,7 +16,7 @@ This library
 * implements many unit tests, adding to those already present in `libsecp256k1`
 * makes no allocations (except in unit tests) for efficiency and use in freestanding implementations
 
-[Full documentation](https://www.wpsoftware.net/rustdoc/secp256k1/)
+[Full documentation](https://docs.rs/parity-secp256k1)
 
 #### Build
 
