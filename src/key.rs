@@ -171,7 +171,7 @@ impl PublicKey {
         if secp.caps == ContextFlag::VerifyOnly || secp.caps == ContextFlag::None {
             return Err(IncapableContext);
         }
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = ffi::PublicKey::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
@@ -186,7 +186,7 @@ impl PublicKey {
     pub fn from_slice(secp: &Secp256k1, data: &[u8])
                       -> Result<PublicKey, Error> {
 
-        let mut pk = unsafe { ffi::PublicKey::blank() };
+        let mut pk = ffi::PublicKey::new();
         unsafe {
             if ffi::secp256k1_ec_pubkey_parse(secp.ctx, &mut pk, data.as_ptr(),
                                               data.len() as usize) == 1 {

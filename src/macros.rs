@@ -54,15 +54,8 @@ macro_rules! impl_array_newtype {
         impl Clone for $thing {
             #[inline]
             fn clone(&self) -> $thing {
-                unsafe {
-                    use std::intrinsics::copy_nonoverlapping;
-                    use std::mem;
-                    let mut ret: $thing = mem::uninitialized();
-                    copy_nonoverlapping(self.as_ptr(),
-                                        ret.as_mut_ptr(),
-                                        mem::size_of::<$thing>());
-                    ret
-                }
+                let &$thing(ref dat) = self;
+                $thing(dat.clone())
             }
         }
 
@@ -122,9 +115,9 @@ macro_rules! impl_pretty_debug {
     ($thing:ident) => {
         impl ::std::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                try!(write!(f, "{}(", stringify!($thing)));
+                write!(f, "{}(", stringify!($thing))?;
                 for i in self[..].iter().cloned() {
-                    try!(write!(f, "{:02x}", i));
+                    write!(f, "{:02x}", i)?;
                 }
                 write!(f, ")")
             }
@@ -137,7 +130,7 @@ macro_rules! impl_raw_debug {
         impl ::std::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 for i in self[..].iter().cloned() {
-                    try!(write!(f, "{:02x}", i));
+                    write!(f, "{:02x}", i)?;
                 }
                 Ok(())
             }

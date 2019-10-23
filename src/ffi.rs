@@ -16,7 +16,6 @@
 //! # FFI bindings
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
-use std::mem;
 use std::hash;
 use std::os::raw::{c_int, c_uchar, c_uint, c_void};
 
@@ -78,8 +77,6 @@ impl_raw_debug!(PublicKey);
 impl PublicKey {
     /// Create a new (zeroed) public key usable for the FFI interface
     pub fn new() -> PublicKey { PublicKey([0; 64]) }
-    /// Create a new (uninitialized) public key usable for the FFI interface
-    pub unsafe fn blank() -> PublicKey { mem::uninitialized() }
 }
 
 impl hash::Hash for PublicKey {
@@ -103,15 +100,11 @@ impl_raw_debug!(RecoverableSignature);
 impl Signature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> Signature { Signature([0; 64]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> Signature { mem::uninitialized() }
 }
 
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> RecoverableSignature { mem::uninitialized() }
 }
 
 /// Library-internal representation of an ECDH shared secret
@@ -123,8 +116,6 @@ impl_raw_debug!(SharedSecret);
 impl SharedSecret {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    pub unsafe fn blank() -> SharedSecret { mem::uninitialized() }
 }
 
 extern "C" {
