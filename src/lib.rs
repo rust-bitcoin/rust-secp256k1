@@ -139,7 +139,6 @@
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
 #[cfg(feature = "serde")] pub extern crate serde;
-#[cfg(all(test, feature = "serde"))] extern crate serde_test;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
 
@@ -984,32 +983,6 @@ mod tests {
         // after normalization it should pass
         sig.normalize_s();
         assert_eq!(secp.verify(&msg, &sig, &pk), Ok(()));
-    }
-
-    #[cfg(feature = "serde")]
-    #[test]
-    fn test_signature_serde() {
-        use serde_test::{Configure, Token, assert_tokens};
-
-        let s = Secp256k1::new();
-
-        let msg = Message::from_slice(&[1; 32]).unwrap();
-        let sk = SecretKey::from_slice(&[2; 32]).unwrap();
-        let sig = s.sign(&msg, &sk);
-        static SIG_BYTES: [u8; 71] = [
-            48, 69, 2, 33, 0, 157, 11, 173, 87, 103, 25, 211, 42, 231, 107, 237,
-            179, 76, 119, 72, 102, 103, 60, 189, 227, 244, 225, 41, 81, 85, 92, 148,
-            8, 230, 206, 119, 75, 2, 32, 40, 118, 231, 16, 47, 32, 79, 107, 254,
-            226, 108, 150, 124, 57, 38, 206, 112, 44, 249, 125, 75, 1, 0, 98, 225,
-            147, 247, 99, 25, 15, 103, 118
-        ];
-        static SIG_STR: &'static str = "\
-            30450221009d0bad576719d32ae76bedb34c774866673cbde3f4e12951555c9408e6ce77\
-            4b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776\
-        ";
-
-        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
-        assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
     }
 }
 

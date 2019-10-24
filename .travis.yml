@@ -43,7 +43,7 @@ script:
   - cargo build --verbose --features=rand
   - cargo test --verbose --features=rand
   - cargo test --verbose --features="rand serde"
-  - cargo test --verbose --features="rand serde recovery endomorphism"
+  - cargo test --verbose --features="rand serde recovery endomorphism serde_test"
   - cargo build --verbose
   - cargo test --verbose
   - cargo build --verbose --release
