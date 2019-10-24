@@ -6,11 +6,32 @@
 extern crate libc;
 extern crate secp256k1;
 
-use core::fmt::*;
+use core::fmt::{self, write, Write};
 use core::intrinsics;
 use core::panic::PanicInfo;
 
+use secp256k1::rand::{self, RngCore};
+use secp256k1::serde::Serialize;
 use secp256k1::*;
+
+struct FakeRng;
+impl RngCore for FakeRng {
+    fn next_u32(&mut self) -> u32 {
+        57
+    }
+    fn next_u64(&mut self) -> u64 {
+        57
+    }
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+        for i in dest {
+            *i = 57;
+        }
+        Ok(())
+    }
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.try_fill_bytes(dest).unwrap();
+    }
+}
 
 #[start]
 fn start(_argc: isize, _argv: *const *const u8) -> isize {
@@ -18,13 +39,15 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let size = Secp256k1::preallocate_size();
     unsafe { libc::printf("needed size: %d\n\0".as_ptr() as _, size) };
 
-    let secp = Secp256k1::preallocated_new(&mut buf).unwrap();
-    let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
+    let mut secp = Secp256k1::preallocated_new(&mut buf).unwrap();
+    secp.randomize(&mut FakeRng);
+    let secret_key = SecretKey::new(&mut FakeRng);
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 
     let sig = secp.sign(&message, &secret_key);
     assert!(secp.verify(&message, &sig, &public_key).is_ok());
+
     unsafe { libc::printf("Verified Successfully!\n\0".as_ptr() as _) };
     0
 }
@@ -65,7 +88,7 @@ impl Print {
 }
 
 impl Write for Print {
-    fn write_str(&mut self, s: &str) -> Result {
+    fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         let curr = self.loc;
         if curr + s.len() > MAX_PRINT {
             unsafe {

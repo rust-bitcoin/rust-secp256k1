@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Elichai Turkel <elichai.turkel@gmail.com>"]
 
 [dependencies]
-secp256k1 = { path = "../", default-features = false }
+secp256k1 = { path = "../", default-features = false, features = ["rand"] }
 libc = { version = "0.2", default-features = false }
 
 
