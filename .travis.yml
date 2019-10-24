@@ -17,8 +17,20 @@ addons:
 
 matrix:
   exclude:
-  - rust: 1.22.0
-    os: windows
+    - rust: 1.22.0
+      os: windows
+
+  include:
+    - env: TARGET=thumbv7em-none-eabi
+      script:
+        - cargo build --target $TARGET --no-default-features
+        - cargo build --target $TARGET --no-default-features --features="serde"
+        - cargo build --target $TARGET --no-default-features --features="lowmemory"
+        - cargo build --target $TARGET --no-default-features --features="rand"
+        - cargo build --target $TARGET --no-default-features --features="rand serde recovery endomorphism"
+      install:
+        - rustup target add $TARGET
+
 
 script:
   - cargo build --verbose --no-default-features
