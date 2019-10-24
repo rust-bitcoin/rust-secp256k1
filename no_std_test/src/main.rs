@@ -5,6 +5,7 @@
 #![no_std]
 extern crate libc;
 extern crate secp256k1;
+extern crate serde_cbor;
 
 use core::fmt::{self, write, Write};
 use core::intrinsics;
@@ -13,6 +14,10 @@ use core::panic::PanicInfo;
 use secp256k1::rand::{self, RngCore};
 use secp256k1::serde::Serialize;
 use secp256k1::*;
+
+use serde_cbor::de;
+use serde_cbor::ser::SliceWrite;
+use serde_cbor::Serializer;
 
 struct FakeRng;
 impl RngCore for FakeRng {
@@ -47,6 +52,14 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
 
     let sig = secp.sign(&message, &secret_key);
     assert!(secp.verify(&message, &sig, &public_key).is_ok());
+
+    let mut cbor_ser = [0u8; 100];
+    let writer = SliceWrite::new(&mut cbor_ser[..]);
+    let mut ser = Serializer::new(writer);
+    sig.serialize(&mut ser).unwrap();
+    let size = ser.into_inner().bytes_written();
+    let new_sig: Signature = de::from_mut_slice(&mut cbor_ser[..size]).unwrap();
+    assert_eq!(sig, new_sig);
 
     unsafe { libc::printf("Verified Successfully!\n\0".as_ptr() as _) };
     0
