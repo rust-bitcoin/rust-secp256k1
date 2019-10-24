@@ -29,14 +29,18 @@ path = "src/lib.rs"
 unstable = []
 default = ["std"]
 fuzztarget = []
-std = ["rand/std"]
+std = ["rand/std", "rand_core/std"]
 recovery = []
 endomorphism = []
 lowmemory = []
 
-[dev-dependencies]
-rand = "0.6"
-rand_core = "0.4"
+[dev-dependencies.rand]
+version = "0.6"
+default-features = false
+
+[dev-dependencies.rand_core]
+version = "0.4"
+default-features = false
 
 [dependencies.rand]
 version = "0.6"
