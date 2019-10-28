@@ -33,6 +33,7 @@ std = ["rand/std"]
 recovery = []
 endomorphism = []
 lowmemory = []
+dont_replace_c_symbols = []
 
 [dev-dependencies]
 rand = "0.6"

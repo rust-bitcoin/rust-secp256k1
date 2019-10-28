@@ -717,6 +717,7 @@ mod tests {
 
 
     #[test]
+    #[cfg(not(feature = "dont_replace_c_symbols"))]
     fn test_manual_create_destroy() {
         let ctx_full = unsafe { ffi::secp256k1_context_create(AllPreallocated::FLAGS) };
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
