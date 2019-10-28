@@ -129,6 +129,12 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
+// In general, rust is absolutely horrid at supporting users doing things like,
+// for example, compiling Rust code for real environments. Disable useless lints
+// that don't do anything but annoy us and cant actually ever be resolved.
+#![allow(bare_trait_objects)]
+#![allow(ellipsis_inclusive_range_patterns)]
+
 #![cfg_attr(feature = "dev", allow(unstable_features))]
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
