@@ -52,5 +52,8 @@ optional = true
 default-features = false
 
 [[example]]
+name = "sign_verify"
+
+[[example]]
 name = "generate_keys"
 required-features = ["rand"]
