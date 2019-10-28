@@ -28,12 +28,15 @@ path = "src/lib.rs"
 [features]
 unstable = []
 default = ["std"]
-fuzztarget = []
 std = ["rand/std"]
 recovery = []
 endomorphism = []
 lowmemory = []
+
+# Do not use this feature! HAZMAT. (meant for Bitcoin Core only)
 dont_replace_c_symbols = []
+# Do not use this feature! HAZMAT. (meant for Fuzzing only. this is *BROKEN CRYPTOGRAPHY*)
+fuzztarget = []
 
 [dev-dependencies]
 rand = "0.6"
