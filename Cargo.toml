@@ -52,6 +52,10 @@ optional = true
 default-features = false
 
 [[example]]
+name = "sign_verify_recovery"
+required-features = ["recovery"]
+
+[[example]]
 name = "sign_verify"
 
 [[example]]
