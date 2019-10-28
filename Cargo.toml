@@ -1,7 +1,7 @@
 [package]
 
 name = "secp256k1"
-version = "0.15.5"
+version = "0.16.0"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
@@ -16,7 +16,7 @@ links = "secp256k1"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "rand", "serde", "recovery", "endomorphism" ]
+features = [ "rand", "rand-std", "serde", "recovery", "endomorphism" ]
 
 [build-dependencies]
 cc = ">= 1.0.28, < 1.0.42"
