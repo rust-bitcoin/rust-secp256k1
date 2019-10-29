@@ -26,6 +26,11 @@ extern crate cc;
 use std::env;
 
 fn main() {
+    if cfg!(feature = "external-symbols") {
+        println!("cargo:rustc-link-lib=static=secp256k1");
+        return;
+    }
+
     // Check whether we can use 64-bit compilation
     let use_64bit_compilation = if env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() == "64" {
         let check = cc::Build::new().file("depend/check_uint128_t.c")
