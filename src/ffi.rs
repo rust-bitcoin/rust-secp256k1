@@ -256,7 +256,7 @@ extern "C" {
 }
 
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(feature = "dont_replace_c_symbols")))]
 #[no_mangle]
 /// A reimplementation of the C function `secp256k1_context_create` in rust.
 ///
@@ -281,7 +281,7 @@ pub unsafe extern "C" fn secp256k1_context_create(flags: c_uint) -> *mut Context
     secp256k1_context_preallocated_create(ptr as *mut c_void, flags)
 }
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(feature = "dont_replace_c_symbols")))]
 #[no_mangle]
 /// A reimplementation of the C function `secp256k1_context_destroy` in rust.
 ///
@@ -300,6 +300,7 @@ pub unsafe extern "C" fn secp256k1_context_destroy(ctx: *mut Context) {
 }
 
 
+#[cfg(not(feature = "dont_replace_c_symbols"))]
 #[no_mangle]
 /// **This function is an override for the C function, this is the an edited version of the original description:**
 ///
@@ -326,6 +327,7 @@ pub unsafe extern "C" fn secp256k1_default_illegal_callback_fn(message: *const c
     panic!("[libsecp256k1] illegal argument. {}", msg);
 }
 
+#[cfg(not(feature = "dont_replace_c_symbols"))]
 #[no_mangle]
 /// **This function is an override for the C function, this is the an edited version of the original description:**
 ///
