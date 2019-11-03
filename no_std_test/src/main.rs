@@ -1,3 +1,44 @@
+// Bitcoin secp256k1 bindings
+// Written in 2019 by
+//   Elichai Turkel
+//
+// To the extent possible under law, the author(s) have dedicated all
+// copyright and related and neighboring rights to this software to
+// the public domain worldwide. This software is distributed without
+// any warranty.
+//
+// You should have received a copy of the CC0 Public Domain Dedication
+// along with this software.
+// If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//
+
+//! # secp256k1 no-std test.
+//! This binary is a short smallest rust code to produce a working binary *without libstd*.
+//! This gives us 2 things: 
+//!     1. Test that the parts of the code that should work in a no-std enviroment actually work.
+//!     2. Test that we don't accidentally import libstd into `secp256k1`.
+//! 
+//! The first is tested using the following command `cargo run --release | grep -q "Verified Successfully"`.
+//! (Making sure that it successfully printed that. i.e. it didn't abort before that).
+//! 
+//! The second is tested by the fact that it compiles. if we accidentally link against libstd we should see the following error:
+//! `error[E0152]: duplicate lang item found`.
+//! Example:
+//! ```
+//! error[E0152]: duplicate lang item found: `eh_personality`.
+//!   --> src/main.rs:37:1
+//!    |
+//! 37 | pub extern "C" fn rust_eh_personality() {}
+//!    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//!    |
+//!    = note: first defined in crate `panic_unwind` (which `std` depends on).
+//! ```
+//! 
+//! Notes: 
+//!     * Requires `panic=abort` and `--release` to not depend on libunwind(which is provided usually by libstd) https://github.com/rust-lang/rust/issues/47493
+//!     * Requires linking with `libc` for calling `printf`.
+//!     
+
 #![feature(lang_items)]
 #![feature(start)]
 #![feature(core_intrinsics)]
