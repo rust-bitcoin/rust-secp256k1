@@ -13,6 +13,7 @@ keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 build = "build.rs"
 links = "secp256k1"
+autoexamples = false # Remove when edition 2018 https://github.com/rust-lang/cargo/issues/5330
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
@@ -43,6 +44,7 @@ fuzztarget = []
 rand = "0.6"
 rand_core = "0.4"
 serde_test = "1.0"
+bitcoin_hashes = "0.7"
 
 [dependencies.rand]
 version = "0.6"
@@ -53,3 +55,14 @@ default-features = false
 version = "1.0"
 optional = true
 default-features = false
+
+[[example]]
+name = "sign_verify_recovery"
+required-features = ["recovery"]
+
+[[example]]
+name = "sign_verify"
+
+[[example]]
+name = "generate_keys"
+required-features = ["rand"]
