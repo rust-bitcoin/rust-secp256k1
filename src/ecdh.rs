@@ -17,10 +17,11 @@
 //!
 
 use core::ptr;
-use core::ops::Deref;
+use core::ops::{FnMut, Deref};
 
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
+use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone)]
@@ -68,7 +69,7 @@ impl SharedSecret {
 
 impl PartialEq for SharedSecret {
     fn eq(&self, other: &SharedSecret) -> bool {
-        &self.data[..self.len] == &other.data[..other.len]
+        self.as_ref() == other.as_ref()
     }
 }
 
@@ -83,6 +84,22 @@ impl Deref for SharedSecret {
     fn deref(&self) -> &[u8] {
         &self.data[..self.len]
     }
+}
+
+
+unsafe extern "C" fn hash_callback<F>(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, data: *mut c_void) -> c_int
+    where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
+    let callback: &mut F = &mut *(data as *mut F);
+
+    let mut x_arr = [0; 32];
+    let mut y_arr = [0; 32];
+    ptr::copy_nonoverlapping(x, x_arr.as_mut_ptr(), 32);
+    ptr::copy_nonoverlapping(y, y_arr.as_mut_ptr(), 32);
+
+    let secret = callback(x_arr, y_arr);
+    ptr::copy_nonoverlapping(secret.as_ptr(), output as *mut u8, secret.len());
+
+    secret.len() as c_int
 }
 
 
@@ -103,6 +120,44 @@ impl SharedSecret {
         };
         debug_assert_eq!(res, 1); // The default `secp256k1_ecdh_hash_function_default` should always return 1.
         ss.set_len(32); // The default hash function is SHA256, which is 32 bytes long.
+        ss
+    }
+
+    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
+    /// # Examples
+    /// ```
+    /// # use secp256k1::ecdh::SharedSecret;
+    /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
+    /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
+    /// # let secp = Secp256k1::signing_only();
+    /// # let secret_key = SecretKey::from_slice(&[3u8; 32]).unwrap();
+    /// # let secret_key2 = SecretKey::from_slice(&[7u8; 32]).unwrap();
+    /// # let public_key = PublicKey::from_secret_key(&secp, &secret_key2);
+    ///
+    /// let secret = SharedSecret::new_with_hash(&public_key, &secret_key, |x,y| {
+    ///     let hash: [u8; 32] = sha2(&x,&y);
+    ///     hash.into()
+    /// });
+    ///
+    /// ```
+    pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, mut hash_function: F) -> SharedSecret
+        where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret
+    {
+        let mut ss = SharedSecret::empty();
+        let hashfp: ffi::EcdhHashFn = hash_callback::<F>;
+
+        let res =  unsafe {
+            ffi::secp256k1_ecdh(
+                ffi::secp256k1_context_no_precomp,
+                ss.get_data_mut_ptr(),
+                point.as_ptr(),
+                scalar.as_ptr(),
+                hashfp,
+                &mut hash_function as *mut F as *mut c_void,
+            )
+        };
+        debug_assert!(res >= 16); // 128 bit is the minimum for a secure hash function and the minimum we let users.
+        ss.set_len(res as usize);
         ss
     }
 }
