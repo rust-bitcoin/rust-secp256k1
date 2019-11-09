@@ -72,7 +72,7 @@ pub type EcdhHashFn = unsafe extern "C" fn(
     x: *const c_uchar,
     y: *const c_uchar,
     data: *mut c_void,
-);
+) -> c_int;
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
@@ -134,25 +134,6 @@ impl Default for Signature {
     }
 }
 
-/// Library-internal representation of an ECDH shared secret
-#[repr(C)]
-pub struct SharedSecret([c_uchar; 32]);
-impl_array_newtype!(SharedSecret, c_uchar, 32);
-impl_raw_debug!(SharedSecret);
-
-impl SharedSecret {
-    /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
-    pub unsafe fn blank() -> SharedSecret { SharedSecret::new() }
-}
-
-impl Default for SharedSecret {
-    fn default() -> Self {
-        SharedSecret::new()
-    }
-}
 
 #[cfg(not(feature = "fuzztarget"))]
 extern "C" {
@@ -296,7 +277,7 @@ extern "C" {
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_0_ecdh")]
     pub fn secp256k1_ecdh(
         cx: *const Context,
-        output: *mut SharedSecret,
+        output: *mut c_uchar,
         pubkey: *const PublicKey,
         privkey: *const c_uchar,
         hashfp: EcdhHashFn,

@@ -144,6 +144,7 @@ macro_rules! impl_array_newtype {
     }
 }
 
+#[macro_export]
 macro_rules! impl_raw_debug {
     ($thing:ident) => {
         impl ::core::fmt::Debug for $thing {
