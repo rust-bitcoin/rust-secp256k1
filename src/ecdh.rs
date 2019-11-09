@@ -180,6 +180,36 @@ mod tests {
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
     }
+
+    #[test]
+    fn ecdh_with_hash() {
+        let s = Secp256k1::signing_only();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+        
+        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into());
+        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into());
+        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into());
+        assert_eq!(sec1, sec2);
+        assert_ne!(sec_odd, sec2);
+    }
+
+    #[test]
+    fn ecdh_with_hash_callback() {
+        let s = Secp256k1::signing_only();
+        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let expect_result: [u8; 64] = [123; 64];
+        let mut x_out = [0u8; 32];
+        let mut y_out = [0u8; 32];
+        let result = SharedSecret::new_with_hash(&pk1, &sk1, | x, y | {
+            x_out = x;
+            y_out = y;
+            expect_result.into()
+        });
+        assert_eq!(&expect_result[..], &result[..]);
+        assert_ne!(x_out, [0u8; 32]);
+        assert_ne!(y_out, [0u8; 32]);
+    }
 }
 
 #[cfg(all(test, feature = "unstable"))]
