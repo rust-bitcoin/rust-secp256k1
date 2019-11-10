@@ -440,7 +440,7 @@ mod fuzz_dummy {
     use self::std::{ptr, mem};
     use self::std::boxed::Box;
     use types::*;
-    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey, SharedSecret,
+    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey,
         SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
         SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
@@ -769,7 +769,7 @@ mod fuzz_dummy {
     /// Sets out to point[0..16]||scalar[0..16]
     pub unsafe fn secp256k1_ecdh(
         cx: *const Context,
-        out: *mut SharedSecret,
+        out: *mut c_uchar,
         point: *const PublicKey,
         scalar: *const c_uchar,
         _hashfp: EcdhHashFn,
@@ -782,13 +782,13 @@ mod fuzz_dummy {
         ptr::copy(scalar, scalar_prefix[..].as_mut_ptr(), 16);
 
         if (*point).0[0..16] > scalar_prefix[0..16] {
-            (*out).0[0..16].copy_from_slice(&(*point).0[0..16]);
-            ptr::copy(scalar, (*out).0[16..32].as_mut_ptr(), 16);
+            ptr::copy((*point).as_ptr(), out, 16);
+            ptr::copy(scalar, out.offset(16), 16);
         } else {
-            ptr::copy(scalar, (*out).0[0..16].as_mut_ptr(), 16);
-            (*out).0[16..32].copy_from_slice(&(*point).0[0..16]);
+            ptr::copy(scalar, out, 16);
+            ptr::copy((*point).as_ptr(), out.offset(16), 16);
         }
-        (*out).0[16] = 0x00; // result should always be a valid secret key
+        (*out.offset(16)) = 0x00; // result should always be a valid secret key
         1
     }
 }
