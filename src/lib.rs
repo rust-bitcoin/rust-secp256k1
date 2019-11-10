@@ -496,7 +496,8 @@ pub enum Error {
     InvalidTweak,
     /// Didn't pass enough memory to context creation with preallocated memory
     NotEnoughMemory,
-
+    /// The callback has panicked.
+    CallbackPanicked,
 }
 
 impl Error {
@@ -510,6 +511,7 @@ impl Error {
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
+            Error::CallbackPanicked => "secp: a callback passed has panicked",
         }
     }
 }
