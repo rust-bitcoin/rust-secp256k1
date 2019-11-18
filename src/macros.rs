@@ -147,9 +147,9 @@ macro_rules! impl_pretty_debug {
     ($thing:ident) => {
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                try!(write!(f, "{}(", stringify!($thing)));
+                write!(f, "{}(", stringify!($thing))?;
                 for i in self[..].iter().cloned() {
-                    try!(write!(f, "{:02x}", i));
+                    write!(f, "{:02x}", i)?;
                 }
                 write!(f, ")")
             }
@@ -162,7 +162,7 @@ macro_rules! impl_raw_debug {
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 for i in self[..].iter().cloned() {
-                    try!(write!(f, "{:02x}", i));
+                    write!(f, "{:02x}", i)?;
                 }
                 Ok(())
             }
