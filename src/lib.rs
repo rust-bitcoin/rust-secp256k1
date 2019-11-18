@@ -247,6 +247,9 @@ impl SerializedSignature {
     pub fn from_signature(sig: &Signature) -> SerializedSignature {
         sig.serialize_der()
     }
+
+    /// Check if the space is zero.
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
 }
 
 impl Signature {
@@ -548,7 +551,7 @@ impl Default for SerializedSignature {
 
 impl PartialEq for SerializedSignature {
     fn eq(&self, other: &SerializedSignature) -> bool {
-        &self.data[..self.len] == &other.data[..other.len]
+        self.data[..self.len] == other.data[..other.len]
     }
 }
 
