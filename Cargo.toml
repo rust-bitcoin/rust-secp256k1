@@ -41,10 +41,10 @@ dont_replace_c_symbols = []
 fuzztarget = []
 
 [dev-dependencies]
-rand = "0.6.5"
-rand_core = "0.4.2"
-serde_test = "1.0.102"
-bitcoin_hashes = "0.7.1"
+rand = "0.6"
+rand_core = "0.4"
+serde_test = "1.0"
+bitcoin_hashes = "0.7"
 
 [dependencies.rand]
 version = "0.6"
