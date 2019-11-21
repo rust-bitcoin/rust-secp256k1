@@ -62,7 +62,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> ::core::cmp::Ordering {
                 self[..].cmp(&other[..])
-            }            
+            }
         }
 
         impl Clone for $thing {
