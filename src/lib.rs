@@ -757,6 +757,41 @@ mod tests {
     }
 
     #[test]
+    fn test_raw_ctx() {
+        let ctx_full = Secp256k1::new();
+        let ctx_sign = Secp256k1::signing_only();
+        let ctx_vrfy = Secp256k1::verification_only();
+
+        let full = unsafe {Secp256k1::from_raw_all(ctx_full.ctx)};
+        let sign = unsafe {Secp256k1::from_raw_signining_only(ctx_sign.ctx)};
+        let vrfy = unsafe {Secp256k1::from_raw_verification_only(ctx_vrfy.ctx)};
+
+        let (sk, pk) = full.generate_keypair(&mut thread_rng());
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        // Try signing
+        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+        let sig = full.sign(&msg, &sk);
+
+        // Try verifying
+        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+        assert!(full.verify(&msg, &sig, &pk).is_ok());
+
+        drop(full);drop(sign);drop(vrfy);
+        drop(ctx_full);drop(ctx_sign);drop(ctx_vrfy);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_raw_ctx() {
+        let ctx_vrfy = Secp256k1::verification_only();
+        let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
+        let (sk, _) = raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        // Try signing
+        raw_ctx_verify_as_full.sign(&msg, &sk);
+    }
+
+    #[test]
     fn test_preallocation() {
         let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
         let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
