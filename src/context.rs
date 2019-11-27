@@ -8,8 +8,8 @@ use Secp256k1;
 pub use self::std_only::*;
 
 /// A trait for all kinds of Context's that Lets you define the exact flags and a function to deallocate memory.
-/// * DO NOT * implement it for your own types.
-pub unsafe trait Context {
+/// It shouldn't be possible to implement this for types outside this crate.
+pub unsafe trait Context : private::Sealed {
     /// Flags for the ffi.
     const FLAGS: c_uint;
     /// A constant description of the context.
@@ -39,8 +39,24 @@ pub struct AllPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
+mod private {
+    use super::*;
+    // A trick to prevent users from implementing a trait.
+    // on one hand this trait is public, on the other it's in a private module
+    // so it's not visible to anyone besides it's parent (the context module)
+    pub trait Sealed {}
+
+    impl<'buf> Sealed for AllPreallocated<'buf> {}
+    impl<'buf> Sealed for VerifyOnlyPreallocated<'buf> {}
+    impl<'buf> Sealed for SignOnlyPreallocated<'buf> {}
+}
+
 #[cfg(feature = "std")]
 mod std_only {
+    impl private::Sealed for SignOnly {}
+    impl private::Sealed for All {}
+    impl private::Sealed for VerifyOnly {}
+
     use super::*;
 
     /// Represents the set of capabilities needed for signing.
