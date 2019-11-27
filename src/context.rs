@@ -15,7 +15,7 @@ pub unsafe trait Context : private::Sealed {
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
-    fn deallocate(ptr: *mut [u8]);
+    unsafe fn deallocate(ptr: *mut [u8]);
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -78,8 +78,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
         const DESCRIPTION: &'static str = "signing only";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -87,8 +87,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
         const DESCRIPTION: &'static str = "verification only";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -96,8 +96,8 @@ mod std_only {
         const FLAGS: c_uint = VerifyOnly::FLAGS | SignOnly::FLAGS;
         const DESCRIPTION: &'static str = "all capabilities";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -152,7 +152,6 @@ mod std_only {
             }
         }
     }
-
 }
 
 impl<'buf> Signing for SignOnlyPreallocated<'buf> {}
@@ -165,7 +164,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
@@ -174,7 +173,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
@@ -183,7 +182,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
