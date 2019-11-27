@@ -45,7 +45,7 @@ extern "C" {
                                                                input64: *const c_uchar, recid: c_int)
                                                                -> c_int;
 
-    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
+    pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(cx: *const Context, output64: *mut c_uchar,
                                                                    recid: *mut c_int, sig: *const RecoverableSignature)
                                                                    -> c_int;
 
@@ -82,7 +82,7 @@ mod fuzz_dummy {
         unimplemented!();
     }
 
-    pub unsafe fn secp256k1_ecdsa_recoverable_signature_serialize_compact(_cx: *const Context, _output64: *const c_uchar,
+    pub unsafe fn secp256k1_ecdsa_recoverable_signature_serialize_compact(_cx: *const Context, _output64: *mut c_uchar,
                                                                           _recid: *mut c_int, _sig: *const RecoverableSignature)
                                                                           -> c_int {
         unimplemented!();

@@ -41,8 +41,9 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         msg32: *const c_uchar,
                                         key32: *const c_uchar,
                                         algo16: *const c_uchar,
+                                        data: *mut c_void,
                                         attempt: c_uint,
-                                        data: *const c_void);
+);
 
 /// Hash function to use to post-process an ECDH point to get
 /// a shared secret.
@@ -50,7 +51,7 @@ pub type EcdhHashFn = unsafe extern "C" fn(
     output: *mut c_uchar,
     x: *const c_uchar,
     y: *const c_uchar,
-    data: *const c_void,
+    data: *mut c_void,
 );
 
 /// A Secp256k1 context, containing various precomputed values and such
@@ -186,7 +187,7 @@ extern "C" {
                                                    out_len: *mut usize, sig: *const Signature)
                                                    -> c_int;
 
-    pub fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *const c_uchar,
+    pub fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *mut c_uchar,
                                                        sig: *const Signature)
                                                        -> c_int;
 

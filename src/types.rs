@@ -24,3 +24,18 @@ impl fmt::Debug for c_void {
         f.pad("c_void")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::os::raw;
+    use std::any::TypeId;
+    use types;
+
+    #[test]
+    fn verify_types() {
+        assert_eq!(TypeId::of::<types::c_int>(), TypeId::of::<raw::c_int>());
+        assert_eq!(TypeId::of::<types::c_uchar>(), TypeId::of::<raw::c_uchar>());
+        assert_eq!(TypeId::of::<types::c_uint>(), TypeId::of::<raw::c_uint>());
+        assert_eq!(TypeId::of::<types::c_char>(), TypeId::of::<raw::c_char>());
+    }
+}
