@@ -574,8 +574,10 @@ impl<C: Context> Eq for Secp256k1<C> { }
 
 impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
-        unsafe { ffi::secp256k1_context_preallocated_destroy(self.ctx) };
-        C::deallocate(self.buf);
+        unsafe {
+            ffi::secp256k1_context_preallocated_destroy(self.ctx);
+            C::deallocate(self.buf);
+        }
     }
 }
 

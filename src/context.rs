@@ -8,14 +8,14 @@ use Secp256k1;
 pub use self::std_only::*;
 
 /// A trait for all kinds of Context's that Lets you define the exact flags and a function to deallocate memory.
-/// * DO NOT * implement it for your own types.
-pub unsafe trait Context {
+/// It shouldn't be possible to implement this for types outside this crate.
+pub unsafe trait Context : private::Sealed {
     /// Flags for the ffi.
     const FLAGS: c_uint;
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
-    fn deallocate(ptr: *mut [u8]);
+    unsafe fn deallocate(ptr: *mut [u8]);
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -39,8 +39,24 @@ pub struct AllPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
+mod private {
+    use super::*;
+    // A trick to prevent users from implementing a trait.
+    // on one hand this trait is public, on the other it's in a private module
+    // so it's not visible to anyone besides it's parent (the context module)
+    pub trait Sealed {}
+
+    impl<'buf> Sealed for AllPreallocated<'buf> {}
+    impl<'buf> Sealed for VerifyOnlyPreallocated<'buf> {}
+    impl<'buf> Sealed for SignOnlyPreallocated<'buf> {}
+}
+
 #[cfg(feature = "std")]
 mod std_only {
+    impl private::Sealed for SignOnly {}
+    impl private::Sealed for All {}
+    impl private::Sealed for VerifyOnly {}
+
     use super::*;
 
     /// Represents the set of capabilities needed for signing.
@@ -62,8 +78,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
         const DESCRIPTION: &'static str = "signing only";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -71,8 +87,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
         const DESCRIPTION: &'static str = "verification only";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -80,8 +96,8 @@ mod std_only {
         const FLAGS: c_uint = VerifyOnly::FLAGS | SignOnly::FLAGS;
         const DESCRIPTION: &'static str = "all capabilities";
 
-        fn deallocate(ptr: *mut [u8]) {
-            let _ = unsafe { Box::from_raw(ptr) };
+        unsafe fn deallocate(ptr: *mut [u8]) {
+            let _ = Box::from_raw(ptr);
         }
     }
 
@@ -136,7 +152,6 @@ mod std_only {
             }
         }
     }
-
 }
 
 impl<'buf> Signing for SignOnlyPreallocated<'buf> {}
@@ -149,7 +164,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
@@ -158,7 +173,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
@@ -167,7 +182,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 
-    fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut [u8]) {
         // Allocated by the user
     }
 }
