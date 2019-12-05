@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+use core::mem::ManuallyDrop;
 use ptr;
 use ffi::{self, CPtr};
 use ffi::types::{c_uint, c_void};
@@ -227,12 +228,12 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
     /// * Violating these may lead to Undefined Behavior.
     ///
-    pub unsafe fn from_raw_all(raw_ctx: *mut ffi::Context) -> Secp256k1<AllPreallocated<'buf>> {
-        Secp256k1 {
+    pub unsafe fn from_raw_all(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<AllPreallocated<'buf>>> {
+        ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
             buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
-        }
+        })
     }
 }
 
@@ -259,12 +260,12 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
     /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.,
     ///
-    pub unsafe fn from_raw_signining_only(raw_ctx: *mut ffi::Context) -> Secp256k1<SignOnlyPreallocated<'buf>> {
-        Secp256k1 {
+    pub unsafe fn from_raw_signining_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
+        ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
             buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
-        }
+        })
     }
 }
 
@@ -291,11 +292,11 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
     /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.,
     ///
-    pub unsafe fn from_raw_verification_only(raw_ctx: *mut ffi::Context) -> Secp256k1<VerifyOnlyPreallocated<'buf>> {
-        Secp256k1 {
+    pub unsafe fn from_raw_verification_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<VerifyOnlyPreallocated<'buf>>> {
+        ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
             buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
-        }
+        })
     }
 }
