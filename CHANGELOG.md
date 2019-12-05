@@ -1,4 +1,12 @@
 
+# 0.17.0
+
+- Move FFI into secp256k1-sys crate.
+- Add `external-symbols` feature for not building upstream.
+- Add functions to create a context from a raw pointer.
+- Support passing custom hash functions to ECDH.
+- Wrap Secp256k1 from raw context in a ManuallyDrop.
+
 # 0.15.4 - 2019-09-06
 
 - Add `rand-std` feature.
