@@ -33,6 +33,7 @@
   [PR 2](https://github.com/rust-bitcoin/rust-secp256k1/pull/125).
   This library should be usable in bare-metal environments and with rust-wasm.
   Thanks to Elichai Turkel for driving this forward!
+* Update upstream libsecp256k1 version to 143dc6e9ee31852a60321b23eea407d2006171da
 
 # 0.13.0 - 2019-05-21
 
