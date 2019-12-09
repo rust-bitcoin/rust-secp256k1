@@ -72,7 +72,7 @@ pub type EcdhHashFn = unsafe extern "C" fn(
     x: *const c_uchar,
     y: *const c_uchar,
     data: *mut c_void,
-);
+) -> c_int;
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
@@ -134,25 +134,6 @@ impl Default for Signature {
     }
 }
 
-/// Library-internal representation of an ECDH shared secret
-#[repr(C)]
-pub struct SharedSecret([c_uchar; 32]);
-impl_array_newtype!(SharedSecret, c_uchar, 32);
-impl_raw_debug!(SharedSecret);
-
-impl SharedSecret {
-    /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> SharedSecret { SharedSecret([0; 32]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
-    pub unsafe fn blank() -> SharedSecret { SharedSecret::new() }
-}
-
-impl Default for SharedSecret {
-    fn default() -> Self {
-        SharedSecret::new()
-    }
-}
 
 #[cfg(not(feature = "fuzztarget"))]
 extern "C" {
@@ -296,7 +277,7 @@ extern "C" {
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_0_ecdh")]
     pub fn secp256k1_ecdh(
         cx: *const Context,
-        output: *mut SharedSecret,
+        output: *mut c_uchar,
         pubkey: *const PublicKey,
         privkey: *const c_uchar,
         hashfp: EcdhHashFn,
@@ -459,7 +440,7 @@ mod fuzz_dummy {
     use self::std::{ptr, mem};
     use self::std::boxed::Box;
     use types::*;
-    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey, SharedSecret,
+    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey,
         SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
         SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
@@ -788,7 +769,7 @@ mod fuzz_dummy {
     /// Sets out to point[0..16]||scalar[0..16]
     pub unsafe fn secp256k1_ecdh(
         cx: *const Context,
-        out: *mut SharedSecret,
+        out: *mut c_uchar,
         point: *const PublicKey,
         scalar: *const c_uchar,
         _hashfp: EcdhHashFn,
@@ -801,13 +782,13 @@ mod fuzz_dummy {
         ptr::copy(scalar, scalar_prefix[..].as_mut_ptr(), 16);
 
         if (*point).0[0..16] > scalar_prefix[0..16] {
-            (*out).0[0..16].copy_from_slice(&(*point).0[0..16]);
-            ptr::copy(scalar, (*out).0[16..32].as_mut_ptr(), 16);
+            ptr::copy((*point).as_ptr(), out, 16);
+            ptr::copy(scalar, out.offset(16), 16);
         } else {
-            ptr::copy(scalar, (*out).0[0..16].as_mut_ptr(), 16);
-            (*out).0[16..32].copy_from_slice(&(*point).0[0..16]);
+            ptr::copy(scalar, out, 16);
+            ptr::copy((*point).as_ptr(), out.offset(16), 16);
         }
-        (*out).0[16] = 0x00; // result should always be a valid secret key
+        (*out.offset(16)) = 0x00; // result should always be a valid secret key
         1
     }
 }

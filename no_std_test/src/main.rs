@@ -55,6 +55,7 @@ use core::panic::PanicInfo;
 use secp256k1::rand::{self, RngCore};
 use secp256k1::serde::Serialize;
 use secp256k1::*;
+use secp256k1::ecdh::SharedSecret;
 
 use serde_cbor::de;
 use serde_cbor::ser::SliceWrite;
@@ -101,6 +102,16 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let size = ser.into_inner().bytes_written();
     let new_sig: Signature = de::from_mut_slice(&mut cbor_ser[..size]).unwrap();
     assert_eq!(sig, new_sig);
+
+    let _ = SharedSecret::new(&public_key, &secret_key);
+    let mut x_arr = [0u8; 32];
+    let y_arr = unsafe { SharedSecret::new_with_hash_no_panic(&public_key, &secret_key, |x,y| {
+        x_arr = x;
+        y.into()
+    })}.unwrap();
+    assert_ne!(x_arr, [0u8; 32]);
+    assert_ne!(&y_arr[..], &[0u8; 32][..]);
+    
 
     unsafe { libc::printf("Verified Successfully!\n\0".as_ptr() as _) };
     0
