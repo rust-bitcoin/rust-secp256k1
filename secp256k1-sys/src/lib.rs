@@ -283,6 +283,12 @@ extern "C" {
         hashfp: EcdhHashFn,
         data: *mut c_void,
     ) -> c_int;
+
+    // todo[dvdplm] add a cfg_attr here too?
+    pub fn secp256k1_ec_privkey_inverse(cx: *const Context,
+                                               out: *mut c_uchar,
+                                               scalar: *const c_uchar)
+                                               -> c_int;
 }
 
 

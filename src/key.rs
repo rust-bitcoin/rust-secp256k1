@@ -197,6 +197,25 @@ impl SecretKey {
             }
         }
     }
+
+    // todo[dvdplm] can we move this to its own file to make it easier to maintain?
+    #[inline]
+    /// Inverts (1 / self) this secret key.
+    pub fn inv_assign(&mut self) -> Result<(), Error> {
+        let original = self.clone();
+        unsafe {
+            if ffi::secp256k1_ec_privkey_inverse(
+                ffi::secp256k1_context_no_precomp,
+                self.as_mut_c_ptr(),
+                original.as_c_ptr()
+            ) != 1
+            {
+                Err(InvalidSecretKey)
+            } else {
+                Ok(())
+            }
+        }
+    }
 }
 
 serde_impl!(SecretKey, constants::SECRET_KEY_SIZE);
