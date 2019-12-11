@@ -140,7 +140,7 @@ AC_ARG_ENABLE(external_default_callbacks,
     [use_external_default_callbacks=no])
 
 AC_ARG_ENABLE(jni,
-    AS_HELP_STRING([--enable-jni],[enable librustsecp256k1_v0_1_0_jni [default=no]]),
+    AS_HELP_STRING([--enable-jni],[enable librustsecp256k1_v0_1_1_jni [default=no]]),
     [use_jni=$enableval],
     [use_jni=no])
 

@@ -10,106 +10,106 @@ extern "C" {
 #endif
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ctx_clone
+ * Method:    rustsecp256k1_v0_1_1_ctx_clone
  * Signature: (J)J
  */
-SECP256K1_API jlong JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ctx_1clone
+SECP256K1_API jlong JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ctx_1clone
   (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_context_randomize
+ * Method:    rustsecp256k1_v0_1_1_context_randomize
  * Signature: (Ljava/nio/ByteBuffer;J)I
  */
-SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1context_1randomize
+SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1context_1randomize
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_privkey_tweak_add
+ * Method:    rustsecp256k1_v0_1_1_privkey_tweak_add
  * Signature: (Ljava/nio/ByteBuffer;J)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1privkey_1tweak_1add
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1privkey_1tweak_1add
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_privkey_tweak_mul
+ * Method:    rustsecp256k1_v0_1_1_privkey_tweak_mul
  * Signature: (Ljava/nio/ByteBuffer;J)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1privkey_1tweak_1mul
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1privkey_1tweak_1mul
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_pubkey_tweak_add
+ * Method:    rustsecp256k1_v0_1_1_pubkey_tweak_add
  * Signature: (Ljava/nio/ByteBuffer;JI)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1pubkey_1tweak_1add
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1pubkey_1tweak_1add
   (JNIEnv *, jclass, jobject, jlong, jint);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_pubkey_tweak_mul
+ * Method:    rustsecp256k1_v0_1_1_pubkey_tweak_mul
  * Signature: (Ljava/nio/ByteBuffer;JI)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1pubkey_1tweak_1mul
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1pubkey_1tweak_1mul
   (JNIEnv *, jclass, jobject, jlong, jint);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_destroy_context
+ * Method:    rustsecp256k1_v0_1_1_destroy_context
  * Signature: (J)V
  */
-SECP256K1_API void JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1destroy_1context
+SECP256K1_API void JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1destroy_1context
   (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ecdsa_verify
+ * Method:    rustsecp256k1_v0_1_1_ecdsa_verify
  * Signature: (Ljava/nio/ByteBuffer;JII)I
  */
-SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ecdsa_1verify
+SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ecdsa_1verify
   (JNIEnv *, jclass, jobject, jlong, jint, jint);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ecdsa_sign
+ * Method:    rustsecp256k1_v0_1_1_ecdsa_sign
  * Signature: (Ljava/nio/ByteBuffer;J)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ecdsa_1sign
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ecdsa_1sign
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ec_seckey_verify
+ * Method:    rustsecp256k1_v0_1_1_ec_seckey_verify
  * Signature: (Ljava/nio/ByteBuffer;J)I
  */
-SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ec_1seckey_1verify
+SECP256K1_API jint JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ec_1seckey_1verify
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ec_pubkey_create
+ * Method:    rustsecp256k1_v0_1_1_ec_pubkey_create
  * Signature: (Ljava/nio/ByteBuffer;J)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ec_1pubkey_1create
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ec_1pubkey_1create
   (JNIEnv *, jclass, jobject, jlong);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ec_pubkey_parse
+ * Method:    rustsecp256k1_v0_1_1_ec_pubkey_parse
  * Signature: (Ljava/nio/ByteBuffer;JI)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ec_1pubkey_1parse
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ec_1pubkey_1parse
   (JNIEnv *, jclass, jobject, jlong, jint);
 
 /*
  * Class:     org_bitcoin_NativeSecp256k1
- * Method:    rustsecp256k1_v0_1_0_ecdh
+ * Method:    rustsecp256k1_v0_1_1_ecdh
  * Signature: (Ljava/nio/ByteBuffer;JI)[[B
  */
-SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_0_1ecdh
+SECP256K1_API jobjectArray JNICALL Java_org_bitcoin_NativeSecp256k1_rustsecp256k1_v0_1_1_1ecdh
   (JNIEnv* env, jclass classObject, jobject byteBufferObject, jlong ctx_l, jint publen);
 
 

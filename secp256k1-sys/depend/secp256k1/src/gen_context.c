@@ -20,13 +20,13 @@ static void default_error_callback_fn(const char* str, void* data) {
     abort();
 }
 
-static const rustsecp256k1_v0_1_0_callback default_error_callback = {
+static const rustsecp256k1_v0_1_1_callback default_error_callback = {
     default_error_callback_fn,
     NULL
 };
 
 int main(int argc, char **argv) {
-    rustsecp256k1_v0_1_0_ecmult_gen_context ctx;
+    rustsecp256k1_v0_1_1_ecmult_gen_context ctx;
     void *prealloc, *base;
     int inner;
     int outer;
@@ -45,12 +45,12 @@ int main(int argc, char **argv) {
     fprintf(fp, "#define _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
     fprintf(fp, "#include \"src/group.h\"\n");
     fprintf(fp, "#define SC SECP256K1_GE_STORAGE_CONST\n");
-    fprintf(fp, "static const rustsecp256k1_v0_1_0_ge_storage rustsecp256k1_v0_1_0_ecmult_static_context[64][16] = {\n");
+    fprintf(fp, "static const rustsecp256k1_v0_1_1_ge_storage rustsecp256k1_v0_1_1_ecmult_static_context[64][16] = {\n");
 
     base = checked_malloc(&default_error_callback, SECP256K1_ECMULT_GEN_CONTEXT_PREALLOCATED_SIZE);
     prealloc = base;
-    rustsecp256k1_v0_1_0_ecmult_gen_context_init(&ctx);
-    rustsecp256k1_v0_1_0_ecmult_gen_context_build(&ctx, &prealloc);
+    rustsecp256k1_v0_1_1_ecmult_gen_context_init(&ctx);
+    rustsecp256k1_v0_1_1_ecmult_gen_context_build(&ctx, &prealloc);
     for(outer = 0; outer != 64; outer++) {
         fprintf(fp,"{\n");
         for(inner = 0; inner != 16; inner++) {
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
         }
     }
     fprintf(fp,"};\n");
-    rustsecp256k1_v0_1_0_ecmult_gen_context_clear(&ctx);
+    rustsecp256k1_v0_1_1_ecmult_gen_context_clear(&ctx);
     free(base);
 
     fprintf(fp, "#undef SC\n");

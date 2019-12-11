@@ -2,13 +2,13 @@ ACLOCAL_AMFLAGS = -I build-aux/m4
 
 lib_LTLIBRARIES = libsecp256k1.la
 if USE_JNI
-JNI_LIB = librustsecp256k1_v0_1_0_jni.la
+JNI_LIB = librustsecp256k1_v0_1_1_jni.la
 noinst_LTLIBRARIES = $(JNI_LIB)
 else
 JNI_LIB =
 endif
 include_HEADERS = include/secp256k1.h
-include_HEADERS += include/rustsecp256k1_v0_1_0_preallocated.h
+include_HEADERS += include/rustsecp256k1_v0_1_1_preallocated.h
 noinst_HEADERS =
 noinst_HEADERS += src/scalar.h
 noinst_HEADERS += src/scalar_4x64.h
@@ -58,7 +58,7 @@ noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.c
 
 if USE_EXTERNAL_ASM
-COMMON_LIB = librustsecp256k1_v0_1_0_common.la
+COMMON_LIB = librustsecp256k1_v0_1_1_common.la
 noinst_LTLIBRARIES = $(COMMON_LIB)
 else
 COMMON_LIB =
@@ -69,16 +69,16 @@ pkgconfig_DATA = libsecp256k1.pc
 
 if USE_EXTERNAL_ASM
 if USE_ASM_ARM
-librustsecp256k1_v0_1_0_common_la_SOURCES = src/asm/field_10x26_arm.s
+librustsecp256k1_v0_1_1_common_la_SOURCES = src/asm/field_10x26_arm.s
 endif
 endif
 
-librustsecp256k1_v0_1_0_la_SOURCES = src/secp256k1.c
-librustsecp256k1_v0_1_0_la_CPPFLAGS = -DSECP256K1_BUILD -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
-librustsecp256k1_v0_1_0_la_LIBADD = $(JNI_LIB) $(SECP_LIBS) $(COMMON_LIB)
+librustsecp256k1_v0_1_1_la_SOURCES = src/secp256k1.c
+librustsecp256k1_v0_1_1_la_CPPFLAGS = -DSECP256K1_BUILD -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
+librustsecp256k1_v0_1_1_la_LIBADD = $(JNI_LIB) $(SECP_LIBS) $(COMMON_LIB)
 
-librustsecp256k1_v0_1_0_jni_la_SOURCES  = src/java/org_bitcoin_NativeSecp256k1.c src/java/org_bitcoin_Secp256k1Context.c
-librustsecp256k1_v0_1_0_jni_la_CPPFLAGS = -DSECP256K1_BUILD $(JNI_INCLUDES)
+librustsecp256k1_v0_1_1_jni_la_SOURCES  = src/java/org_bitcoin_NativeSecp256k1.c src/java/org_bitcoin_Secp256k1Context.c
+librustsecp256k1_v0_1_1_jni_la_CPPFLAGS = -DSECP256K1_BUILD $(JNI_INCLUDES)
 
 noinst_PROGRAMS =
 if USE_BENCHMARK
@@ -161,7 +161,7 @@ gen_%.o: src/gen_%.c
 $(gen_context_BIN): $(gen_context_OBJECTS)
 	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $^ -o $@
 
-$(librustsecp256k1_v0_1_0_la_OBJECTS): src/ecmult_static_context.h
+$(librustsecp256k1_v0_1_1_la_OBJECTS): src/ecmult_static_context.h
 $(tests_OBJECTS): src/ecmult_static_context.h
 $(bench_internal_OBJECTS): src/ecmult_static_context.h
 $(bench_ecmult_OBJECTS): src/ecmult_static_context.h

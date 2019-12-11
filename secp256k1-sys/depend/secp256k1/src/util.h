@@ -18,9 +18,9 @@
 typedef struct {
     void (*fn)(const char *text, void* data);
     const void* data;
-} rustsecp256k1_v0_1_0_callback;
+} rustsecp256k1_v0_1_1_callback;
 
-static SECP256K1_INLINE void rustsecp256k1_v0_1_0_callback_call(const rustsecp256k1_v0_1_0_callback * const cb, const char * const text) {
+static SECP256K1_INLINE void rustsecp256k1_v0_1_1_callback_call(const rustsecp256k1_v0_1_1_callback * const cb, const char * const text) {
     cb->fn(text, (void*)cb->data);
 }
 

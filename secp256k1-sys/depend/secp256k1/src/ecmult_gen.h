@@ -23,21 +23,21 @@ typedef struct {
      * None of the resulting prec group elements have a known scalar, and neither do any of
      * the intermediate sums while computing a*G.
      */
-    rustsecp256k1_v0_1_0_ge_storage (*prec)[64][16]; /* prec[j][i] = 16^j * i * G + U_i */
-    rustsecp256k1_v0_1_0_scalar blind;
-    rustsecp256k1_v0_1_0_gej initial;
-} rustsecp256k1_v0_1_0_ecmult_gen_context;
+    rustsecp256k1_v0_1_1_ge_storage (*prec)[64][16]; /* prec[j][i] = 16^j * i * G + U_i */
+    rustsecp256k1_v0_1_1_scalar blind;
+    rustsecp256k1_v0_1_1_gej initial;
+} rustsecp256k1_v0_1_1_ecmult_gen_context;
 
 static const size_t SECP256K1_ECMULT_GEN_CONTEXT_PREALLOCATED_SIZE;
-static void rustsecp256k1_v0_1_0_ecmult_gen_context_init(rustsecp256k1_v0_1_0_ecmult_gen_context* ctx);
-static void rustsecp256k1_v0_1_0_ecmult_gen_context_build(rustsecp256k1_v0_1_0_ecmult_gen_context* ctx, void **prealloc);
-static void rustsecp256k1_v0_1_0_ecmult_gen_context_finalize_memcpy(rustsecp256k1_v0_1_0_ecmult_gen_context *dst, const rustsecp256k1_v0_1_0_ecmult_gen_context* src);
-static void rustsecp256k1_v0_1_0_ecmult_gen_context_clear(rustsecp256k1_v0_1_0_ecmult_gen_context* ctx);
-static int rustsecp256k1_v0_1_0_ecmult_gen_context_is_built(const rustsecp256k1_v0_1_0_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_1_1_ecmult_gen_context_init(rustsecp256k1_v0_1_1_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_1_1_ecmult_gen_context_build(rustsecp256k1_v0_1_1_ecmult_gen_context* ctx, void **prealloc);
+static void rustsecp256k1_v0_1_1_ecmult_gen_context_finalize_memcpy(rustsecp256k1_v0_1_1_ecmult_gen_context *dst, const rustsecp256k1_v0_1_1_ecmult_gen_context* src);
+static void rustsecp256k1_v0_1_1_ecmult_gen_context_clear(rustsecp256k1_v0_1_1_ecmult_gen_context* ctx);
+static int rustsecp256k1_v0_1_1_ecmult_gen_context_is_built(const rustsecp256k1_v0_1_1_ecmult_gen_context* ctx);
 
 /** Multiply with the generator: R = a*G */
-static void rustsecp256k1_v0_1_0_ecmult_gen(const rustsecp256k1_v0_1_0_ecmult_gen_context* ctx, rustsecp256k1_v0_1_0_gej *r, const rustsecp256k1_v0_1_0_scalar *a);
+static void rustsecp256k1_v0_1_1_ecmult_gen(const rustsecp256k1_v0_1_1_ecmult_gen_context* ctx, rustsecp256k1_v0_1_1_gej *r, const rustsecp256k1_v0_1_1_scalar *a);
 
-static void rustsecp256k1_v0_1_0_ecmult_gen_blind(rustsecp256k1_v0_1_0_ecmult_gen_context *ctx, const unsigned char *seed32);
+static void rustsecp256k1_v0_1_1_ecmult_gen_blind(rustsecp256k1_v0_1_1_ecmult_gen_context *ctx, const unsigned char *seed32);
 
 #endif /* SECP256K1_ECMULT_GEN_H */
