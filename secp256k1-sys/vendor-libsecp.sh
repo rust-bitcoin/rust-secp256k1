@@ -55,7 +55,7 @@ find "$DIR" -not -path '*/\.*' -type f -print0 | xargs -0 sed -i "/^#include/! s
 find "$DIR" -not -path '*/\.*' -type f -print0 | xargs -0 sed -i 's/^const int CURVE_B/static const int CURVE_B/g'
 
 while true; do
-    read -r -p "Update Rust extern references as well? [yn]: " yn
+    read -r -p "Update Rust extern references and Cargo.toml as well? [yn]: " yn
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
@@ -64,5 +64,10 @@ while true; do
 done
 
 cd "$ORIGDIR"
+
+# Update the `links = ` in the manifest file.
+sed -i -r "s/^links = \".*\"$/links = \"rustsecp256k1_v${VERSIONCODE}\"/" Cargo.toml
+
+# Update the extern references in the Rust FFI source files.
 find "./src/" -name "*.rs" -type f -print0 | xargs -0 sed -i -r "s/rustsecp256k1_v[0-9]+_[0-9]+_[0-9]+_(.*)([\"\(])/rustsecp256k1_v${VERSIONCODE}_\1\2/g"
 

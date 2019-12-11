@@ -1,4 +1,8 @@
 
+# 0.17.1
+
+- Correctly prefix the secp256k1-sys links field in Cargo.toml.
+
 # 0.17.0
 
 - Move FFI into secp256k1-sys crate.

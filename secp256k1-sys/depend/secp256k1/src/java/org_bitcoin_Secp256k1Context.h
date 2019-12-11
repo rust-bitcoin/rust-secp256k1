@@ -10,10 +10,10 @@ extern "C" {
 #endif
 /*
  * Class:     org_bitcoin_Secp256k1Context
- * Method:    rustsecp256k1_v0_1_0_init_context
+ * Method:    rustsecp256k1_v0_1_1_init_context
  * Signature: ()J
  */
-SECP256K1_API jlong JNICALL Java_org_bitcoin_Secp256k1Context_rustsecp256k1_v0_1_0_1init_1context
+SECP256K1_API jlong JNICALL Java_org_bitcoin_Secp256k1Context_rustsecp256k1_v0_1_1_1init_1context
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus
