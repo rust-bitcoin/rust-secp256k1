@@ -10,6 +10,6 @@
 #include <stdint.h>
 
 /** A scalar modulo the group order of the secp256k1 curve. */
-typedef uint32_t rustsecp256k1_v0_1_0_scalar;
+typedef uint32_t rustsecp256k1_v0_1_1_scalar;
 
 #endif /* SECP256K1_SCALAR_REPR_H */

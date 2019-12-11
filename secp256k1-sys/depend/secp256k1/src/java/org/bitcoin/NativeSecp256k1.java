@@ -69,7 +69,7 @@ public class NativeSecp256k1 {
 
         r.lock();
         try {
-          return rustsecp256k1_v0_1_0_ecdsa_verify(byteBuff, Secp256k1Context.getContext(), signature.length, pub.length) == 1;
+          return rustsecp256k1_v0_1_1_ecdsa_verify(byteBuff, Secp256k1Context.getContext(), signature.length, pub.length) == 1;
         } finally {
           r.unlock();
         }
@@ -101,7 +101,7 @@ public class NativeSecp256k1 {
 
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_ecdsa_sign(byteBuff, Secp256k1Context.getContext());
+          retByteArray = rustsecp256k1_v0_1_1_ecdsa_sign(byteBuff, Secp256k1Context.getContext());
         } finally {
           r.unlock();
         }
@@ -134,7 +134,7 @@ public class NativeSecp256k1 {
 
         r.lock();
         try {
-          return rustsecp256k1_v0_1_0_ec_seckey_verify(byteBuff,Secp256k1Context.getContext()) == 1;
+          return rustsecp256k1_v0_1_1_ec_seckey_verify(byteBuff,Secp256k1Context.getContext()) == 1;
         } finally {
           r.unlock();
         }
@@ -166,7 +166,7 @@ public class NativeSecp256k1 {
 
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_ec_pubkey_create(byteBuff, Secp256k1Context.getContext());
+          retByteArray = rustsecp256k1_v0_1_1_ec_pubkey_create(byteBuff, Secp256k1Context.getContext());
         } finally {
           r.unlock();
         }
@@ -187,7 +187,7 @@ public class NativeSecp256k1 {
     public static synchronized void cleanup() {
         w.lock();
         try {
-          rustsecp256k1_v0_1_0_destroy_context(Secp256k1Context.getContext());
+          rustsecp256k1_v0_1_1_destroy_context(Secp256k1Context.getContext());
         } finally {
           w.unlock();
         }
@@ -196,7 +196,7 @@ public class NativeSecp256k1 {
     public static long cloneContext() {
        r.lock();
        try {
-        return rustsecp256k1_v0_1_0_ctx_clone(Secp256k1Context.getContext());
+        return rustsecp256k1_v0_1_1_ctx_clone(Secp256k1Context.getContext());
        } finally { r.unlock(); }
     }
 
@@ -222,7 +222,7 @@ public class NativeSecp256k1 {
         byte[][] retByteArray;
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_privkey_tweak_mul(byteBuff,Secp256k1Context.getContext());
+          retByteArray = rustsecp256k1_v0_1_1_privkey_tweak_mul(byteBuff,Secp256k1Context.getContext());
         } finally {
           r.unlock();
         }
@@ -261,7 +261,7 @@ public class NativeSecp256k1 {
         byte[][] retByteArray;
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_privkey_tweak_add(byteBuff,Secp256k1Context.getContext());
+          retByteArray = rustsecp256k1_v0_1_1_privkey_tweak_add(byteBuff,Secp256k1Context.getContext());
         } finally {
           r.unlock();
         }
@@ -300,7 +300,7 @@ public class NativeSecp256k1 {
         byte[][] retByteArray;
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_pubkey_tweak_add(byteBuff,Secp256k1Context.getContext(), pubkey.length);
+          retByteArray = rustsecp256k1_v0_1_1_pubkey_tweak_add(byteBuff,Secp256k1Context.getContext(), pubkey.length);
         } finally {
           r.unlock();
         }
@@ -339,7 +339,7 @@ public class NativeSecp256k1 {
         byte[][] retByteArray;
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_pubkey_tweak_mul(byteBuff,Secp256k1Context.getContext(), pubkey.length);
+          retByteArray = rustsecp256k1_v0_1_1_pubkey_tweak_mul(byteBuff,Secp256k1Context.getContext(), pubkey.length);
         } finally {
           r.unlock();
         }
@@ -378,7 +378,7 @@ public class NativeSecp256k1 {
         byte[][] retByteArray;
         r.lock();
         try {
-          retByteArray = rustsecp256k1_v0_1_0_ecdh(byteBuff, Secp256k1Context.getContext(), pubkey.length);
+          retByteArray = rustsecp256k1_v0_1_1_ecdh(byteBuff, Secp256k1Context.getContext(), pubkey.length);
         } finally {
           r.unlock();
         }
@@ -411,36 +411,36 @@ public class NativeSecp256k1 {
 
         w.lock();
         try {
-          return rustsecp256k1_v0_1_0_context_randomize(byteBuff, Secp256k1Context.getContext()) == 1;
+          return rustsecp256k1_v0_1_1_context_randomize(byteBuff, Secp256k1Context.getContext()) == 1;
         } finally {
           w.unlock();
         }
     }
 
-    private static native long rustsecp256k1_v0_1_0_ctx_clone(long context);
+    private static native long rustsecp256k1_v0_1_1_ctx_clone(long context);
 
-    private static native int rustsecp256k1_v0_1_0_context_randomize(ByteBuffer byteBuff, long context);
+    private static native int rustsecp256k1_v0_1_1_context_randomize(ByteBuffer byteBuff, long context);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_privkey_tweak_add(ByteBuffer byteBuff, long context);
+    private static native byte[][] rustsecp256k1_v0_1_1_privkey_tweak_add(ByteBuffer byteBuff, long context);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_privkey_tweak_mul(ByteBuffer byteBuff, long context);
+    private static native byte[][] rustsecp256k1_v0_1_1_privkey_tweak_mul(ByteBuffer byteBuff, long context);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_pubkey_tweak_add(ByteBuffer byteBuff, long context, int pubLen);
+    private static native byte[][] rustsecp256k1_v0_1_1_pubkey_tweak_add(ByteBuffer byteBuff, long context, int pubLen);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_pubkey_tweak_mul(ByteBuffer byteBuff, long context, int pubLen);
+    private static native byte[][] rustsecp256k1_v0_1_1_pubkey_tweak_mul(ByteBuffer byteBuff, long context, int pubLen);
 
-    private static native void rustsecp256k1_v0_1_0_destroy_context(long context);
+    private static native void rustsecp256k1_v0_1_1_destroy_context(long context);
 
-    private static native int rustsecp256k1_v0_1_0_ecdsa_verify(ByteBuffer byteBuff, long context, int sigLen, int pubLen);
+    private static native int rustsecp256k1_v0_1_1_ecdsa_verify(ByteBuffer byteBuff, long context, int sigLen, int pubLen);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_ecdsa_sign(ByteBuffer byteBuff, long context);
+    private static native byte[][] rustsecp256k1_v0_1_1_ecdsa_sign(ByteBuffer byteBuff, long context);
 
-    private static native int rustsecp256k1_v0_1_0_ec_seckey_verify(ByteBuffer byteBuff, long context);
+    private static native int rustsecp256k1_v0_1_1_ec_seckey_verify(ByteBuffer byteBuff, long context);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_ec_pubkey_create(ByteBuffer byteBuff, long context);
+    private static native byte[][] rustsecp256k1_v0_1_1_ec_pubkey_create(ByteBuffer byteBuff, long context);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_ec_pubkey_parse(ByteBuffer byteBuff, long context, int inputLen);
+    private static native byte[][] rustsecp256k1_v0_1_1_ec_pubkey_parse(ByteBuffer byteBuff, long context, int inputLen);
 
-    private static native byte[][] rustsecp256k1_v0_1_0_ecdh(ByteBuffer byteBuff, long context, int inputLen);
+    private static native byte[][] rustsecp256k1_v0_1_1_ecdh(ByteBuffer byteBuff, long context, int inputLen);
 
 }
