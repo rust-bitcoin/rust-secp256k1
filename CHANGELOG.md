@@ -1,4 +1,7 @@
 
+# 0.17.2
+- Fix linking in the `fuzztarget` feature.
+
 # 0.17.1
 
 - Correctly prefix the secp256k1-sys links field in Cargo.toml.

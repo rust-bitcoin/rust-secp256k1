@@ -27,8 +27,8 @@ script:
   - cargo build --verbose --no-default-features --features="rand"
   - cargo build --verbose --no-default-features --features="rand serde recovery endomorphism"
   - cargo build --verbose --no-default-features --features="fuzztarget recovery"
-  - cargo build --verbose --features=fuzztarget
   - cargo build --verbose --features=rand
+  - cargo test --no-run --features=fuzztarget
   - cargo test --verbose --features=rand
   - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
