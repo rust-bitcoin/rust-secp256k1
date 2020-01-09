@@ -444,10 +444,14 @@ mod fuzz_dummy {
         SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
         SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
+    #[allow(non_upper_case_globals)]
+    pub static secp256k1_context_no_precomp: &Context = &Context(0);
+
     extern "C" {
+        #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdh_hash_function_default")]
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
+        #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_nonce_function_rfc6979")]
         pub static secp256k1_nonce_function_rfc6979: NonceFn;
-        pub static secp256k1_context_no_precomp: *const Context;
     }
 
     // Contexts
