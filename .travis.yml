@@ -1,5 +1,5 @@
 language: rust
-cache: 
+cache:
   directories:
   - cargo_web
 
@@ -20,34 +20,14 @@ matrix:
   - rust: 1.22.0
     os: windows
 
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then
+    choco install python3 --version 3.8 || (cat /c/ProgramData/chocolatey/logs/chocolatey.log && false) &&
+    export PATH="/c/Python38:/c/Python38/Scripts:$PATH" &&
+    shopt -s expand_aliases &&
+    alias python3="py -3";
+    fi
+
 script:
-  - cargo build --verbose --no-default-features
-  - cargo build --verbose --no-default-features --features="serde"
-  - cargo build --verbose --no-default-features --features="lowmemory"
-  - cargo build --verbose --no-default-features --features="rand"
-  - cargo build --verbose --no-default-features --features="rand serde recovery endomorphism"
-  - cargo build --verbose --no-default-features --features="fuzztarget recovery"
-  - cargo build --verbose --features=rand
-  - cargo test --no-run --features=fuzztarget
-  - cargo test --verbose --features=rand
-  - cargo test --verbose --features="rand rand-std"
-  - cargo test --verbose --features="rand serde"
-  - cargo test --verbose --features="rand serde recovery endomorphism"
-  - cargo build --verbose
-  - cargo test --verbose
-  - cargo build --verbose --release
-  - cargo test --verbose --release
-  - cargo run --example sign_verify
-  - cargo run --example sign_verify_recovery --features=recovery
-  - cargo run --example generate_keys --features=rand
-  - if [ ${TRAVIS_RUST_VERSION} == "stable" ]; then cargo doc --verbose --features="rand,serde,recovery,endomorphism"; fi
-  - if [ ${TRAVIS_RUST_VERSION} == "nightly" ]; then cargo test --verbose --benches --features=unstable; fi
-  - if [ ${TRAVIS_RUST_VERSION} == "nightly" -a "$TRAVIS_OS_NAME" = "linux" ]; then 
-    cd no_std_test &&
-    cargo run --release | grep -q "Verified Successfully";
-    fi
-  - if [ ${TRAVIS_RUST_VERSION} == "stable" -a "$TRAVIS_OS_NAME" = "linux" ]; then 
-    CARGO_TARGET_DIR=cargo_web cargo install --verbose --force cargo-web && 
-    cargo web build --verbose --target=asmjs-unknown-emscripten && 
-    cargo web test --verbose --target=asmjs-unknown-emscripten; 
-    fi
+  - python3 --version
+  - python3 ./contrib/tests.py
