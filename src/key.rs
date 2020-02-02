@@ -197,6 +197,12 @@ impl SecretKey {
             }
         }
     }
+
+    #[inline]
+    /// Returns inner slice of bytes which represents `SecretKey`.
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
 }
 
 serde_impl!(SecretKey, constants::SECRET_KEY_SIZE);
@@ -355,6 +361,12 @@ impl PublicKey {
             }
         }
     }
+
+    #[inline]
+    /// Returns inner slice of bytes which represents `PublicKey`.
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
 }
 
 impl CPtr for PublicKey {
@@ -473,6 +485,13 @@ mod test {
         assert!(sk.is_ok());
     }
 
+
+    #[test]
+    fn skey_as_slice() {
+        let sk = SecretKey::from_slice(&[1; 32]).unwrap();
+        assert_eq!(sk.as_slice(), &[1; 32]);
+    }
+
     #[test]
     fn pubkey_from_slice() {
         assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
@@ -483,6 +502,12 @@ mod test {
 
         let compressed = PublicKey::from_slice(&[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
         assert!(compressed.is_ok());
+    }
+
+    #[test]
+    fn pubkey_as_slice() {
+        let pubkey = PublicKey::from_slice(&[4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]).unwrap();
+        assert_eq!(pubkey.as_slice(), &[179, 49, 74, 67, 135, 156, 94, 162, 30, 121, 57, 100, 40, 220, 85, 224, 234, 82, 10, 152, 154, 75, 239, 254, 246, 175, 148, 162, 239, 149, 57, 54, 188, 228, 60, 113, 123, 247, 51, 155, 195, 152, 183, 227, 86, 193, 96, 55, 111, 110, 229, 211, 72, 30, 74, 77, 168, 144, 149, 124, 162, 53, 236, 57][..]);
     }
 
     #[test]
