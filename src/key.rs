@@ -492,7 +492,6 @@ mod test {
         assert_eq!(sk.serialize(), [1; 32]);
     }
 
-
     #[test]
     fn skey_as_slice() {
         let sk = SecretKey::from_slice(&[1; 32]).unwrap();
