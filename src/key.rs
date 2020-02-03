@@ -126,7 +126,7 @@ impl SecretKey {
         SecretKey(data)
     }
 
-    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
+    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key.
     #[inline]
     pub fn from_slice(data: &[u8])-> Result<SecretKey, Error> {
         match data.len() {
@@ -199,6 +199,13 @@ impl SecretKey {
     }
 
     #[inline]
+    /// Serializes key to owned slice of bytes. Current implementation just
+    /// copies internal buffer. If you need a reference, use `as_slice` instead.
+    pub fn serialize(&self) -> [u8; 32] {
+        self.0
+    }
+
+    #[inline]
     /// Returns inner slice of bytes which represents `SecretKey`.
     pub fn as_slice(&self) -> &[u8] {
         &self.0[..]
@@ -208,13 +215,13 @@ impl SecretKey {
 serde_impl!(SecretKey, constants::SECRET_KEY_SIZE);
 
 impl PublicKey {
-    /// Obtains a raw const pointer suitable for use with FFI functions
+    /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
         &self.0 as *const _
     }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey {
         &mut self.0 as *mut _
@@ -235,7 +242,7 @@ impl PublicKey {
         PublicKey(pk)
     }
 
-    /// Creates a public key directly from a slice
+    /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         if data.is_empty() {return Err(Error::InvalidPublicKey);}
@@ -257,7 +264,7 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Serialize the key as a byte-encoded pair of values. In compressed form
+    /// Serializes the key as a byte-encoded pair of values. In compressed form
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
@@ -278,7 +285,7 @@ impl PublicKey {
         ret
     }
 
-    /// Serialize the key as a byte-encoded pair of values, in uncompressed form
+    /// Serializes the key as a byte-encoded pair of values, in uncompressed form.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
         let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
@@ -343,7 +350,7 @@ impl PublicKey {
 
     /// Adds a second key to this one, returning the sum. Returns an error if
     /// the result would be the point at infinity, i.e. we are adding this point
-    /// to its own negation
+    /// to its own negation.
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         unsafe {
             let mut ret = ffi::PublicKey::new();
@@ -360,12 +367,6 @@ impl PublicKey {
                 Err(InvalidPublicKey)
             }
         }
-    }
-
-    #[inline]
-    /// Returns inner slice of bytes which represents `PublicKey`.
-    pub fn as_slice(&self) -> &[u8] {
-        &self.0[..]
     }
 }
 
@@ -485,6 +486,12 @@ mod test {
         assert!(sk.is_ok());
     }
 
+    #[test]
+    fn skey_serialize() {
+        let sk = SecretKey::from_slice(&[1; 32]).unwrap();
+        assert_eq!(sk.serialize(), [1; 32]);
+    }
+
 
     #[test]
     fn skey_as_slice() {
@@ -502,12 +509,6 @@ mod test {
 
         let compressed = PublicKey::from_slice(&[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]);
         assert!(compressed.is_ok());
-    }
-
-    #[test]
-    fn pubkey_as_slice() {
-        let pubkey = PublicKey::from_slice(&[4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85, 220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124, 149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195, 155, 51, 247, 123, 113, 60, 228, 188]).unwrap();
-        assert_eq!(pubkey.as_slice(), &[179, 49, 74, 67, 135, 156, 94, 162, 30, 121, 57, 100, 40, 220, 85, 224, 234, 82, 10, 152, 154, 75, 239, 254, 246, 175, 148, 162, 239, 149, 57, 54, 188, 228, 60, 113, 123, 247, 51, 155, 195, 152, 183, 227, 86, 193, 96, 55, 111, 110, 229, 211, 72, 30, 74, 77, 168, 144, 149, 124, 162, 53, 236, 57][..]);
     }
 
     #[test]
