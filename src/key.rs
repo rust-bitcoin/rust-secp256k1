@@ -199,7 +199,7 @@ impl SecretKey {
     }
 
     #[inline]
-    /// Serializes key to owned slice of bytes. Current implementation just
+    /// Serializes key to array of bytes. Current implementation just
     /// copies internal buffer. If you need a reference, use `as_slice` instead.
     pub fn serialize(&self) -> [u8; 32] {
         self.0
