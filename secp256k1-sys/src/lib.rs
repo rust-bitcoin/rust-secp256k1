@@ -702,6 +702,20 @@ mod fuzz_dummy {
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
+    pub unsafe fn secp256k1_ec_privkey_negate(cx: *const Context,
+                                              sk: *mut c_uchar) -> c_int {
+        assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
+        if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
+        1
+    }
+
+    pub unsafe fn secp256k1_ec_pubkey_negate(cx: *const Context,
+                                             pk: *mut PublicKey) -> c_int {
+        assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
+        if test_pk_validate(cx, pk) != 1 { return 0; }
+        1
+    }
+
     /// Copies the first 16 bytes of tweak into the last 16 bytes of sk
     pub unsafe fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                                  sk: *mut c_uchar,
