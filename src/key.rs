@@ -149,6 +149,19 @@ impl SecretKey {
     }
 
     #[inline]
+    /// Negates one secret key.
+    pub fn negate_assign(
+        &mut self
+    ) {
+        unsafe {
+            ffi::secp256k1_ec_privkey_negate(
+                ffi::secp256k1_context_no_precomp,
+                self.as_mut_c_ptr()
+            );
+        }
+    }
+
+    #[inline]
     /// Adds one secret key to another, modulo the curve order. WIll
     /// return an error if the resulting key would be invalid or if
     /// the tweak was not a 32-byte length slice.
@@ -289,6 +302,22 @@ impl PublicKey {
             debug_assert_eq!(ret_len, ret.len());
         }
         ret
+    }
+
+    #[inline]
+    /// Negates the pk to the pk `self` in place
+    /// Will return an error if the pk would be invalid.
+    pub fn negate_assign<C: Verification>(
+        &mut self,
+        secp: &Secp256k1<C>
+    ) -> Result<(), Error> {
+        unsafe {
+            if ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0 as *mut _) == 1 {
+                Ok(())
+            } else {
+                Err(Error::InvalidPublicKey)
+            }
+        }
     }
 
     #[inline]
@@ -750,6 +779,27 @@ mod test {
         assert!(sk2.mul_assign(&sk1[..]).is_ok());
         assert!(pk2.mul_assign(&s, &sk1[..]).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
+    }
+
+    #[test]
+    fn test_negation() {
+        let s = Secp256k1::new();
+
+        let (mut sk, mut pk) = s.generate_keypair(&mut thread_rng());
+
+        let original_sk = sk;
+        let original_pk = pk;
+
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
+        sk.negate_assign();
+        assert!(pk.negate_assign(&s).is_ok());
+        assert_ne!(original_sk, sk);
+        assert_ne!(original_pk, pk);
+        sk.negate_assign();
+        assert!(pk.negate_assign(&s).is_ok());
+        assert_eq!(original_sk, sk);
+        assert_eq!(original_pk, pk);
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
     }
 
     #[test]

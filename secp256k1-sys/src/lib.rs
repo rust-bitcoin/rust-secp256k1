@@ -243,6 +243,14 @@ extern "C" {
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_privkey_negate")]
+    pub fn secp256k1_ec_privkey_negate(cx: *const Context,
+                                       sk: *mut c_uchar) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_pubkey_negate")]
+    pub fn secp256k1_ec_pubkey_negate(cx: *const Context,
+                                      pk: *mut PublicKey) -> c_int;
+
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_privkey_tweak_add")]
     pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                           sk: *mut c_uchar,
