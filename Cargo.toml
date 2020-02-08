@@ -41,13 +41,13 @@ fuzztarget = ["secp256k1-sys/fuzztarget"]
 secp256k1-sys = { version = "0.1.1", default-features = false, path = "./secp256k1-sys" }
 
 [dev-dependencies]
-rand = "0.6"
-rand_core = "0.4"
+rand = "0.7"
+rand_core = "0.5"
 serde_test = "1.0"
 bitcoin_hashes = "0.7"
 
 [dependencies.rand]
-version = "0.6"
+version = "0.7"
 optional = true
 default-features = false
 

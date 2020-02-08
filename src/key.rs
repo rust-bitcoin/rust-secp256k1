@@ -451,7 +451,7 @@ mod test {
     use super::{PublicKey, SecretKey};
     use super::super::constants;
 
-    use rand::{Error, ErrorKind, RngCore, thread_rng};
+    use rand::{Error, RngCore, thread_rng};
     use rand_core::impls;
     use std::iter;
     use std::str::FromStr;
@@ -624,7 +624,7 @@ mod test {
             }
 
             fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
+                unimplemented!();
             }
         }
 
@@ -700,7 +700,7 @@ mod test {
                 self.next_u32() as u64
             }
             fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
+                unimplemented!();
             }
 
             fn fill_bytes(&mut self, dest: &mut [u8]) {
