@@ -21,6 +21,7 @@ matrix:
     os: windows
 
 script:
+  - cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose
   - cargo build --verbose --no-default-features
   - cargo build --verbose --no-default-features --features="serde"
   - cargo build --verbose --no-default-features --features="lowmemory"
