@@ -26,12 +26,6 @@ $ ./vendor-libsecp.sh depend <version-code> <rev>
 - Where `<version-code>` is the secp256k1-sys version number underscored: `0_1_2`.
 - Where `<rev>` is the git revision of libsecp256k1 to checkout.
 
-## Note
-
-The build dependency `cc` might require a recent version of the rust compiler.
-If you want to compile it with rust 1.22.0, pin its version in your `Cargo.lock`
-with `cargo update -p cc --precise 1.0.41`.
-
 ## Linking to external symbols
 
 For the more exotic use cases, this crate can be used with existing libsecp256k1

@@ -21,3 +21,9 @@ Contributions to this library are welcome. A few guidelines:
 * No new dependencies, please.
 * No crypto should be implemented in Rust, with the possible exception of hash functions. Cryptographic contributions should be directed upstream to libsecp256k1.
 * This library should always compile with any combination of features on **Rust 1.22**.
+
+## A note on Rust 1.22 support
+
+The build dependency `cc` might require a more recent version of the Rust compiler.
+To ensure compilation with Rust 1.22.0, pin its version in your `Cargo.lock`
+with `cargo update -p cc --precise 1.0.41`.
