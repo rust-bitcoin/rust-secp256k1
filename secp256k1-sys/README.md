@@ -26,6 +26,7 @@ $ ./vendor-libsecp.sh depend <version-code> <rev>
 - Where `<version-code>` is the secp256k1-sys version number underscored: `0_1_2`.
 - Where `<rev>` is the git revision of libsecp256k1 to checkout.
 
+
 ## Linking to external symbols
 
 For the more exotic use cases, this crate can be used with existing libsecp256k1
