@@ -304,7 +304,6 @@ mod benches {
         let s = Secp256k1::signing_only();
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let s = Secp256k1::new();
         bh.iter( || {
             let res = SharedSecret::new(&pk, &sk);
             black_box(res);
