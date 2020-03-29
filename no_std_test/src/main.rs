@@ -14,13 +14,13 @@
 
 //! # secp256k1 no-std test.
 //! This binary is a short smallest rust code to produce a working binary *without libstd*.
-//! This gives us 2 things: 
+//! This gives us 2 things:
 //!     1. Test that the parts of the code that should work in a no-std enviroment actually work.
 //!     2. Test that we don't accidentally import libstd into `secp256k1`.
-//! 
+//!
 //! The first is tested using the following command `cargo run --release | grep -q "Verified Successfully"`.
 //! (Making sure that it successfully printed that. i.e. it didn't abort before that).
-//! 
+//!
 //! The second is tested by the fact that it compiles. if we accidentally link against libstd we should see the following error:
 //! `error[E0152]: duplicate lang item found`.
 //! Example:
@@ -33,11 +33,11 @@
 //!    |
 //!    = note: first defined in crate `panic_unwind` (which `std` depends on).
 //! ```
-//! 
-//! Notes: 
+//!
+//! Notes:
 //!     * Requires `panic=abort` and `--release` to not depend on libunwind(which is provided usually by libstd) https://github.com/rust-lang/rust/issues/47493
 //!     * Requires linking with `libc` for calling `printf`.
-//!     
+//!
 
 #![feature(lang_items)]
 #![feature(start)]
@@ -52,10 +52,10 @@ use core::fmt::{self, write, Write};
 use core::intrinsics;
 use core::panic::PanicInfo;
 
+use secp256k1::ecdh::SharedSecret;
 use secp256k1::rand::{self, RngCore};
 use secp256k1::serde::Serialize;
 use secp256k1::*;
-use secp256k1::ecdh::SharedSecret;
 
 use serde_cbor::de;
 use serde_cbor::ser::SliceWrite;
@@ -111,23 +111,10 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     })}.unwrap();
     assert_ne!(x_arr, [0u8; 32]);
     assert_ne!(&y_arr[..], &[0u8; 32][..]);
-    
 
     unsafe { libc::printf("Verified Successfully!\n\0".as_ptr() as _) };
     0
 }
-
-// These functions are used by the compiler, but not
-// for a bare-bones hello world. These are normally
-// provided by libstd.
-#[lang = "eh_personality"]
-#[no_mangle]
-pub extern "C" fn rust_eh_personality() {}
-
-// This function may be needed based on the compilation target.
-#[lang = "eh_unwind_resume"]
-#[no_mangle]
-pub extern "C" fn rust_eh_unwind_resume() {}
 
 const MAX_PRINT: usize = 511;
 struct Print {
