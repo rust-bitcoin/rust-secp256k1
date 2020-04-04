@@ -63,7 +63,6 @@ fn main() {
     } else {
         base_config.define("ECMULT_WINDOW_SIZE", Some("15")); // This is the default in the configure file (`auto`)
     }
-    #[cfg(not(feature = "dont_replace_c_symbols"))]
     base_config.define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
     #[cfg(feature = "endomorphism")]
     base_config.define("USE_ENDOMORPHISM", Some("1"));
