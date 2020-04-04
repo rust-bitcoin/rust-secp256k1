@@ -1,7 +1,7 @@
 language: rust
-cache: 
-  directories:
-  - cargo_web
+# cache:
+#   directories:
+#   - cargo_web
 
 rust:
   - stable
@@ -42,12 +42,12 @@ script:
   - cargo run --example generate_keys --features=rand
   - if [ ${TRAVIS_RUST_VERSION} == "stable" ]; then cargo doc --verbose --features="rand,serde,recovery,endomorphism"; fi
   - if [ ${TRAVIS_RUST_VERSION} == "nightly" ]; then cargo test --verbose --benches --features=unstable; fi
-  - if [ ${TRAVIS_RUST_VERSION} == "nightly" -a "$TRAVIS_OS_NAME" = "linux" ]; then 
+  - if [ ${TRAVIS_RUST_VERSION} == "nightly" -a "$TRAVIS_OS_NAME" = "linux" ]; then
     cd no_std_test &&
     cargo run --release | grep -q "Verified Successfully";
     fi
-  - if [ ${TRAVIS_RUST_VERSION} == "stable" -a "$TRAVIS_OS_NAME" = "linux" ]; then 
-    CARGO_TARGET_DIR=cargo_web cargo install --verbose --force cargo-web && 
-    cargo web build --verbose --target=asmjs-unknown-emscripten && 
-    cargo web test --verbose --target=asmjs-unknown-emscripten; 
-    fi
+  - #if [ ${TRAVIS_RUST_VERSION} == "stable" -a "$TRAVIS_OS_NAME" = "linux" ]; then
+    #CARGO_TARGET_DIR=cargo_web cargo install --verbose --force cargo-web &&
+    #cargo web build --verbose --target=asmjs-unknown-emscripten &&
+    #cargo web test --verbose --target=asmjs-unknown-emscripten;
+    #fi
