@@ -63,7 +63,7 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         algo16: *const c_uchar,
                                         data: *mut c_void,
                                         attempt: c_uint,
-);
+) -> c_int;
 
 /// Hash function to use to post-process an ECDH point to get
 /// a shared secret.
@@ -490,13 +490,6 @@ mod fuzz_dummy {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         1
     }
-
-    // TODO secp256k1_context_set_illegal_callback
-    // TODO secp256k1_context_set_error_callback
-    // (Actually, I don't really want these exposed; if either of these
-    // are ever triggered it indicates a bug in rust-secp256k1, since
-    // one goal is to use Rust's type system to eliminate all possible
-    // bad inputs.)
 
     // Pubkeys
     /// Parse 33/65 byte pubkey into PublicKey, losing compressed information
