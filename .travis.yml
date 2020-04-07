@@ -30,6 +30,7 @@ script:
     cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose;
     fi
   - cargo build --verbose --no-default-features
+  - cargo build --verbose --no-default-features --features="bitcoin_hashes"
   - cargo build --verbose --no-default-features --features="serde"
   - cargo build --verbose --no-default-features --features="lowmemory"
   - cargo build --verbose --no-default-features --features="rand"
@@ -37,6 +38,7 @@ script:
   - cargo build --verbose --no-default-features --features="fuzztarget recovery"
   - cargo build --verbose --features=rand
   - cargo test --no-run --features=fuzztarget
+  - cargo test --verbose --features="bitcoin_hashes"
   - cargo test --verbose --features=rand
   - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
