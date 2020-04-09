@@ -363,6 +363,10 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
+    use rand::{thread_rng, RngCore};
+    use test::{Bencher, black_box};
+    use super::{Message, Secp256k1};
+
     #[bench]
     pub fn bench_recover(bh: &mut Bencher) {
         let s = Secp256k1::new();

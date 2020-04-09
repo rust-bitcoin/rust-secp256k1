@@ -22,7 +22,6 @@ use core::ops::{FnMut, Deref};
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
-use Error;
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone)]
@@ -89,38 +88,11 @@ impl Deref for SharedSecret {
 }
 
 
-unsafe fn callback_logic<F>(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, data: *mut c_void) -> c_int 
-    where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-    let callback: &mut F = &mut *(data as *mut F);
-
-    let mut x_arr = [0; 32];
-    let mut y_arr = [0; 32];
-    ptr::copy_nonoverlapping(x, x_arr.as_mut_ptr(), 32);
-    ptr::copy_nonoverlapping(y, y_arr.as_mut_ptr(), 32);
-
-    let secret = callback(x_arr, y_arr);
-    ptr::copy_nonoverlapping(secret.as_ptr(), output as *mut u8, secret.len());
-
-    secret.len() as c_int
+unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, _data: *mut c_void) -> c_int {
+    ptr::copy_nonoverlapping(x, output, 32);
+    ptr::copy_nonoverlapping(y, output.offset(32), 32);
+    1
 }
-
-#[cfg(feature = "std")]
-unsafe extern "C" fn hash_callback_catch_unwind<F>(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, data: *mut c_void) -> c_int
-    where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-
-    let res = ::std::panic::catch_unwind(||callback_logic::<F>(output, x, y, data));
-    if let Ok(len) = res {
-        len
-    } else {
-        -1
-    }
-}
-
-unsafe extern "C" fn hash_callback_unsafe<F>(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, data: *mut c_void) -> c_int
-    where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-    callback_logic::<F>(output, x, y, data)
-}
-
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key
@@ -137,35 +109,17 @@ impl SharedSecret {
                 ptr::null_mut(),
             )
         };
-        debug_assert_eq!(res, 1); // The default `secp256k1_ecdh_hash_function_default` should always return 1.
+        // The default `secp256k1_ecdh_hash_function_default` should always return 1.
+        // and the scalar was verified to be valid(0 > scalar > group_order) via the type system
+        debug_assert_eq!(res, 1);
         ss.set_len(32); // The default hash function is SHA256, which is 32 bytes long.
         ss
     }
 
-    fn new_with_callback_internal<F>(point: &PublicKey, scalar: &SecretKey, mut closure: F, callback: ffi::EcdhHashFn) -> Result<SharedSecret, Error>
-        where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-        let mut ss = SharedSecret::empty();
-
-        let res =  unsafe {
-            ffi::secp256k1_ecdh(
-                ffi::secp256k1_context_no_precomp,
-                ss.get_data_mut_ptr(),
-                point.as_ptr(),
-                scalar.as_ptr(),
-                callback,
-                &mut closure as *mut F as *mut c_void,
-            )
-        };
-        if res == -1 {
-            return Err(Error::CallbackPanicked);
-        }
-        debug_assert!(res >= 16); // 128 bit is the minimum for a secure hash function and the minimum we let users.
-        ss.set_len(res as usize);
-        Ok(ss)
-
-    }
 
     /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
+    /// The custom hash function must be in the form of `fn(x: [u8;32], y: [u8;32]) -> SharedSecret`
+    /// `SharedSecret` can be easily created via the `From` impl from arrays.
     /// # Examples
     /// ```
     /// # use secp256k1::ecdh::SharedSecret;
@@ -182,43 +136,29 @@ impl SharedSecret {
     /// });
     ///
     /// ```
-    #[cfg(feature = "std")]
-    pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, hash_function: F) -> Result<SharedSecret, Error>
+    pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, mut hash_function: F) -> SharedSecret
         where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-            Self::new_with_callback_internal(point, scalar, hash_function, hash_callback_catch_unwind::<F>)
-    }
+        let mut xy = [0u8; 64];
 
-    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
-    /// Note that this function is the same as [`new_with_hash`]
-    ///
-    /// # Safety
-    /// The function doesn't wrap the callback with [`catch_unwind`]
-    /// so if the callback panics it will panic through an FFI boundray which is [`Undefined Behavior`]
-    /// If possible you should use [`new_with_hash`] which does wrap the callback with [`catch_unwind`] so is safe to use.
-    ///
-    /// [`catch_unwind`]: https://doc.rust-lang.org/std/panic/fn.catch_unwind.html
-    /// [`Undefined Behavior`]: https://doc.rust-lang.org/nomicon/ffi.html#ffi-and-panics
-    /// [`new_with_hash`]: #method.new_with_hash
-    /// # Examples
-    /// ```
-    /// # use secp256k1::ecdh::SharedSecret;
-    /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
-    /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
-    /// # let secp = Secp256k1::signing_only();
-    /// # let secret_key = SecretKey::from_slice(&[3u8; 32]).unwrap();
-    /// # let secret_key2 = SecretKey::from_slice(&[7u8; 32]).unwrap();
-    /// # let public_key = PublicKey::from_secret_key(&secp, &secret_key2);
-    //
-    /// let secret = unsafe { SharedSecret::new_with_hash_no_panic(&public_key, &secret_key, |x,y| {
-    ///     let hash: [u8; 32] = sha2(&x,&y);
-    ///     hash.into()
-    /// })};
-    ///
-    ///
-    /// ```
-    pub unsafe fn new_with_hash_no_panic<F>(point: &PublicKey, scalar: &SecretKey, hash_function: F) -> Result<SharedSecret, Error>
-        where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-        Self::new_with_callback_internal(point, scalar, hash_function, hash_callback_unsafe::<F>)
+        let res = unsafe {
+            ffi::secp256k1_ecdh(
+                ffi::secp256k1_context_no_precomp,
+                xy.as_mut_ptr(),
+                point.as_ptr(),
+                scalar.as_ptr(),
+                c_callback,
+                ptr::null_mut(),
+            )
+        };
+        // Our callback *always* returns 1.
+        // and the scalar was verified to be valid(0 > scalar > group_order) via the type system
+        debug_assert_eq!(res, 1);
+
+        let mut x = [0u8; 32];
+        let mut y = [0u8; 32];
+        x.copy_from_slice(&xy[..32]);
+        y.copy_from_slice(&xy[32..]);
+        hash_function(x, y)
     }
 }
 
@@ -248,9 +188,9 @@ mod tests {
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
         
-        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into()).unwrap();
-        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into()).unwrap();
-        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into()).unwrap();
+        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into());
+        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into());
+        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into());
         assert_eq!(sec1, sec2);
         assert_ne!(sec_odd, sec2);
     }
@@ -262,32 +202,29 @@ mod tests {
         let expect_result: [u8; 64] = [123; 64];
         let mut x_out = [0u8; 32];
         let mut y_out = [0u8; 32];
-        let result = SharedSecret::new_with_hash(&pk1, &sk1, | x, y | {
+        let result = SharedSecret::new_with_hash(&pk1, &sk1, |x, y| {
             x_out = x;
             y_out = y;
             expect_result.into()
-        }).unwrap();
-        let result_unsafe = unsafe {SharedSecret::new_with_hash_no_panic(&pk1, &sk1, | x, y | {
-            x_out = x;
-            y_out = y;
-            expect_result.into()
-        }).unwrap()};
+        });
         assert_eq!(&expect_result[..], &result[..]);
-        assert_eq!(result, result_unsafe);
         assert_ne!(x_out, [0u8; 32]);
         assert_ne!(y_out, [0u8; 32]);
     }
 
     #[test]
-    fn ecdh_with_hash_callback_panic() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        let mut res = [0u8; 48];
-        let result = SharedSecret::new_with_hash(&pk1, &sk1, | x, _ | {
-            res.copy_from_slice(&x); // res.len() != x.len(). this will panic.
-            res.into()
-        });
-        assert_eq!(result, Err(Error::CallbackPanicked));
+    fn test_c_callback() {
+        let x = [5u8; 32];
+        let y = [7u8; 32];
+        let mut output = [0u8; 64];
+        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), ::ptr::null_mut()) };
+        assert_eq!(res, 1);
+        let mut new_x = [0u8; 32];
+        let mut new_y = [0u8; 32];
+        new_x.copy_from_slice(&output[..32]);
+        new_y.copy_from_slice(&output[32..]);
+        assert_eq!(x, new_x);
+        assert_eq!(y, new_y);
     }
 }
 
@@ -304,7 +241,6 @@ mod benches {
         let s = Secp256k1::signing_only();
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let s = Secp256k1::new();
         bh.iter( || {
             let res = SharedSecret::new(&pk, &sk);
             black_box(res);

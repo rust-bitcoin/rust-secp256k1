@@ -63,7 +63,7 @@ pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
                                         algo16: *const c_uchar,
                                         data: *mut c_void,
                                         attempt: c_uint,
-);
+) -> c_int;
 
 /// Hash function to use to post-process an ECDH point to get
 /// a shared secret.
@@ -295,7 +295,7 @@ extern "C" {
 // Returns: a newly created context object.
 //  In:      flags: which parts of the context to initialize.
 #[no_mangle]
-#[cfg(all(feature = "std", not(feature = "external_symbols")))]
+#[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_create(flags: c_uint) -> *mut Context {
     use std::mem;
     assert!(mem::align_of::<usize>() >= mem::align_of::<u8>());
@@ -312,7 +312,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_create(flags: c_uint) -> *
     secp256k1_context_preallocated_create(ptr as *mut c_void, flags)
 }
 
-#[cfg(all(feature = "std", not(feature = "external_symbols")))]
+#[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
     rustsecp256k1_v0_1_1_context_create(flags)
 }
@@ -324,7 +324,7 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 /// The pointer shouldn't be used after passing to this function, consider it as passing it to `free()`.
 ///
 #[no_mangle]
-#[cfg(all(feature = "std", not(feature = "external_symbols")))]
+#[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_destroy(ctx: *mut Context) {
     secp256k1_context_preallocated_destroy(ctx);
     let ctx: *mut usize = ctx as *mut usize;
@@ -335,7 +335,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_1_1_context_destroy(ctx: *mut Context)
     let _ = Box::from_raw(slice as *mut [usize]);
 }
 
-#[cfg(all(feature = "std", not(feature = "external_symbols")))]
+#[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
     rustsecp256k1_v0_1_1_context_destroy(ctx)
 }
@@ -360,7 +360,7 @@ pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
 /// See also secp256k1_default_error_callback_fn.
 ///
 #[no_mangle]
-#[cfg(not(feature = "external_symbols"))]
+#[cfg(not(feature = "external-symbols"))]
 pub unsafe extern "C" fn rustsecp256k1_v0_1_1_default_illegal_callback_fn(message: *const c_char, _data: *mut c_void) {
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
@@ -383,7 +383,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_1_1_default_illegal_callback_fn(messag
 /// See also secp256k1_default_illegal_callback_fn.
 ///
 #[no_mangle]
-#[cfg(not(feature = "external_symbols"))]
+#[cfg(not(feature = "external-symbols"))]
 pub unsafe extern "C" fn rustsecp256k1_v0_1_1_default_error_callback_fn(message: *const c_char, _data: *mut c_void) {
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
@@ -490,13 +490,6 @@ mod fuzz_dummy {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         1
     }
-
-    // TODO secp256k1_context_set_illegal_callback
-    // TODO secp256k1_context_set_error_callback
-    // (Actually, I don't really want these exposed; if either of these
-    // are ever triggered it indicates a bug in rust-secp256k1, since
-    // one goal is to use Rust's type system to eliminate all possible
-    // bad inputs.)
 
     // Pubkeys
     /// Parse 33/65 byte pubkey into PublicKey, losing compressed information

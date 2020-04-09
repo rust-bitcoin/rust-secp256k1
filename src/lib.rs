@@ -496,8 +496,6 @@ pub enum Error {
     InvalidTweak,
     /// Didn't pass enough memory to context creation with preallocated memory
     NotEnoughMemory,
-    /// The callback has panicked.
-    CallbackPanicked,
 }
 
 impl Error {
@@ -511,7 +509,6 @@ impl Error {
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
-            Error::CallbackPanicked => "secp: a callback passed has panicked",
         }
     }
 }
@@ -734,7 +731,6 @@ mod tests {
 
 
     #[test]
-    #[cfg(not(feature = "dont_replace_c_symbols"))]
     fn test_manual_create_destroy() {
         let ctx_full = unsafe { ffi::secp256k1_context_create(AllPreallocated::FLAGS) };
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };

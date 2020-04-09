@@ -22,7 +22,7 @@ name = "secp256k1"
 path = "src/lib.rs"
 
 [features]
-unstable = []
+unstable = ["recovery", "rand-std"]
 default = ["std"]
 std = ["secp256k1-sys/std"]
 rand-std = ["rand/std"]
