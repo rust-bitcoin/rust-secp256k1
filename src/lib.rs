@@ -1060,6 +1060,33 @@ mod tests {
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
     }
+
+    // For WASM, just run through our general tests in this file all at once.
+    #[cfg(target_arch = "wasm32")]
+    extern crate wasm_bindgen_test;
+    #[cfg(target_arch = "wasm32")]
+    use self::wasm_bindgen_test::*;
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test]
+    fn stuff() {
+        test_manual_create_destroy();
+        test_raw_ctx();
+        // Note that, sadly, WASM doesn't currently properly unwind panics, so use of the library
+        // via unsafe primitives may cause abort() instead of catch-able panics.
+        /*assert!(std::panic::catch_unwind(|| {
+            test_panic_raw_ctx();
+        }).is_err());*/
+        test_preallocation();
+        capabilities();
+        signature_serialize_roundtrip();
+        signature_display();
+        signature_lax_der();
+        sign_and_verify();
+        sign_and_verify_extreme();
+        sign_and_verify_fail();
+        test_bad_slice();
+        test_low_s();
+    }
 }
 
 #[cfg(all(test, feature = "unstable"))]

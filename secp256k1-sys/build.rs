@@ -84,6 +84,10 @@ fn main() {
                    .define("USE_SCALAR_8X32", Some("1"));
     }
 
+    if env::var("TARGET").unwrap() == "wasm32-unknown-unknown" {
+        base_config.include("wasm-sysroot");
+    }
+
     // secp256k1
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
                .file("depend/secp256k1/src/secp256k1.c")
