@@ -663,7 +663,7 @@ impl<C: Signing> Secp256k1<C> {
 
 impl<C: Verification> Secp256k1<C> {
     /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
-    /// key `pubkey`. Returns `Ok(true)` on success. Note that this function cannot
+    /// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
     /// be used for Bitcoin consensus checking since there may exist signatures
     /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
     /// verify-capable context.
