@@ -6,7 +6,7 @@ use secp256k1::{Error, Message, PublicKey, Secp256k1, SecretKey, Signature, Sign
 
 fn verify<C: Verification>(secp: &Secp256k1<C>, msg: &[u8], sig: [u8; 64], pubkey: [u8; 33]) -> Result<bool, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from(msg);
     let sig = Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
@@ -15,7 +15,7 @@ fn verify<C: Verification>(secp: &Secp256k1<C>, msg: &[u8], sig: [u8; 64], pubke
 
 fn sign<C: Signing>(secp: &Secp256k1<C>, msg: &[u8], seckey: [u8; 32]) -> Result<Signature, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from(msg);
     let seckey = SecretKey::from_slice(&seckey)?;
     Ok(secp.sign(&msg, &seckey))
 }

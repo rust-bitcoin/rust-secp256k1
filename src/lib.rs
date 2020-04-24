@@ -50,7 +50,7 @@
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
 //! let (secret_key, public_key) = secp.generate_keypair(&mut rng);
-//! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+//! let message = Message::from([0xab; 32]);
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
@@ -68,7 +68,7 @@
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-//! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+//! let message = Message::from([0xab; 32]);
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
@@ -91,12 +91,12 @@
 //!     0x3a, 0x17, 0x10, 0xc9, 0x62, 0x67, 0x90, 0x63,
 //! ]).expect("public keys must be 33 or 65 bytes, serialized according to SEC 2");
 //!
-//! let message = Message::from_slice(&[
+//! let message = Message::from([
 //!     0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe,
 //!     0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0, 0xcd, 0x91,
 //!     0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61,
 //!     0xd5, 0x44, 0x53, 0xcf, 0x6e, 0x82, 0xb4, 0x50,
-//! ]).expect("messages must be 32 bytes and are expected to be hashes");
+//! ]);
 //!
 //! let sig = Signature::from_compact(&[
 //!     0xdc, 0x4d, 0xc2, 0x64, 0xa9, 0xfe, 0xf1, 0x7a,
@@ -209,14 +209,6 @@ fn from_str(s: &str) -> Result<Signature, Error> {
         _ => Err(Error::InvalidSignature),
     }
 }
-}
-
-/// Trait describing something that promises to be a 32-byte random number; in particular,
-/// it has negligible probability of being zero or overflowing the group order. Such objects
-/// may be converted to `Message`s without any error paths.
-pub trait ThirtyTwoByteHash {
-    /// Converts the object into a 32-byte array
-    fn into_32(self) -> [u8; 32];
 }
 
 impl SerializedSignature {
@@ -469,10 +461,10 @@ impl Message {
     }
 }
 
-impl<T: ThirtyTwoByteHash> From<T> for Message {
-    /// Converts a 32-byte hash directly to a message without error paths
-    fn from(t: T) -> Message {
-        Message(t.into_32())
+impl<T> From<T> for Message where T: Into<[u8; 32]> {
+    fn from(t: T) -> Self {
+        let array = t.into();
+        Message(array)
     }
 }
 
@@ -742,7 +734,7 @@ mod tests {
         let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, buf};
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
         let sig = full.sign(&msg, &sk);
@@ -769,7 +761,7 @@ mod tests {
         let vrfy = unsafe {Secp256k1::from_raw_verification_only(ctx_vrfy.ctx)};
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
         let sig = full.sign(&msg, &sk);
@@ -788,7 +780,7 @@ mod tests {
         let ctx_vrfy = Secp256k1::verification_only();
         let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
         let (sk, _) = raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from([2u8; 32]);
         // Try signing
         raw_ctx_verify_as_full.sign(&msg, &sk);
     }
@@ -807,7 +799,7 @@ mod tests {
 //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
         let sig = full.sign(&msg, &sk);
@@ -825,7 +817,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
 
         // Try key generation
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
@@ -854,7 +846,7 @@ mod tests {
         let mut msg = [0; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
-            let msg = Message::from_slice(&msg).unwrap();
+            let msg = Message::from(msg);
 
             let (sk, _) = s.generate_keypair(&mut thread_rng());
             let sig1 = s.sign(&msg, &sk);
@@ -940,7 +932,7 @@ mod tests {
         let mut msg = [0; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
-            let msg = Message::from_slice(&msg).unwrap();
+            let msg = Message::from(msg);
 
             let (sk, pk) = s.generate_keypair(&mut thread_rng());
             let sig = s.sign(&msg, &sk);
@@ -984,7 +976,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
 
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
@@ -992,7 +984,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
         assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
     }
 
@@ -1042,7 +1034,7 @@ mod tests {
 
         let s = Secp256k1::new();
 
-        let msg = Message::from_slice(&[1; 32]).unwrap();
+        let msg = Message::from([1; 32]);
         let sk = SecretKey::from_slice(&[2; 32]).unwrap();
         let sig = s.sign(&msg, &sk);
         static SIG_BYTES: [u8; 71] = [
@@ -1109,7 +1101,7 @@ mod benches {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
         let (sk, _) = s.generate_keypair(&mut thread_rng());
 
         bh.iter(|| {
@@ -1123,7 +1115,7 @@ mod benches {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
         let sig = s.sign(&msg, &sk);
 

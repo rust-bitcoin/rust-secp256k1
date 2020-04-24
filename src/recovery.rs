@@ -208,7 +208,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
 
         // Try key generation
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
@@ -240,7 +240,7 @@ mod tests {
                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
         let sk = SecretKey::from_slice(&one).unwrap();
-        let msg = Message::from_slice(&one).unwrap();
+        let msg = Message::from(one);
 
         let sig = s.sign_recoverable(&msg, &sk);
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
@@ -262,7 +262,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
 
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
@@ -271,7 +271,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
         assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
 
         let recovered_key = s.recover(&msg, &sigr).unwrap();
@@ -285,7 +285,7 @@ mod tests {
 
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
 
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
@@ -299,7 +299,7 @@ mod tests {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
 
-        let msg = Message::from_slice(&[0x55; 32]).unwrap();
+        let msg = Message::from([0x55; 32]);
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
@@ -372,7 +372,7 @@ mod benches {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
-        let msg = Message::from_slice(&msg).unwrap();
+        let msg = Message::from(msg);
         let (sk, _) = s.generate_keypair(&mut thread_rng());
         let sig = s.sign_recoverable(&msg, &sk);
 

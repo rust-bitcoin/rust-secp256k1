@@ -44,7 +44,7 @@ secp256k1-sys = { version = "0.1.1", default-features = false, path = "./secp256
 rand = "0.6"
 rand_core = "0.4"
 serde_test = "1.0"
-bitcoin_hashes = "0.7"
+bitcoin_hashes = { git = "https://github.com/thomaseizinger/bitcoin_hashes.git", branch = "impl-into" }
 
 [dependencies.rand]
 version = "0.6"
