@@ -38,28 +38,31 @@
 //!
 //! ```rust
 //! extern crate secp256k1;
+//! # #[cfg(feature="bitcoin_hashes")]
+//! extern crate bitcoin_hashes;
 //! # #[cfg(feature="rand")]
 //! extern crate rand;
 //!
 //! #
 //! # fn main() {
-//! # #[cfg(feature="rand")] {
-//! use rand::OsRng;
+//! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
+//! use rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
+//! use bitcoin_hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
 //! let (secret_key, public_key) = secp.generate_keypair(&mut rng);
-//! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
 //! # } }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand`
+//! The above code requires `rust-secp256k1` to be compiled with the `rand` and `bitcoin_hashes`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
-//! Alternately, keys can be parsed from slices, like
+//! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
 //! # fn main() {
@@ -68,6 +71,8 @@
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+//! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
+//! // See the above example for how to use this library together with bitcoin_hashes.
 //! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 //!
 //! let sig = secp.sign(&message, &secret_key);
@@ -476,7 +481,12 @@ impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
 
 impl Message {
-    /// Converts a `MESSAGE_SIZE`-byte slice to a message object
+    /// **If you just want to sign an arbitrary message use `Message::from_hashed_data` instead.**
+    ///
+    /// Converts a `MESSAGE_SIZE`-byte slice to a message object. **WARNING:** the slice has to be a
+    /// cryptographically secure hash of the actual message that's going to be signed. Otherwise
+    /// the result of signing isn't a
+    /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
         if data == [0; constants::MESSAGE_SIZE] {
@@ -493,7 +503,8 @@ impl Message {
         }
     }
 
-    /// Constructs a `Message` by hashing `data` with hash algorithm `H`.
+    /// Constructs a `Message` by hashing `data` with hash algorithm `H`. This requires the feature
+    /// `bitcoin_hashes` to be enabled.
     /// ```rust
     /// extern crate bitcoin_hashes;
     /// use secp256k1::Message;
