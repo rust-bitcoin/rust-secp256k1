@@ -152,7 +152,7 @@ extern "C" {
 
     // Contexts
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_context_preallocated_size")]
-    pub fn secp256k1_context_preallocated_size(flags: c_uint) -> usize;
+    pub fn secp256k1_context_preallocated_size(flags: c_uint) -> size_t;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_context_preallocated_create")]
     pub fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context;
@@ -161,7 +161,7 @@ extern "C" {
     pub fn secp256k1_context_preallocated_destroy(cx: *mut Context);
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_context_preallocated_clone_size")]
-    pub fn secp256k1_context_preallocated_clone_size(cx: *const Context) -> usize;
+    pub fn secp256k1_context_preallocated_clone_size(cx: *const Context) -> size_t;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_context_preallocated_clone")]
     pub fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
@@ -174,19 +174,19 @@ extern "C" {
     // Pubkeys
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_pubkey_parse")]
     pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
-                                     input: *const c_uchar, in_len: usize)
+                                     input: *const c_uchar, in_len: size_t)
                                      -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_pubkey_serialize")]
     pub fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *mut c_uchar,
-                                         out_len: *mut usize, pk: *const PublicKey,
+                                         out_len: *mut size_t, pk: *const PublicKey,
                                          compressed: c_uint)
                                          -> c_int;
 
     // Signatures
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdsa_signature_parse_der")]
     pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
-                                               input: *const c_uchar, in_len: usize)
+                                               input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdsa_signature_parse_compact")]
@@ -196,12 +196,12 @@ extern "C" {
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdsa_signature_parse_der_lax")]
     pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
-                                         input: *const c_uchar, in_len: usize)
+                                         input: *const c_uchar, in_len: size_t)
                                          -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdsa_signature_serialize_der")]
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
-                                                   out_len: *mut usize, sig: *const Signature)
+                                                   out_len: *mut size_t, sig: *const Signature)
                                                    -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ecdsa_signature_serialize_compact")]
@@ -462,12 +462,12 @@ mod fuzz_dummy {
     }
 
     /// Return dummy size of context struct.
-    pub unsafe fn secp256k1_context_preallocated_size(_flags: c_uint) -> usize {
+    pub unsafe fn secp256k1_context_preallocated_size(_flags: c_uint) -> size_t {
         mem::size_of::<Context>()
     }
 
     /// Return dummy size of context struct.
-    pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *mut Context) -> usize {
+    pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *mut Context) -> size_t {
         mem::size_of::<Context>()
     }
 
@@ -494,7 +494,7 @@ mod fuzz_dummy {
     // Pubkeys
     /// Parse 33/65 byte pubkey into PublicKey, losing compressed information
     pub unsafe fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
-                                            input: *const c_uchar, in_len: usize)
+                                            input: *const c_uchar, in_len: size_t)
                                             -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         match in_len {
@@ -521,7 +521,7 @@ mod fuzz_dummy {
 
     /// Serialize PublicKey back to 33/65 byte pubkey
     pub unsafe fn secp256k1_ec_pubkey_serialize(cx: *const Context, output: *mut c_uchar,
-                                                out_len: *mut usize, pk: *const PublicKey,
+                                                out_len: *mut size_t, pk: *const PublicKey,
                                                 compressed: c_uint)
                                                 -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
@@ -546,7 +546,7 @@ mod fuzz_dummy {
 
     // Signatures
     pub unsafe fn secp256k1_ecdsa_signature_parse_der(_cx: *const Context, _sig: *mut Signature,
-                                                      _input: *const c_uchar, _in_len: usize)
+                                                      _input: *const c_uchar, _in_len: size_t)
                                                       -> c_int {
         unimplemented!();
     }
@@ -562,14 +562,14 @@ mod fuzz_dummy {
     }
 
     pub unsafe fn ecdsa_signature_parse_der_lax(_cx: *const Context, _sig: *mut Signature,
-                                                _input: *const c_uchar, _in_len: usize)
+                                                _input: *const c_uchar, _in_len: size_t)
                                                 -> c_int {
         unimplemented!();
     }
 
     /// Copies up to 72 bytes into output from sig
     pub unsafe fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
-                                                          out_len: *mut usize, sig: *const Signature)
+                                                          out_len: *mut size_t, sig: *const Signature)
                                                           -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
 

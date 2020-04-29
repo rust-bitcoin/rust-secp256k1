@@ -1,19 +1,24 @@
 language: rust
-# cache:
-#   directories:
-#   - cargo_web
+cache:
+  directories:
+  - wasm
 
 rust:
   - stable
   - beta
   - nightly
   - 1.22.0
+distro: bionic
 os:
  - linux
  - windows
 
 addons:
   chrome: stable
+  apt:
+    packages:
+      - clang-9
+      - nodejs
 
 matrix:
   exclude:
@@ -46,8 +51,10 @@ script:
     cd no_std_test &&
     cargo run --release | grep -q "Verified Successfully";
     fi
-  - #if [ ${TRAVIS_RUST_VERSION} == "stable" -a "$TRAVIS_OS_NAME" = "linux" ]; then
-    #CARGO_TARGET_DIR=cargo_web cargo install --verbose --force cargo-web &&
-    #cargo web build --verbose --target=asmjs-unknown-emscripten &&
-    #cargo web test --verbose --target=asmjs-unknown-emscripten;
-    #fi
+  - if [ ${TRAVIS_RUST_VERSION} == "stable" -a "$TRAVIS_OS_NAME" = "linux" ]; then
+    clang --version &&
+    CARGO_TARGET_DIR=wasm cargo install --verbose --force wasm-pack &&
+    sed -i 's/\[lib\]/[lib]\ncrate-type = ["cdylib", "rlib"]/' Cargo.toml &&
+    CC=clang-9 wasm-pack build &&
+    CC=clang-9 wasm-pack test --node;
+    fi
