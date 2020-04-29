@@ -106,6 +106,9 @@ mod std_only {
     impl<C: Context> Secp256k1<C> {
         /// Lets you create a context in a generic manner(sign/verify/all)
         pub fn gen_new() -> Secp256k1<C> {
+            #[cfg(target_arch = "wasm32")]
+            ffi::types::sanity_checks_for_wasm();
+
             let buf = vec![0u8; Self::preallocate_size_gen()].into_boxed_slice();
             let ptr = Box::into_raw(buf);
             Secp256k1 {
@@ -192,6 +195,9 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
     /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
     pub fn preallocated_gen_new(buf: &'buf mut [u8]) -> Result<Secp256k1<C>, Error> {
+        #[cfg(target_arch = "wasm32")]
+        ffi::types::sanity_checks_for_wasm();
+
         if buf.len() < Self::preallocate_size_gen() {
             return Err(Error::NotEnoughMemory);
         }
