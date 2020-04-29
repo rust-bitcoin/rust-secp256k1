@@ -4,6 +4,7 @@ use core::fmt;
 pub type c_int = i32;
 pub type c_uchar = u8;
 pub type c_uint = u32;
+pub type size_t = usize;
 
 /// This might not match C's `c_char` exactly.
 /// The way we use it makes it fine either way but this type shouldn't be used outside of the library.
