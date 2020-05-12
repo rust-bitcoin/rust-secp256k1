@@ -64,9 +64,19 @@ macro_rules! serde_impl(
             fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<$t, D::Error> {
                 use ::serde::de::Error;
                 use core::str::FromStr;
+                #[cfg(feature = "std")]
+                use std::borrow::Cow;
 
                 if d.is_human_readable() {
+                    // If std is available support deserializing from owned strings
+                    #[cfg(feature = "std")]
+                    let s_cow: Cow<'de, str> = ::serde::Deserialize::deserialize(d)?;
+                    #[cfg(feature = "std")]
+                    let sl = &s_cow;
+
+                    #[cfg(not(feature = "std"))]
                     let sl: &str = ::serde::Deserialize::deserialize(d)?;
+
                     SecretKey::from_str(sl).map_err(D::Error::custom)
                 } else {
                     let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
