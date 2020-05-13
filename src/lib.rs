@@ -667,6 +667,29 @@ impl<C: Verification> Secp256k1<C> {
     /// be used for Bitcoin consensus checking since there may exist signatures
     /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
     /// verify-capable context.
+    ///
+    /// ```rust
+    /// # extern crate secp256k1;
+    /// # #[cfg(feature="rand")]
+    /// # extern crate rand;
+    /// #
+    /// # fn main() {
+    /// # #[cfg(feature="rand")] {
+    /// # use rand::OsRng;
+    /// # use secp256k1::{Secp256k1, Message, Error};
+    /// #
+    /// # let secp = Secp256k1::new();
+    /// # let mut rng = OsRng::new().expect("OsRng");
+    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+    /// #
+    /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+    /// let sig = secp.sign(&message, &secret_key);
+    /// assert_eq!(secp.verify(&message, &sig, &public_key), Ok(()));
+    ///
+    /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
+    /// assert_eq!(secp.verify(&message, &sig, &public_key), Err(Error::IncorrectSignature));
+    /// # } }
+    /// ```
     #[inline]
     pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
         unsafe {
