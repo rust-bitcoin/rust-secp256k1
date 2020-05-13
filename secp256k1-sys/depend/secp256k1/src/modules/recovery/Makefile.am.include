@@ -1,4 +1,4 @@
-include_HEADERS += include/rustsecp256k1_v0_1_1_recovery.h
+include_HEADERS += include/rustsecp256k1_v0_1_2_recovery.h
 noinst_HEADERS += src/modules/recovery/main_impl.h
 noinst_HEADERS += src/modules/recovery/tests_impl.h
 if USE_BENCHMARK

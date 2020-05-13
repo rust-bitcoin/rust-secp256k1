@@ -52,10 +52,10 @@ extern "C" {
  *  simple 32-byte private keys are sufficient.
  *
  *  Note that this function does not guarantee correct DER output. It is
- *  guaranteed to be parsable by rustsecp256k1_v0_1_1_ec_privkey_import_der
+ *  guaranteed to be parsable by rustsecp256k1_v0_1_2_ec_privkey_import_der
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
-    const rustsecp256k1_v0_1_1_context* ctx,
+    const rustsecp256k1_v0_1_2_context* ctx,
     unsigned char *privkey,
     size_t *privkeylen,
     const unsigned char *seckey,
@@ -77,7 +77,7 @@ SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
  * key.
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_import_der(
-    const rustsecp256k1_v0_1_1_context* ctx,
+    const rustsecp256k1_v0_1_2_context* ctx,
     unsigned char *seckey,
     const unsigned char *privkey,
     size_t privkeylen

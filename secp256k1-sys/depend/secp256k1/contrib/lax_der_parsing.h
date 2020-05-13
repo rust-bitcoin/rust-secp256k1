@@ -26,8 +26,8 @@
  * certain violations are easily supported. You may need to adapt it.
  *
  * Do not use this for new systems. Use well-defined DER or compact signatures
- * instead if you have the choice (see rustsecp256k1_v0_1_1_ecdsa_signature_parse_der and
- * rustsecp256k1_v0_1_1_ecdsa_signature_parse_compact).
+ * instead if you have the choice (see rustsecp256k1_v0_1_2_ecdsa_signature_parse_der and
+ * rustsecp256k1_v0_1_2_ecdsa_signature_parse_compact).
  *
  * The supported violations are:
  * - All numbers are parsed as nonnegative integers, even though X.609-0207
@@ -77,9 +77,9 @@ extern "C" {
  *  encoded numbers are out of range, signature validation with it is
  *  guaranteed to fail for every message and public key.
  */
-int rustsecp256k1_v0_1_1_ecdsa_signature_parse_der_lax(
-    const rustsecp256k1_v0_1_1_context* ctx,
-    rustsecp256k1_v0_1_1_ecdsa_signature* sig,
+int rustsecp256k1_v0_1_2_ecdsa_signature_parse_der_lax(
+    const rustsecp256k1_v0_1_2_context* ctx,
+    rustsecp256k1_v0_1_2_ecdsa_signature* sig,
     const unsigned char *input,
     size_t inputlen
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);

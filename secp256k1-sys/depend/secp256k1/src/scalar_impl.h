@@ -7,8 +7,8 @@
 #ifndef SECP256K1_SCALAR_IMPL_H
 #define SECP256K1_SCALAR_IMPL_H
 
-#include "group.h"
 #include "scalar.h"
+#include "util.h"
 
 #if defined HAVE_CONFIG_H
 #include "libsecp256k1-config.h"
@@ -24,15 +24,18 @@
 #error "Please select scalar implementation"
 #endif
 
+static const rustsecp256k1_v0_1_2_scalar rustsecp256k1_v0_1_2_scalar_one = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1);
+static const rustsecp256k1_v0_1_2_scalar rustsecp256k1_v0_1_2_scalar_zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
+
 #ifndef USE_NUM_NONE
-static void rustsecp256k1_v0_1_1_scalar_get_num(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_scalar *a) {
+static void rustsecp256k1_v0_1_2_scalar_get_num(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_scalar *a) {
     unsigned char c[32];
-    rustsecp256k1_v0_1_1_scalar_get_b32(c, a);
-    rustsecp256k1_v0_1_1_num_set_bin(r, c, 32);
+    rustsecp256k1_v0_1_2_scalar_get_b32(c, a);
+    rustsecp256k1_v0_1_2_num_set_bin(r, c, 32);
 }
 
-/** secp256k1 curve order, see rustsecp256k1_v0_1_1_ecdsa_const_order_as_fe in ecdsa_impl.h */
-static void rustsecp256k1_v0_1_1_scalar_order_get_num(rustsecp256k1_v0_1_1_num *r) {
+/** secp256k1 curve order, see rustsecp256k1_v0_1_2_ecdsa_const_order_as_fe in ecdsa_impl.h */
+static void rustsecp256k1_v0_1_2_scalar_order_get_num(rustsecp256k1_v0_1_2_num *r) {
 #if defined(EXHAUSTIVE_TEST_ORDER)
     static const unsigned char order[32] = {
         0,0,0,0,0,0,0,0,
@@ -48,11 +51,17 @@ static void rustsecp256k1_v0_1_1_scalar_order_get_num(rustsecp256k1_v0_1_1_num *
         0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x41
     };
 #endif
-    rustsecp256k1_v0_1_1_num_set_bin(r, order, 32);
+    rustsecp256k1_v0_1_2_num_set_bin(r, order, 32);
 }
 #endif
 
-static void rustsecp256k1_v0_1_1_scalar_inverse(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *x) {
+static int rustsecp256k1_v0_1_2_scalar_set_b32_seckey(rustsecp256k1_v0_1_2_scalar *r, const unsigned char *bin) {
+    int overflow;
+    rustsecp256k1_v0_1_2_scalar_set_b32(r, bin, &overflow);
+    return (!overflow) & (!rustsecp256k1_v0_1_2_scalar_is_zero(r));
+}
+
+static void rustsecp256k1_v0_1_2_scalar_inverse(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *x) {
 #if defined(EXHAUSTIVE_TEST_ORDER)
     int i;
     *r = 0;
@@ -64,180 +73,180 @@ static void rustsecp256k1_v0_1_1_scalar_inverse(rustsecp256k1_v0_1_1_scalar *r, 
     VERIFY_CHECK(*r != 0);
 }
 #else
-    rustsecp256k1_v0_1_1_scalar *t;
+    rustsecp256k1_v0_1_2_scalar *t;
     int i;
     /* First compute xN as x ^ (2^N - 1) for some values of N,
      * and uM as x ^ M for some values of M. */
-    rustsecp256k1_v0_1_1_scalar x2, x3, x6, x8, x14, x28, x56, x112, x126;
-    rustsecp256k1_v0_1_1_scalar u2, u5, u9, u11, u13;
+    rustsecp256k1_v0_1_2_scalar x2, x3, x6, x8, x14, x28, x56, x112, x126;
+    rustsecp256k1_v0_1_2_scalar u2, u5, u9, u11, u13;
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&u2, x);
-    rustsecp256k1_v0_1_1_scalar_mul(&x2, &u2,  x);
-    rustsecp256k1_v0_1_1_scalar_mul(&u5, &u2, &x2);
-    rustsecp256k1_v0_1_1_scalar_mul(&x3, &u5,  &u2);
-    rustsecp256k1_v0_1_1_scalar_mul(&u9, &x3, &u2);
-    rustsecp256k1_v0_1_1_scalar_mul(&u11, &u9, &u2);
-    rustsecp256k1_v0_1_1_scalar_mul(&u13, &u11, &u2);
+    rustsecp256k1_v0_1_2_scalar_sqr(&u2, x);
+    rustsecp256k1_v0_1_2_scalar_mul(&x2, &u2,  x);
+    rustsecp256k1_v0_1_2_scalar_mul(&u5, &u2, &x2);
+    rustsecp256k1_v0_1_2_scalar_mul(&x3, &u5,  &u2);
+    rustsecp256k1_v0_1_2_scalar_mul(&u9, &x3, &u2);
+    rustsecp256k1_v0_1_2_scalar_mul(&u11, &u9, &u2);
+    rustsecp256k1_v0_1_2_scalar_mul(&u13, &u11, &u2);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x6, &u13);
-    rustsecp256k1_v0_1_1_scalar_sqr(&x6, &x6);
-    rustsecp256k1_v0_1_1_scalar_mul(&x6, &x6, &u11);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x6, &u13);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x6, &x6);
+    rustsecp256k1_v0_1_2_scalar_mul(&x6, &x6, &u11);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x8, &x6);
-    rustsecp256k1_v0_1_1_scalar_sqr(&x8, &x8);
-    rustsecp256k1_v0_1_1_scalar_mul(&x8, &x8,  &x2);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x8, &x6);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x8, &x8);
+    rustsecp256k1_v0_1_2_scalar_mul(&x8, &x8,  &x2);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x14, &x8);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x14, &x8);
     for (i = 0; i < 5; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(&x14, &x14);
+        rustsecp256k1_v0_1_2_scalar_sqr(&x14, &x14);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(&x14, &x14, &x6);
+    rustsecp256k1_v0_1_2_scalar_mul(&x14, &x14, &x6);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x28, &x14);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x28, &x14);
     for (i = 0; i < 13; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(&x28, &x28);
+        rustsecp256k1_v0_1_2_scalar_sqr(&x28, &x28);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(&x28, &x28, &x14);
+    rustsecp256k1_v0_1_2_scalar_mul(&x28, &x28, &x14);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x56, &x28);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x56, &x28);
     for (i = 0; i < 27; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(&x56, &x56);
+        rustsecp256k1_v0_1_2_scalar_sqr(&x56, &x56);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(&x56, &x56, &x28);
+    rustsecp256k1_v0_1_2_scalar_mul(&x56, &x56, &x28);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x112, &x56);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x112, &x56);
     for (i = 0; i < 55; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(&x112, &x112);
+        rustsecp256k1_v0_1_2_scalar_sqr(&x112, &x112);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(&x112, &x112, &x56);
+    rustsecp256k1_v0_1_2_scalar_mul(&x112, &x112, &x56);
 
-    rustsecp256k1_v0_1_1_scalar_sqr(&x126, &x112);
+    rustsecp256k1_v0_1_2_scalar_sqr(&x126, &x112);
     for (i = 0; i < 13; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(&x126, &x126);
+        rustsecp256k1_v0_1_2_scalar_sqr(&x126, &x126);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(&x126, &x126, &x14);
+    rustsecp256k1_v0_1_2_scalar_mul(&x126, &x126, &x14);
 
     /* Then accumulate the final result (t starts at x126). */
     t = &x126;
     for (i = 0; i < 3; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u5); /* 101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u5); /* 101 */
     for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u5); /* 101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u5); /* 101 */
     for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u11); /* 1011 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u11); /* 1011 */
     for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u11); /* 1011 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u11); /* 1011 */
     for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 5; i++) { /* 00 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u13); /* 1101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u13); /* 1101 */
     for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u5); /* 101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u5); /* 101 */
     for (i = 0; i < 3; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u9); /* 1001 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u9); /* 1001 */
     for (i = 0; i < 6; i++) { /* 000 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u5); /* 101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u5); /* 101 */
     for (i = 0; i < 10; i++) { /* 0000000 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x3); /* 111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x3); /* 111 */
     for (i = 0; i < 9; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x8); /* 11111111 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x8); /* 11111111 */
     for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u9); /* 1001 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u9); /* 1001 */
     for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u11); /* 1011 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u11); /* 1011 */
     for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u13); /* 1101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u13); /* 1101 */
     for (i = 0; i < 5; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &x2); /* 11 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &x2); /* 11 */
     for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u13); /* 1101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u13); /* 1101 */
     for (i = 0; i < 10; i++) { /* 000000 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u13); /* 1101 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u13); /* 1101 */
     for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, &u9); /* 1001 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, &u9); /* 1001 */
     for (i = 0; i < 6; i++) { /* 00000 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(t, t, x); /* 1 */
+    rustsecp256k1_v0_1_2_scalar_mul(t, t, x); /* 1 */
     for (i = 0; i < 8; i++) { /* 00 */
-        rustsecp256k1_v0_1_1_scalar_sqr(t, t);
+        rustsecp256k1_v0_1_2_scalar_sqr(t, t);
     }
-    rustsecp256k1_v0_1_1_scalar_mul(r, t, &x6); /* 111111 */
+    rustsecp256k1_v0_1_2_scalar_mul(r, t, &x6); /* 111111 */
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_is_even(const rustsecp256k1_v0_1_1_scalar *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_is_even(const rustsecp256k1_v0_1_2_scalar *a) {
     return !(a->d[0] & 1);
 }
 #endif
 
-static void rustsecp256k1_v0_1_1_scalar_inverse_var(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *x) {
+static void rustsecp256k1_v0_1_2_scalar_inverse_var(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *x) {
 #if defined(USE_SCALAR_INV_BUILTIN)
-    rustsecp256k1_v0_1_1_scalar_inverse(r, x);
+    rustsecp256k1_v0_1_2_scalar_inverse(r, x);
 #elif defined(USE_SCALAR_INV_NUM)
     unsigned char b[32];
-    rustsecp256k1_v0_1_1_num n, m;
-    rustsecp256k1_v0_1_1_scalar t = *x;
-    rustsecp256k1_v0_1_1_scalar_get_b32(b, &t);
-    rustsecp256k1_v0_1_1_num_set_bin(&n, b, 32);
-    rustsecp256k1_v0_1_1_scalar_order_get_num(&m);
-    rustsecp256k1_v0_1_1_num_mod_inverse(&n, &n, &m);
-    rustsecp256k1_v0_1_1_num_get_bin(b, 32, &n);
-    rustsecp256k1_v0_1_1_scalar_set_b32(r, b, NULL);
+    rustsecp256k1_v0_1_2_num n, m;
+    rustsecp256k1_v0_1_2_scalar t = *x;
+    rustsecp256k1_v0_1_2_scalar_get_b32(b, &t);
+    rustsecp256k1_v0_1_2_num_set_bin(&n, b, 32);
+    rustsecp256k1_v0_1_2_scalar_order_get_num(&m);
+    rustsecp256k1_v0_1_2_num_mod_inverse(&n, &n, &m);
+    rustsecp256k1_v0_1_2_num_get_bin(b, 32, &n);
+    rustsecp256k1_v0_1_2_scalar_set_b32(r, b, NULL);
     /* Verify that the inverse was computed correctly, without GMP code. */
-    rustsecp256k1_v0_1_1_scalar_mul(&t, &t, r);
-    CHECK(rustsecp256k1_v0_1_1_scalar_is_one(&t));
+    rustsecp256k1_v0_1_2_scalar_mul(&t, &t, r);
+    CHECK(rustsecp256k1_v0_1_2_scalar_is_one(&t));
 #else
 #error "Please select scalar inverse implementation"
 #endif
@@ -251,7 +260,7 @@ static void rustsecp256k1_v0_1_1_scalar_inverse_var(rustsecp256k1_v0_1_1_scalar 
  * nontrivial to get full test coverage for the exhaustive tests. We therefore
  * (arbitrarily) set k2 = k + 5 and k1 = k - k2 * lambda.
  */
-static void rustsecp256k1_v0_1_1_scalar_split_lambda(rustsecp256k1_v0_1_1_scalar *r1, rustsecp256k1_v0_1_1_scalar *r2, const rustsecp256k1_v0_1_1_scalar *a) {
+static void rustsecp256k1_v0_1_2_scalar_split_lambda(rustsecp256k1_v0_1_2_scalar *r1, rustsecp256k1_v0_1_2_scalar *r2, const rustsecp256k1_v0_1_2_scalar *a) {
     *r2 = (*a + 5) % EXHAUSTIVE_TEST_ORDER;
     *r1 = (*a + (EXHAUSTIVE_TEST_ORDER - *r2) * EXHAUSTIVE_TEST_LAMBDA) % EXHAUSTIVE_TEST_ORDER;
 }
@@ -294,38 +303,38 @@ static void rustsecp256k1_v0_1_1_scalar_split_lambda(rustsecp256k1_v0_1_1_scalar
  * The function below splits a in r1 and r2, such that r1 + lambda * r2 == a (mod order).
  */
 
-static void rustsecp256k1_v0_1_1_scalar_split_lambda(rustsecp256k1_v0_1_1_scalar *r1, rustsecp256k1_v0_1_1_scalar *r2, const rustsecp256k1_v0_1_1_scalar *a) {
-    rustsecp256k1_v0_1_1_scalar c1, c2;
-    static const rustsecp256k1_v0_1_1_scalar minus_lambda = SECP256K1_SCALAR_CONST(
+static void rustsecp256k1_v0_1_2_scalar_split_lambda(rustsecp256k1_v0_1_2_scalar *r1, rustsecp256k1_v0_1_2_scalar *r2, const rustsecp256k1_v0_1_2_scalar *a) {
+    rustsecp256k1_v0_1_2_scalar c1, c2;
+    static const rustsecp256k1_v0_1_2_scalar minus_lambda = SECP256K1_SCALAR_CONST(
         0xAC9C52B3UL, 0x3FA3CF1FUL, 0x5AD9E3FDUL, 0x77ED9BA4UL,
         0xA880B9FCUL, 0x8EC739C2UL, 0xE0CFC810UL, 0xB51283CFUL
     );
-    static const rustsecp256k1_v0_1_1_scalar minus_b1 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_1_2_scalar minus_b1 = SECP256K1_SCALAR_CONST(
         0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
         0xE4437ED6UL, 0x010E8828UL, 0x6F547FA9UL, 0x0ABFE4C3UL
     );
-    static const rustsecp256k1_v0_1_1_scalar minus_b2 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_1_2_scalar minus_b2 = SECP256K1_SCALAR_CONST(
         0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL,
         0x8A280AC5UL, 0x0774346DUL, 0xD765CDA8UL, 0x3DB1562CUL
     );
-    static const rustsecp256k1_v0_1_1_scalar g1 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_1_2_scalar g1 = SECP256K1_SCALAR_CONST(
         0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00003086UL,
         0xD221A7D4UL, 0x6BCDE86CUL, 0x90E49284UL, 0xEB153DABUL
     );
-    static const rustsecp256k1_v0_1_1_scalar g2 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_1_2_scalar g2 = SECP256K1_SCALAR_CONST(
         0x00000000UL, 0x00000000UL, 0x00000000UL, 0x0000E443UL,
         0x7ED6010EUL, 0x88286F54UL, 0x7FA90ABFUL, 0xE4C42212UL
     );
     VERIFY_CHECK(r1 != a);
     VERIFY_CHECK(r2 != a);
     /* these _var calls are constant time since the shift amount is constant */
-    rustsecp256k1_v0_1_1_scalar_mul_shift_var(&c1, a, &g1, 272);
-    rustsecp256k1_v0_1_1_scalar_mul_shift_var(&c2, a, &g2, 272);
-    rustsecp256k1_v0_1_1_scalar_mul(&c1, &c1, &minus_b1);
-    rustsecp256k1_v0_1_1_scalar_mul(&c2, &c2, &minus_b2);
-    rustsecp256k1_v0_1_1_scalar_add(r2, &c1, &c2);
-    rustsecp256k1_v0_1_1_scalar_mul(r1, r2, &minus_lambda);
-    rustsecp256k1_v0_1_1_scalar_add(r1, r1, a);
+    rustsecp256k1_v0_1_2_scalar_mul_shift_var(&c1, a, &g1, 272);
+    rustsecp256k1_v0_1_2_scalar_mul_shift_var(&c2, a, &g2, 272);
+    rustsecp256k1_v0_1_2_scalar_mul(&c1, &c1, &minus_b1);
+    rustsecp256k1_v0_1_2_scalar_mul(&c2, &c2, &minus_b2);
+    rustsecp256k1_v0_1_2_scalar_add(r2, &c1, &c2);
+    rustsecp256k1_v0_1_2_scalar_mul(r1, r2, &minus_lambda);
+    rustsecp256k1_v0_1_2_scalar_add(r1, r1, a);
 }
 #endif
 #endif

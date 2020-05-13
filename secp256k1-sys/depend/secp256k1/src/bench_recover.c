@@ -10,24 +10,24 @@
 #include "bench.h"
 
 typedef struct {
-    rustsecp256k1_v0_1_1_context *ctx;
+    rustsecp256k1_v0_1_2_context *ctx;
     unsigned char msg[32];
     unsigned char sig[64];
 } bench_recover_data;
 
-void bench_recover(void* arg) {
+void bench_recover(void* arg, int iters) {
     int i;
     bench_recover_data *data = (bench_recover_data*)arg;
-    rustsecp256k1_v0_1_1_pubkey pubkey;
+    rustsecp256k1_v0_1_2_pubkey pubkey;
     unsigned char pubkeyc[33];
 
-    for (i = 0; i < 20000; i++) {
+    for (i = 0; i < iters; i++) {
         int j;
         size_t pubkeylen = 33;
-        rustsecp256k1_v0_1_1_ecdsa_recoverable_signature sig;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(data->ctx, &sig, data->sig, i % 2));
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(data->ctx, &pubkey, &sig, data->msg));
-        CHECK(rustsecp256k1_v0_1_1_ec_pubkey_serialize(data->ctx, pubkeyc, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED));
+        rustsecp256k1_v0_1_2_ecdsa_recoverable_signature sig;
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(data->ctx, &sig, data->sig, i % 2));
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(data->ctx, &pubkey, &sig, data->msg));
+        CHECK(rustsecp256k1_v0_1_2_ec_pubkey_serialize(data->ctx, pubkeyc, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED));
         for (j = 0; j < 32; j++) {
             data->sig[j + 32] = data->msg[j];    /* Move former message to S. */
             data->msg[j] = data->sig[j];         /* Move former R to message. */
@@ -51,10 +51,12 @@ void bench_recover_setup(void* arg) {
 int main(void) {
     bench_recover_data data;
 
-    data.ctx = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_VERIFY);
+    int iters = get_iters(20000);
 
-    run_benchmark("ecdsa_recover", bench_recover, bench_recover_setup, NULL, &data, 10, 20000);
+    data.ctx = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_VERIFY);
 
-    rustsecp256k1_v0_1_1_context_destroy(data.ctx);
+    run_benchmark("ecdsa_recover", bench_recover, bench_recover_setup, NULL, &data, 10, iters);
+
+    rustsecp256k1_v0_1_2_context_destroy(data.ctx);
     return 0;
 }

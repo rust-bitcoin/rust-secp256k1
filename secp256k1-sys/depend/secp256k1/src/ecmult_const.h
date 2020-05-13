@@ -10,8 +10,11 @@
 #include "scalar.h"
 #include "group.h"
 
-/* Here `bits` should be set to the maximum bitlength of the _absolute value_ of `q`, plus
- * one because we internally sometimes add 2 to the number during the WNAF conversion. */
-static void rustsecp256k1_v0_1_1_ecmult_const(rustsecp256k1_v0_1_1_gej *r, const rustsecp256k1_v0_1_1_ge *a, const rustsecp256k1_v0_1_1_scalar *q, int bits);
+/**
+ * Multiply: R = q*A (in constant-time)
+ * Here `bits` should be set to the maximum bitlength of the _absolute value_ of `q`, plus
+ * one because we internally sometimes add 2 to the number during the WNAF conversion.
+ */
+static void rustsecp256k1_v0_1_2_ecmult_const(rustsecp256k1_v0_1_2_gej *r, const rustsecp256k1_v0_1_2_ge *a, const rustsecp256k1_v0_1_2_scalar *q, int bits);
 
 #endif /* SECP256K1_ECMULT_CONST_H */

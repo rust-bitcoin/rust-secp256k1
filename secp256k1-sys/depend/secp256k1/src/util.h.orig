@@ -69,6 +69,22 @@ static SECP256K1_INLINE void rustsecp256k1_v0_1_2_callback_call(const rustsecp25
 #define VERIFY_SETUP(stmt)
 #endif
 
+static SECP256K1_INLINE void *checked_malloc(const rustsecp256k1_v0_1_2_callback* cb, size_t size) {
+    void *ret = malloc(size);
+    if (ret == NULL) {
+        rustsecp256k1_v0_1_2_callback_call(cb, "Out of memory");
+    }
+    return ret;
+}
+
+static SECP256K1_INLINE void *checked_realloc(const rustsecp256k1_v0_1_2_callback* cb, void *ptr, size_t size) {
+    void *ret = realloc(ptr, size);
+    if (ret == NULL) {
+        rustsecp256k1_v0_1_2_callback_call(cb, "Out of memory");
+    }
+    return ret;
+}
+
 #if defined(__BIGGEST_ALIGNMENT__)
 #define ALIGNMENT __BIGGEST_ALIGNMENT__
 #else

@@ -25,19 +25,19 @@ static int recovery_test_nonce_function(unsigned char *nonce32, const unsigned c
     }
     /* On the next run, return a valid nonce, but flip a coin as to whether or not to fail signing. */
     memset(nonce32, 1, 32);
-    return rustsecp256k1_v0_1_1_rand_bits(1);
+    return rustsecp256k1_v0_1_2_rand_bits(1);
 }
 
 void test_ecdsa_recovery_api(void) {
     /* Setup contexts that just count errors */
-    rustsecp256k1_v0_1_1_context *none = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_NONE);
-    rustsecp256k1_v0_1_1_context *sign = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_SIGN);
-    rustsecp256k1_v0_1_1_context *vrfy = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_VERIFY);
-    rustsecp256k1_v0_1_1_context *both = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    rustsecp256k1_v0_1_1_pubkey pubkey;
-    rustsecp256k1_v0_1_1_pubkey recpubkey;
-    rustsecp256k1_v0_1_1_ecdsa_signature normal_sig;
-    rustsecp256k1_v0_1_1_ecdsa_recoverable_signature recsig;
+    rustsecp256k1_v0_1_2_context *none = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_NONE);
+    rustsecp256k1_v0_1_2_context *sign = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_SIGN);
+    rustsecp256k1_v0_1_2_context *vrfy = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_VERIFY);
+    rustsecp256k1_v0_1_2_context *both = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    rustsecp256k1_v0_1_2_pubkey pubkey;
+    rustsecp256k1_v0_1_2_pubkey recpubkey;
+    rustsecp256k1_v0_1_2_ecdsa_signature normal_sig;
+    rustsecp256k1_v0_1_2_ecdsa_recoverable_signature recsig;
     unsigned char privkey[32] = { 1 };
     unsigned char message[32] = { 2 };
     int32_t ecount = 0;
@@ -49,159 +49,159 @@ void test_ecdsa_recovery_api(void) {
                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                                        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-    rustsecp256k1_v0_1_1_context_set_error_callback(none, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_error_callback(sign, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_error_callback(vrfy, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_error_callback(both, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_illegal_callback(none, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_illegal_callback(sign, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_illegal_callback(vrfy, counting_illegal_callback_fn, &ecount);
-    rustsecp256k1_v0_1_1_context_set_illegal_callback(both, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_error_callback(none, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_error_callback(sign, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_error_callback(vrfy, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_error_callback(both, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_illegal_callback(none, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_illegal_callback(sign, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_illegal_callback(vrfy, counting_illegal_callback_fn, &ecount);
+    rustsecp256k1_v0_1_2_context_set_illegal_callback(both, counting_illegal_callback_fn, &ecount);
 
     /* Construct and verify corresponding public key. */
-    CHECK(rustsecp256k1_v0_1_1_ec_seckey_verify(ctx, privkey) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ec_pubkey_create(ctx, &pubkey, privkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ec_seckey_verify(ctx, privkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ec_pubkey_create(ctx, &pubkey, privkey) == 1);
 
     /* Check bad contexts and NULLs for signing */
     ecount = 0;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(none, &recsig, message, privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(none, &recsig, message, privkey, NULL, NULL) == 0);
     CHECK(ecount == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(sign, &recsig, message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(sign, &recsig, message, privkey, NULL, NULL) == 1);
     CHECK(ecount == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(vrfy, &recsig, message, privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(vrfy, &recsig, message, privkey, NULL, NULL) == 0);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, NULL, message, privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, NULL, message, privkey, NULL, NULL) == 0);
     CHECK(ecount == 3);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, NULL, privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, NULL, privkey, NULL, NULL) == 0);
     CHECK(ecount == 4);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, NULL, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, NULL, NULL, NULL) == 0);
     CHECK(ecount == 5);
     /* This will fail or succeed randomly, and in either case will not ARG_CHECK failure */
-    rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, privkey, recovery_test_nonce_function, NULL);
+    rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, privkey, recovery_test_nonce_function, NULL);
     CHECK(ecount == 5);
     /* These will all fail, but not in ARG_CHECK way */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, zero_privkey, NULL, NULL) == 0);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, over_privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, zero_privkey, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, over_privkey, NULL, NULL) == 0);
     /* This one will succeed. */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
     CHECK(ecount == 5);
 
     /* Check signing with a goofy nonce function */
 
     /* Check bad contexts and NULLs for recovery */
     ecount = 0;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(none, &recpubkey, &recsig, message) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(none, &recpubkey, &recsig, message) == 0);
     CHECK(ecount == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(sign, &recpubkey, &recsig, message) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(sign, &recpubkey, &recsig, message) == 0);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(vrfy, &recpubkey, &recsig, message) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(vrfy, &recpubkey, &recsig, message) == 1);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(both, &recpubkey, &recsig, message) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(both, &recpubkey, &recsig, message) == 1);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(both, NULL, &recsig, message) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(both, NULL, &recsig, message) == 0);
     CHECK(ecount == 3);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(both, &recpubkey, NULL, message) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(both, &recpubkey, NULL, message) == 0);
     CHECK(ecount == 4);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(both, &recpubkey, &recsig, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(both, &recpubkey, &recsig, NULL) == 0);
     CHECK(ecount == 5);
 
     /* Check NULLs for conversion */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign(both, &normal_sig, message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign(both, &normal_sig, message, privkey, NULL, NULL) == 1);
     ecount = 0;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(both, NULL, &recsig) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(both, NULL, &recsig) == 0);
     CHECK(ecount == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(both, &normal_sig, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(both, &normal_sig, NULL) == 0);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(both, &normal_sig, &recsig) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(both, &normal_sig, &recsig) == 1);
 
     /* Check NULLs for de/serialization */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(both, &recsig, message, privkey, NULL, NULL) == 1);
     ecount = 0;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(both, NULL, &recid, &recsig) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(both, NULL, &recid, &recsig) == 0);
     CHECK(ecount == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(both, sig, NULL, &recsig) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(both, sig, NULL, &recsig) == 0);
     CHECK(ecount == 2);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(both, sig, &recid, NULL) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(both, sig, &recid, NULL) == 0);
     CHECK(ecount == 3);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(both, sig, &recid, &recsig) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(both, sig, &recid, &recsig) == 1);
 
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(both, NULL, sig, recid) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(both, NULL, sig, recid) == 0);
     CHECK(ecount == 4);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(both, &recsig, NULL, recid) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(both, &recsig, NULL, recid) == 0);
     CHECK(ecount == 5);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, -1) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, -1) == 0);
     CHECK(ecount == 6);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, 5) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, 5) == 0);
     CHECK(ecount == 7);
     /* overflow in signature will fail but not affect ecount */
     memcpy(sig, over_privkey, 32);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, recid) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(both, &recsig, sig, recid) == 0);
     CHECK(ecount == 7);
 
     /* cleanup */
-    rustsecp256k1_v0_1_1_context_destroy(none);
-    rustsecp256k1_v0_1_1_context_destroy(sign);
-    rustsecp256k1_v0_1_1_context_destroy(vrfy);
-    rustsecp256k1_v0_1_1_context_destroy(both);
+    rustsecp256k1_v0_1_2_context_destroy(none);
+    rustsecp256k1_v0_1_2_context_destroy(sign);
+    rustsecp256k1_v0_1_2_context_destroy(vrfy);
+    rustsecp256k1_v0_1_2_context_destroy(both);
 }
 
 void test_ecdsa_recovery_end_to_end(void) {
     unsigned char extra[32] = {0x00};
     unsigned char privkey[32];
     unsigned char message[32];
-    rustsecp256k1_v0_1_1_ecdsa_signature signature[5];
-    rustsecp256k1_v0_1_1_ecdsa_recoverable_signature rsignature[5];
+    rustsecp256k1_v0_1_2_ecdsa_signature signature[5];
+    rustsecp256k1_v0_1_2_ecdsa_recoverable_signature rsignature[5];
     unsigned char sig[74];
-    rustsecp256k1_v0_1_1_pubkey pubkey;
-    rustsecp256k1_v0_1_1_pubkey recpubkey;
+    rustsecp256k1_v0_1_2_pubkey pubkey;
+    rustsecp256k1_v0_1_2_pubkey recpubkey;
     int recid = 0;
 
     /* Generate a random key and message. */
     {
-        rustsecp256k1_v0_1_1_scalar msg, key;
+        rustsecp256k1_v0_1_2_scalar msg, key;
         random_scalar_order_test(&msg);
         random_scalar_order_test(&key);
-        rustsecp256k1_v0_1_1_scalar_get_b32(privkey, &key);
-        rustsecp256k1_v0_1_1_scalar_get_b32(message, &msg);
+        rustsecp256k1_v0_1_2_scalar_get_b32(privkey, &key);
+        rustsecp256k1_v0_1_2_scalar_get_b32(message, &msg);
     }
 
     /* Construct and verify corresponding public key. */
-    CHECK(rustsecp256k1_v0_1_1_ec_seckey_verify(ctx, privkey) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ec_pubkey_create(ctx, &pubkey, privkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ec_seckey_verify(ctx, privkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ec_pubkey_create(ctx, &pubkey, privkey) == 1);
 
     /* Serialize/parse compact and verify/recover. */
     extra[0] = 0;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(ctx, &rsignature[0], message, privkey, NULL, NULL) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign(ctx, &signature[0], message, privkey, NULL, NULL) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(ctx, &rsignature[4], message, privkey, NULL, NULL) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(ctx, &rsignature[1], message, privkey, NULL, extra) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(ctx, &rsignature[0], message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign(ctx, &signature[0], message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(ctx, &rsignature[4], message, privkey, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(ctx, &rsignature[1], message, privkey, NULL, extra) == 1);
     extra[31] = 1;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(ctx, &rsignature[2], message, privkey, NULL, extra) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(ctx, &rsignature[2], message, privkey, NULL, extra) == 1);
     extra[31] = 0;
     extra[0] = 1;
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_sign_recoverable(ctx, &rsignature[3], message, privkey, NULL, extra) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &rsignature[4]) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_sign_recoverable(ctx, &rsignature[3], message, privkey, NULL, extra) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &rsignature[4]) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
     CHECK(memcmp(&signature[4], &signature[0], 64) == 0);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 1);
     memset(&rsignature[4], 0, sizeof(rsignature[4]));
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 1);
     /* Parse compact (with recovery id) and recover. */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &recpubkey, &rsignature[4], message) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &recpubkey, &rsignature[4], message) == 1);
     CHECK(memcmp(&pubkey, &recpubkey, sizeof(pubkey)) == 0);
     /* Serialize/destroy/parse signature and verify again. */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &rsignature[4]) == 1);
-    sig[rustsecp256k1_v0_1_1_rand_bits(6)] += 1 + rustsecp256k1_v0_1_1_rand_int(255);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 0);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &rsignature[4]) == 1);
+    sig[rustsecp256k1_v0_1_2_rand_bits(6)] += 1 + rustsecp256k1_v0_1_2_rand_int(255);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsignature[4], sig, recid) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_convert(ctx, &signature[4], &rsignature[4]) == 1);
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &signature[4], message, &pubkey) == 0);
     /* Recover again */
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &recpubkey, &rsignature[4], message) == 0 ||
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &recpubkey, &rsignature[4], message) == 0 ||
           memcmp(&pubkey, &recpubkey, sizeof(pubkey)) != 0);
 }
 
@@ -215,7 +215,7 @@ void test_ecdsa_recovery_edge_cases(void) {
     };
     const unsigned char sig64[64] = {
         /* Generated by signing the above message with nonce 'This is the nonce we will use...'
-         * and secret key 0 (which is not valid), resulting in recid 0. */
+         * and secret key 0 (which is not valid), resulting in recid 1. */
         0x67, 0xCB, 0x28, 0x5F, 0x9C, 0xD1, 0x94, 0xE8,
         0x40, 0xD6, 0x29, 0x39, 0x7A, 0xF5, 0x56, 0x96,
         0x62, 0xFD, 0xE4, 0x46, 0x49, 0x99, 0x59, 0x63,
@@ -225,7 +225,7 @@ void test_ecdsa_recovery_edge_cases(void) {
         0x7D, 0xD7, 0x3E, 0x38, 0x7E, 0xE4, 0xFC, 0x86,
         0x6E, 0x1B, 0xE8, 0xEC, 0xC7, 0xDD, 0x95, 0x57
     };
-    rustsecp256k1_v0_1_1_pubkey pubkey;
+    rustsecp256k1_v0_1_2_pubkey pubkey;
     /* signature (r,s) = (4,4), which can be recovered with all 4 recids. */
     const unsigned char sigb64[64] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -237,19 +237,19 @@ void test_ecdsa_recovery_edge_cases(void) {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,
     };
-    rustsecp256k1_v0_1_1_pubkey pubkeyb;
-    rustsecp256k1_v0_1_1_ecdsa_recoverable_signature rsig;
-    rustsecp256k1_v0_1_1_ecdsa_signature sig;
+    rustsecp256k1_v0_1_2_pubkey pubkeyb;
+    rustsecp256k1_v0_1_2_ecdsa_recoverable_signature rsig;
+    rustsecp256k1_v0_1_2_ecdsa_signature sig;
     int recid;
 
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 0));
-    CHECK(!rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 1));
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 2));
-    CHECK(!rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
-    CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 3));
-    CHECK(!rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 0));
+    CHECK(!rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 1));
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 2));
+    CHECK(!rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
+    CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sig64, 3));
+    CHECK(!rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkey, &rsig, msg32));
 
     for (recid = 0; recid < 4; recid++) {
         int i;
@@ -294,40 +294,40 @@ void test_ecdsa_recovery_edge_cases(void) {
             0xE6, 0xAF, 0x48, 0xA0, 0x3B, 0xBF, 0xD2, 0x5E,
             0x8C, 0xD0, 0x36, 0x41, 0x45, 0x02, 0x01, 0x04
         };
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigb64, recid) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigb64, recid) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 1);
         for (recid2 = 0; recid2 < 4; recid2++) {
-            rustsecp256k1_v0_1_1_pubkey pubkey2b;
-            CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigb64, recid2) == 1);
-            CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkey2b, &rsig, msg32) == 1);
+            rustsecp256k1_v0_1_2_pubkey pubkey2b;
+            CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigb64, recid2) == 1);
+            CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkey2b, &rsig, msg32) == 1);
             /* Verifying with (order + r,4) should always fail. */
-            CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderlong, sizeof(sigbderlong)) == 1);
-            CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
+            CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderlong, sizeof(sigbderlong)) == 1);
+            CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
         }
         /* DER parsing tests. */
         /* Zero length r/s. */
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigcder_zr, sizeof(sigcder_zr)) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigcder_zs, sizeof(sigcder_zs)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigcder_zr, sizeof(sigcder_zr)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigcder_zs, sizeof(sigcder_zs)) == 0);
         /* Leading zeros. */
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt1, sizeof(sigbderalt1)) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt2, sizeof(sigbderalt2)) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt3, sizeof(sigbderalt3)) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt4, sizeof(sigbderalt4)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt1, sizeof(sigbderalt1)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt2, sizeof(sigbderalt2)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt3, sizeof(sigbderalt3)) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt4, sizeof(sigbderalt4)) == 0);
         sigbderalt3[4] = 1;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt3, sizeof(sigbderalt3)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt3, sizeof(sigbderalt3)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
         sigbderalt4[7] = 1;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbderalt4, sizeof(sigbderalt4)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbderalt4, sizeof(sigbderalt4)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
         /* Damage signature. */
         sigbder[7]++;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
         sigbder[7]--;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbder, 6) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder) - 1) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbder, 6) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder) - 1) == 0);
         for(i = 0; i < 8; i++) {
             int c;
             unsigned char orig = sigbder[i];
@@ -337,7 +337,7 @@ void test_ecdsa_recovery_edge_cases(void) {
                     continue;
                 }
                 sigbder[i] = c;
-                CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 0 || rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
+                CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigbder, sizeof(sigbder)) == 0 || rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyb) == 0);
             }
             sigbder[i] = orig;
         }
@@ -357,25 +357,25 @@ void test_ecdsa_recovery_edge_cases(void) {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
         };
-        rustsecp256k1_v0_1_1_pubkey pubkeyc;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkeyc, &rsig, msg32) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 1);
+        rustsecp256k1_v0_1_2_pubkey pubkeyc;
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkeyc, &rsig, msg32) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 1);
         sigcder[4] = 0;
         sigc64[31] = 0;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 0);
         sigcder[4] = 1;
         sigcder[7] = 0;
         sigc64[31] = 1;
         sigc64[63] = 0;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 0);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recoverable_signature_parse_compact(ctx, &rsig, sigc64, 0) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_recover(ctx, &pubkeyb, &rsig, msg32) == 0);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_parse_der(ctx, &sig, sigcder, sizeof(sigcder)) == 1);
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_verify(ctx, &sig, msg32, &pubkeyc) == 0);
     }
 }
 

@@ -15,18 +15,18 @@
 #include "num.h"
 
 #ifdef VERIFY
-static void rustsecp256k1_v0_1_1_num_sanity(const rustsecp256k1_v0_1_1_num *a) {
+static void rustsecp256k1_v0_1_2_num_sanity(const rustsecp256k1_v0_1_2_num *a) {
     VERIFY_CHECK(a->limbs == 1 || (a->limbs > 1 && a->data[a->limbs-1] != 0));
 }
 #else
-#define rustsecp256k1_v0_1_1_num_sanity(a) do { } while(0)
+#define rustsecp256k1_v0_1_2_num_sanity(a) do { } while(0)
 #endif
 
-static void rustsecp256k1_v0_1_1_num_copy(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a) {
+static void rustsecp256k1_v0_1_2_num_copy(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a) {
     *r = *a;
 }
 
-static void rustsecp256k1_v0_1_1_num_get_bin(unsigned char *r, unsigned int rlen, const rustsecp256k1_v0_1_1_num *a) {
+static void rustsecp256k1_v0_1_2_num_get_bin(unsigned char *r, unsigned int rlen, const rustsecp256k1_v0_1_2_num *a) {
     unsigned char tmp[65];
     int len = 0;
     int shift = 0;
@@ -42,7 +42,7 @@ static void rustsecp256k1_v0_1_1_num_get_bin(unsigned char *r, unsigned int rlen
     memset(tmp, 0, sizeof(tmp));
 }
 
-static void rustsecp256k1_v0_1_1_num_set_bin(rustsecp256k1_v0_1_1_num *r, const unsigned char *a, unsigned int alen) {
+static void rustsecp256k1_v0_1_2_num_set_bin(rustsecp256k1_v0_1_2_num *r, const unsigned char *a, unsigned int alen) {
     int len;
     VERIFY_CHECK(alen > 0);
     VERIFY_CHECK(alen <= 64);
@@ -59,7 +59,7 @@ static void rustsecp256k1_v0_1_1_num_set_bin(rustsecp256k1_v0_1_1_num *r, const 
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_add_abs(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static void rustsecp256k1_v0_1_2_num_add_abs(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     mp_limb_t c = mpn_add(r->data, a->data, a->limbs, b->data, b->limbs);
     r->limbs = a->limbs;
     if (c != 0) {
@@ -68,7 +68,7 @@ static void rustsecp256k1_v0_1_1_num_add_abs(rustsecp256k1_v0_1_1_num *r, const 
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_sub_abs(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static void rustsecp256k1_v0_1_2_num_sub_abs(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     mp_limb_t c = mpn_sub(r->data, a->data, a->limbs, b->data, b->limbs);
     (void)c;
     VERIFY_CHECK(c == 0);
@@ -78,9 +78,9 @@ static void rustsecp256k1_v0_1_1_num_sub_abs(rustsecp256k1_v0_1_1_num *r, const 
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_mod(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *m) {
-    rustsecp256k1_v0_1_1_num_sanity(r);
-    rustsecp256k1_v0_1_1_num_sanity(m);
+static void rustsecp256k1_v0_1_2_num_mod(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *m) {
+    rustsecp256k1_v0_1_2_num_sanity(r);
+    rustsecp256k1_v0_1_2_num_sanity(m);
 
     if (r->limbs >= m->limbs) {
         mp_limb_t t[2*NUM_LIMBS];
@@ -93,20 +93,20 @@ static void rustsecp256k1_v0_1_1_num_mod(rustsecp256k1_v0_1_1_num *r, const rust
     }
 
     if (r->neg && (r->limbs > 1 || r->data[0] != 0)) {
-        rustsecp256k1_v0_1_1_num_sub_abs(r, m, r);
+        rustsecp256k1_v0_1_2_num_sub_abs(r, m, r);
         r->neg = 0;
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_mod_inverse(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *m) {
+static void rustsecp256k1_v0_1_2_num_mod_inverse(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *m) {
     int i;
     mp_limb_t g[NUM_LIMBS+1];
     mp_limb_t u[NUM_LIMBS+1];
     mp_limb_t v[NUM_LIMBS+1];
     mp_size_t sn;
     mp_size_t gn;
-    rustsecp256k1_v0_1_1_num_sanity(a);
-    rustsecp256k1_v0_1_1_num_sanity(m);
+    rustsecp256k1_v0_1_2_num_sanity(a);
+    rustsecp256k1_v0_1_2_num_sanity(m);
 
     /** mpn_gcdext computes: (G,S) = gcdext(U,V), where
      *  * G = gcd(U,V)
@@ -144,11 +144,11 @@ static void rustsecp256k1_v0_1_1_num_mod_inverse(rustsecp256k1_v0_1_1_num *r, co
     memset(v, 0, sizeof(v));
 }
 
-static int rustsecp256k1_v0_1_1_num_jacobi(const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static int rustsecp256k1_v0_1_2_num_jacobi(const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     int ret;
     mpz_t ga, gb;
-    rustsecp256k1_v0_1_1_num_sanity(a);
-    rustsecp256k1_v0_1_1_num_sanity(b);
+    rustsecp256k1_v0_1_2_num_sanity(a);
+    rustsecp256k1_v0_1_2_num_sanity(b);
     VERIFY_CHECK(!b->neg && (b->limbs > 0) && (b->data[0] & 1));
 
     mpz_inits(ga, gb, NULL);
@@ -166,19 +166,19 @@ static int rustsecp256k1_v0_1_1_num_jacobi(const rustsecp256k1_v0_1_1_num *a, co
     return ret;
 }
 
-static int rustsecp256k1_v0_1_1_num_is_one(const rustsecp256k1_v0_1_1_num *a) {
+static int rustsecp256k1_v0_1_2_num_is_one(const rustsecp256k1_v0_1_2_num *a) {
     return (a->limbs == 1 && a->data[0] == 1);
 }
 
-static int rustsecp256k1_v0_1_1_num_is_zero(const rustsecp256k1_v0_1_1_num *a) {
+static int rustsecp256k1_v0_1_2_num_is_zero(const rustsecp256k1_v0_1_2_num *a) {
     return (a->limbs == 1 && a->data[0] == 0);
 }
 
-static int rustsecp256k1_v0_1_1_num_is_neg(const rustsecp256k1_v0_1_1_num *a) {
+static int rustsecp256k1_v0_1_2_num_is_neg(const rustsecp256k1_v0_1_2_num *a) {
     return (a->limbs > 1 || a->data[0] != 0) && a->neg;
 }
 
-static int rustsecp256k1_v0_1_1_num_cmp(const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static int rustsecp256k1_v0_1_2_num_cmp(const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     if (a->limbs > b->limbs) {
         return 1;
     }
@@ -188,54 +188,54 @@ static int rustsecp256k1_v0_1_1_num_cmp(const rustsecp256k1_v0_1_1_num *a, const
     return mpn_cmp(a->data, b->data, a->limbs);
 }
 
-static int rustsecp256k1_v0_1_1_num_eq(const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static int rustsecp256k1_v0_1_2_num_eq(const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     if (a->limbs > b->limbs) {
         return 0;
     }
     if (a->limbs < b->limbs) {
         return 0;
     }
-    if ((a->neg && !rustsecp256k1_v0_1_1_num_is_zero(a)) != (b->neg && !rustsecp256k1_v0_1_1_num_is_zero(b))) {
+    if ((a->neg && !rustsecp256k1_v0_1_2_num_is_zero(a)) != (b->neg && !rustsecp256k1_v0_1_2_num_is_zero(b))) {
         return 0;
     }
     return mpn_cmp(a->data, b->data, a->limbs) == 0;
 }
 
-static void rustsecp256k1_v0_1_1_num_subadd(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b, int bneg) {
+static void rustsecp256k1_v0_1_2_num_subadd(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b, int bneg) {
     if (!(b->neg ^ bneg ^ a->neg)) { /* a and b have the same sign */
         r->neg = a->neg;
         if (a->limbs >= b->limbs) {
-            rustsecp256k1_v0_1_1_num_add_abs(r, a, b);
+            rustsecp256k1_v0_1_2_num_add_abs(r, a, b);
         } else {
-            rustsecp256k1_v0_1_1_num_add_abs(r, b, a);
+            rustsecp256k1_v0_1_2_num_add_abs(r, b, a);
         }
     } else {
-        if (rustsecp256k1_v0_1_1_num_cmp(a, b) > 0) {
+        if (rustsecp256k1_v0_1_2_num_cmp(a, b) > 0) {
             r->neg = a->neg;
-            rustsecp256k1_v0_1_1_num_sub_abs(r, a, b);
+            rustsecp256k1_v0_1_2_num_sub_abs(r, a, b);
         } else {
             r->neg = b->neg ^ bneg;
-            rustsecp256k1_v0_1_1_num_sub_abs(r, b, a);
+            rustsecp256k1_v0_1_2_num_sub_abs(r, b, a);
         }
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_add(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
-    rustsecp256k1_v0_1_1_num_sanity(a);
-    rustsecp256k1_v0_1_1_num_sanity(b);
-    rustsecp256k1_v0_1_1_num_subadd(r, a, b, 0);
+static void rustsecp256k1_v0_1_2_num_add(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
+    rustsecp256k1_v0_1_2_num_sanity(a);
+    rustsecp256k1_v0_1_2_num_sanity(b);
+    rustsecp256k1_v0_1_2_num_subadd(r, a, b, 0);
 }
 
-static void rustsecp256k1_v0_1_1_num_sub(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
-    rustsecp256k1_v0_1_1_num_sanity(a);
-    rustsecp256k1_v0_1_1_num_sanity(b);
-    rustsecp256k1_v0_1_1_num_subadd(r, a, b, 1);
+static void rustsecp256k1_v0_1_2_num_sub(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
+    rustsecp256k1_v0_1_2_num_sanity(a);
+    rustsecp256k1_v0_1_2_num_sanity(b);
+    rustsecp256k1_v0_1_2_num_subadd(r, a, b, 1);
 }
 
-static void rustsecp256k1_v0_1_1_num_mul(rustsecp256k1_v0_1_1_num *r, const rustsecp256k1_v0_1_1_num *a, const rustsecp256k1_v0_1_1_num *b) {
+static void rustsecp256k1_v0_1_2_num_mul(rustsecp256k1_v0_1_2_num *r, const rustsecp256k1_v0_1_2_num *a, const rustsecp256k1_v0_1_2_num *b) {
     mp_limb_t tmp[2*NUM_LIMBS+1];
-    rustsecp256k1_v0_1_1_num_sanity(a);
-    rustsecp256k1_v0_1_1_num_sanity(b);
+    rustsecp256k1_v0_1_2_num_sanity(a);
+    rustsecp256k1_v0_1_2_num_sanity(b);
 
     VERIFY_CHECK(a->limbs + b->limbs <= 2*NUM_LIMBS+1);
     if ((a->limbs==1 && a->data[0]==0) || (b->limbs==1 && b->data[0]==0)) {
@@ -259,7 +259,7 @@ static void rustsecp256k1_v0_1_1_num_mul(rustsecp256k1_v0_1_1_num *r, const rust
     memset(tmp, 0, sizeof(tmp));
 }
 
-static void rustsecp256k1_v0_1_1_num_shift(rustsecp256k1_v0_1_1_num *r, int bits) {
+static void rustsecp256k1_v0_1_2_num_shift(rustsecp256k1_v0_1_2_num *r, int bits) {
     if (bits % GMP_NUMB_BITS) {
         /* Shift within limbs. */
         mpn_rshift(r->data, r->data, r->limbs, bits % GMP_NUMB_BITS);
@@ -281,7 +281,7 @@ static void rustsecp256k1_v0_1_1_num_shift(rustsecp256k1_v0_1_1_num *r, int bits
     }
 }
 
-static void rustsecp256k1_v0_1_1_num_negate(rustsecp256k1_v0_1_1_num *r) {
+static void rustsecp256k1_v0_1_2_num_negate(rustsecp256k1_v0_1_2_num *r) {
     r->neg ^= 1;
 }
 

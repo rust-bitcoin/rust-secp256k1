@@ -15,7 +15,7 @@
 #define VERIFY_BITS(x, n) do { } while(0)
 #endif
 
-SECP256K1_INLINE static void rustsecp256k1_v0_1_1_fe_mul_inner(uint64_t *r, const uint64_t *a, const uint64_t * SECP256K1_RESTRICT b) {
+SECP256K1_INLINE static void rustsecp256k1_v0_1_2_fe_mul_inner(uint64_t *r, const uint64_t *a, const uint64_t * SECP256K1_RESTRICT b) {
     uint128_t c, d;
     uint64_t t3, t4, tx, u0;
     uint64_t a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3], a4 = a[4];
@@ -154,7 +154,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_1_1_fe_mul_inner(uint64_t *r, cons
     /* [r4 r3 r2 r1 r0] = [p8 p7 p6 p5 p4 p3 p2 p1 p0] */
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_1_1_fe_sqr_inner(uint64_t *r, const uint64_t *a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_1_2_fe_sqr_inner(uint64_t *r, const uint64_t *a) {
     uint128_t c, d;
     uint64_t a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3], a4 = a[4];
     int64_t t3, t4, tx, u0;

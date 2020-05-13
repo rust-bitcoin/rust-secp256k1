@@ -34,7 +34,7 @@
 #define SECP256K1_N_H_6 ((uint32_t)0xFFFFFFFFUL)
 #define SECP256K1_N_H_7 ((uint32_t)0x7FFFFFFFUL)
 
-SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_clear(rustsecp256k1_v0_1_1_scalar *r) {
+SECP256K1_INLINE static void rustsecp256k1_v0_1_2_scalar_clear(rustsecp256k1_v0_1_2_scalar *r) {
     r->d[0] = 0;
     r->d[1] = 0;
     r->d[2] = 0;
@@ -45,7 +45,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_clear(rustsecp256k1_v0_
     r->d[7] = 0;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_set_int(rustsecp256k1_v0_1_1_scalar *r, unsigned int v) {
+SECP256K1_INLINE static void rustsecp256k1_v0_1_2_scalar_set_int(rustsecp256k1_v0_1_2_scalar *r, unsigned int v) {
     r->d[0] = v;
     r->d[1] = 0;
     r->d[2] = 0;
@@ -56,23 +56,23 @@ SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_set_int(rustsecp256k1_v
     r->d[7] = 0;
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_1_1_scalar_get_bits(const rustsecp256k1_v0_1_1_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_1_2_scalar_get_bits(const rustsecp256k1_v0_1_2_scalar *a, unsigned int offset, unsigned int count) {
     VERIFY_CHECK((offset + count - 1) >> 5 == offset >> 5);
     return (a->d[offset >> 5] >> (offset & 0x1F)) & ((1 << count) - 1);
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_1_1_scalar_get_bits_var(const rustsecp256k1_v0_1_1_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_1_2_scalar_get_bits_var(const rustsecp256k1_v0_1_2_scalar *a, unsigned int offset, unsigned int count) {
     VERIFY_CHECK(count < 32);
     VERIFY_CHECK(offset + count <= 256);
     if ((offset + count - 1) >> 5 == offset >> 5) {
-        return rustsecp256k1_v0_1_1_scalar_get_bits(a, offset, count);
+        return rustsecp256k1_v0_1_2_scalar_get_bits(a, offset, count);
     } else {
         VERIFY_CHECK((offset >> 5) + 1 < 8);
         return ((a->d[offset >> 5] >> (offset & 0x1F)) | (a->d[(offset >> 5) + 1] << (32 - (offset & 0x1F)))) & ((((uint32_t)1) << count) - 1);
     }
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_check_overflow(const rustsecp256k1_v0_1_1_scalar *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_check_overflow(const rustsecp256k1_v0_1_2_scalar *a) {
     int yes = 0;
     int no = 0;
     no |= (a->d[7] < SECP256K1_N_7); /* No need for a > check. */
@@ -90,7 +90,7 @@ SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_check_overflow(const rus
     return yes;
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_reduce(rustsecp256k1_v0_1_1_scalar *r, uint32_t overflow) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_reduce(rustsecp256k1_v0_1_2_scalar *r, uint32_t overflow) {
     uint64_t t;
     VERIFY_CHECK(overflow <= 1);
     t = (uint64_t)r->d[0] + overflow * SECP256K1_N_C_0;
@@ -112,7 +112,7 @@ SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_reduce(rustsecp256k1_v0_
     return overflow;
 }
 
-static int rustsecp256k1_v0_1_1_scalar_add(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *a, const rustsecp256k1_v0_1_1_scalar *b) {
+static int rustsecp256k1_v0_1_2_scalar_add(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a, const rustsecp256k1_v0_1_2_scalar *b) {
     int overflow;
     uint64_t t = (uint64_t)a->d[0] + b->d[0];
     r->d[0] = t & 0xFFFFFFFFULL; t >>= 32;
@@ -130,13 +130,13 @@ static int rustsecp256k1_v0_1_1_scalar_add(rustsecp256k1_v0_1_1_scalar *r, const
     r->d[6] = t & 0xFFFFFFFFULL; t >>= 32;
     t += (uint64_t)a->d[7] + b->d[7];
     r->d[7] = t & 0xFFFFFFFFULL; t >>= 32;
-    overflow = t + rustsecp256k1_v0_1_1_scalar_check_overflow(r);
+    overflow = t + rustsecp256k1_v0_1_2_scalar_check_overflow(r);
     VERIFY_CHECK(overflow == 0 || overflow == 1);
-    rustsecp256k1_v0_1_1_scalar_reduce(r, overflow);
+    rustsecp256k1_v0_1_2_scalar_reduce(r, overflow);
     return overflow;
 }
 
-static void rustsecp256k1_v0_1_1_scalar_cadd_bit(rustsecp256k1_v0_1_1_scalar *r, unsigned int bit, int flag) {
+static void rustsecp256k1_v0_1_2_scalar_cadd_bit(rustsecp256k1_v0_1_2_scalar *r, unsigned int bit, int flag) {
     uint64_t t;
     VERIFY_CHECK(bit < 256);
     bit += ((uint32_t) flag - 1) & 0x100;  /* forcing (bit >> 5) > 7 makes this a noop */
@@ -158,11 +158,11 @@ static void rustsecp256k1_v0_1_1_scalar_cadd_bit(rustsecp256k1_v0_1_1_scalar *r,
     r->d[7] = t & 0xFFFFFFFFULL;
 #ifdef VERIFY
     VERIFY_CHECK((t >> 32) == 0);
-    VERIFY_CHECK(rustsecp256k1_v0_1_1_scalar_check_overflow(r) == 0);
+    VERIFY_CHECK(rustsecp256k1_v0_1_2_scalar_check_overflow(r) == 0);
 #endif
 }
 
-static void rustsecp256k1_v0_1_1_scalar_set_b32(rustsecp256k1_v0_1_1_scalar *r, const unsigned char *b32, int *overflow) {
+static void rustsecp256k1_v0_1_2_scalar_set_b32(rustsecp256k1_v0_1_2_scalar *r, const unsigned char *b32, int *overflow) {
     int over;
     r->d[0] = (uint32_t)b32[31] | (uint32_t)b32[30] << 8 | (uint32_t)b32[29] << 16 | (uint32_t)b32[28] << 24;
     r->d[1] = (uint32_t)b32[27] | (uint32_t)b32[26] << 8 | (uint32_t)b32[25] << 16 | (uint32_t)b32[24] << 24;
@@ -172,13 +172,13 @@ static void rustsecp256k1_v0_1_1_scalar_set_b32(rustsecp256k1_v0_1_1_scalar *r, 
     r->d[5] = (uint32_t)b32[11] | (uint32_t)b32[10] << 8 | (uint32_t)b32[9] << 16 | (uint32_t)b32[8] << 24;
     r->d[6] = (uint32_t)b32[7] | (uint32_t)b32[6] << 8 | (uint32_t)b32[5] << 16 | (uint32_t)b32[4] << 24;
     r->d[7] = (uint32_t)b32[3] | (uint32_t)b32[2] << 8 | (uint32_t)b32[1] << 16 | (uint32_t)b32[0] << 24;
-    over = rustsecp256k1_v0_1_1_scalar_reduce(r, rustsecp256k1_v0_1_1_scalar_check_overflow(r));
+    over = rustsecp256k1_v0_1_2_scalar_reduce(r, rustsecp256k1_v0_1_2_scalar_check_overflow(r));
     if (overflow) {
         *overflow = over;
     }
 }
 
-static void rustsecp256k1_v0_1_1_scalar_get_b32(unsigned char *bin, const rustsecp256k1_v0_1_1_scalar* a) {
+static void rustsecp256k1_v0_1_2_scalar_get_b32(unsigned char *bin, const rustsecp256k1_v0_1_2_scalar* a) {
     bin[0] = a->d[7] >> 24; bin[1] = a->d[7] >> 16; bin[2] = a->d[7] >> 8; bin[3] = a->d[7];
     bin[4] = a->d[6] >> 24; bin[5] = a->d[6] >> 16; bin[6] = a->d[6] >> 8; bin[7] = a->d[6];
     bin[8] = a->d[5] >> 24; bin[9] = a->d[5] >> 16; bin[10] = a->d[5] >> 8; bin[11] = a->d[5];
@@ -189,12 +189,12 @@ static void rustsecp256k1_v0_1_1_scalar_get_b32(unsigned char *bin, const rustse
     bin[28] = a->d[0] >> 24; bin[29] = a->d[0] >> 16; bin[30] = a->d[0] >> 8; bin[31] = a->d[0];
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_is_zero(const rustsecp256k1_v0_1_1_scalar *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_is_zero(const rustsecp256k1_v0_1_2_scalar *a) {
     return (a->d[0] | a->d[1] | a->d[2] | a->d[3] | a->d[4] | a->d[5] | a->d[6] | a->d[7]) == 0;
 }
 
-static void rustsecp256k1_v0_1_1_scalar_negate(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *a) {
-    uint32_t nonzero = 0xFFFFFFFFUL * (rustsecp256k1_v0_1_1_scalar_is_zero(a) == 0);
+static void rustsecp256k1_v0_1_2_scalar_negate(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a) {
+    uint32_t nonzero = 0xFFFFFFFFUL * (rustsecp256k1_v0_1_2_scalar_is_zero(a) == 0);
     uint64_t t = (uint64_t)(~a->d[0]) + SECP256K1_N_0 + 1;
     r->d[0] = t & nonzero; t >>= 32;
     t += (uint64_t)(~a->d[1]) + SECP256K1_N_1;
@@ -213,11 +213,11 @@ static void rustsecp256k1_v0_1_1_scalar_negate(rustsecp256k1_v0_1_1_scalar *r, c
     r->d[7] = t & nonzero;
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_is_one(const rustsecp256k1_v0_1_1_scalar *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_is_one(const rustsecp256k1_v0_1_2_scalar *a) {
     return ((a->d[0] ^ 1) | a->d[1] | a->d[2] | a->d[3] | a->d[4] | a->d[5] | a->d[6] | a->d[7]) == 0;
 }
 
-static int rustsecp256k1_v0_1_1_scalar_is_high(const rustsecp256k1_v0_1_1_scalar *a) {
+static int rustsecp256k1_v0_1_2_scalar_is_high(const rustsecp256k1_v0_1_2_scalar *a) {
     int yes = 0;
     int no = 0;
     no |= (a->d[7] < SECP256K1_N_H_7);
@@ -235,11 +235,11 @@ static int rustsecp256k1_v0_1_1_scalar_is_high(const rustsecp256k1_v0_1_1_scalar
     return yes;
 }
 
-static int rustsecp256k1_v0_1_1_scalar_cond_negate(rustsecp256k1_v0_1_1_scalar *r, int flag) {
+static int rustsecp256k1_v0_1_2_scalar_cond_negate(rustsecp256k1_v0_1_2_scalar *r, int flag) {
     /* If we are flag = 0, mask = 00...00 and this is a no-op;
-     * if we are flag = 1, mask = 11...11 and this is identical to rustsecp256k1_v0_1_1_scalar_negate */
+     * if we are flag = 1, mask = 11...11 and this is identical to rustsecp256k1_v0_1_2_scalar_negate */
     uint32_t mask = !flag - 1;
-    uint32_t nonzero = 0xFFFFFFFFUL * (rustsecp256k1_v0_1_1_scalar_is_zero(r) == 0);
+    uint32_t nonzero = 0xFFFFFFFFUL * (rustsecp256k1_v0_1_2_scalar_is_zero(r) == 0);
     uint64_t t = (uint64_t)(r->d[0] ^ mask) + ((SECP256K1_N_0 + 1) & mask);
     r->d[0] = t & nonzero; t >>= 32;
     t += (uint64_t)(r->d[1] ^ mask) + (SECP256K1_N_1 & mask);
@@ -346,7 +346,7 @@ static int rustsecp256k1_v0_1_1_scalar_cond_negate(rustsecp256k1_v0_1_1_scalar *
     VERIFY_CHECK(c2 == 0); \
 }
 
-static void rustsecp256k1_v0_1_1_scalar_reduce_512(rustsecp256k1_v0_1_1_scalar *r, const uint32_t *l) {
+static void rustsecp256k1_v0_1_2_scalar_reduce_512(rustsecp256k1_v0_1_2_scalar *r, const uint32_t *l) {
     uint64_t c;
     uint32_t n0 = l[8], n1 = l[9], n2 = l[10], n3 = l[11], n4 = l[12], n5 = l[13], n6 = l[14], n7 = l[15];
     uint32_t m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12;
@@ -485,10 +485,10 @@ static void rustsecp256k1_v0_1_1_scalar_reduce_512(rustsecp256k1_v0_1_1_scalar *
     r->d[7] = c & 0xFFFFFFFFUL; c >>= 32;
 
     /* Final reduction of r. */
-    rustsecp256k1_v0_1_1_scalar_reduce(r, c + rustsecp256k1_v0_1_1_scalar_check_overflow(r));
+    rustsecp256k1_v0_1_2_scalar_reduce(r, c + rustsecp256k1_v0_1_2_scalar_check_overflow(r));
 }
 
-static void rustsecp256k1_v0_1_1_scalar_mul_512(uint32_t *l, const rustsecp256k1_v0_1_1_scalar *a, const rustsecp256k1_v0_1_1_scalar *b) {
+static void rustsecp256k1_v0_1_2_scalar_mul_512(uint32_t *l, const rustsecp256k1_v0_1_2_scalar *a, const rustsecp256k1_v0_1_2_scalar *b) {
     /* 96 bit accumulator. */
     uint32_t c0 = 0, c1 = 0, c2 = 0;
 
@@ -576,7 +576,7 @@ static void rustsecp256k1_v0_1_1_scalar_mul_512(uint32_t *l, const rustsecp256k1
     l[15] = c0;
 }
 
-static void rustsecp256k1_v0_1_1_scalar_sqr_512(uint32_t *l, const rustsecp256k1_v0_1_1_scalar *a) {
+static void rustsecp256k1_v0_1_2_scalar_sqr_512(uint32_t *l, const rustsecp256k1_v0_1_2_scalar *a) {
     /* 96 bit accumulator. */
     uint32_t c0 = 0, c1 = 0, c2 = 0;
 
@@ -644,13 +644,13 @@ static void rustsecp256k1_v0_1_1_scalar_sqr_512(uint32_t *l, const rustsecp256k1
 #undef extract
 #undef extract_fast
 
-static void rustsecp256k1_v0_1_1_scalar_mul(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *a, const rustsecp256k1_v0_1_1_scalar *b) {
+static void rustsecp256k1_v0_1_2_scalar_mul(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a, const rustsecp256k1_v0_1_2_scalar *b) {
     uint32_t l[16];
-    rustsecp256k1_v0_1_1_scalar_mul_512(l, a, b);
-    rustsecp256k1_v0_1_1_scalar_reduce_512(r, l);
+    rustsecp256k1_v0_1_2_scalar_mul_512(l, a, b);
+    rustsecp256k1_v0_1_2_scalar_reduce_512(r, l);
 }
 
-static int rustsecp256k1_v0_1_1_scalar_shr_int(rustsecp256k1_v0_1_1_scalar *r, int n) {
+static int rustsecp256k1_v0_1_2_scalar_shr_int(rustsecp256k1_v0_1_2_scalar *r, int n) {
     int ret;
     VERIFY_CHECK(n > 0);
     VERIFY_CHECK(n < 16);
@@ -666,14 +666,14 @@ static int rustsecp256k1_v0_1_1_scalar_shr_int(rustsecp256k1_v0_1_1_scalar *r, i
     return ret;
 }
 
-static void rustsecp256k1_v0_1_1_scalar_sqr(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *a) {
+static void rustsecp256k1_v0_1_2_scalar_sqr(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a) {
     uint32_t l[16];
-    rustsecp256k1_v0_1_1_scalar_sqr_512(l, a);
-    rustsecp256k1_v0_1_1_scalar_reduce_512(r, l);
+    rustsecp256k1_v0_1_2_scalar_sqr_512(l, a);
+    rustsecp256k1_v0_1_2_scalar_reduce_512(r, l);
 }
 
 #ifdef USE_ENDOMORPHISM
-static void rustsecp256k1_v0_1_1_scalar_split_128(rustsecp256k1_v0_1_1_scalar *r1, rustsecp256k1_v0_1_1_scalar *r2, const rustsecp256k1_v0_1_1_scalar *a) {
+static void rustsecp256k1_v0_1_2_scalar_split_128(rustsecp256k1_v0_1_2_scalar *r1, rustsecp256k1_v0_1_2_scalar *r2, const rustsecp256k1_v0_1_2_scalar *a) {
     r1->d[0] = a->d[0];
     r1->d[1] = a->d[1];
     r1->d[2] = a->d[2];
@@ -693,17 +693,17 @@ static void rustsecp256k1_v0_1_1_scalar_split_128(rustsecp256k1_v0_1_1_scalar *r
 }
 #endif
 
-SECP256K1_INLINE static int rustsecp256k1_v0_1_1_scalar_eq(const rustsecp256k1_v0_1_1_scalar *a, const rustsecp256k1_v0_1_1_scalar *b) {
+SECP256K1_INLINE static int rustsecp256k1_v0_1_2_scalar_eq(const rustsecp256k1_v0_1_2_scalar *a, const rustsecp256k1_v0_1_2_scalar *b) {
     return ((a->d[0] ^ b->d[0]) | (a->d[1] ^ b->d[1]) | (a->d[2] ^ b->d[2]) | (a->d[3] ^ b->d[3]) | (a->d[4] ^ b->d[4]) | (a->d[5] ^ b->d[5]) | (a->d[6] ^ b->d[6]) | (a->d[7] ^ b->d[7])) == 0;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_mul_shift_var(rustsecp256k1_v0_1_1_scalar *r, const rustsecp256k1_v0_1_1_scalar *a, const rustsecp256k1_v0_1_1_scalar *b, unsigned int shift) {
+SECP256K1_INLINE static void rustsecp256k1_v0_1_2_scalar_mul_shift_var(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a, const rustsecp256k1_v0_1_2_scalar *b, unsigned int shift) {
     uint32_t l[16];
     unsigned int shiftlimbs;
     unsigned int shiftlow;
     unsigned int shifthigh;
     VERIFY_CHECK(shift >= 256);
-    rustsecp256k1_v0_1_1_scalar_mul_512(l, a, b);
+    rustsecp256k1_v0_1_2_scalar_mul_512(l, a, b);
     shiftlimbs = shift >> 5;
     shiftlow = shift & 0x1F;
     shifthigh = 32 - shiftlow;
@@ -715,7 +715,21 @@ SECP256K1_INLINE static void rustsecp256k1_v0_1_1_scalar_mul_shift_var(rustsecp2
     r->d[5] = shift < 352 ? (l[5 + shiftlimbs] >> shiftlow | (shift < 320 && shiftlow ? (l[6 + shiftlimbs] << shifthigh) : 0)) : 0;
     r->d[6] = shift < 320 ? (l[6 + shiftlimbs] >> shiftlow | (shift < 288 && shiftlow ? (l[7 + shiftlimbs] << shifthigh) : 0)) : 0;
     r->d[7] = shift < 288 ? (l[7 + shiftlimbs] >> shiftlow)  : 0;
-    rustsecp256k1_v0_1_1_scalar_cadd_bit(r, 0, (l[(shift - 1) >> 5] >> ((shift - 1) & 0x1f)) & 1);
+    rustsecp256k1_v0_1_2_scalar_cadd_bit(r, 0, (l[(shift - 1) >> 5] >> ((shift - 1) & 0x1f)) & 1);
+}
+
+static SECP256K1_INLINE void rustsecp256k1_v0_1_2_scalar_cmov(rustsecp256k1_v0_1_2_scalar *r, const rustsecp256k1_v0_1_2_scalar *a, int flag) {
+    uint32_t mask0, mask1;
+    mask0 = flag + ~((uint32_t)0);
+    mask1 = ~mask0;
+    r->d[0] = (r->d[0] & mask0) | (a->d[0] & mask1);
+    r->d[1] = (r->d[1] & mask0) | (a->d[1] & mask1);
+    r->d[2] = (r->d[2] & mask0) | (a->d[2] & mask1);
+    r->d[3] = (r->d[3] & mask0) | (a->d[3] & mask1);
+    r->d[4] = (r->d[4] & mask0) | (a->d[4] & mask1);
+    r->d[5] = (r->d[5] & mask0) | (a->d[5] & mask1);
+    r->d[6] = (r->d[6] & mask0) | (a->d[6] & mask1);
+    r->d[7] = (r->d[7] & mask0) | (a->d[7] & mask1);
 }
 
 #endif /* SECP256K1_SCALAR_REPR_IMPL_H */

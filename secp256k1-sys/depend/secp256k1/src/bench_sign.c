@@ -9,7 +9,7 @@
 #include "bench.h"
 
 typedef struct {
-    rustsecp256k1_v0_1_1_context* ctx;
+    rustsecp256k1_v0_1_2_context* ctx;
     unsigned char msg[32];
     unsigned char key[32];
 } bench_sign;
@@ -26,17 +26,17 @@ static void bench_sign_setup(void* arg) {
     }
 }
 
-static void bench_sign_run(void* arg) {
+static void bench_sign_run(void* arg, int iters) {
     int i;
     bench_sign *data = (bench_sign*)arg;
 
     unsigned char sig[74];
-    for (i = 0; i < 20000; i++) {
+    for (i = 0; i < iters; i++) {
         size_t siglen = 74;
         int j;
-        rustsecp256k1_v0_1_1_ecdsa_signature signature;
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_sign(data->ctx, &signature, data->msg, data->key, NULL, NULL));
-        CHECK(rustsecp256k1_v0_1_1_ecdsa_signature_serialize_der(data->ctx, sig, &siglen, &signature));
+        rustsecp256k1_v0_1_2_ecdsa_signature signature;
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_sign(data->ctx, &signature, data->msg, data->key, NULL, NULL));
+        CHECK(rustsecp256k1_v0_1_2_ecdsa_signature_serialize_der(data->ctx, sig, &siglen, &signature));
         for (j = 0; j < 32; j++) {
             data->msg[j] = sig[j];
             data->key[j] = sig[j + 32];
@@ -47,10 +47,12 @@ static void bench_sign_run(void* arg) {
 int main(void) {
     bench_sign data;
 
-    data.ctx = rustsecp256k1_v0_1_1_context_create(SECP256K1_CONTEXT_SIGN);
+    int iters = get_iters(20000);
 
-    run_benchmark("ecdsa_sign", bench_sign_run, bench_sign_setup, NULL, &data, 10, 20000);
+    data.ctx = rustsecp256k1_v0_1_2_context_create(SECP256K1_CONTEXT_SIGN);
 
-    rustsecp256k1_v0_1_1_context_destroy(data.ctx);
+    run_benchmark("ecdsa_sign", bench_sign_run, bench_sign_setup, NULL, &data, 10, iters);
+
+    rustsecp256k1_v0_1_2_context_destroy(data.ctx);
     return 0;
 }

@@ -143,6 +143,17 @@ rustsecp256k1_v0_1_2_context* rustsecp256k1_v0_1_2_context_preallocated_create(v
     return (rustsecp256k1_v0_1_2_context*) ret;
 }
 
+rustsecp256k1_v0_1_2_context* rustsecp256k1_v0_1_2_context_create(unsigned int flags) {
+    size_t const prealloc_size = rustsecp256k1_v0_1_2_context_preallocated_size(flags);
+    rustsecp256k1_v0_1_2_context* ctx = (rustsecp256k1_v0_1_2_context*)checked_malloc(&default_error_callback, prealloc_size);
+    if (EXPECT(rustsecp256k1_v0_1_2_context_preallocated_create(ctx, flags) == NULL, 0)) {
+        free(ctx);
+        return NULL;
+    }
+
+    return ctx;
+}
+
 rustsecp256k1_v0_1_2_context* rustsecp256k1_v0_1_2_context_preallocated_clone(const rustsecp256k1_v0_1_2_context* ctx, void* prealloc) {
     size_t prealloc_size;
     rustsecp256k1_v0_1_2_context* ret;
@@ -157,11 +168,29 @@ rustsecp256k1_v0_1_2_context* rustsecp256k1_v0_1_2_context_preallocated_clone(co
     return ret;
 }
 
+rustsecp256k1_v0_1_2_context* rustsecp256k1_v0_1_2_context_clone(const rustsecp256k1_v0_1_2_context* ctx) {
+    rustsecp256k1_v0_1_2_context* ret;
+    size_t prealloc_size;
+
+    VERIFY_CHECK(ctx != NULL);
+    prealloc_size = rustsecp256k1_v0_1_2_context_preallocated_clone_size(ctx);
+    ret = (rustsecp256k1_v0_1_2_context*)checked_malloc(&ctx->error_callback, prealloc_size);
+    ret = rustsecp256k1_v0_1_2_context_preallocated_clone(ctx, ret);
+    return ret;
+}
+
 void rustsecp256k1_v0_1_2_context_preallocated_destroy(rustsecp256k1_v0_1_2_context* ctx) {
     ARG_CHECK_NO_RETURN(ctx != rustsecp256k1_v0_1_2_context_no_precomp);
     if (ctx != NULL) {
         rustsecp256k1_v0_1_2_ecmult_context_clear(&ctx->ecmult_ctx);
         rustsecp256k1_v0_1_2_ecmult_gen_context_clear(&ctx->ecmult_gen_ctx);
+    }
+}
+
+void rustsecp256k1_v0_1_2_context_destroy(rustsecp256k1_v0_1_2_context* ctx) {
+    if (ctx != NULL) {
+        rustsecp256k1_v0_1_2_context_preallocated_destroy(ctx);
+        free(ctx);
     }
 }
 
@@ -181,6 +210,16 @@ void rustsecp256k1_v0_1_2_context_set_error_callback(rustsecp256k1_v0_1_2_contex
     }
     ctx->error_callback.fn = fun;
     ctx->error_callback.data = data;
+}
+
+rustsecp256k1_v0_1_2_scratch_space* rustsecp256k1_v0_1_2_scratch_space_create(const rustsecp256k1_v0_1_2_context* ctx, size_t max_size) {
+    VERIFY_CHECK(ctx != NULL);
+    return rustsecp256k1_v0_1_2_scratch_create(&ctx->error_callback, max_size);
+}
+
+void rustsecp256k1_v0_1_2_scratch_space_destroy(const rustsecp256k1_v0_1_2_context *ctx, rustsecp256k1_v0_1_2_scratch_space* scratch) {
+    VERIFY_CHECK(ctx != NULL);
+    rustsecp256k1_v0_1_2_scratch_destroy(&ctx->error_callback, scratch);
 }
 
 /* Mark memory as no-longer-secret for the purpose of analysing constant-time behaviour
