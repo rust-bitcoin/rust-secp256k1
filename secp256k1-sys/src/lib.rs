@@ -243,11 +243,19 @@ extern "C" {
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
+    #[deprecated(since = "0.1.3",note = "Please use the secp256k1_ec_seckey_tweak_add function instead")]
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_privkey_tweak_add")]
     pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
+
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_seckey_tweak_add")]
+    pub fn secp256k1_ec_seckey_tweak_add(cx: *const Context,
+                                        sk: *mut c_uchar,
+                                        tweak: *const c_uchar)
+                                        -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_pubkey_tweak_add")]
     pub fn secp256k1_ec_pubkey_tweak_add(cx: *const Context,
@@ -255,11 +263,18 @@ extern "C" {
                                          tweak: *const c_uchar)
                                          -> c_int;
 
+    #[deprecated(since = "0.1.3",note = "Please use the secp256k1_ec_seckey_tweak_mul function instead")]
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_privkey_tweak_mul")]
     pub fn secp256k1_ec_privkey_tweak_mul(cx: *const Context,
                                           sk: *mut c_uchar,
                                           tweak: *const c_uchar)
                                           -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_seckey_tweak_mul")]
+    pub fn secp256k1_ec_seckey_tweak_mul(cx: *const Context,
+                                        sk: *mut c_uchar,
+                                        tweak: *const c_uchar)
+                                        -> c_int;
 
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_2_ec_pubkey_tweak_mul")]
     pub fn secp256k1_ec_pubkey_tweak_mul(cx: *const Context,
@@ -279,7 +294,7 @@ extern "C" {
         cx: *const Context,
         output: *mut c_uchar,
         pubkey: *const PublicKey,
-        privkey: *const c_uchar,
+        seckey: *const c_uchar,
         hashfp: EcdhHashFn,
         data: *mut c_void,
     ) -> c_int;
@@ -405,7 +420,7 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
 /// A trait for producing pointers that will always be valid in C. (assuming NULL pointer is a valid no-op)
 /// Rust doesn't promise what pointers does it give to ZST (https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts)
 /// In case the type is empty this trait will give a NULL pointer, which should be handled in C.
-/// 
+///
 pub trait CPtr {
     type Target;
     fn as_c_ptr(&self) -> *const Self::Target;
@@ -695,10 +710,18 @@ mod fuzz_dummy {
 //TODO secp256k1_ec_privkey_import
 
     /// Copies the first 16 bytes of tweak into the last 16 bytes of sk
+    #[deprecated(since = "0.1.3",note = "Please use the secp256k1_ec_seckey_tweak_add function instead")]
     pub unsafe fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                                  sk: *mut c_uchar,
                                                  tweak: *const c_uchar)
                                                  -> c_int {
+        secp256k1_ec_seckey_tweak_add(cx, sk, tweak)
+    }
+
+    pub unsafe fn secp256k1_ec_seckey_tweak_add(cx: *const Context,
+                                                sk: *mut c_uchar,
+                                                tweak: *const c_uchar)
+                                                -> c_int {
         assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         ptr::copy(tweak.offset(16), sk.offset(16), 16);
@@ -721,7 +744,16 @@ mod fuzz_dummy {
     }
 
     /// Copies the last 16 bytes of tweak into the last 16 bytes of sk
+    #[deprecated(since = "0.1.3",note = "Please use the secp256k1_ec_seckey_tweak_mul function instead")]
     pub unsafe fn secp256k1_ec_privkey_tweak_mul(cx: *const Context,
+                                                 sk: *mut c_uchar,
+                                                 tweak: *const c_uchar)
+                                                 -> c_int {
+            secp256k1_ec_seckey_tweak_mul(cx, sk, tweak)
+    }
+
+    /// Copies the last 16 bytes of tweak into the last 16 bytes of sk
+    pub unsafe fn secp256k1_ec_seckey_tweak_mul(cx: *const Context,
                                                  sk: *mut c_uchar,
                                                  tweak: *const c_uchar)
                                                  -> c_int {
