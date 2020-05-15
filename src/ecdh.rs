@@ -194,7 +194,7 @@ mod tests {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
-        
+
         let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into());
         let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into());
         let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into());

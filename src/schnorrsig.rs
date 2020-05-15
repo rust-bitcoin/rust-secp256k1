@@ -18,7 +18,33 @@ use {Message, Signing, Verification};
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
-serde_impl!(Signature, constants::SCHNORRSIG_SIGNATURE_SIZE);
+
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for Signature {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for Signature {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::HexVisitor::new(
+                "a hex string representing 64 byte schnorr signature"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 64 bytes schnorr signature",
+                Signature::from_slice
+            ))
+        }
+    }
+}
 
 impl fmt::LowerHex for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -376,7 +402,32 @@ impl From<::key::PublicKey> for PublicKey {
     }
 }
 
-serde_impl_from_slice!(PublicKey);
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for PublicKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize())
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for PublicKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::HexVisitor::new(
+                "a hex string representing 32 byte schnorr public key"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 32 bytes schnorr public key",
+                PublicKey::from_slice
+            ))
+        }
+    }
+}
 
 impl<C: Signing> Secp256k1<C> {
     fn schnorrsig_sign_helper(

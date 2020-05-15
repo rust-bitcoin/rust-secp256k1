@@ -147,6 +147,8 @@ pub mod key;
 pub mod schnorrsig;
 #[cfg(feature = "recovery")]
 pub mod recovery;
+#[cfg(feature = "serde")]
+mod serde_util;
 
 pub use key::SecretKey;
 pub use key::PublicKey;
@@ -435,21 +437,21 @@ impl ::serde::Serialize for Signature {
         } else {
             s.serialize_bytes(&self.serialize_der())
         }
-
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'de> ::serde::Deserialize<'de> for Signature {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Signature, D::Error> {
-        use ::serde::de::Error;
-        use str::FromStr;
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            let sl: &str = ::serde::Deserialize::deserialize(d)?;
-            Signature::from_str(sl).map_err(D::Error::custom)
+            d.deserialize_str(serde_util::HexVisitor::new(
+                "a hex string representing a DER encoded Signature"
+            ))
         } else {
-            let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
-            Signature::from_der(sl).map_err(D::Error::custom)
+            d.deserialize_bytes(serde_util::BytesVisitor::new(
+                "raw byte stream, that represents a DER encoded Signature",
+                Signature::from_der
+            ))
         }
     }
 }
@@ -1260,7 +1262,13 @@ mod tests {
         ";
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES)]);
+        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES)]);
+
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
+
     }
 
     #[cfg(feature = "global-context")]
