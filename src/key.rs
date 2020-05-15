@@ -915,8 +915,20 @@ mod test {
         let pk = PublicKey::from_secret_key(&s, &sk);
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
+        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+
         assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES)]);
+        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES)]);
+
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
+
     }
 }

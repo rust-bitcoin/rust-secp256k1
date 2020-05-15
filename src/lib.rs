@@ -1122,7 +1122,13 @@ mod tests {
         ";
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES)]);
+        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES)]);
+
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
+
     }
 
     // For WASM, just run through our general tests in this file all at once.
