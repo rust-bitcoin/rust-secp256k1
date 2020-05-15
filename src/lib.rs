@@ -432,15 +432,56 @@ impl ::serde::Serialize for Signature {
 
 #[cfg(feature = "serde")]
 impl<'de> ::serde::Deserialize<'de> for Signature {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Signature, D::Error> {
-        use ::serde::de::Error;
-        use str::FromStr;
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            let sl: &str = ::serde::Deserialize::deserialize(d)?;
-            Signature::from_str(sl).map_err(D::Error::custom)
+            struct HexVisitor;
+
+            impl<'de> ::serde::de::Visitor<'de> for HexVisitor {
+                type Value = Signature;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a hex string representing a DER encoded Signature")
+                }
+
+                fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    if let Ok(hex) = str::from_utf8(v) {
+                        str::FromStr::from_str(hex).map_err(E::custom)
+                    } else {
+                        Err(E::invalid_value(::serde::de::Unexpected::Bytes(v), &self))
+                    }
+                }
+
+                fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    str::FromStr::from_str(v).map_err(E::custom)
+                }
+            }
+
+            d.deserialize_str(HexVisitor)
         } else {
-            let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
-            Signature::from_der(sl).map_err(D::Error::custom)
+            struct BytesVisitor;
+
+            impl<'de> ::serde::de::Visitor<'de> for BytesVisitor {
+                type Value = Signature;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("raw byte stream, that represents a DER encoded Signature")
+                }
+
+                fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                where
+                    E: ::serde::de::Error,
+                {
+                    Signature::from_der(v).map_err(E::custom)
+                }
+            }
+
+            d.deserialize_bytes(BytesVisitor)
         }
     }
 }
