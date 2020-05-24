@@ -38,28 +38,31 @@
 //!
 //! ```rust
 //! extern crate secp256k1;
+//! # #[cfg(feature="bitcoin_hashes")]
+//! extern crate bitcoin_hashes;
 //! # #[cfg(feature="rand")]
 //! extern crate rand;
 //!
 //! #
 //! # fn main() {
-//! # #[cfg(feature="rand")] {
-//! use rand::OsRng;
+//! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
+//! use rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
+//! use bitcoin_hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
 //! let (secret_key, public_key) = secp.generate_keypair(&mut rng);
-//! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
 //! # } }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand`
+//! The above code requires `rust-secp256k1` to be compiled with the `rand` and `bitcoin_hashes`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
-//! Alternately, keys can be parsed from slices, like
+//! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
 //! # fn main() {
@@ -68,6 +71,8 @@
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+//! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
+//! // See the above example for how to use this library together with bitcoin_hashes.
 //! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 //!
 //! let sig = secp.sign(&message, &secret_key);
@@ -147,6 +152,7 @@
 pub extern crate secp256k1_sys;
 pub use secp256k1_sys as ffi;
 
+#[cfg(feature = "bitcoin_hashes")] extern crate bitcoin_hashes;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
@@ -172,6 +178,9 @@ pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
 use ffi::CPtr;
+
+#[cfg(feature = "bitcoin_hashes")]
+use bitcoin_hashes::Hash;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -217,6 +226,27 @@ fn from_str(s: &str) -> Result<Signature, Error> {
 pub trait ThirtyTwoByteHash {
     /// Converts the object into a 32-byte array
     fn into_32(self) -> [u8; 32];
+}
+
+#[cfg(feature = "bitcoin_hashes")]
+impl ThirtyTwoByteHash for bitcoin_hashes::sha256::Hash {
+    fn into_32(self) -> [u8; 32] {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "bitcoin_hashes")]
+impl ThirtyTwoByteHash for bitcoin_hashes::sha256d::Hash {
+    fn into_32(self) -> [u8; 32] {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "bitcoin_hashes")]
+impl<T: bitcoin_hashes::sha256t::Tag> ThirtyTwoByteHash for bitcoin_hashes::sha256t::Hash<T> {
+    fn into_32(self) -> [u8; 32] {
+        self.into_inner()
+    }
 }
 
 impl SerializedSignature {
@@ -451,7 +481,12 @@ impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
 
 impl Message {
-    /// Converts a `MESSAGE_SIZE`-byte slice to a message object
+    /// **If you just want to sign an arbitrary message use `Message::from_hashed_data` instead.**
+    ///
+    /// Converts a `MESSAGE_SIZE`-byte slice to a message object. **WARNING:** the slice has to be a
+    /// cryptographically secure hash of the actual message that's going to be signed. Otherwise
+    /// the result of signing isn't a
+    /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
         if data == [0; constants::MESSAGE_SIZE] {
@@ -466,6 +501,25 @@ impl Message {
             }
             _ => Err(Error::InvalidMessage)
         }
+    }
+
+    /// Constructs a `Message` by hashing `data` with hash algorithm `H`. This requires the feature
+    /// `bitcoin_hashes` to be enabled.
+    /// ```rust
+    /// extern crate bitcoin_hashes;
+    /// use secp256k1::Message;
+    /// use bitcoin_hashes::sha256;
+    /// use bitcoin_hashes::Hash;
+    ///
+    /// let m1 = Message::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
+    /// // is equivalent to
+    /// let m2 = Message::from(sha256::Hash::hash("Hello world!".as_bytes()));
+    ///
+    /// assert_eq!(m1, m2);
+    /// ```
+    #[cfg(feature = "bitcoin_hashes")]
+    pub fn from_hashed_data<H: ThirtyTwoByteHash + bitcoin_hashes::Hash>(data: &[u8]) -> Self {
+        <H as bitcoin_hashes::Hash>::hash(data).into()
     }
 }
 
@@ -1109,6 +1163,31 @@ mod tests {
         sign_and_verify_fail();
         test_bad_slice();
         test_low_s();
+    }
+
+    #[cfg(feature = "bitcoin_hashes")]
+    #[test]
+    fn test_from_hash() {
+        use bitcoin_hashes;
+        use bitcoin_hashes::Hash;
+
+        let test_bytes = "Hello world!".as_bytes();
+
+        let hash = bitcoin_hashes::sha256::Hash::hash(test_bytes);
+        let msg = Message::from(hash);
+        assert_eq!(msg.0, hash.into_inner());
+        assert_eq!(
+            msg,
+            Message::from_hashed_data::<bitcoin_hashes::sha256::Hash>(test_bytes)
+        );
+
+        let hash = bitcoin_hashes::sha256d::Hash::hash(test_bytes);
+        let msg = Message::from(hash);
+        assert_eq!(msg.0, hash.into_inner());
+        assert_eq!(
+            msg,
+            Message::from_hashed_data::<bitcoin_hashes::sha256d::Hash>(test_bytes)
+        );
     }
 }
 
