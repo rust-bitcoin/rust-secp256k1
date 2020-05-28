@@ -35,6 +35,13 @@ macro_rules! impl_array_newtype {
             }
 
             #[inline]
+            /// Gets a reference to the underlying array
+            pub fn as_ref(&self) -> &[$ty; $len] {
+                let &$thing(ref dat) = self;
+                dat
+            }
+
+            #[inline]
             /// Returns the length of the object as an array
             pub fn len(&self) -> usize { $len }
 
