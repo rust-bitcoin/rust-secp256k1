@@ -154,10 +154,11 @@ impl SecretKey {
         &mut self
     ) {
         unsafe {
-            ffi::secp256k1_ec_privkey_negate(
+            let res = ffi::secp256k1_ec_privkey_negate(
                 ffi::secp256k1_context_no_precomp,
                 self.as_mut_c_ptr()
             );
+            debug_assert_eq!(res, 1);
         }
     }
 
@@ -310,13 +311,10 @@ impl PublicKey {
     pub fn negate_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>
-    ) -> Result<(), Error> {
+    ) {
         unsafe {
-            if ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0 as *mut _) == 1 {
-                Ok(())
-            } else {
-                Err(Error::InvalidPublicKey)
-            }
+            let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0 as *mut _);
+            debug_assert_eq!(res, 1);
         }
     }
 
@@ -792,11 +790,11 @@ mod test {
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
         sk.negate_assign();
-        assert!(pk.negate_assign(&s).is_ok());
+        pk.negate_assign(&s);
         assert_ne!(original_sk, sk);
         assert_ne!(original_pk, pk);
         sk.negate_assign();
-        assert!(pk.negate_assign(&s).is_ok());
+        pk.negate_assign(&s);
         assert_eq!(original_sk, sk);
         assert_eq!(original_pk, pk);
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
