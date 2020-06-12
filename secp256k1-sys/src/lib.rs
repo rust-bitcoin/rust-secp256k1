@@ -243,6 +243,11 @@ extern "C" {
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
 
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_pubkey_negate")]
+    pub fn secp256k1_ec_pubkey_negate(cx: *const Context,
+                                             pk: *mut PublicKey)
+                                             -> c_int;
+
     #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_1_1_ec_privkey_tweak_add")]
     pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
                                           sk: *mut c_uchar,
@@ -693,6 +698,16 @@ mod fuzz_dummy {
 
 //TODO secp256k1_ec_privkey_export
 //TODO secp256k1_ec_privkey_import
+
+    pub unsafe fn secp256k1_ec_pubkey_negate(cx: *const Context,
+                                      pk: *mut PublicKey)
+                                      -> c_int {
+        assert!(!cx.is_null() && (*cx).0 as u32 & !(SECP256K1_START_NONE | SECP256K1_START_VERIFY | SECP256K1_START_SIGN) == 0);
+        if test_pk_validate(cx, pk) != 1 { return 0; }
+        (*pk).0[24] = 0x7f; // Ensure pk remains valid
+        (*pk).0[24+32] = 0x7f; // Ensure pk remains valid
+        1
+    }
 
     /// Copies the first 16 bytes of tweak into the last 16 bytes of sk
     pub unsafe fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
