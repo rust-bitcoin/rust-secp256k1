@@ -43,6 +43,9 @@ script:
   - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
   - cargo test --verbose --features="rand serde recovery endomorphism"
+  - if [ ${TRAVIS_RUST_VERSION} != "1.22.0" ]; then
+    cargo test --verbose --features global-context;
+    fi
   - cargo build --verbose
   - cargo test --verbose
   - cargo build --verbose --release
