@@ -7,7 +7,7 @@ rust:
   - stable
   - beta
   - nightly
-  - 1.22.0
+  - 1.4.0
 distro: bionic
 os:
  - linux
