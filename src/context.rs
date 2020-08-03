@@ -31,7 +31,9 @@ pub mod global {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;
             ONCE.call_once(|| unsafe {
-                CONTEXT = Some(Secp256k1::new());
+                let mut ctx = Secp256k1::new();
+                ctx.randomize(&mut rand::thread_rng());
+                CONTEXT = Some(ctx);
             });
             unsafe { CONTEXT.as_ref().unwrap() }
         }
