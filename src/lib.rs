@@ -179,6 +179,9 @@ use core::marker::PhantomData;
 use core::ops::Deref;
 use ffi::CPtr;
 
+#[cfg(feature = "global-context")]
+pub use context::global::SECP256K1;
+
 #[cfg(feature = "bitcoin_hashes")]
 use bitcoin_hashes::Hash;
 
@@ -1136,6 +1139,24 @@ mod tests {
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
+    }
+
+    #[cfg(feature = "global-context")]
+    #[test]
+    fn test_global_context() {
+        use super::SECP256K1;
+
+        let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
+        let sk = SecretKey::from_slice(&sk_data).unwrap();
+        let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
+        let msg = Message::from_slice(&msg_data).unwrap();
+
+        // Check usage as explicit parameter
+        let pk = PublicKey::from_secret_key(&SECP256K1, &sk);
+
+        // Check usage as self
+        let sig = SECP256K1.sign(&msg, &sk);
+        assert!(SECP256K1.verify(&msg, &sig, &pk).is_ok());
     }
 
     // For WASM, just run through our general tests in this file all at once.

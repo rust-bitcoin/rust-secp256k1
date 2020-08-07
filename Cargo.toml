@@ -29,6 +29,7 @@ rand-std = ["rand/std"]
 recovery = ["secp256k1-sys/recovery"]
 endomorphism = ["secp256k1-sys/endomorphism"]
 lowmemory = ["secp256k1-sys/lowmemory"]
+global-context = ["std", "rand"]
 
 # Use this feature to not compile the bundled libsecp256k1 C symbols,
 # but use external ones. Use this only if you know what you are doing!

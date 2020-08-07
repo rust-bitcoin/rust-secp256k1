@@ -9,6 +9,38 @@ use Secp256k1;
 #[cfg(feature = "std")]
 pub use self::std_only::*;
 
+#[cfg(feature = "global-context")]
+/// Module implementing a singleton pattern for a global `Secp256k1` context
+pub mod global {
+    use std::ops::Deref;
+    use std::sync::Once;
+    use ::{Secp256k1, All};
+
+    /// Proxy struct for global `SECP256K1` context
+    pub struct GlobalContext {
+        __private: (),
+    }
+
+    /// A global, static context to avoid repeatedly creating contexts where one can't be passed
+    pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
+
+    impl Deref for GlobalContext {
+        type Target = Secp256k1<All>;
+
+        fn deref(&self) -> &Self::Target {
+            static ONCE: Once = Once::new();
+            static mut CONTEXT: Option<Secp256k1<All>> = None;
+            ONCE.call_once(|| unsafe {
+                let mut ctx = Secp256k1::new();
+                ctx.randomize(&mut rand::thread_rng());
+                CONTEXT = Some(ctx);
+            });
+            unsafe { CONTEXT.as_ref().unwrap() }
+        }
+    }
+}
+
+
 /// A trait for all kinds of Context's that Lets you define the exact flags and a function to deallocate memory.
 /// It shouldn't be possible to implement this for types outside this crate.
 pub unsafe trait Context : private::Sealed {
