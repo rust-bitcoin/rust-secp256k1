@@ -46,6 +46,8 @@ rand = "0.6"
 rand_core = "0.4"
 serde_test = "1.0"
 bitcoin_hashes = "0.7"
+llvm-ir = "^0.5"
+pitchfork = { package = "haybale-pitchfork", version = "^0.2" }
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
