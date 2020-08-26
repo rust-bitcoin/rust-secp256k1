@@ -492,10 +492,6 @@ impl Message {
     /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
-        if data == [0; constants::MESSAGE_SIZE] {
-            return Err(Error::InvalidMessage);
-        }
-
         match data.len() {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0; constants::MESSAGE_SIZE];
@@ -1087,10 +1083,7 @@ mod tests {
                    Err(InvalidMessage));
         assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE + 1]),
                    Err(InvalidMessage));
-        assert_eq!(
-            Message::from_slice(&[0; constants::MESSAGE_SIZE]),
-            Err(InvalidMessage)
-        );
+        assert!(Message::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
         assert!(Message::from_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
     }
 
