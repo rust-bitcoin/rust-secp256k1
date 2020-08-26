@@ -7,6 +7,11 @@ AH_TOP([#ifndef LIBSECP256K1_CONFIG_H])
 AH_TOP([#define LIBSECP256K1_CONFIG_H])
 AH_BOTTOM([#endif /*LIBSECP256K1_CONFIG_H*/])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+# Set -g if CFLAGS are not already set, which matches the default autoconf
+# behavior (see PROG_CC in the Autoconf manual) with the exception that we don't
+# set -O2 here because we set it in any case (see further down).
+: ${CFLAGS="-g"}
 LT_INIT
 
 dnl make the compilation flags quiet unless V=1 is used
@@ -18,10 +23,6 @@ AC_PATH_TOOL(AR, ar)
 AC_PATH_TOOL(RANLIB, ranlib)
 AC_PATH_TOOL(STRIP, strip)
 AX_PROG_CC_FOR_BUILD
-
-if test "x$CFLAGS" = "x"; then
-  CFLAGS="-g"
-fi
 
 AM_PROG_CC_C_O
 
@@ -45,6 +46,7 @@ case $host_os in
          if test x$openssl_prefix != x; then
            PKG_CONFIG_PATH="$openssl_prefix/lib/pkgconfig:$PKG_CONFIG_PATH"
            export PKG_CONFIG_PATH
+           CRYPTO_CPPFLAGS="-I$openssl_prefix/include"
          fi
          if test x$gmp_prefix != x; then
            GMP_CPPFLAGS="-I$gmp_prefix/include"
@@ -63,11 +65,11 @@ case $host_os in
    ;;
 esac
 
-CFLAGS="$CFLAGS -W"
+CFLAGS="-W $CFLAGS"
 
 warn_CFLAGS="-std=c89 -pedantic -Wall -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
 saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $warn_CFLAGS"
+CFLAGS="$warn_CFLAGS $CFLAGS"
 AC_MSG_CHECKING([if ${CC} supports ${warn_CFLAGS}])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
     [ AC_MSG_RESULT([yes]) ],
@@ -76,7 +78,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
     ])
 
 saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -fvisibility=hidden"
+CFLAGS="-fvisibility=hidden $CFLAGS"
 AC_MSG_CHECKING([if ${CC} supports -fvisibility=hidden])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
     [ AC_MSG_RESULT([yes]) ],
@@ -135,23 +137,16 @@ AC_ARG_ENABLE(module_recovery,
     [enable_module_recovery=no])
 
 AC_ARG_ENABLE(external_default_callbacks,
-    AS_HELP_STRING([--enable-external-default-callbacks],[enable external default callback functions (default is no)]),
+    AS_HELP_STRING([--enable-external-default-callbacks],[enable external default callback functions [default=no]]),
     [use_external_default_callbacks=$enableval],
     [use_external_default_callbacks=no])
 
-AC_ARG_ENABLE(jni,
-    AS_HELP_STRING([--enable-jni],[enable librustsecp256k1_v0_1_1_jni [default=no]]),
-    [use_jni=$enableval],
-    [use_jni=no])
-
-AC_ARG_WITH([field], [AS_HELP_STRING([--with-field=64bit|32bit|auto],
-[finite field implementation to use [default=auto]])],[req_field=$withval], [req_field=auto])
+dnl Test-only override of the (autodetected by the C code) "widemul" setting.
+dnl Legal values are int64 (for [u]int64_t), int128 (for [unsigned] __int128), and auto (the default).
+AC_ARG_WITH([test-override-wide-multiply], [] ,[set_widemul=$withval], [set_widemul=auto])
 
 AC_ARG_WITH([bignum], [AS_HELP_STRING([--with-bignum=gmp|no|auto],
 [bignum implementation to use [default=auto]])],[req_bignum=$withval], [req_bignum=auto])
-
-AC_ARG_WITH([scalar], [AS_HELP_STRING([--with-scalar=64bit|32bit|auto],
-[scalar implementation to use [default=auto]])],[req_scalar=$withval], [req_scalar=auto])
 
 AC_ARG_WITH([asm], [AS_HELP_STRING([--with-asm=x86_64|arm|no|auto],
 [assembly optimizations to use (experimental: arm) [default=auto]])],[req_asm=$withval], [req_asm=auto])
@@ -165,14 +160,23 @@ AC_ARG_WITH([ecmult-window], [AS_HELP_STRING([--with-ecmult-window=SIZE|auto],
 )],
 [req_ecmult_window=$withval], [req_ecmult_window=auto])
 
-AC_CHECK_TYPES([__int128])
+AC_ARG_WITH([ecmult-gen-precision], [AS_HELP_STRING([--with-ecmult-gen-precision=2|4|8|auto],
+[Precision bits to tune the precomputed table size for signing.]
+[The size of the table is 32kB for 2 bits, 64kB for 4 bits, 512kB for 8 bits of precision.]
+[A larger table size usually results in possible faster signing.]
+["auto" is a reasonable setting for desktop machines (currently 4). [default=auto]]
+)],
+[req_ecmult_gen_precision=$withval], [req_ecmult_gen_precision=auto])
+
+AC_CHECK_HEADER([valgrind/memcheck.h], [enable_valgrind=yes], [enable_valgrind=no], [])
+AM_CONDITIONAL([VALGRIND_ENABLED],[test "$enable_valgrind" = "yes"])
 
 if test x"$enable_coverage" = x"yes"; then
     AC_DEFINE(COVERAGE, 1, [Define this symbol to compile out all VERIFY code])
-    CFLAGS="$CFLAGS -O0 --coverage"
-    LDFLAGS="$LDFLAGS --coverage"
+    CFLAGS="-O0 --coverage $CFLAGS"
+    LDFLAGS="--coverage $LDFLAGS"
 else
-    CFLAGS="$CFLAGS -O3"
+    CFLAGS="-O2 $CFLAGS"
 fi
 
 if test x"$use_ecmult_static_precomputation" != x"no"; then
@@ -190,7 +194,7 @@ if test x"$use_ecmult_static_precomputation" != x"no"; then
 
   warn_CFLAGS_FOR_BUILD="-Wall -Wextra -Wno-unused-function"
   saved_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS $warn_CFLAGS_FOR_BUILD"
+  CFLAGS="$warn_CFLAGS_FOR_BUILD $CFLAGS"
   AC_MSG_CHECKING([if native ${CC_FOR_BUILD} supports ${warn_CFLAGS_FOR_BUILD}])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
       [ AC_MSG_RESULT([yes]) ],
@@ -202,7 +206,7 @@ if test x"$use_ecmult_static_precomputation" != x"no"; then
   AC_RUN_IFELSE(
     [AC_LANG_PROGRAM([], [])],
     [working_native_cc=yes],
-    [working_native_cc=no],[dnl])
+    [working_native_cc=no],[:])
 
   CFLAGS_FOR_BUILD="$CFLAGS"
 
@@ -257,63 +261,6 @@ else
   esac
 fi
 
-if test x"$req_field" = x"auto"; then
-  if test x"set_asm" = x"x86_64"; then
-    set_field=64bit
-  fi
-  if test x"$set_field" = x; then
-    SECP_INT128_CHECK
-    if test x"$has_int128" = x"yes"; then
-      set_field=64bit
-    fi
-  fi
-  if test x"$set_field" = x; then
-    set_field=32bit
-  fi
-else
-  set_field=$req_field
-  case $set_field in
-  64bit)
-    if test x"$set_asm" != x"x86_64"; then
-      SECP_INT128_CHECK
-      if test x"$has_int128" != x"yes"; then
-        AC_MSG_ERROR([64bit field explicitly requested but neither __int128 support or x86_64 assembly available])
-      fi
-    fi
-    ;;
-  32bit)
-    ;;
-  *)
-    AC_MSG_ERROR([invalid field implementation selection])
-    ;;
-  esac
-fi
-
-if test x"$req_scalar" = x"auto"; then
-  SECP_INT128_CHECK
-  if test x"$has_int128" = x"yes"; then
-    set_scalar=64bit
-  fi
-  if test x"$set_scalar" = x; then
-    set_scalar=32bit
-  fi
-else
-  set_scalar=$req_scalar
-  case $set_scalar in
-  64bit)
-    SECP_INT128_CHECK
-    if test x"$has_int128" != x"yes"; then
-      AC_MSG_ERROR([64bit scalar explicitly requested but __int128 support not available])
-    fi
-    ;;
-  32bit)
-    ;;
-  *)
-    AC_MSG_ERROR([invalid scalar implementation selected])
-    ;;
-  esac
-fi
-
 if test x"$req_bignum" = x"auto"; then
   SECP_GMP_CHECK
   if test x"$has_gmp" = x"yes"; then
@@ -357,16 +304,18 @@ no)
   ;;
 esac
 
-# select field implementation
-case $set_field in
-64bit)
-  AC_DEFINE(USE_FIELD_5X52, 1, [Define this symbol to use the FIELD_5X52 implementation])
+# select wide multiplication implementation
+case $set_widemul in
+int128)
+  AC_DEFINE(USE_FORCE_WIDEMUL_INT128, 1, [Define this symbol to force the use of the (unsigned) __int128 based wide multiplication implementation])
   ;;
-32bit)
-  AC_DEFINE(USE_FIELD_10X26, 1, [Define this symbol to use the FIELD_10X26 implementation])
+int64)
+  AC_DEFINE(USE_FORCE_WIDEMUL_INT64, 1, [Define this symbol to force the use of the (u)int64_t based wide multiplication implementation])
+  ;;
+auto)
   ;;
 *)
-  AC_MSG_ERROR([invalid field implementation])
+  AC_MSG_ERROR([invalid wide multiplication implementation])
   ;;
 esac
 
@@ -385,19 +334,6 @@ no)
   ;;
 *)
   AC_MSG_ERROR([invalid bignum implementation])
-  ;;
-esac
-
-#select scalar implementation
-case $set_scalar in
-64bit)
-  AC_DEFINE(USE_SCALAR_4X64, 1, [Define this symbol to use the 4x64 scalar implementation])
-  ;;
-32bit)
-  AC_DEFINE(USE_SCALAR_8X32, 1, [Define this symbol to use the 8x32 scalar implementation])
-  ;;
-*)
-  AC_MSG_ERROR([invalid scalar implementation])
   ;;
 esac
 
@@ -423,12 +359,28 @@ case $set_ecmult_window in
   ;;
 esac
 
+#set ecmult gen precision
+if test x"$req_ecmult_gen_precision" = x"auto"; then
+  set_ecmult_gen_precision=4
+else
+  set_ecmult_gen_precision=$req_ecmult_gen_precision
+fi
+
+case $set_ecmult_gen_precision in
+2|4|8)
+  AC_DEFINE_UNQUOTED(ECMULT_GEN_PREC_BITS, $set_ecmult_gen_precision, [Set ecmult gen precision bits])
+  ;;
+*)
+  AC_MSG_ERROR(['ecmult gen precision not 2, 4, 8 or "auto"'])
+  ;;
+esac
+
 if test x"$use_tests" = x"yes"; then
   SECP_OPENSSL_CHECK
   if test x"$has_openssl_ec" = x"yes"; then
     if test x"$enable_openssl_tests" != x"no"; then
       AC_DEFINE(ENABLE_OPENSSL_TESTS, 1, [Define this symbol if OpenSSL EC functions are available])
-      SECP_TEST_INCLUDES="$SSL_CFLAGS $CRYPTO_CFLAGS"
+      SECP_TEST_INCLUDES="$SSL_CFLAGS $CRYPTO_CFLAGS $CRYPTO_CPPFLAGS"
       SECP_TEST_LIBS="$CRYPTO_LIBS"
 
       case $host in
@@ -445,29 +397,6 @@ if test x"$use_tests" = x"yes"; then
 else
   if test x"$enable_openssl_tests" = x"yes"; then
     AC_MSG_ERROR([OpenSSL tests requested but tests are not enabled])
-  fi
-fi
-
-if test x"$use_jni" != x"no"; then
-  AX_JNI_INCLUDE_DIR
-  have_jni_dependencies=yes
-  if test x"$enable_module_ecdh" = x"no"; then
-    have_jni_dependencies=no
-  fi
-  if test "x$JNI_INCLUDE_DIRS" = "x"; then
-    have_jni_dependencies=no
-  fi
-  if test "x$have_jni_dependencies" = "xno"; then
-    if test x"$use_jni" = x"yes"; then
-      AC_MSG_ERROR([jni support explicitly requested but headers/dependencies were not found. Enable ECDH and try again.])
-    fi
-    AC_MSG_WARN([jni headers/dependencies not found. jni support disabled])
-    use_jni=no
-  else
-    use_jni=yes
-    for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS; do
-      JNI_INCLUDES="$JNI_INCLUDES -I$JNI_INCLUDE_DIR"
-    done
   fi
 fi
 
@@ -491,8 +420,6 @@ fi
 if test x"$enable_module_recovery" = x"yes"; then
   AC_DEFINE(ENABLE_MODULE_RECOVERY, 1, [Define this symbol to enable the ECDSA pubkey recovery module])
 fi
-
-AC_C_BIGENDIAN()
 
 if test x"$use_external_asm" = x"yes"; then
   AC_DEFINE(USE_EXTERNAL_ASM, 1, [Define this symbol if an external (non-inline) assembly implementation is used])
@@ -519,7 +446,6 @@ fi
 
 AC_CONFIG_HEADERS([src/libsecp256k1-config.h])
 AC_CONFIG_FILES([Makefile libsecp256k1.pc])
-AC_SUBST(JNI_INCLUDES)
 AC_SUBST(SECP_INCLUDES)
 AC_SUBST(SECP_LIBS)
 AC_SUBST(SECP_TEST_LIBS)
@@ -531,7 +457,6 @@ AM_CONDITIONAL([USE_BENCHMARK], [test x"$use_benchmark" = x"yes"])
 AM_CONDITIONAL([USE_ECMULT_STATIC_PRECOMPUTATION], [test x"$set_precomp" = x"yes"])
 AM_CONDITIONAL([ENABLE_MODULE_ECDH], [test x"$enable_module_ecdh" = x"yes"])
 AM_CONDITIONAL([ENABLE_MODULE_RECOVERY], [test x"$enable_module_recovery" = x"yes"])
-AM_CONDITIONAL([USE_JNI], [test x"$use_jni" = x"yes"])
 AM_CONDITIONAL([USE_EXTERNAL_ASM], [test x"$use_external_asm" = x"yes"])
 AM_CONDITIONAL([USE_ASM_ARM], [test x"$set_asm" = x"arm"])
 
@@ -547,7 +472,6 @@ echo "Build Options:"
 echo "  with endomorphism       = $use_endomorphism"
 echo "  with ecmult precomp     = $set_precomp"
 echo "  with external callbacks = $use_external_default_callbacks"
-echo "  with jni                = $use_jni"
 echo "  with benchmarks         = $use_benchmark"
 echo "  with coverage           = $enable_coverage"
 echo "  module ecdh             = $enable_module_ecdh"
@@ -555,10 +479,14 @@ echo "  module recovery         = $enable_module_recovery"
 echo
 echo "  asm                     = $set_asm"
 echo "  bignum                  = $set_bignum"
-echo "  field                   = $set_field"
-echo "  scalar                  = $set_scalar"
 echo "  ecmult window size      = $set_ecmult_window"
+echo "  ecmult gen prec. bits   = $set_ecmult_gen_precision"
+dnl Hide test-only options unless they're used.
+if test x"$set_widemul" != xauto; then
+echo "  wide multiplication     = $set_widemul"
+fi
 echo
+echo "  valgrind                = $enable_valgrind"
 echo "  CC                      = $CC"
 echo "  CFLAGS                  = $CFLAGS"
 echo "  CPPFLAGS                = $CPPFLAGS"

@@ -31,20 +31,6 @@ fn main() {
         return;
     }
 
-    // Check whether we can use 64-bit compilation
-    let use_64bit_compilation = if env::var("CARGO_CFG_TARGET_POINTER_WIDTH").unwrap() == "64" {
-        let check = cc::Build::new().file("depend/check_uint128_t.c")
-                                    .cargo_metadata(false)
-                                    .try_compile("check_uint128_t")
-                                    .is_ok();
-        if !check {
-            println!("cargo:warning=Compiling in 32-bit mode on a 64-bit architecture due to lack of uint128_t support.");
-        }
-        check
-    } else {
-        false
-    };
-
     // Actual build
     let mut base_config = cc::Build::new();
     base_config.include("depend/secp256k1/")
@@ -74,15 +60,6 @@ fn main() {
         if target_endian == "big" {
             base_config.define("WORDS_BIGENDIAN", Some("1"));
         }
-    }
-
-    if use_64bit_compilation {
-        base_config.define("USE_FIELD_5X52", Some("1"))
-                   .define("USE_SCALAR_4X64", Some("1"))
-                   .define("HAVE___INT128", Some("1"));
-    } else {
-        base_config.define("USE_FIELD_10X26", Some("1"))
-                   .define("USE_SCALAR_8X32", Some("1"));
     }
 
     if env::var("TARGET").unwrap() == "wasm32-unknown-unknown" {
