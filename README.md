@@ -25,13 +25,13 @@ Contributions to this library are welcome. A few guidelines:
 ## A note on Rust 1.22 support
 
 The build dependency `cc` might require a more recent version of the Rust compiler.
-To ensure compilation with Rust 1.22.0, pin its version in your `Cargo.lock`
+To ensure compilation with Rust 1.29.0, pin its version in your `Cargo.lock`
 with `cargo update -p cc --precise 1.0.41`. If you're using `secp256k1` in a library,
 to make sure it compiles in CI, you'll need to generate a lockfile first.
 Example for Travis CI:
 ```yml
 before_script:
-  - if [ "$TRAVIS_RUST_VERSION" == "1.22.0" ]; then
+  - if [ "$TRAVIS_RUST_VERSION" == "1.29.0" ]; then
     cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose;
     fi
 ```

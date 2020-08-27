@@ -1,4 +1,8 @@
 
+# 0.19.0 - 2020-08-27
+
+* **Update MSRV to 1.29.0**
+
 # 0.18.0 - 2020-08-26
 
 * Add feature-gated `bitcoin_hashes` dependency and [`ThirtyTwoByteHash` trait](https://github.com/rust-bitcoin/rust-secp256k1/pull/206/)
