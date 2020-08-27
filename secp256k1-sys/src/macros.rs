@@ -130,7 +130,7 @@ macro_rules! impl_array_newtype {
                 &dat[..]
             }
         }
-        impl ::CPtr for $thing {
+        impl $crate::CPtr for $thing {
             type Target = $ty;
             fn as_c_ptr(&self) -> *const Self::Target {
                 if self.is_empty() {

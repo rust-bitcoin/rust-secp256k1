@@ -14,7 +14,7 @@ pub use self::std_only::*;
 pub mod global {
     use std::ops::Deref;
     use std::sync::Once;
-    use ::{Secp256k1, All};
+    use {Secp256k1, All};
 
     /// Proxy struct for global `SECP256K1` context
     pub struct GlobalContext {

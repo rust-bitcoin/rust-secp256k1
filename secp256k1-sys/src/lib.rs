@@ -16,16 +16,13 @@
 //! Direct bindings to the underlying C library functions. These should
 //! not be needed for most users.
 
-#![crate_type = "lib"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-#![crate_name = "secp256k1_sys"]
+// Coding conventions
+#![deny(non_upper_case_globals)]
+#![deny(non_camel_case_types)]
+#![deny(non_snake_case)]
+#![deny(unused_mut)]
 
-#![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
-#![cfg_attr(feature = "dev", allow(unstable_features))]
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
-
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #[cfg(any(test, feature = "std"))]
 extern crate core;
 
@@ -467,7 +464,7 @@ mod fuzz_dummy {
     use self::std::{ptr, mem};
     use self::std::boxed::Box;
     use types::*;
-    use ::{Signature, Context, NonceFn, EcdhHashFn, PublicKey,
+    use {Signature, Context, NonceFn, EcdhHashFn, PublicKey,
         SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
         SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
