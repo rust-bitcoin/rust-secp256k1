@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
-use ptr;
+use core::ptr::NonNull;
 use ffi::{self, CPtr};
 use ffi::types::{c_uint, c_void};
 use Error;
@@ -49,7 +49,7 @@ pub unsafe trait Context : private::Sealed {
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
-    unsafe fn deallocate(ptr: *mut [u8]);
+    unsafe fn deallocate(ptr: NonNull<[u8]>);
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -112,8 +112,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
         const DESCRIPTION: &'static str = "signing only";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+            let _ = Box::from_raw(ptr.as_ptr());
         }
     }
 
@@ -121,8 +121,8 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
         const DESCRIPTION: &'static str = "verification only";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+            let _ = Box::from_raw(ptr.as_ptr());
         }
     }
 
@@ -130,8 +130,8 @@ mod std_only {
         const FLAGS: c_uint = VerifyOnly::FLAGS | SignOnly::FLAGS;
         const DESCRIPTION: &'static str = "all capabilities";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+            let _ = Box::from_raw(ptr.as_ptr());
         }
     }
 
@@ -142,9 +142,9 @@ mod std_only {
             ffi::types::sanity_checks_for_wasm();
 
             let buf = vec![0u8; Self::preallocate_size_gen()].into_boxed_slice();
-            let ptr = Box::into_raw(buf);
+            let ptr = NonNull::from(Box::leak(buf));
             Secp256k1 {
-                ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
+                ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr.as_ptr() as *mut c_void, C::FLAGS) },
                 phantom: PhantomData,
                 buf: ptr,
             }
@@ -181,11 +181,11 @@ mod std_only {
     impl<C: Context> Clone for Secp256k1<C> {
         fn clone(&self) -> Secp256k1<C> {
             let clone_size = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx)};
-            let ptr_buf = Box::into_raw(vec![0u8; clone_size].into_boxed_slice());
+            let ptr = NonNull::from(Box::leak(vec![0u8; clone_size].into_boxed_slice()));
             Secp256k1 {
-                ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr_buf as *mut c_void) },
+                ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr.as_ptr() as *mut c_void) },
                 phantom: PhantomData,
-                buf: ptr_buf,
+                buf: ptr,
             }
         }
     }
@@ -201,7 +201,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
         // Allocated by the user
     }
 }
@@ -210,7 +210,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
         // Allocated by the user
     }
 }
@@ -219,7 +219,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
         // Allocated by the user
     }
 }
@@ -240,7 +240,7 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
                     C::FLAGS)
             },
             phantom: PhantomData,
-            buf: buf as *mut [u8],
+            buf: buf.into(),
         })
     }
 }
@@ -270,7 +270,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            buf: NonNull::<[u8; 0]>::dangling() as _,
         })
     }
 }
@@ -302,7 +302,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            buf: NonNull::<[u8; 0]>::dangling() as _,
         })
     }
 }
@@ -334,7 +334,7 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            buf: NonNull::<[u8; 0]>::dangling() as _,
         })
     }
 }

@@ -161,7 +161,7 @@ pub use secp256k1_sys as ffi;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
 
-use core::{fmt, ptr, str};
+use core::{fmt, str, ptr::{self, NonNull}};
 
 #[macro_use]
 mod macros;
@@ -584,7 +584,7 @@ impl std::error::Error for Error {
 pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
     phantom: PhantomData<C>,
-    buf: *mut [u8],
+    buf: NonNull<[u8]>,
 }
 
 // The underlying secp context does not contain any references to memory it does not own
@@ -789,6 +789,7 @@ mod tests {
     use rand::{RngCore, thread_rng};
     use std::str::FromStr;
     use std::marker::PhantomData;
+    use core::ptr::NonNull;
 
     use key::{SecretKey, PublicKey};
     use super::from_hex;
@@ -813,7 +814,7 @@ mod tests {
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
         let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
 
-        let buf: *mut [u8] = &mut [0u8;0] as _;
+        let buf = NonNull::<[u8; 0]>::dangling() as _;
         let full: Secp256k1<AllPreallocated> = Secp256k1{ctx: ctx_full, phantom: PhantomData, buf};
         let sign: Secp256k1<SignOnlyPreallocated> = Secp256k1{ctx: ctx_sign, phantom: PhantomData, buf};
         let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, buf};
