@@ -167,7 +167,6 @@ mod tests {
     use rand::thread_rng;
     use super::SharedSecret;
     use super::super::Secp256k1;
-    use Error;
 
     #[test]
     fn ecdh() {

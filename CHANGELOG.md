@@ -1,4 +1,11 @@
 
+# 0.18.0 - 2020-08-26
+
+* Add feature-gated `bitcoin_hashes` dependency and [`ThirtyTwoByteHash` trait](https://github.com/rust-bitcoin/rust-secp256k1/pull/206/)
+* Add feature-gated [global static context](https://github.com/rust-bitcoin/rust-secp256k1/pull/224) 
+* Allow [all-zero messages](https://github.com/rust-bitcoin/rust-secp256k1/pull/207) to be constructed
+* Bump rust-secp-sys to 0.2.0
+
 # 0.17.2
 - Fix linking in the `fuzztarget` feature.
 
