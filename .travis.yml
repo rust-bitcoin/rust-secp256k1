@@ -7,7 +7,7 @@ rust:
   - stable
   - beta
   - nightly
-  - 1.22.0
+  - 1.29.0
 distro: bionic
 os:
  - linux
@@ -22,11 +22,11 @@ addons:
 
 matrix:
   exclude:
-  - rust: 1.22.0
+  - rust: 1.29.0
     os: windows
 
 script:
-  - if [ "$TRAVIS_RUST_VERSION" == "1.22.0" ]; then 
+  - if [ "$TRAVIS_RUST_VERSION" == "1.29.0" ]; then
     cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose;
     fi
   - cargo build --verbose --no-default-features
@@ -43,7 +43,7 @@ script:
   - cargo test --verbose --features="rand rand-std"
   - cargo test --verbose --features="rand serde"
   - cargo test --verbose --features="rand serde recovery endomorphism"
-  - if [ ${TRAVIS_RUST_VERSION} != "1.22.0" ]; then
+  - if [ ${TRAVIS_RUST_VERSION} != "1.29.0" ]; then
     cargo test --verbose --features global-context;
     fi
   - cargo build --verbose

@@ -506,6 +506,7 @@ impl Message {
     /// `bitcoin_hashes` to be enabled.
     /// ```rust
     /// extern crate bitcoin_hashes;
+    /// # extern crate secp256k1;
     /// use secp256k1::Message;
     /// use bitcoin_hashes::sha256;
     /// use bitcoin_hashes::Hash;

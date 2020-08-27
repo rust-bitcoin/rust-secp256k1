@@ -1,4 +1,8 @@
 
+# 0.3.0 - 2020-08-27
+
+* **Update MSRV to 1.29.0**
+
 # 0.2.0 - 2020-08-26
 
 * Update upstream to `670cdd3f8be25f81472b2d16dcd228b0d24a5c45`
