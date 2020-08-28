@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
-use core::mem::ManuallyDrop;
+use core::mem::{self, ManuallyDrop};
 use core::ptr::NonNull;
-use ffi::{self, CPtr};
+use ffi::{self, CPtr, types::AlignedType};
 use ffi::types::{c_uint, c_void};
 use Error;
 use Secp256k1;
@@ -49,7 +49,7 @@ pub unsafe trait Context : private::Sealed {
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
-    unsafe fn deallocate(ptr: NonNull<[u8]>);
+    unsafe fn deallocate(ptr: NonNull<[AlignedType]>);
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -112,7 +112,7 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
         const DESCRIPTION: &'static str = "signing only";
 
-        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+        unsafe fn deallocate(ptr: NonNull<[AlignedType]>) {
             let _ = Box::from_raw(ptr.as_ptr());
         }
     }
@@ -121,7 +121,7 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
         const DESCRIPTION: &'static str = "verification only";
 
-        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+        unsafe fn deallocate(ptr: NonNull<[AlignedType]>) {
             let _ = Box::from_raw(ptr.as_ptr());
         }
     }
@@ -130,7 +130,7 @@ mod std_only {
         const FLAGS: c_uint = VerifyOnly::FLAGS | SignOnly::FLAGS;
         const DESCRIPTION: &'static str = "all capabilities";
 
-        unsafe fn deallocate(ptr: NonNull<[u8]>) {
+        unsafe fn deallocate(ptr: NonNull<[AlignedType]>) {
             let _ = Box::from_raw(ptr.as_ptr());
         }
     }
@@ -141,7 +141,7 @@ mod std_only {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
 
-            let buf = vec![0u8; Self::preallocate_size_gen()].into_boxed_slice();
+            let buf = vec![AlignedType::zeroed(); Self::preallocate_size_gen()].into_boxed_slice();
             let ptr = NonNull::from(Box::leak(buf));
             Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr.as_ptr() as *mut c_void, C::FLAGS) },
@@ -180,8 +180,10 @@ mod std_only {
 
     impl<C: Context> Clone for Secp256k1<C> {
         fn clone(&self) -> Secp256k1<C> {
-            let clone_size = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx)};
-            let ptr = NonNull::from(Box::leak(vec![0u8; clone_size].into_boxed_slice()));
+            let word_size = mem::size_of::<AlignedType>();
+            let bytes = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx)};
+            let words = (bytes + word_size - 1) / word_size;
+            let ptr = NonNull::from(Box::leak(vec![AlignedType::zeroed(); words].into_boxed_slice()));
             Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr.as_ptr() as *mut c_void) },
                 phantom: PhantomData,
@@ -201,7 +203,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
-    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
+    unsafe fn deallocate(_ptr: NonNull<[AlignedType]>) {
         // Allocated by the user
     }
 }
@@ -210,7 +212,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
-    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
+    unsafe fn deallocate(_ptr: NonNull<[AlignedType]>) {
         // Allocated by the user
     }
 }
@@ -219,14 +221,14 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 
-    unsafe fn deallocate(_ptr: NonNull<[u8]>) {
+    unsafe fn deallocate(_ptr: NonNull<[AlignedType]>) {
         // Allocated by the user
     }
 }
 
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
     /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
-    pub fn preallocated_gen_new(buf: &'buf mut [u8]) -> Result<Secp256k1<C>, Error> {
+    pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
 
@@ -247,7 +249,7 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
 
 impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// Creates a new Secp256k1 context with all capabilities
-    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
+    pub fn preallocated_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
     /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
@@ -270,14 +272,14 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: NonNull::<[u8; 0]>::dangling() as _,
+            buf: NonNull::<[AlignedType; 0]>::dangling() as _,
         })
     }
 }
 
 impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for signing
-    pub fn preallocated_signing_only(buf: &'buf mut [u8]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
+    pub fn preallocated_signing_only(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -302,14 +304,14 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: NonNull::<[u8; 0]>::dangling() as _,
+            buf: NonNull::<[AlignedType; 0]>::dangling() as _,
         })
     }
 }
 
 impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for verification
-    pub fn preallocated_verification_only(buf: &'buf mut [u8]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
+    pub fn preallocated_verification_only(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -334,7 +336,7 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: NonNull::<[u8; 0]>::dangling() as _,
+            buf: NonNull::<[AlignedType; 0]>::dangling() as _,
         })
     }
 }
