@@ -1,8 +1,7 @@
 use core::marker::PhantomData;
 use core::mem::{self, ManuallyDrop};
-use ffi::{self, CPtr, types::AlignedType};
+use ffi::{self, types::AlignedType};
 use ffi::types::{c_uint, c_void};
-use Error;
 use Secp256k1;
 
 #[cfg(feature = "std")]
@@ -232,28 +231,31 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
     /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
-    pub fn preallocated_gen_new(buf: &'buf mut [u8]) -> Result<Secp256k1<C>, Error> {
+    ///
+    /// # Safety
+    /// * The pointer must be valid for [`preallocate_size_gen()`](#method.preallocated_gen_new) bytes
+    /// * The pointer must be as aligned as [`ffi::types::AlignedType`](../secp256k1-sys/src/types.html#AlignedType)
+    /// * The pointer must be writeable.
+    pub unsafe fn preallocated_gen_new(buf: *mut c_void) -> Secp256k1<C> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
 
-        if buf.len() < Self::preallocate_size_gen() {
-            return Err(Error::NotEnoughMemory);
-        }
-        Ok(Secp256k1 {
-            ctx: unsafe {
-                ffi::secp256k1_context_preallocated_create(
-                    buf.as_mut_c_ptr() as *mut c_void,
-                    C::FLAGS)
-            },
+        Secp256k1 {
+            ctx: ffi::secp256k1_context_preallocated_create(buf, C::FLAGS),
             phantom: PhantomData,
             size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
-        })
+        }
     }
 }
 
 impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// Creates a new Secp256k1 context with all capabilities
-    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
+    ///
+    /// # Safety
+    /// * The pointer must be valid for [`preallocate_size()`](#method.preallocate_size) bytes
+    /// * The pointer must be as aligned as [`ffi::types::AlignedType`](../secp256k1-sys/src/types.html#AlignedType)
+    /// * The pointer must be writeable.
+    pub unsafe fn preallocated_new(buf: *mut c_void) -> Secp256k1<AllPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
     /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
@@ -283,7 +285,12 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
 
 impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for signing
-    pub fn preallocated_signing_only(buf: &'buf mut [u8]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
+    ///
+    /// # Safety
+    /// * The pointer must be valid for [`preallocate_size_gen()`](#method.preallocate_size_gen) bytes
+    /// * The pointer must be as aligned as [`ffi::types::AlignedType`](../secp256k1-sys/src/types.html#AlignedType)
+    /// * The pointer must be writeable.
+    pub unsafe fn preallocated_signing_only(buf: *mut c_void) -> Secp256k1<SignOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -315,7 +322,12 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
 
 impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for verification
-    pub fn preallocated_verification_only(buf: &'buf mut [u8]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
+    ///
+    /// # Safety
+    /// * The pointer must be valid for [`preallocate_verification_size()`](#method.preallocate_verification_size) bytes
+    /// * The pointer must be as aligned as [`ffi::types::AlignedType`](../secp256k1-sys/src/types.html#AlignedType)
+    /// * The pointer must be writeable.
+    pub unsafe fn preallocated_verification_only(buf: *mut c_void) -> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 

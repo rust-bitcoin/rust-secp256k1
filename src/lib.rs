@@ -548,8 +548,6 @@ pub enum Error {
     InvalidRecoveryId,
     /// Invalid tweak for add_*_assign or mul_*_assign
     InvalidTweak,
-    /// Didn't pass enough memory to context creation with preallocated memory
-    NotEnoughMemory,
 }
 
 impl Error {
@@ -562,7 +560,6 @@ impl Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
-            Error::NotEnoughMemory => "secp: not enough memory allocated",
         }
     }
 }
@@ -788,6 +785,7 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 mod tests {
     use rand::{RngCore, thread_rng};
     use std::str::FromStr;
+    use std::alloc::{alloc, dealloc, Layout};
     use std::marker::PhantomData;
 
     use key::{SecretKey, PublicKey};
@@ -795,7 +793,7 @@ mod tests {
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
-    use ffi;
+    use ffi::{self, types::AlignedType};
     use context::*;
 
     macro_rules! hex {
@@ -872,26 +870,36 @@ mod tests {
 
     #[test]
     fn test_preallocation() {
-        let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
-        let mut buf_vfy = vec![0u8; Secp256k1::preallocate_verification_size()];
-//
-        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
-        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
-        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();
+        const ALIGN_TO: usize = ::std::mem::align_of::<AlignedType>();
+        let ful_layout = Layout::from_size_align(Secp256k1::preallocate_size(), ALIGN_TO).unwrap();
+        let sign_layout = Layout::from_size_align(Secp256k1::preallocate_signing_size(), ALIGN_TO).unwrap();
+        let vrf_layout = Layout::from_size_align(Secp256k1::preallocate_verification_size(), ALIGN_TO).unwrap();
+        let buf_ful = unsafe { alloc(ful_layout) };
+        let buf_sign = unsafe { alloc(sign_layout) };
+        let buf_vfy = unsafe { alloc(vrf_layout)} ;
+        {
+            let full = unsafe { Secp256k1::preallocated_new(buf_ful as _) };
+            let sign = unsafe { Secp256k1::preallocated_signing_only(buf_sign as _) };
+            let vrfy = unsafe { Secp256k1::preallocated_verification_only(buf_vfy as _) };
 
 //        drop(buf_vfy); // The buffer can't get dropped before the context.
 //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
-        let (sk, pk) = full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
-        // Try signing
-        assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
-        let sig = full.sign(&msg, &sk);
+            let (sk, pk) = full.generate_keypair(&mut thread_rng());
+            let msg = Message::from_slice(&[2u8; 32]).unwrap();
+            // Try signing
+            assert_eq!(sign.sign(&msg, &sk), full.sign(&msg, &sk));
+            let sig = full.sign(&msg, &sk);
 
-        // Try verifying
-        assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
-        assert!(full.verify(&msg, &sig, &pk).is_ok());
+            // Try verifying
+            assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
+            assert!(full.verify(&msg, &sig, &pk).is_ok());
+        }
+        unsafe {
+            dealloc(buf_ful, ful_layout);
+            dealloc(buf_sign, sign_layout);
+            dealloc(buf_vfy, vrf_layout);
+        }
     }
 
     #[test]
