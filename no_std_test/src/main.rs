@@ -56,6 +56,7 @@ use secp256k1::ecdh::SharedSecret;
 use secp256k1::rand::{self, RngCore};
 use secp256k1::serde::Serialize;
 use secp256k1::*;
+use secp256k1::ffi::types::AlignedType;
 
 use serde_cbor::de;
 use serde_cbor::ser::SliceWrite;
@@ -82,11 +83,11 @@ impl RngCore for FakeRng {
 
 #[start]
 fn start(_argc: isize, _argv: *const *const u8) -> isize {
-    let mut buf = [0u8; 600_000];
+    let mut buf = [AlignedType::zeroed(); 37_000];
     let size = Secp256k1::preallocate_size();
     unsafe { libc::printf("needed size: %d\n\0".as_ptr() as _, size) };
 
-    let mut secp = Secp256k1::preallocated_new(&mut buf).unwrap();
+    let mut secp = unsafe {Secp256k1::preallocated_new(buf.as_mut() as *mut [AlignedType] as _)};
     secp.randomize(&mut FakeRng);
     let secret_key = SecretKey::new(&mut FakeRng);
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
@@ -161,5 +162,5 @@ fn panic(info: &PanicInfo) -> ! {
     let mut buf = Print::new();
     write(&mut buf, *msg).unwrap();
     buf.print();
-    unsafe { intrinsics::abort() }
+    intrinsics::abort()
 }
