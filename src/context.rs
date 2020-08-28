@@ -233,7 +233,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
     /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
-    pub fn preallocated_gen_new(buf: &'buf mut [u8]) -> Result<Secp256k1<C>, Error> {
+    pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
 
@@ -254,7 +254,7 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
 
 impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// Creates a new Secp256k1 context with all capabilities
-    pub fn preallocated_new(buf: &'buf mut [u8]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
+    pub fn preallocated_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
     /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
@@ -284,7 +284,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
 
 impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for signing
-    pub fn preallocated_signing_only(buf: &'buf mut [u8]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
+    pub fn preallocated_signing_only(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -316,7 +316,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
 
 impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for verification
-    pub fn preallocated_verification_only(buf: &'buf mut [u8]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
+    pub fn preallocated_verification_only(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
