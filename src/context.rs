@@ -1,7 +1,6 @@
 use core::marker::PhantomData;
-use core::mem::ManuallyDrop;
-use ptr;
-use ffi::{self, CPtr};
+use core::mem::{self, ManuallyDrop};
+use ffi::{self, CPtr, types::AlignedType};
 use ffi::types::{c_uint, c_void};
 use Error;
 use Secp256k1;
@@ -49,7 +48,7 @@ pub unsafe trait Context : private::Sealed {
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
-    unsafe fn deallocate(ptr: *mut [u8]);
+    unsafe fn deallocate(ptr: *mut u8, size: usize);
 }
 
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for signing.
@@ -92,6 +91,8 @@ mod std_only {
     impl private::Sealed for VerifyOnly {}
 
     use super::*;
+    use std::alloc;
+    const ALIGN_TO: usize = mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
     pub enum SignOnly {}
@@ -112,8 +113,9 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
         const DESCRIPTION: &'static str = "signing only";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: *mut u8, size: usize) {
+            let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
+            alloc::dealloc(ptr, layout);
         }
     }
 
@@ -121,8 +123,9 @@ mod std_only {
         const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
         const DESCRIPTION: &'static str = "verification only";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: *mut u8, size: usize) {
+            let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
+            alloc::dealloc(ptr, layout);
         }
     }
 
@@ -130,8 +133,9 @@ mod std_only {
         const FLAGS: c_uint = VerifyOnly::FLAGS | SignOnly::FLAGS;
         const DESCRIPTION: &'static str = "all capabilities";
 
-        unsafe fn deallocate(ptr: *mut [u8]) {
-            let _ = Box::from_raw(ptr);
+        unsafe fn deallocate(ptr: *mut u8, size: usize) {
+            let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
+            alloc::dealloc(ptr, layout);
         }
     }
 
@@ -141,12 +145,13 @@ mod std_only {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
 
-            let buf = vec![0u8; Self::preallocate_size_gen()].into_boxed_slice();
-            let ptr = Box::into_raw(buf);
+            let size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
+            let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
+            let ptr = unsafe {alloc::alloc(layout)};
             Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
                 phantom: PhantomData,
-                buf: ptr,
+                size,
             }
         }
     }
@@ -180,12 +185,13 @@ mod std_only {
 
     impl<C: Context> Clone for Secp256k1<C> {
         fn clone(&self) -> Secp256k1<C> {
-            let clone_size = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx)};
-            let ptr_buf = Box::into_raw(vec![0u8; clone_size].into_boxed_slice());
+            let size = unsafe {ffi::secp256k1_context_preallocated_clone_size(self.ctx as _)};
+            let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
+            let ptr = unsafe {alloc::alloc(layout)};
             Secp256k1 {
-                ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr_buf as *mut c_void) },
+                ctx: unsafe { ffi::secp256k1_context_preallocated_clone(self.ctx, ptr as *mut c_void) },
                 phantom: PhantomData,
-                buf: ptr_buf,
+                size,
             }
         }
     }
@@ -201,7 +207,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut u8, _size: usize) {
         // Allocated by the user
     }
 }
@@ -210,7 +216,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut u8, _size: usize) {
         // Allocated by the user
     }
 }
@@ -219,7 +225,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 
-    unsafe fn deallocate(_ptr: *mut [u8]) {
+    unsafe fn deallocate(_ptr: *mut u8, _size: usize) {
         // Allocated by the user
     }
 }
@@ -240,7 +246,7 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
                     C::FLAGS)
             },
             phantom: PhantomData,
-            buf: buf as *mut [u8],
+            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
         })
     }
 }
@@ -270,7 +276,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
         })
     }
 }
@@ -302,7 +308,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
         })
     }
 }
@@ -334,7 +340,7 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
-            buf: ptr::null_mut::<[u8;0]>() as *mut [u8] ,
+            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
         })
     }
 }
