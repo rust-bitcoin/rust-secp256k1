@@ -71,6 +71,20 @@ pub type EcdhHashFn = unsafe extern "C" fn(
     data: *mut c_void,
 ) -> c_int;
 
+///  Same as secp256k1_nonce function with the exception of accepting an
+///  additional pubkey argument and not requiring an attempt argument. The pubkey
+///  argument can protect signature schemes with key-prefixed challenge hash
+///  inputs against reusing the nonce when signing with the wrong precomputed
+///  pubkey.
+pub type SchnorrNonceFn = unsafe extern "C" fn(
+    nonce32: *mut c_uchar,
+    msg32: *const c_uchar,
+    key32: *const c_uchar,
+    xonly_pk32: *const c_uchar,
+    algo16: *const c_uchar,
+    data: *mut c_void,
+) -> c_int;
+
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
 /// with `secp256k1_context_create` you MUST destroy it with
@@ -125,6 +139,55 @@ impl Default for Signature {
     }
 }
 
+#[repr(C)]
+pub struct XOnlyPublicKey([c_uchar; 64]);
+impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
+impl_raw_debug!(XOnlyPublicKey);
+
+impl XOnlyPublicKey {
+    /// Create a new (zeroed) x-only public key usable for the FFI interface
+    pub fn new() -> XOnlyPublicKey { XOnlyPublicKey([0; 64]) }
+    pub fn from_array(data: [c_uchar; 64]) -> XOnlyPublicKey {
+        XOnlyPublicKey(data)
+    }
+}
+
+impl hash::Hash for XOnlyPublicKey {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0)
+    }
+}
+
+impl Default for XOnlyPublicKey {
+    fn default() -> Self {
+        XOnlyPublicKey::new()
+    }
+}
+
+#[repr(C)]
+pub struct KeyPair([c_uchar; 96]);
+impl_array_newtype!(KeyPair, c_uchar, 96);
+impl_raw_debug!(KeyPair);
+
+impl KeyPair {
+    /// Create a new (zeroed) key pair usable for the FFI interface
+    pub fn new() -> KeyPair { KeyPair([0; 96]) }
+    pub fn from_array(data: [c_uchar; 96]) -> KeyPair {
+        KeyPair(data)
+    }
+}
+
+impl hash::Hash for KeyPair {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0)
+    }
+}
+
+impl Default for KeyPair {
+    fn default() -> Self {
+        KeyPair::new()
+    }
+}
 
 #[cfg(not(feature = "fuzztarget"))]
 extern "C" {
@@ -301,6 +364,92 @@ extern "C" {
         hashfp: EcdhHashFn,
         data: *mut c_void,
     ) -> c_int;
+
+
+    // Schnorr Signatures
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_nonce_function_bip340")]
+    pub static secp256k1_nonce_function_bip340: SchnorrNonceFn;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_schnorrsig_sign")]
+    pub fn secp256k1_schnorrsig_sign(
+        cx: *const Context,
+        sig: *mut c_uchar,
+        msg32: *const c_uchar,
+        keypair: *const KeyPair,
+        noncefp: SchnorrNonceFn,
+        noncedata: *const c_void
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_schnorrsig_verify")]
+    pub fn secp256k1_schnorrsig_verify(
+        cx: *const Context,
+        sig64: *const c_uchar,
+        msg32: *const c_uchar,
+        pubkey: *const XOnlyPublicKey,
+    ) -> c_int;
+
+    // Extra keys
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_keypair_create")]
+    pub fn secp256k1_keypair_create(
+        cx: *const Context,
+        keypair: *mut KeyPair,
+        seckey: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_xonly_pubkey_parse")]
+    pub fn secp256k1_xonly_pubkey_parse(
+        cx: *const Context,
+        pubkey: *mut XOnlyPublicKey,
+        input32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_xonly_pubkey_serialize")]
+    pub fn secp256k1_xonly_pubkey_serialize(
+        cx: *const Context,
+        output32: *mut c_uchar,
+        pubkey: *const XOnlyPublicKey,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_xonly_pubkey_from_pubkey")]
+    pub fn secp256k1_xonly_pubkey_from_pubkey(
+        cx: *const Context,
+        xonly_pubkey: *mut XOnlyPublicKey,
+        pk_parity: *mut c_int,
+        pubkey: *const PublicKey,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add")]
+    pub fn secp256k1_xonly_pubkey_tweak_add(
+        cx: *const Context,
+        output_pubkey: *mut PublicKey,
+        internal_pubkey: *const XOnlyPublicKey,
+        tweak32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_keypair_xonly_pub")]
+    pub fn secp256k1_keypair_xonly_pub(
+        cx: *const Context,
+        pubkey: *mut XOnlyPublicKey,
+        pk_parity: *mut c_int,
+        keypair: *const KeyPair
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_keypair_xonly_tweak_add")]
+    pub fn secp256k1_keypair_xonly_tweak_add(
+        cx: *const Context,
+        keypair: *mut KeyPair,
+        tweak32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add_check")]
+    pub fn secp256k1_xonly_pubkey_tweak_add_check(
+        cx: *const Context,
+        tweaked_pubkey32: *const c_uchar,
+        tweaked_pubkey_parity: c_int,
+        internal_pubkey: *const XOnlyPublicKey,
+        tweak32: *const c_uchar,
+    ) -> c_int;
 }
 
 
@@ -459,6 +608,7 @@ mod fuzz_dummy {
     use self::std::boxed::Box;
     use types::*;
     use {Signature, Context, NonceFn, EcdhHashFn, PublicKey,
+        SchnorrNonceFn, XOnlyPublicKey, KeyPair,
         SECP256K1_START_NONE, SECP256K1_START_VERIFY, SECP256K1_START_SIGN,
         SECP256K1_SER_COMPRESSED, SECP256K1_SER_UNCOMPRESSED};
 
@@ -470,6 +620,8 @@ mod fuzz_dummy {
         pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
         #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_nonce_function_rfc6979")]
         pub static secp256k1_nonce_function_rfc6979: NonceFn;
+        #[cfg_attr(not(feature = "external-symbols"), link_name = "rustsecp256k1_v0_3_1_nonce_function_bip340")]
+        pub static secp256k1_nonce_function_bip340: SchnorrNonceFn;
     }
 
     // Contexts
@@ -840,6 +992,95 @@ mod fuzz_dummy {
         }
         (*out.offset(16)) = 0x00; // result should always be a valid secret key
         1
+    }
+
+    pub unsafe fn secp256k1_schnorrsig_sign(
+        _cx: *const Context,
+        _sig: *mut c_uchar,
+        _msg32: *const c_uchar,
+        _keypair: *const KeyPair,
+        _noncefp: SchnorrNonceFn,
+        _noncedata: *const c_void
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_schnorrsig_verify(
+        _cx: *const Context,
+        _sig64: *const c_uchar,
+        _msg32: *const c_uchar,
+        _pubkey: *const XOnlyPublicKey,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub fn secp256k1_xonly_pubkey_parse(
+        _cx: *const Context,
+        _pubkey: *mut XOnlyPublicKey,
+        _input32: *const c_uchar,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub fn secp256k1_xonly_pubkey_serialize(
+        _cx: *const Context,
+        _output32: *mut c_uchar,
+        _pubkey: *const XOnlyPublicKey,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_xonly_pubkey_from_pubkey(
+        _cx: *const Context,
+        _xonly_pubkey: *mut XOnlyPublicKey,
+        _pk_parity: *mut c_int,
+        _pubkey: *const PublicKey,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_keypair_create(
+        _cx: *const Context,
+        _keypair: *mut KeyPair,
+        _seckey: *const c_uchar,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_xonly_pubkey_tweak_add(
+        _cx: *const Context,
+        _output_pubkey: *mut PublicKey,
+        _internal_pubkey: *const XOnlyPublicKey,
+        _tweak32: *const c_uchar,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_keypair_xonly_pub(
+        _cx: *const Context,
+        _pubkey: *mut XOnlyPublicKey,
+        _pk_parity: *mut c_int,
+        _keypair: *const KeyPair
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_keypair_xonly_tweak_add(
+        _cx: *const Context,
+        _keypair: *mut KeyPair,
+        _tweak32: *const c_uchar,
+    ) -> c_int {
+        unimplemented!();
+    }
+
+    pub unsafe fn secp256k1_xonly_pubkey_tweak_add_check(
+        _cx: *const Context,
+        _tweaked_pubkey32: *const c_uchar,
+        _tweaked_pubkey_parity: c_int,
+        _internal_pubkey: *const XOnlyPublicKey,
+        _tweak32: *const c_uchar,
+    ) -> c_int {
+        unimplemented!();
     }
 }
 #[cfg(feature = "fuzztarget")]

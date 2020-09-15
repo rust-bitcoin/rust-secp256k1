@@ -39,6 +39,8 @@ fn main() {
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
                .define("SECP256K1_BUILD", Some("1"))
                .define("ENABLE_MODULE_ECDH", Some("1"))
+               .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
+               .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
                .define("ECMULT_GEN_PREC_BITS", Some("4"))
                // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
                .define("USE_NUM_NONE", Some("1"))
