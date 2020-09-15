@@ -7,6 +7,8 @@
 #ifndef SECP256K1_ASSUMPTIONS_H
 #define SECP256K1_ASSUMPTIONS_H
 
+#include <limits.h>
+
 #include "util.h"
 
 /* This library, like most software, relies on a number of compiler implementation defined (but not undefined)
@@ -14,12 +16,16 @@
    reduce the odds of experiencing an unwelcome surprise.
 */
 
-struct rustsecp256k1_v0_2_0_assumption_checker {
+struct rustsecp256k1_v0_3_1_assumption_checker {
     /* This uses a trick to implement a static assertion in C89: a type with an array of negative size is not
        allowed. */
     int dummy_array[(
         /* Bytes are 8 bits. */
-        CHAR_BIT == 8 &&
+        (CHAR_BIT == 8) &&
+
+        /* No integer promotion for uint32_t. This ensures that we can multiply uintXX_t values where XX >= 32
+           without signed overflow, which would be undefined behaviour. */
+        (UINT_MAX <= UINT32_MAX) &&
 
         /* Conversions from unsigned to signed outside of the bounds of the signed type are
            implementation-defined. Verify that they function as reinterpreting the lower
