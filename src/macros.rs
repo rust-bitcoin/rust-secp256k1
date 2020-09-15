@@ -67,7 +67,7 @@ macro_rules! serde_impl(
 
                 if d.is_human_readable() {
                     let sl: &str = ::serde::Deserialize::deserialize(d)?;
-                    SecretKey::from_str(sl).map_err(D::Error::custom)
+                    $t::from_str(sl).map_err(D::Error::custom)
                 } else {
                     let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
                     if sl.len() != $len {
