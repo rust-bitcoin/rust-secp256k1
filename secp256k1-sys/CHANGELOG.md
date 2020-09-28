@@ -1,4 +1,7 @@
 
+# 0.3.1 - 2020-09-28
+
+* Fix the `cc` dependency to `>= 1.0.28, <1.0.42` to support MSRV 1.29.0.
 # 0.3.0 - 2020-08-27
 
 * **Update MSRV to 1.29.0**
