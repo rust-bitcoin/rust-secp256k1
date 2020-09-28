@@ -19,7 +19,7 @@ links = "rustsecp256k1_v0_2_0"
 features = [ "recovery", "endomorphism", "lowmemory" ]
 
 [build-dependencies]
-cc = "1.0.28"
+cc = ">= 1.0.28, <1.0.42"
 
 [lib]
 name = "secp256k1_sys"
