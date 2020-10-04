@@ -37,18 +37,10 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! extern crate secp256k1;
-//! # #[cfg(feature="bitcoin_hashes")]
-//! extern crate bitcoin_hashes;
-//! # #[cfg(feature="rand")]
-//! extern crate rand;
-//!
-//! #
-//! # fn main() {
 //! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
-//! use rand::rngs::OsRng;
+//! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
-//! use bitcoin_hashes::sha256;
+//! use secp256k1::bitcoin_hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
@@ -57,7 +49,7 @@
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
-//! # } }
+//! # }
 //! ```
 //!
 //! The above code requires `rust-secp256k1` to be compiled with the `rand` and `bitcoin_hashes`
@@ -65,7 +57,6 @@
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
-//! # fn main() {
 //! use self::secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
@@ -77,13 +68,11 @@
 //!
 //! let sig = secp.sign(&message, &secret_key);
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
-//! # }
 //! ```
 //!
 //! Users who only want to verify signatures can use a cheaper context, like so:
 //!
 //! ```rust
-//! # fn main() {
 //! use secp256k1::{Secp256k1, Message, Signature, PublicKey};
 //!
 //! let secp = Secp256k1::verification_only();
@@ -115,17 +104,11 @@
 //! ]).expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
 //!
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
-//! # }
 //! ```
 //!
 //! Observe that the same code using, say [`signing_only`](struct.Secp256k1.html#method.signing_only)
 //! to generate a context would simply not compile.
 //!
-
-#![crate_type = "lib"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-#![crate_name = "secp256k1"]
 
 // Coding conventions
 #![deny(non_upper_case_globals)]
@@ -134,25 +117,15 @@
 #![deny(unused_mut)]
 #![warn(missing_docs)]
 
-// In general, rust is absolutely horrid at supporting users doing things like,
-// for example, compiling Rust code for real environments. Disable useless lints
-// that don't do anything but annoy us and cant actually ever be resolved.
-#![allow(bare_trait_objects)]
-#![allow(ellipsis_inclusive_range_patterns)]
 
-#![cfg_attr(feature = "dev", allow(unstable_features))]
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
-
-
-#![cfg_attr(all(not(test), not(fuzztarget), not(feature = "std")), no_std)]
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 
 #[macro_use]
 pub extern crate secp256k1_sys;
 pub use secp256k1_sys as ffi;
 
-#[cfg(feature = "bitcoin_hashes")] extern crate bitcoin_hashes;
+#[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
@@ -575,9 +548,7 @@ impl fmt::Display for Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
-    fn description(&self) -> &str { self.as_str() }
-}
+impl std::error::Error for Error {}
 
 
 /// The secp256k1 engine, used to execute all signature operations
@@ -676,7 +647,7 @@ impl<C: Context> Secp256k1<C> {
             // However, if this DOES fail, the result is potentially weaker side-channel
             // resistance, which is deadly and undetectable, so we take out the entire
             // thread to be on the safe side.
-            assert!(err == 1);
+            assert_eq!(err, 1);
         }
     }
 
@@ -723,13 +694,8 @@ impl<C: Verification> Secp256k1<C> {
     /// verify-capable context.
     ///
     /// ```rust
-    /// # extern crate secp256k1;
-    /// # #[cfg(feature="rand")]
-    /// # extern crate rand;
-    /// #
-    /// # fn main() {
     /// # #[cfg(feature="rand")] {
-    /// # use rand::OsRng;
+    /// # use secp256k1::rand::rngs::OsRng;
     /// # use secp256k1::{Secp256k1, Message, Error};
     /// #
     /// # let secp = Secp256k1::new();
@@ -742,7 +708,7 @@ impl<C: Verification> Secp256k1<C> {
     ///
     /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
     /// assert_eq!(secp.verify(&message, &sig, &public_key), Err(Error::IncorrectSignature));
-    /// # } }
+    /// # }
     /// ```
     #[inline]
     pub fn verify(&self, msg: &Message, sig: &Signature, pk: &key::PublicKey) -> Result<(), Error> {
@@ -769,9 +735,9 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
     for c in hex.bytes() {
         b <<= 4;
         match c {
-            b'A'...b'F' => b |= c - b'A' + 10,
-            b'a'...b'f' => b |= c - b'a' + 10,
-            b'0'...b'9' => b |= c - b'0',
+            b'A'..=b'F' => b |= c - b'A' + 10,
+            b'a'..=b'f' => b |= c - b'a' + 10,
+            b'0'..=b'9' => b |= c - b'0',
             _ => return Err(()),
         }
         if (idx & 1) == 1 {

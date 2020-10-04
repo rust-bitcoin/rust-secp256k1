@@ -28,9 +28,6 @@ impl_raw_debug!(RecoverableSignature);
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
-    /// Create a new (uninitialized) signature usable for the FFI interface
-    #[deprecated(since = "0.15.3", note = "Please use the new function instead")]
-    pub unsafe fn blank() -> RecoverableSignature { RecoverableSignature::new() }
 }
 
 impl Default for RecoverableSignature {
