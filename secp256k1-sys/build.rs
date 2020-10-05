@@ -62,8 +62,10 @@ fn main() {
         }
     }
 
-    if env::var("TARGET").unwrap() == "wasm32-unknown-unknown" {
-        base_config.include("wasm-sysroot");
+    match &env::var("TARGET").unwrap() as &str {
+        "wasm32-unknown-unknown"|"wasm32-wasi" =>
+            { base_config.include("wasm-sysroot"); },
+        _ => {},
     }
 
     // secp256k1
