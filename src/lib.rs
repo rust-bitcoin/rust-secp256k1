@@ -133,6 +133,7 @@ pub use secp256k1_sys as ffi;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
+#[cfg(feature = "schemars")] extern crate schemars;
 
 use core::{fmt, ptr, str};
 
@@ -160,7 +161,106 @@ use bitcoin_hashes::Hash;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct Signature(ffi::Signature);
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct Signature(
+    #[cfg_attr(feature = "schemars", schemars(schema_with="schemas::signature"))]
+    ffi::Signature
+);
+
+#[cfg(feature = "schemars")]
+pub mod schemas {
+    use schemars::schema::{Schema, SchemaObject};
+    use schemars::{gen::SchemaGenerator, JsonSchema};
+    const HEX_REGEX: &'static str = "([0-9a-fA-F]{2})*";
+
+    /// schema for Signature
+    /// Max length 72*2, no min length. Must be hex, upper or lower.
+    pub fn signature(gen: &mut SchemaGenerator) -> Schema {
+        let mut schema: SchemaObject = <String>::json_schema(gen).into();
+        schema.string = Some(Box::new(schemars::schema::StringValidation {
+            max_length: Some(72 * 2),
+            min_length: Some(6 * 2),
+            pattern: Some(HEX_REGEX.to_owned()),
+        }));
+        schema.into()
+    }
+
+    /// schema for PublicKey
+    /// Excact Length PUBLIC_KEY_SIZE*2. Must be hex, upper or lower.
+    pub fn publickey(gen: &mut SchemaGenerator) -> Schema {
+        let mut schema: SchemaObject = <String>::json_schema(gen).into();
+        const L: Option<u32> = Some((crate::constants::PUBLIC_KEY_SIZE * 2) as u32);
+        schema.string = Some(Box::new(schemars::schema::StringValidation {
+            max_length: L,
+            min_length: L,
+            pattern: Some(HEX_REGEX.to_owned()),
+        }));
+        schema.into()
+    }
+
+    /// schema for SecretKey
+    /// Excact Length SECRET_KEY_SIZE*2. Must be hex, upper or lower.
+    pub fn secretkey(gen: &mut SchemaGenerator) -> Schema {
+        let mut schema: SchemaObject = <String>::json_schema(gen).into();
+        const L: Option<u32> = Some((crate::constants::SECRET_KEY_SIZE * 2) as u32);
+        schema.string = Some(Box::new(schemars::schema::StringValidation {
+            max_length: L,
+            min_length: L,
+            pattern: Some(HEX_REGEX.to_owned()),
+        }));
+        schema.into()
+    }
+
+    #[cfg(test)]
+    mod test {
+        use crate::key::{PublicKey, SecretKey};
+        use crate::{Message, Secp256k1};
+        #[cfg(feature = "serde")]
+        #[test]
+        fn signature_schema_correct() {
+            let s = Secp256k1::new();
+            let msg = Message::from_slice(&[1; 32]).unwrap();
+            let sk = SecretKey::from_slice(&[2; 32]).unwrap();
+            let sig = s.sign(&msg, &sk);
+
+            let js = serde_json::from_str(&serde_json::to_string(&sig).unwrap()).unwrap();
+            let s = schemars::schema_for!(crate::Signature);
+            let schema = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+            assert!(jsonschema_valid::Config::from_schema(&schema, None)
+                .unwrap()
+                .validate(&js)
+                .is_ok());
+        }
+
+        #[cfg(feature = "serde")]
+        #[test]
+        fn secret_key_schema_correct() {
+            let sk = SecretKey::from_slice(&[2; 32]).unwrap();
+            let js = serde_json::from_str(&serde_json::to_string(&sk).unwrap()).unwrap();
+            let s = schemars::schema_for!(SecretKey);
+            let schema = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+            assert!(jsonschema_valid::Config::from_schema(&schema, None)
+                .unwrap()
+                .validate(&js)
+                .is_ok());
+        }
+
+        #[cfg(feature = "serde")]
+        #[test]
+        fn public_key_schema_correct() {
+            let s = Secp256k1::new();
+            let sk = SecretKey::from_slice(&[2; 32]).unwrap();
+            let pk = PublicKey::from_secret_key(&s, &sk);
+            let js = serde_json::from_str(&serde_json::to_string(&pk).unwrap()).unwrap();
+            let s = schemars::schema_for!(PublicKey);
+            let schema = serde_json::from_str(&serde_json::to_string(&s).unwrap()).unwrap();
+            assert!(jsonschema_valid::Config::from_schema(&schema, None)
+                .unwrap()
+                .validate(&js)
+                .is_ok());
+        }
+    }
+}
 
 /// A DER serialized Signature
 #[derive(Copy, Clone)]

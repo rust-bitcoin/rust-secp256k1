@@ -25,6 +25,7 @@ recovery = ["secp256k1-sys/recovery"]
 endomorphism = ["secp256k1-sys/endomorphism"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std", "rand"]
+json = ['schemars']
 
 # Use this feature to not compile the bundled libsecp256k1 C symbols,
 # but use external ones. Use this only if you know what you are doing!
@@ -39,12 +40,18 @@ bitcoin_hashes = { version = "0.9", optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 
+[dependencies.schemars]
+version = "0.8.0"
+optional = true
+
 
 [dev-dependencies]
 rand = "0.6"
 rand_core = "0.4"
 serde_test = "1.0"
 bitcoin_hashes = "0.9"
+serde_json = "1.0"
+jsonschema-valid = "0.4.0"
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"

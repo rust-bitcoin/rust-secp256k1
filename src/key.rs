@@ -27,7 +27,11 @@ use constants;
 use ffi::{self, CPtr};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
-pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct SecretKey(
+    #[cfg_attr(feature = "schemars", schemars(schema_with="crate::schemas::secretkey"))]
+    [u8; constants::SECRET_KEY_SIZE]
+);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
 
@@ -65,7 +69,11 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
-pub struct PublicKey(ffi::PublicKey);
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct PublicKey(
+    #[cfg_attr(feature = "schemars", schemars(schema_with="crate::schemas::publickey"))]
+    ffi::PublicKey
+);
 
 impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
