@@ -64,7 +64,7 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 1]);
 
 /// A Secp256k1 public key, used for verification of signatures
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::PublicKey);
 
 impl fmt::LowerHex for PublicKey {
@@ -470,6 +470,18 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
     }
 }
 
+impl PartialOrd for PublicKey {
+    fn partial_cmp(&self, other: &PublicKey) -> Option<::core::cmp::Ordering> {
+        self.serialize().partial_cmp(&other.serialize())
+    }
+}
+
+impl Ord for PublicKey {
+    fn cmp(&self, other: &PublicKey) -> ::core::cmp::Ordering {
+        self.serialize().cmp(&other.serialize())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use Secp256k1;
@@ -860,10 +872,10 @@ mod test {
         assert!(!(pk2 < pk1));
         assert!(!(pk1 < pk2));
 
-        assert!(pk3 < pk1);
-        assert!(pk1 > pk3);
-        assert!(pk3 <= pk1);
-        assert!(pk1 >= pk3);
+        assert!(pk3 > pk1);
+        assert!(pk1 < pk3);
+        assert!(pk3 >= pk1);
+        assert!(pk1 <= pk3);
     }
 
     #[cfg(feature = "serde")]
