@@ -324,6 +324,26 @@ impl From<ffi::XOnlyPublicKey> for PublicKey {
     }
 }
 
+impl From<::key::PublicKey> for PublicKey {
+    fn from(src: ::key::PublicKey) -> PublicKey {
+        let mut pk = ffi::XOnlyPublicKey::new();
+
+        unsafe {
+            assert_eq!(
+                1,
+                ffi::secp256k1_xonly_pubkey_from_pubkey(
+                    ffi::secp256k1_context_no_precomp,
+                    &mut pk,
+                    ptr::null_mut(),
+                    src.as_c_ptr(),
+                )
+            );
+        }
+
+        PublicKey(pk)
+    }
+}
+
 serde_impl_from_slice!(PublicKey);
 
 impl<C: Signing> Secp256k1<C> {
@@ -706,5 +726,23 @@ mod tests {
             pk.add_assign(&s, &tweak).expect("Tweak error");
             assert_eq!(PublicKey::from_keypair(&s, &kp), pk);
         }
+    }
+
+    #[test]
+    fn test_from_key_pubkey() {
+        let kpk1 = ::key::PublicKey::from_str(
+            "02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443",
+        )
+        .unwrap();
+        let kpk2 = ::key::PublicKey::from_str(
+            "0384526253c27c7aef56c7b71a5cd25bebb66dddda437826defc5b2568bde81f07",
+        )
+        .unwrap();
+
+        let pk1 = PublicKey::from(kpk1);
+        let pk2 = PublicKey::from(kpk2);
+
+        assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
+        assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
     }
 }
