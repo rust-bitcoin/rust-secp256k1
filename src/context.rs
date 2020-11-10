@@ -12,6 +12,7 @@ pub use self::std_only::*;
 #[cfg(feature = "global-context")]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
+    use rand;
     use std::ops::Deref;
     use std::sync::Once;
     use {Secp256k1, All};
