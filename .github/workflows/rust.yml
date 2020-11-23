@@ -1,0 +1,82 @@
+on: [push, pull_request]
+
+name: Continuous integration
+
+jobs:
+  bench_nightly:
+    name: Nightly - ASan + Bench
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - nightly
+    steps:
+      - name: Checkout Crate 
+        uses: actions/checkout@v2
+      - name: Checkout Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rust-src
+      - name: Running address sanitizer
+        env:
+          DO_ASAN: true
+        run: ./contrib/test.sh
+      - name: Running benchmarks
+        env:
+          DO_BENCH: true
+        run: ./contrib/test.sh
+
+  wasm: 
+    name: Stable - Docs / WebAssembly Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v2
+      - name: Checkout Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Building docs
+        env:
+          DO_DOCS: true
+        run: ./contrib/test.sh
+      - name: Running WASM build
+        env:
+          DO_WASM: true
+        run: ./contrib/test.sh
+
+  Tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.29.0
+          - beta
+          - stable
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v2
+      - name: Checkout Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Pin cc if rust 1.29
+        if: matrix.rust == '1.29.0'
+        run: cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose
+      - name: Running cargo
+        env:
+          DO_FEATURE_MATRIX: true
+        run: ./contrib/test.sh
+
