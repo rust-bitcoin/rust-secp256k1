@@ -4,7 +4,7 @@
 
 ### rust-secp256k1
 
-`rust-secp256k1` is a wrapper around ![libsecp256k1](https://github.com/bitcoin-core/secp256k1),
+`rust-secp256k1` is a wrapper around [libsecp256k1](https://github.com/bitcoin-core/secp256k1),
 a C library by Pieter Wuille for producing ECDSA signatures using the SECG curve
 `secp256k1`. This library
 * exposes type-safe Rust bindings for all `libsecp256k1` functions
