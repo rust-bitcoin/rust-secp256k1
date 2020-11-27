@@ -233,14 +233,14 @@ impl PublicKey {
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
                            -> PublicKey {
-        let mut pk = ffi::PublicKey::new();
         unsafe {
+            let mut pk = ffi::PublicKey::new();
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something
             let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_c_ptr());
             debug_assert_eq!(res, 1);
+            PublicKey(pk)
         }
-        PublicKey(pk)
     }
 
     /// Creates a public key directly from a slice
@@ -248,8 +248,8 @@ impl PublicKey {
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         if data.is_empty() {return Err(Error::InvalidPublicKey);}
 
-        let mut pk = ffi::PublicKey::new();
         unsafe {
+            let mut pk = ffi::PublicKey::new();
             if ffi::secp256k1_ec_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,

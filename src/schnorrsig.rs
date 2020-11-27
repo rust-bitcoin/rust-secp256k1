@@ -123,8 +123,8 @@ impl KeyPair {
             return Err(InvalidPublicKey);
         }
 
-        let mut kp = ffi::KeyPair::new();
         unsafe {
+            let mut kp = ffi::KeyPair::new();
             if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, data.as_c_ptr()) == 1 {
                 Ok(KeyPair(kp))
             } else {
@@ -155,13 +155,13 @@ impl KeyPair {
             ret
         };
         let mut data = random_32_bytes();
-        let mut keypair = ffi::KeyPair::new();
         unsafe {
+            let mut keypair = ffi::KeyPair::new();
             while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
                 data = random_32_bytes();
             }
+            KeyPair(keypair)
         }
-        KeyPair(keypair)
     }
 
     /// Tweak a keypair by adding the given tweak to the secret key and updating the
@@ -210,9 +210,9 @@ impl PublicKey {
     /// Creates a new Schnorr public key from a Schnorr key pair
     #[inline]
     pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> PublicKey {
-        let mut xonly_pk = ffi::XOnlyPublicKey::new();
         let mut pk_parity = 0;
         unsafe {
+            let mut xonly_pk = ffi::XOnlyPublicKey::new();
             let ret = ffi::secp256k1_keypair_xonly_pub(
                 secp.ctx,
                 &mut xonly_pk,
@@ -220,8 +220,8 @@ impl PublicKey {
                 keypair.as_ptr(),
             );
             debug_assert_eq!(ret, 1);
+            PublicKey(xonly_pk)
         }
-        PublicKey(xonly_pk)
     }
 
     /// Creates a Schnorr public key directly from a slice
@@ -231,8 +231,8 @@ impl PublicKey {
             return Err(InvalidPublicKey);
         }
 
-        let mut pk = ffi::XOnlyPublicKey::new();
         unsafe {
+            let mut pk = ffi::XOnlyPublicKey::new();
             if ffi::secp256k1_xonly_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
@@ -326,9 +326,8 @@ impl From<ffi::XOnlyPublicKey> for PublicKey {
 
 impl From<::key::PublicKey> for PublicKey {
     fn from(src: ::key::PublicKey) -> PublicKey {
-        let mut pk = ffi::XOnlyPublicKey::new();
-
         unsafe {
+            let mut pk = ffi::XOnlyPublicKey::new();
             assert_eq!(
                 1,
                 ffi::secp256k1_xonly_pubkey_from_pubkey(
@@ -338,9 +337,8 @@ impl From<::key::PublicKey> for PublicKey {
                     src.as_c_ptr(),
                 )
             );
+            PublicKey(pk)
         }
-
-        PublicKey(pk)
     }
 }
 
