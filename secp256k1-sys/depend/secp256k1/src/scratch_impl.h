@@ -10,29 +10,33 @@
 #include "util.h"
 #include "scratch.h"
 
-static size_t rustsecp256k1_v0_2_0_scratch_checkpoint(const rustsecp256k1_v0_2_0_callback* error_callback, const rustsecp256k1_v0_2_0_scratch* scratch) {
+static size_t rustsecp256k1_v0_3_1_scratch_checkpoint(const rustsecp256k1_v0_3_1_callback* error_callback, const rustsecp256k1_v0_3_1_scratch* scratch) {
     if (memcmp(scratch->magic, "scratch", 8) != 0) {
-        rustsecp256k1_v0_2_0_callback_call(error_callback, "invalid scratch space");
+        rustsecp256k1_v0_3_1_callback_call(error_callback, "invalid scratch space");
         return 0;
     }
     return scratch->alloc_size;
 }
 
-static void rustsecp256k1_v0_2_0_scratch_apply_checkpoint(const rustsecp256k1_v0_2_0_callback* error_callback, rustsecp256k1_v0_2_0_scratch* scratch, size_t checkpoint) {
+static void rustsecp256k1_v0_3_1_scratch_apply_checkpoint(const rustsecp256k1_v0_3_1_callback* error_callback, rustsecp256k1_v0_3_1_scratch* scratch, size_t checkpoint) {
     if (memcmp(scratch->magic, "scratch", 8) != 0) {
-        rustsecp256k1_v0_2_0_callback_call(error_callback, "invalid scratch space");
+        rustsecp256k1_v0_3_1_callback_call(error_callback, "invalid scratch space");
         return;
     }
     if (checkpoint > scratch->alloc_size) {
-        rustsecp256k1_v0_2_0_callback_call(error_callback, "invalid checkpoint");
+        rustsecp256k1_v0_3_1_callback_call(error_callback, "invalid checkpoint");
         return;
     }
     scratch->alloc_size = checkpoint;
 }
 
-static size_t rustsecp256k1_v0_2_0_scratch_max_allocation(const rustsecp256k1_v0_2_0_callback* error_callback, const rustsecp256k1_v0_2_0_scratch* scratch, size_t objects) {
+static size_t rustsecp256k1_v0_3_1_scratch_max_allocation(const rustsecp256k1_v0_3_1_callback* error_callback, const rustsecp256k1_v0_3_1_scratch* scratch, size_t objects) {
     if (memcmp(scratch->magic, "scratch", 8) != 0) {
-        rustsecp256k1_v0_2_0_callback_call(error_callback, "invalid scratch space");
+        rustsecp256k1_v0_3_1_callback_call(error_callback, "invalid scratch space");
+        return 0;
+    }
+    /* Ensure that multiplication will not wrap around */
+    if (ALIGNMENT > 1 && objects > SIZE_MAX/(ALIGNMENT - 1)) {
         return 0;
     }
     if (scratch->max_size - scratch->alloc_size <= objects * (ALIGNMENT - 1)) {
@@ -41,12 +45,19 @@ static size_t rustsecp256k1_v0_2_0_scratch_max_allocation(const rustsecp256k1_v0
     return scratch->max_size - scratch->alloc_size - objects * (ALIGNMENT - 1);
 }
 
-static void *rustsecp256k1_v0_2_0_scratch_alloc(const rustsecp256k1_v0_2_0_callback* error_callback, rustsecp256k1_v0_2_0_scratch* scratch, size_t size) {
+static void *rustsecp256k1_v0_3_1_scratch_alloc(const rustsecp256k1_v0_3_1_callback* error_callback, rustsecp256k1_v0_3_1_scratch* scratch, size_t size) {
     void *ret;
-    size = ROUND_TO_ALIGN(size);
+    size_t rounded_size;
+
+    rounded_size = ROUND_TO_ALIGN(size);
+    /* Check that rounding did not wrap around */
+    if (rounded_size < size) {
+        return NULL;
+    }
+    size = rounded_size;
 
     if (memcmp(scratch->magic, "scratch", 8) != 0) {
-        rustsecp256k1_v0_2_0_callback_call(error_callback, "invalid scratch space");
+        rustsecp256k1_v0_3_1_callback_call(error_callback, "invalid scratch space");
         return NULL;
     }
 

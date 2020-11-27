@@ -67,7 +67,7 @@ macro_rules! serde_impl(
 
                 if d.is_human_readable() {
                     let sl: &str = ::serde::Deserialize::deserialize(d)?;
-                    SecretKey::from_str(sl).map_err(D::Error::custom)
+                    $t::from_str(sl).map_err(D::Error::custom)
                 } else {
                     let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
                     if sl.len() != $len {
@@ -86,4 +86,78 @@ macro_rules! serde_impl(
 #[cfg(not(feature="serde"))]
 macro_rules! serde_impl(
     ($t:ident, $len:expr) => ()
+);
+
+#[cfg(feature = "serde")]
+macro_rules! serde_impl_from_slice {
+    ($t: ident) => {
+        impl ::serde::Serialize for $t {
+            fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+                if s.is_human_readable() {
+                    s.collect_str(self)
+                } else {
+                    s.serialize_bytes(&self.serialize())
+                }
+            }
+        }
+
+        impl<'de> ::serde::Deserialize<'de> for $t {
+            fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<$t, D::Error> {
+                if d.is_human_readable() {
+                    struct HexVisitor;
+
+                    impl<'de> ::serde::de::Visitor<'de> for HexVisitor {
+                        type Value = $t;
+
+                        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                            formatter.write_str("an ASCII hex string")
+                        }
+
+                        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                        where
+                            E: ::serde::de::Error,
+                        {
+                            if let Ok(hex) = str::from_utf8(v) {
+                                str::FromStr::from_str(hex).map_err(E::custom)
+                            } else {
+                                Err(E::invalid_value(::serde::de::Unexpected::Bytes(v), &self))
+                            }
+                        }
+
+                        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+                        where
+                            E: ::serde::de::Error,
+                        {
+                            str::FromStr::from_str(v).map_err(E::custom)
+                        }
+                    }
+                    d.deserialize_str(HexVisitor)
+                } else {
+                    struct BytesVisitor;
+
+                    impl<'de> ::serde::de::Visitor<'de> for BytesVisitor {
+                        type Value = $t;
+
+                        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                            formatter.write_str("a bytestring")
+                        }
+
+                        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+                        where
+                            E: ::serde::de::Error,
+                        {
+                            $t::from_slice(v).map_err(E::custom)
+                        }
+                    }
+
+                    d.deserialize_bytes(BytesVisitor)
+                }
+            }
+        }
+    };
+}
+
+#[cfg(not(feature = "serde"))]
+macro_rules! serde_impl_from_slice(
+    ($t:ident) => ()
 );

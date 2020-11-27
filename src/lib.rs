@@ -142,6 +142,7 @@ mod context;
 pub mod constants;
 pub mod ecdh;
 pub mod key;
+pub mod schnorrsig;
 #[cfg(feature = "recovery")]
 pub mod recovery;
 

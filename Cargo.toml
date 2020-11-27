@@ -34,7 +34,7 @@ external-symbols = ["secp256k1-sys/external-symbols"]
 fuzztarget = ["secp256k1-sys/fuzztarget"]
 
 [dependencies]
-secp256k1-sys = { version = "0.3.0", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys = { version = "0.3.1", default-features = false, path = "./secp256k1-sys" }
 bitcoin_hashes = { version = "0.9", optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
