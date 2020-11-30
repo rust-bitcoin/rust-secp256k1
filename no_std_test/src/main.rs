@@ -105,8 +105,13 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
 
     let _ = SharedSecret::new(&public_key, &secret_key);
     let mut x_arr = [0u8; 32];
-    let y_arr = SharedSecret::new_with_hash(&public_key, &secret_key, |x,y| {
-        x_arr = x;
+    let y_arr = SharedSecret::new_with_hash(&public_key, &secret_key, |pubkey| {
+        let xy = pubkey.serialize_uncompressed();
+        x_arr.copy_from_slice(&xy[1..33]);
+
+        let mut y = [0u8; 32];
+        y.copy_from_slice(&xy[33..]);
+
         y.into()
     });
     assert_ne!(x_arr, [0u8; 32]);

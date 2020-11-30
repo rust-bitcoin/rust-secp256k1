@@ -125,7 +125,7 @@
 pub extern crate secp256k1_sys;
 pub use secp256k1_sys as ffi;
 
-#[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes;
+#[cfg(any(test, feature = "bitcoin_hashes"))] pub extern crate bitcoin_hashes;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;

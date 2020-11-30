@@ -118,32 +118,32 @@ impl SharedSecret {
 
 
     /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
-    /// The custom hash function must be in the form of `fn(x: [u8;32], y: [u8;32]) -> SharedSecret`
+    /// The custom hash function must be in the form of `fn(pk: PublicKey) -> SharedSecret`
     /// `SharedSecret` can be easily created via the `From` impl from arrays.
     /// # Examples
     /// ```
     /// # use secp256k1::ecdh::SharedSecret;
     /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
-    /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
+    /// # fn sha2(_pk: PublicKey) -> [u8; 32] {[0u8; 32]}
     /// # let secp = Secp256k1::signing_only();
     /// # let secret_key = SecretKey::from_slice(&[3u8; 32]).unwrap();
     /// # let secret_key2 = SecretKey::from_slice(&[7u8; 32]).unwrap();
     /// # let public_key = PublicKey::from_secret_key(&secp, &secret_key2);
     ///
-    /// let secret = SharedSecret::new_with_hash(&public_key, &secret_key, |x,y| {
-    ///     let hash: [u8; 32] = sha2(&x,&y);
+    /// let secret = SharedSecret::new_with_hash(&public_key, &secret_key, |pk| {
+    ///     let hash: [u8; 32] = sha2(pk);
     ///     hash.into()
     /// });
     ///
     /// ```
     pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, mut hash_function: F) -> SharedSecret
-        where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-        let mut xy = [0u8; 64];
+        where F: FnMut(PublicKey) -> SharedSecret {
+        let mut pk = ffi::PublicKey::new();
 
         let res = unsafe {
             ffi::secp256k1_ecdh(
                 ffi::secp256k1_context_no_precomp,
-                xy.as_mut_ptr(),
+                pk.as_mut_ptr(),
                 point.as_ptr(),
                 scalar.as_ptr(),
                 c_callback,
@@ -154,17 +154,16 @@ impl SharedSecret {
         // and the scalar was verified to be valid(0 > scalar > group_order) via the type system
         debug_assert_eq!(res, 1);
 
-        let mut x = [0u8; 32];
-        let mut y = [0u8; 32];
-        x.copy_from_slice(&xy[..32]);
-        y.copy_from_slice(&xy[32..]);
-        hash_function(x, y)
+        hash_function(PublicKey::from(pk))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use rand::thread_rng;
+    use crate::PublicKey;
+    use bitcoin_hashes::{Hash, sha256};
+
     use super::SharedSecret;
     use super::super::Secp256k1;
 
@@ -186,10 +185,10 @@ mod tests {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
-        
-        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into());
-        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into());
-        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into());
+     
+        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, pubkey_hash);
+        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, pubkey_hash);
+        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, pubkey_hash);
         assert_eq!(sec1, sec2);
         assert_ne!(sec_odd, sec2);
     }
@@ -199,16 +198,13 @@ mod tests {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let expect_result: [u8; 64] = [123; 64];
-        let mut x_out = [0u8; 32];
-        let mut y_out = [0u8; 32];
-        let result = SharedSecret::new_with_hash(&pk1, &sk1, |x, y| {
-            x_out = x;
-            y_out = y;
+        let mut pk_out_bytes = [0u8; 65];
+        let result = SharedSecret::new_with_hash(&pk1, &sk1, |pk| {
+            pk_out_bytes = pk.serialize_uncompressed();
             expect_result.into()
         });
         assert_eq!(&expect_result[..], &result[..]);
-        assert_ne!(x_out, [0u8; 32]);
-        assert_ne!(y_out, [0u8; 32]);
+        assert_ne!(pk_out_bytes, [0u8; 65]);
     }
 
     #[test]
@@ -224,6 +220,10 @@ mod tests {
         new_y.copy_from_slice(&output[32..]);
         assert_eq!(x, new_x);
         assert_eq!(y, new_y);
+    }
+
+    fn pubkey_hash(pk: PublicKey) -> SharedSecret {
+        sha256::Hash::hash(&pk.serialize()).into_inner().into()
     }
 }
 
