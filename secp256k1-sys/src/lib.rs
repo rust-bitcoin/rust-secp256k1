@@ -661,7 +661,7 @@ impl<T> CPtr for [T] {
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
         if self.is_empty() {
-            ptr::null::<Self::Target>() as *mut _
+            ptr::null_mut::<Self::Target>()
         } else {
             self.as_mut_ptr()
         }

@@ -104,13 +104,13 @@ impl KeyPair {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::KeyPair {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     /// Creates a Schnorr KeyPair directly from a secret key slice
@@ -181,7 +181,7 @@ impl KeyPair {
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx,
-                &mut self.0 as *mut _,
+                &mut self.0,
                 tweak.as_c_ptr(),
             );
 
@@ -198,13 +198,13 @@ impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     /// Creates a new Schnorr public key from a Schnorr key pair
@@ -295,8 +295,8 @@ impl PublicKey {
             let mut parity: ::secp256k1_sys::types::c_int = 0;
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
                 secp.ctx,
-                &mut self.0 as *mut _,
-                &mut parity as *mut _,
+                &mut self.0,
+                &mut parity,
                 &pubkey,
             );
 
@@ -334,7 +334,7 @@ impl PublicKey {
                 secp.ctx,
                 tweaked_ser.as_c_ptr(),
                 if tweaked_parity { 1 } else { 0 },
-                &self.0 as *const _,
+                &self.0,
                 tweak.as_c_ptr(),
             );
 

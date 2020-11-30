@@ -361,13 +361,13 @@ impl Signature {
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     #[inline]

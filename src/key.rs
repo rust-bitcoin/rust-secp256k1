@@ -219,13 +219,13 @@ impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     /// Creates a new public key from a secret key.
@@ -313,7 +313,7 @@ impl PublicKey {
         secp: &Secp256k1<C>
     ) {
         unsafe {
-            let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0 as *mut _);
+            let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0);
             debug_assert_eq!(res, 1);
         }
     }
@@ -331,8 +331,7 @@ impl PublicKey {
             return Err(Error::InvalidTweak);
         }
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0 as *mut _,
-                                                  other.as_c_ptr()) == 1 {
+            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0, other.as_c_ptr()) == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidTweak)
@@ -353,8 +352,7 @@ impl PublicKey {
             return Err(Error::InvalidTweak);
         }
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0 as *mut _,
-                                                  other.as_c_ptr()) == 1 {
+            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0, other.as_c_ptr()) == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidTweak)
