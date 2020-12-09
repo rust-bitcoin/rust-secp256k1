@@ -322,12 +322,8 @@ impl PublicKey {
         secp: &Secp256k1<V>,
         tweaked_key: &Self,
         tweaked_parity: bool,
-        tweak: &[u8],
-    ) -> Result<(), Error> {
-        if tweak.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
-
+        tweak: [u8; 32],
+    ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
         unsafe {
             let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
@@ -338,11 +334,7 @@ impl PublicKey {
                 tweak.as_c_ptr(),
             );
 
-            if err == 1 {
-                Ok(())
-            } else {
-                Err(Error::TweakCheckFailed)
-            }
+            err == 1
         }
     }
 }
@@ -766,7 +758,7 @@ mod tests {
             kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
             let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
             assert_eq!(PublicKey::from_keypair(&s, &kp), pk);
-            orig_pk.tweak_add_check(&s, &pk, parity, &tweak).expect("tweak check");
+            assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
         }
     }
 
