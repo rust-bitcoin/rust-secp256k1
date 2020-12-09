@@ -104,13 +104,13 @@ impl KeyPair {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::KeyPair {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     /// Creates a Schnorr KeyPair directly from a secret key slice
@@ -123,8 +123,8 @@ impl KeyPair {
             return Err(InvalidPublicKey);
         }
 
-        let mut kp = ffi::KeyPair::new();
         unsafe {
+            let mut kp = ffi::KeyPair::new();
             if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, data.as_c_ptr()) == 1 {
                 Ok(KeyPair(kp))
             } else {
@@ -155,13 +155,13 @@ impl KeyPair {
             ret
         };
         let mut data = random_32_bytes();
-        let mut keypair = ffi::KeyPair::new();
         unsafe {
+            let mut keypair = ffi::KeyPair::new();
             while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
                 data = random_32_bytes();
             }
+            KeyPair(keypair)
         }
-        KeyPair(keypair)
     }
 
     /// Tweak a keypair by adding the given tweak to the secret key and updating the
@@ -169,7 +169,7 @@ impl KeyPair {
     /// Will return an error if the resulting key would be invalid or if
     /// the tweak was not a 32-byte length slice.
     #[inline]
-    pub fn add_assign<C: Verification>(
+    pub fn tweak_add_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
         tweak: &[u8],
@@ -181,7 +181,7 @@ impl KeyPair {
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx,
-                &mut self.0 as *mut _,
+                &mut self.0,
                 tweak.as_c_ptr(),
             );
 
@@ -198,21 +198,21 @@ impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     /// Creates a new Schnorr public key from a Schnorr key pair
     #[inline]
     pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> PublicKey {
-        let mut xonly_pk = ffi::XOnlyPublicKey::new();
         let mut pk_parity = 0;
         unsafe {
+            let mut xonly_pk = ffi::XOnlyPublicKey::new();
             let ret = ffi::secp256k1_keypair_xonly_pub(
                 secp.ctx,
                 &mut xonly_pk,
@@ -220,8 +220,8 @@ impl PublicKey {
                 keypair.as_ptr(),
             );
             debug_assert_eq!(ret, 1);
+            PublicKey(xonly_pk)
         }
-        PublicKey(xonly_pk)
     }
 
     /// Creates a Schnorr public key directly from a slice
@@ -231,8 +231,8 @@ impl PublicKey {
             return Err(InvalidPublicKey);
         }
 
-        let mut pk = ffi::XOnlyPublicKey::new();
         unsafe {
+            let mut pk = ffi::XOnlyPublicKey::new();
             if ffi::secp256k1_xonly_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
@@ -264,14 +264,17 @@ impl PublicKey {
         ret
     }
 
-    /// Tweak a schnorrsig PublicKey by adding the generator multiplied with the given tweak to it.
-    /// Will return an error if the resulting key would be invalid or if
-    /// the tweak was not a 32-byte length slice.
-    pub fn add_assign<V: Verification>(
+    /// Tweak an x-only PublicKey by adding the generator multiplied with the given tweak to it.
+    ///
+    /// Returns a boolean representing the parity of the tweaked key, which can be provided to 
+    /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
+    /// it and checking equality. Will return an error if the resulting key would be invalid or
+    /// if the tweak was not a 32-byte length slice.
+    pub fn tweak_add_assign<V: Verification>(
         &mut self,
         secp: &Secp256k1<V>,
         tweak: &[u8],
-    ) -> Result<(), Error> {
+    ) -> Result<bool, Error> {
         if tweak.len() != 32 {
             return Err(Error::InvalidTweak);
         }
@@ -289,18 +292,49 @@ impl PublicKey {
                 return Err(Error::InvalidTweak);
             }
 
+            let mut parity: ::secp256k1_sys::types::c_int = 0;
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
                 secp.ctx,
-                &mut self.0 as *mut _,
-                ptr::null_mut(),
+                &mut self.0,
+                &mut parity,
                 &pubkey,
             );
 
-            return if err == 0 {
+            if err == 0 {
                 Err(Error::InvalidPublicKey)
             } else {
-                Ok(())
-            };
+                Ok(parity != 0)
+            }
+        }
+    }
+
+    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly
+    ///
+    /// Should be called on the original untweaked key. Takes the tweaked key and
+    /// output parity from `tweak_add_assign` as input.
+    ///
+    /// Currently this is not much more efficient than just recomputing the tweak
+    /// and checking equality. However, in future this API will support batch
+    /// verification, which is significantly faster, so it is wise to design
+    /// protocols with this in mind.
+    pub fn tweak_add_check<V: Verification>(
+        &self,
+        secp: &Secp256k1<V>,
+        tweaked_key: &Self,
+        tweaked_parity: bool,
+        tweak: [u8; 32],
+    ) -> bool {
+        let tweaked_ser = tweaked_key.serialize();
+        unsafe {
+            let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
+                secp.ctx,
+                tweaked_ser.as_c_ptr(),
+                if tweaked_parity { 1 } else { 0 },
+                &self.0,
+                tweak.as_c_ptr(),
+            );
+
+            err == 1
         }
     }
 }
@@ -326,9 +360,8 @@ impl From<ffi::XOnlyPublicKey> for PublicKey {
 
 impl From<::key::PublicKey> for PublicKey {
     fn from(src: ::key::PublicKey) -> PublicKey {
-        let mut pk = ffi::XOnlyPublicKey::new();
-
         unsafe {
+            let mut pk = ffi::XOnlyPublicKey::new();
             assert_eq!(
                 1,
                 ffi::secp256k1_xonly_pubkey_from_pubkey(
@@ -338,9 +371,8 @@ impl From<::key::PublicKey> for PublicKey {
                     src.as_c_ptr(),
                 )
             );
+            PublicKey(pk)
         }
-
-        PublicKey(pk)
     }
 }
 
@@ -722,9 +754,11 @@ mod tests {
             let mut tweak = [0u8; 32];
             thread_rng().fill_bytes(&mut tweak);
             let (mut kp, mut pk) = s.generate_schnorrsig_keypair(&mut thread_rng());
-            kp.add_assign(&s, &tweak).expect("Tweak error");
-            pk.add_assign(&s, &tweak).expect("Tweak error");
+            let orig_pk = pk;
+            kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
             assert_eq!(PublicKey::from_keypair(&s, &kp), pk);
+            assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
         }
     }
 

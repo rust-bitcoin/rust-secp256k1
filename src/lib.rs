@@ -269,9 +269,8 @@ impl Signature {
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
         if data.is_empty() {return Err(Error::InvalidSignature);}
 
-        let mut ret = ffi::Signature::new();
-
         unsafe {
+            let mut ret = ffi::Signature::new();
             if ffi::secp256k1_ecdsa_signature_parse_der(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
@@ -288,12 +287,12 @@ impl Signature {
 
     /// Converts a 64-byte compact-encoded byte slice to a signature
     pub fn from_compact(data: &[u8]) -> Result<Signature, Error> {
-        let mut ret = ffi::Signature::new();
         if data.len() != 64 {
             return Err(Error::InvalidSignature)
         }
 
         unsafe {
+            let mut ret = ffi::Signature::new();
             if ffi::secp256k1_ecdsa_signature_parse_compact(
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
@@ -362,13 +361,13 @@ impl Signature {
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::Signature {
-        &self.0 as *const _
+        &self.0
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature {
-        &mut self.0 as *mut _
+        &mut self.0
     }
 
     #[inline]
@@ -522,6 +521,8 @@ pub enum Error {
     InvalidRecoveryId,
     /// Invalid tweak for add_*_assign or mul_*_assign
     InvalidTweak,
+    /// `tweak_add_check` failed on an xonly public key
+    TweakCheckFailed,
     /// Didn't pass enough memory to context creation with preallocated memory
     NotEnoughMemory,
 }
@@ -536,6 +537,7 @@ impl Error {
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
+            Error::TweakCheckFailed => "secp: xonly_pubkey_tewak_add_check failed",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
         }
     }
@@ -661,16 +663,15 @@ impl<C: Signing> Secp256k1<C> {
     pub fn sign(&self, msg: &Message, sk: &key::SecretKey)
                 -> Signature {
 
-        let mut ret = ffi::Signature::new();
         unsafe {
+            let mut ret = ffi::Signature::new();
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
             assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
                                                  sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                  ptr::null()), 1);
+            Signature::from(ret)
         }
-
-        Signature::from(ret)
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
