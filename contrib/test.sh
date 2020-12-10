@@ -60,8 +60,8 @@ if [ "$DO_WASM" = true ]; then
     clang --version &&
     CARGO_TARGET_DIR=wasm cargo install --force wasm-pack &&
     printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml &&
-    CC=clang-9 wasm-pack build &&
-    CC=clang-9 wasm-pack test --node;
+    wasm-pack build &&
+    wasm-pack test --node;
 fi
 
 # Address Sanitizer
