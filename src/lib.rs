@@ -151,7 +151,8 @@ pub use key::PublicKey;
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
-use ffi::CPtr;
+use core::mem;
+use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context")]
 pub use context::global::SECP256K1;
@@ -558,7 +559,7 @@ impl std::error::Error for Error {}
 pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
     phantom: PhantomData<C>,
-    buf: *mut [u8],
+    size: usize,
 }
 
 // The underlying secp context does not contain any references to memory it does not own
@@ -607,7 +608,7 @@ impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
         unsafe {
             ffi::secp256k1_context_preallocated_destroy(self.ctx);
-            C::deallocate(self.buf);
+            C::deallocate(self.ctx as _, self.size);
         }
     }
 }
@@ -630,7 +631,10 @@ impl<C: Context> Secp256k1<C> {
 
     /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
     pub fn preallocate_size_gen() -> usize {
-        unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) }
+        let word_size = mem::size_of::<AlignedType>();
+        let bytes = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
+
+        (bytes + word_size - 1) / word_size
     }
 
     /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
@@ -763,7 +767,7 @@ mod tests {
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
-    use ffi;
+    use ffi::{self, types::AlignedType};
     use context::*;
 
     macro_rules! hex {
@@ -781,10 +785,10 @@ mod tests {
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
         let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
 
-        let buf: *mut [u8] = &mut [0u8;0] as _;
-        let full: Secp256k1<AllPreallocated> = Secp256k1{ctx: ctx_full, phantom: PhantomData, buf};
-        let sign: Secp256k1<SignOnlyPreallocated> = Secp256k1{ctx: ctx_sign, phantom: PhantomData, buf};
-        let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, buf};
+        let size = 0;
+        let full: Secp256k1<AllPreallocated> = Secp256k1{ctx: ctx_full, phantom: PhantomData, size};
+        let sign: Secp256k1<SignOnlyPreallocated> = Secp256k1{ctx: ctx_sign, phantom: PhantomData, size};
+        let vrfy: Secp256k1<VerifyOnlyPreallocated> = Secp256k1{ctx: ctx_vrfy, phantom: PhantomData, size};
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
@@ -840,10 +844,10 @@ mod tests {
 
     #[test]
     fn test_preallocation() {
-        let mut buf_ful = vec![0u8; Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![0u8; Secp256k1::preallocate_signing_size()];
-        let mut buf_vfy = vec![0u8; Secp256k1::preallocate_verification_size()];
-//
+        let mut buf_ful = vec![AlignedType::zeroed(); Secp256k1::preallocate_size()];
+        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
+        let mut buf_vfy = vec![AlignedType::zeroed(); Secp256k1::preallocate_verification_size()];
+
         let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
         let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
         let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();

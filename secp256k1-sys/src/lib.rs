@@ -534,19 +534,21 @@ extern "C" {
 #[no_mangle]
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe extern "C" fn rustsecp256k1_v0_3_1_context_create(flags: c_uint) -> *mut Context {
-    use std::mem;
-    assert!(mem::align_of::<usize>() >= mem::align_of::<u8>());
-    assert_eq!(mem::size_of::<usize>(), mem::size_of::<&usize>());
+    use core::mem;
+    use std::alloc;
+    assert!(ALIGN_TO >= mem::align_of::<usize>());
+    assert!(ALIGN_TO >= mem::align_of::<&usize>());
+    assert!(ALIGN_TO >= mem::size_of::<usize>());
 
-    let word_size = mem::size_of::<usize>();
-    let n_words = (secp256k1_context_preallocated_size(flags) + word_size - 1) / word_size;
-
-    let buf = vec![0usize; n_words + 1].into_boxed_slice();
-    let ptr = Box::into_raw(buf) as *mut usize;
-    ::core::ptr::write(ptr, n_words);
-    let ptr: *mut usize = ptr.offset(1);
-
-    secp256k1_context_preallocated_create(ptr as *mut c_void, flags)
+    // We need to allocate `ALIGN_TO` more bytes in order to write the amount of bytes back.
+    let bytes = secp256k1_context_preallocated_size(flags) + ALIGN_TO;
+    let layout = alloc::Layout::from_size_align(bytes, ALIGN_TO).unwrap();
+    let ptr = alloc::alloc(layout);
+    (ptr as *mut usize).write(bytes);
+    // We must offset a whole ALIGN_TO in order to preserve the same alignment
+    // this means we "lose" ALIGN_TO-size_of(usize) for padding.
+    let ptr = ptr.add(ALIGN_TO) as *mut c_void;
+    secp256k1_context_preallocated_create(ptr, flags)
 }
 
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]
@@ -563,13 +565,12 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 #[no_mangle]
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub unsafe extern "C" fn rustsecp256k1_v0_3_1_context_destroy(ctx: *mut Context) {
+    use std::alloc;
     secp256k1_context_preallocated_destroy(ctx);
-    let ctx: *mut usize = ctx as *mut usize;
-
-    let n_words_ptr: *mut usize = ctx.offset(-1);
-    let n_words: usize = ::core::ptr::read(n_words_ptr);
-    let slice: &mut [usize] = slice::from_raw_parts_mut(n_words_ptr , n_words+1);
-    let _ = Box::from_raw(slice as *mut [usize]);
+    let ptr = (ctx as *mut u8).sub(ALIGN_TO);
+    let bytes = (ptr as *mut usize).read();
+    let layout = alloc::Layout::from_size_align(bytes, ALIGN_TO).unwrap();
+    alloc::dealloc(ptr, layout);
 }
 
 #[cfg(all(feature = "std", not(feature = "external-symbols")))]
