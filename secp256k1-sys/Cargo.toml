@@ -1,6 +1,6 @@
 [package]
 name = "secp256k1-sys"
-version = "0.3.1"
+version = "0.4.0"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>",
             "Steven Roose <steven@stevenroose.org>" ]
@@ -16,7 +16,7 @@ links = "rustsecp256k1_v0_4_0"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "recovery", "endomorphism", "lowmemory" ]
+features = [ "recovery", "lowmemory" ]
 
 [build-dependencies]
 cc = "1.0.28"
@@ -27,7 +27,6 @@ libc = "0.2"
 [features]
 default = ["std"]
 recovery = []
-endomorphism = []
 lowmemory = []
 std = []
 
