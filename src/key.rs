@@ -762,13 +762,13 @@ mod test {
         let s = Secp256k1::new();
         let mut set = HashSet::new();
         const COUNT : usize = 1024;
-        let count = (0..COUNT).map(|_| {
+        for _ in 0..COUNT {
             let (_, pk) = s.generate_keypair(&mut thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
-        }).count();
-        assert_eq!(count, COUNT);
+        };
+        assert_eq!(set.len(), COUNT);
     }
 
     #[test]
