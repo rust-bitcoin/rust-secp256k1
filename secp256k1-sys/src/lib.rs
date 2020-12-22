@@ -58,36 +58,37 @@ pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 /// around the FFI functions to use it. And it's an unsafe type.
 /// Nonces are generated deterministically by RFC6979 by
 /// default; there should be no need to ever change this.
-pub type NonceFn = unsafe extern "C" fn(nonce32: *mut c_uchar,
-                                        msg32: *const c_uchar,
-                                        key32: *const c_uchar,
-                                        algo16: *const c_uchar,
-                                        data: *mut c_void,
-                                        attempt: c_uint,
-) -> c_int;
+pub type NonceFn = Option<unsafe extern "C" fn(
+    nonce32: *mut c_uchar,
+    msg32: *const c_uchar,
+    key32: *const c_uchar,
+    algo16: *const c_uchar,
+    data: *mut c_void,
+    attempt: c_uint,
+) -> c_int>;
 
 /// Hash function to use to post-process an ECDH point to get
 /// a shared secret.
-pub type EcdhHashFn = unsafe extern "C" fn(
+pub type EcdhHashFn = Option<unsafe extern "C" fn(
     output: *mut c_uchar,
     x: *const c_uchar,
     y: *const c_uchar,
     data: *mut c_void,
-) -> c_int;
+) -> c_int>;
 
 ///  Same as secp256k1_nonce function with the exception of accepting an
 ///  additional pubkey argument and not requiring an attempt argument. The pubkey
 ///  argument can protect signature schemes with key-prefixed challenge hash
 ///  inputs against reusing the nonce when signing with the wrong precomputed
 ///  pubkey.
-pub type SchnorrNonceFn = unsafe extern "C" fn(
+pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
     nonce32: *mut c_uchar,
     msg32: *const c_uchar,
     key32: *const c_uchar,
     xonly_pk32: *const c_uchar,
     algo16: *const c_uchar,
     data: *mut c_void,
-) -> c_int;
+) -> c_int>;
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
