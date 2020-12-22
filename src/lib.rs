@@ -1172,6 +1172,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_low_s() {
         // nb this is a transaction on testnet
         // txid 8ccc87b72d766ab3128f03176bb1c98293f2d1f85ebfaf07b82cc81ea6891fa9

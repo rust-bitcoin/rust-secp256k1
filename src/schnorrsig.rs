@@ -561,6 +561,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_schnorrsig_sign() {
         let secp = Secp256k1::new();
 
@@ -582,6 +583,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_schnorrsig_verify() {
         let secp = Secp256k1::new();
 
