@@ -31,8 +31,8 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     done
 
     # Other combos 
-    cargo test --no-run --verbose --features="fuzztarget"
-    cargo test --no-run --verbose --features="fuzztarget recovery"
+    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --verbose
+    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --verbose --features="recovery"
     cargo test --verbose --features="rand rand-std"
     cargo test --verbose --features="rand serde"
 

@@ -93,7 +93,7 @@ pub type SchnorrNonceFn = unsafe extern "C" fn(
 #[derive(Clone, Debug)]
 #[repr(C)] pub struct Context(c_int);
 
-#[cfg(feature = "fuzztarget")]
+#[cfg(rust_secp_fuzz)]
 impl Context {
     pub fn flags(&self) -> u32 {
         self.0 as u32
@@ -260,7 +260,7 @@ impl hash::Hash for KeyPair {
     }
 }
 
-#[cfg(not(feature = "fuzztarget"))]
+#[cfg(not(rust_secp_fuzz))]
 extern "C" {
     /// Default ECDH hash function
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_3_1_ecdh_hash_function_default")]
@@ -674,7 +674,7 @@ impl<T> CPtr for [T] {
 
 
 
-#[cfg(feature = "fuzztarget")]
+#[cfg(rust_secp_fuzz)]
 mod fuzz_dummy {
     extern crate std;
     use self::std::{ptr, mem};
@@ -1156,7 +1156,8 @@ mod fuzz_dummy {
         unimplemented!();
     }
 }
-#[cfg(feature = "fuzztarget")]
+
+#[cfg(rust_secp_fuzz)]
 pub use self::fuzz_dummy::*;
 
 

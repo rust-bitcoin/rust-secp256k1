@@ -26,9 +26,6 @@ endomorphism = ["secp256k1-sys/endomorphism"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std", "rand-std"]
 
-# Do not use this feature! HAZMAT. (meant for Fuzzing only. this is *BROKEN CRYPTOGRAPHY*)
-fuzztarget = ["secp256k1-sys/fuzztarget"]
-
 [dependencies]
 secp256k1-sys = { version = "0.3.1", default-features = false, path = "./secp256k1-sys" }
 bitcoin_hashes = { version = "0.9", optional = true }

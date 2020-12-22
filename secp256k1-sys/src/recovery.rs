@@ -16,7 +16,7 @@
 //! # FFI of the recovery module
 
 use ::types::*;
-#[cfg(not(feature = "fuzztarget"))]
+#[cfg(not(rust_secp_fuzz))]
 use ::{Context, Signature, NonceFn, PublicKey};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
@@ -36,7 +36,7 @@ impl Default for RecoverableSignature {
     }
 }
 
-#[cfg(not(feature = "fuzztarget"))]
+#[cfg(not(rust_secp_fuzz))]
 extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_3_1_ecdsa_recoverable_signature_parse_compact")]
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(cx: *const Context, sig: *mut RecoverableSignature,
@@ -70,7 +70,7 @@ extern "C" {
 }
 
 
-#[cfg(feature = "fuzztarget")]
+#[cfg(rust_secp_fuzz)]
 mod fuzz_dummy {
     extern crate std;
     use self::std::ptr;
@@ -126,6 +126,6 @@ mod fuzz_dummy {
         unimplemented!();
     }
 }
-#[cfg(feature = "fuzztarget")]
+#[cfg(rust_secp_fuzz)]
 pub use self::fuzz_dummy::*;
 
