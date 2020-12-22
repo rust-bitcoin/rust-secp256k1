@@ -429,6 +429,9 @@ mod test {
     use std::iter;
     use std::str::FromStr;
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
     macro_rules! hex {
         ($hex:expr) => ({
             let mut result = vec![0; $hex.len() / 2];

@@ -173,6 +173,9 @@ mod tests {
     use super::SharedSecret;
     use super::super::Secp256k1;
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
     #[test]
     fn ecdh() {
         let s = Secp256k1::signing_only();

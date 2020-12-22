@@ -133,6 +133,7 @@ pub use secp256k1_sys as ffi;
 #[cfg(all(test, feature = "serde"))] extern crate serde_test;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
+#[cfg(all(test, target_arch = "wasm32"))] extern crate wasm_bindgen_test;
 
 use core::{fmt, ptr, str};
 
@@ -770,6 +771,9 @@ mod tests {
     use ffi::{self, types::AlignedType};
     use context::*;
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
     macro_rules! hex {
         ($hex:expr) => ({
             let mut result = vec![0; $hex.len() / 2];
@@ -840,6 +844,7 @@ mod tests {
         drop(ctx_vrfy);
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     #[should_panic]
     fn test_panic_raw_ctx() {
@@ -1132,33 +1137,6 @@ mod tests {
         // Check usage as self
         let sig = SECP256K1.sign(&msg, &sk);
         assert!(SECP256K1.verify(&msg, &sig, &pk).is_ok());
-    }
-
-    // For WASM, just run through our general tests in this file all at once.
-    #[cfg(target_arch = "wasm32")]
-    extern crate wasm_bindgen_test;
-    #[cfg(target_arch = "wasm32")]
-    use self::wasm_bindgen_test::*;
-    #[cfg(target_arch = "wasm32")]
-    #[wasm_bindgen_test]
-    fn stuff() {
-        test_manual_create_destroy();
-        test_raw_ctx();
-        // Note that, sadly, WASM doesn't currently properly unwind panics, so use of the library
-        // via unsafe primitives may cause abort() instead of catch-able panics.
-        /*assert!(std::panic::catch_unwind(|| {
-            test_panic_raw_ctx();
-        }).is_err());*/
-        test_preallocation();
-        capabilities();
-        signature_serialize_roundtrip();
-        signature_display();
-        signature_lax_der();
-        sign_and_verify();
-        sign_and_verify_extreme();
-        sign_and_verify_fail();
-        test_bad_slice();
-        test_low_s();
     }
 
     #[cfg(feature = "bitcoin_hashes")]

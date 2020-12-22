@@ -199,6 +199,9 @@ mod tests {
     use super::super::{Secp256k1, Message};
     use super::super::Error::{IncorrectSignature, InvalidSignature};
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
     #[test]
     fn capabilities() {
         let sign = Secp256k1::signing_only();

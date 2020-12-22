@@ -500,6 +500,9 @@ mod tests {
     use std::iter;
     use std::str::FromStr;
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0; 32];
