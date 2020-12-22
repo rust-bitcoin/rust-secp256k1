@@ -661,6 +661,34 @@ impl<C: Context> Secp256k1<C> {
 
 }
 
+fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
+    let mut ser_ret = [0; 72];
+    let mut len: usize = ser_ret.len();
+    unsafe {
+        let err = ffi::secp256k1_ecdsa_signature_serialize_der(
+            ffi::secp256k1_context_no_precomp,
+            ser_ret.as_mut_c_ptr(),
+            &mut len,
+            sig,
+        );
+        debug_assert!(err == 1);
+    }
+    len <= max_len
+}
+
+fn compact_sig_has_zero_first_bit(sig: &ffi::Signature) -> bool {
+    let mut compact = [0; 64];
+    unsafe {
+        let err = ffi::secp256k1_ecdsa_signature_serialize_compact(
+            ffi::secp256k1_context_no_precomp,
+            compact.as_mut_c_ptr(),
+            sig,
+        );
+        debug_assert!(err == 1);
+    }
+    compact[0] < 0x80
+}
+
 impl<C: Signing> Secp256k1<C> {
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
@@ -677,6 +705,59 @@ impl<C: Signing> Secp256k1<C> {
                                                  ptr::null()), 1);
             Signature::from(ret)
         }
+    }
+
+    fn sign_grind_with_check(
+        &self, msg: &Message,
+        sk: &key::SecretKey,
+        check: impl Fn(&ffi::Signature) -> bool) -> Signature {
+            let mut entropy_p : *const ffi::types::c_void = ptr::null();
+            let mut counter : u32 = 0;
+            let mut extra_entropy = [0u8; 32];
+            loop {
+                unsafe {
+                    let mut ret = ffi::Signature::new();
+                    // We can assume the return value because it's not possible to construct
+                    // an invalid signature from a valid `Message` and `SecretKey`
+                    assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
+                                                        sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
+                                                        entropy_p), 1);
+                    if check(&ret) {
+                        return Signature::from(ret);
+                    }
+
+                    counter += 1;
+                    // From 1.32 can use `to_le_bytes` instead
+                    let le_counter = counter.to_le();
+                    let le_counter_bytes : [u8; 4] = mem::transmute(le_counter);
+                    for (i, b) in le_counter_bytes.iter().enumerate() {
+                        extra_entropy[i] = *b;
+                    }
+
+                    entropy_p = extra_entropy.as_ptr() as *const ffi::types::c_void;
+                }
+            }
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+    /// and "grinds" the nonce by passing extra entropy if necessary to produce
+    /// a signature that is less than 71 - bytes_to_grund bytes. The number
+    /// of signing operation performed by this function is exponential in the
+    /// number of bytes grinded.
+    /// Requires a signing capable context.
+    pub fn sign_grind_r(&self, msg: &Message, sk: &key::SecretKey, bytes_to_grind: usize) -> Signature {
+        let len_check = |s : &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
+        return self.sign_grind_with_check(msg, sk, len_check);
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+    /// and "grinds" the nonce by passing extra entropy if necessary to produce
+    /// a signature that is less than 71 bytes and compatible with the low r
+    /// signature implementation of bitcoin core. In average, this function
+    /// will perform two signing operations.
+    /// Requires a signing capable context.
+    pub fn sign_low_r(&self, msg: &Message, sk: &key::SecretKey) -> Signature {
+        return self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
     }
 
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
@@ -1008,6 +1089,18 @@ mod tests {
             let (sk, pk) = s.generate_keypair(&mut thread_rng());
             let sig = s.sign(&msg, &sk);
             assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
+            let low_r_sig = s.sign_low_r(&msg, &sk);
+            assert_eq!(s.verify(&msg, &low_r_sig, &pk), Ok(()));
+            let grind_r_sig = s.sign_grind_r(&msg, &sk, 1);
+            assert_eq!(s.verify(&msg, &grind_r_sig, &pk), Ok(()));
+            let compact = sig.serialize_compact();
+            if compact[0] < 0x80 {
+                assert_eq!(sig, low_r_sig);
+            } else {
+                assert_ne!(sig, low_r_sig);
+            }
+            assert!(super::compact_sig_has_zero_first_bit(&low_r_sig.0));
+            assert!(super::der_length_check(&grind_r_sig.0, 70));
          }
     }
 
@@ -1034,8 +1127,12 @@ mod tests {
         for key in wild_keys.iter().map(|k| SecretKey::from_slice(&k[..]).unwrap()) {
             for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
                 let sig = s.sign(&msg, &key);
+                let low_r_sig = s.sign_low_r(&msg, &key);
+                let grind_r_sig = s.sign_grind_r(&msg, &key, 1);
                 let pk = PublicKey::from_secret_key(&s, &key);
                 assert_eq!(s.verify(&msg, &sig, &pk), Ok(()));
+                assert_eq!(s.verify(&msg, &low_r_sig, &pk), Ok(()));
+                assert_eq!(s.verify(&msg, &grind_r_sig, &pk), Ok(()));
             }
         }
     }
@@ -1093,6 +1190,33 @@ mod tests {
         // after normalization it should pass
         sig.normalize_s();
         assert_eq!(secp.verify(&msg, &sig, &pk), Ok(()));
+    }
+
+    #[test]
+    fn test_low_r() {
+        let secp = Secp256k1::new();
+        let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
+        let msg = Message::from_slice(&msg).unwrap();
+        let sk = SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead").unwrap();
+        let expected_sig = hex!("047dd4d049db02b430d24c41c7925b2725bcd5a85393513bdec04b4dc363632b1054d0180094122b380f4cfa391e6296244da773173e78fc745c1b9c79f7b713");
+        let expected_sig = Signature::from_compact(&expected_sig).unwrap();
+
+        let sig = secp.sign_low_r(&msg, &sk);
+
+        assert_eq!(expected_sig, sig);
+    }
+
+    #[test]
+    fn test_grind_r() {
+        let secp = Secp256k1::new();
+        let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
+        let msg = Message::from_slice(&msg).unwrap();
+        let sk = SecretKey::from_str("848355d75fe1c354cf05539bb29b2015f1863065bcb6766b44d399ab95c3fa0b").unwrap();
+        let expected_sig = Signature::from_str("304302202ffc447100d518c8ba643d11f3e6a83a8640488e7d2537b1954b942408be6ea3021f26e1248dd1e52160c3a38af9769d91a1a806cab5f9d508c103464d3c02d6e1").unwrap();
+
+        let sig = secp.sign_grind_r(&msg, &sk, 2);
+
+        assert_eq!(expected_sig, sig);
     }
 
     #[cfg(feature = "serde")]
