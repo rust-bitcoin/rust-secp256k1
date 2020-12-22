@@ -809,13 +809,15 @@ mod tests {
 
     #[test]
     fn test_raw_ctx() {
+        use std::mem::ManuallyDrop;
+
         let ctx_full = Secp256k1::new();
         let ctx_sign = Secp256k1::signing_only();
         let ctx_vrfy = Secp256k1::verification_only();
 
-        let full = unsafe {Secp256k1::from_raw_all(ctx_full.ctx)};
-        let sign = unsafe {Secp256k1::from_raw_signining_only(ctx_sign.ctx)};
-        let vrfy = unsafe {Secp256k1::from_raw_verification_only(ctx_vrfy.ctx)};
+        let mut full = unsafe {Secp256k1::from_raw_all(ctx_full.ctx)};
+        let mut sign = unsafe {Secp256k1::from_raw_signining_only(ctx_sign.ctx)};
+        let mut vrfy = unsafe {Secp256k1::from_raw_verification_only(ctx_vrfy.ctx)};
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
@@ -827,8 +829,15 @@ mod tests {
         assert!(vrfy.verify(&msg, &sig, &pk).is_ok());
         assert!(full.verify(&msg, &sig, &pk).is_ok());
 
-        drop(full);drop(sign);drop(vrfy);
-        drop(ctx_full);drop(ctx_sign);drop(ctx_vrfy);
+        unsafe {
+            ManuallyDrop::drop(&mut full);
+            ManuallyDrop::drop(&mut sign);
+            ManuallyDrop::drop(&mut vrfy);
+
+        }
+        drop(ctx_full);
+        drop(ctx_sign);
+        drop(ctx_vrfy);
     }
 
     #[test]

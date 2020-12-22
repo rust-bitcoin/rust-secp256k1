@@ -61,6 +61,11 @@ impl SharedSecret {
         self.len
     }
 
+    /// True if the underlying data buffer is empty.
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     /// Set the length of the object.
     pub(crate) fn set_len(&mut self, len: usize) {
         debug_assert!(len <= self.data.len());

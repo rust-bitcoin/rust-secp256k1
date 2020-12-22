@@ -512,7 +512,8 @@ mod test {
                 self.0 -= 1;
             }
             fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-                Ok(self.fill_bytes(dest))
+                self.fill_bytes(dest);
+                Ok(())
             }
         }
 
@@ -761,13 +762,13 @@ mod test {
         let s = Secp256k1::new();
         let mut set = HashSet::new();
         const COUNT : usize = 1024;
-        let count = (0..COUNT).map(|_| {
+        for _ in 0..COUNT {
             let (_, pk) = s.generate_keypair(&mut thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
-        }).count();
-        assert_eq!(count, COUNT);
+        };
+        assert_eq!(set.len(), COUNT);
     }
 
     #[test]
@@ -795,7 +796,7 @@ mod test {
         let pk1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
         ).unwrap();
-        let pk2 = pk1.clone();
+        let pk2 = pk1;
         let pk3 = PublicKey::from_slice(
             &hex!("02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443"),
         ).unwrap();
