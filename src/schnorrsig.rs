@@ -185,11 +185,11 @@ impl KeyPair {
                 tweak.as_c_ptr(),
             );
 
-            return if err == 1 {
+            if err == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidTweak)
-            };
+            }
         }
     }
 }
@@ -465,11 +465,11 @@ impl<C: Signing> Secp256k1<C> {
                 pubkey.as_c_ptr(),
             );
 
-            return if ret == 1 {
+            if ret == 1 {
                 Ok(())
             } else {
                 Err(Error::InvalidSignature)
-            };
+            }
         }
     }
 
