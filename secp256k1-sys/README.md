@@ -29,6 +29,7 @@ $ ./vendor-libsecp.sh depend <version-code> <rev>
 
 ## Linking to external symbols
 
-For the more exotic use cases, this crate can be used with existing libsecp256k1
-symbols by using the `external-symbols` feature. How to setup rustc to link
-against those existing symbols is left as an exercise to the reader.
+If you want to compile this library without using the bundled symbols (which may
+be required for integration into other build systems), you can do so by adding
+`--cfg=rust_secp_no_symbol_renaming'` to your `RUSTFLAGS` variable.
+

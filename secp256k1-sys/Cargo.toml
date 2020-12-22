@@ -31,9 +31,3 @@ endomorphism = []
 lowmemory = []
 std = []
 
-# Use this feature to not compile the bundled libsecp256k1 C symbols,
-# but use external ones. Use this only if you know what you are doing!
-external-symbols = []
-
-# Do not use this feature! HAZMAT. (meant for Fuzzing only. this is *BROKEN CRYPTOGRAPHY*)
-fuzztarget = []

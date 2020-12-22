@@ -35,3 +35,12 @@ before_script:
     cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose;
     fi
 ```
+
+## Fuzzing
+
+If you want to fuzz this library, or any library which depends on it, you will
+probably want to disable the actual cryptography, since fuzzers are unable to
+forge signatures and therefore won't test many interesting codepaths. To instead
+use a trivially-broken but fuzzer-accessible signature scheme, compile with
+`--cfg=rust_secp_fuzz` in your `RUSTFLAGS` variable.
+
