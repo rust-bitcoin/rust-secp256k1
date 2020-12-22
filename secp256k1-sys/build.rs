@@ -26,11 +26,6 @@ extern crate cc;
 use std::env;
 
 fn main() {
-    if cfg!(feature = "external-symbols") {
-        println!("cargo:rustc-link-lib=static=secp256k1");
-        return;
-    }
-
     // Actual build
     let mut base_config = cc::Build::new();
     base_config.include("depend/secp256k1/")
