@@ -384,7 +384,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
         nonce_data: *const ffi::types::c_void,
-    ) -> Result<Signature, Error> {
+    ) -> Signature {
         unsafe {
             let mut sig = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
             assert_eq!(
@@ -399,7 +399,7 @@ impl<C: Signing> Secp256k1<C> {
                 )
             );
 
-            Ok(Signature(sig))
+            Signature(sig)
         }
     }
 
@@ -407,7 +407,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
-    pub fn schnorrsig_sign(&self, msg: &Message, keypair: &KeyPair) -> Result<Signature, Error> {
+    pub fn schnorrsig_sign(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         let mut rng = thread_rng();
         self.schnorrsig_sign_with_rng(msg, keypair, &mut rng)
     }
@@ -417,7 +417,7 @@ impl<C: Signing> Secp256k1<C> {
         &self,
         msg: &Message,
         keypair: &KeyPair,
-    ) -> Result<Signature, Error> {
+    ) -> Signature {
         self.schnorrsig_sign_helper(msg, keypair, ptr::null())
     }
 
@@ -427,7 +427,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
         aux_rand: &[u8; 32],
-    ) -> Result<Signature, Error> {
+    ) -> Signature {
         self.schnorrsig_sign_helper(
             msg,
             keypair,
@@ -444,7 +444,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
         rng: &mut R,
-    ) -> Result<Signature, Error> {
+    ) -> Signature {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
         self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
@@ -533,7 +533,6 @@ mod tests {
             let mut aux_rand = [0; 32];
             rng.fill_bytes(&mut aux_rand);
             secp.schnorrsig_sign_with_aux_rand(msg, seckey, &aux_rand)
-                .unwrap()
         })
     }
 
@@ -541,21 +540,20 @@ mod tests {
     fn test_schnorrsig_sign_with_rng_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, mut rng| {
             secp.schnorrsig_sign_with_rng(msg, seckey, &mut rng)
-                .unwrap()
         })
     }
 
     #[test]
     fn test_schnorrsig_sign_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
-            secp.schnorrsig_sign(msg, seckey).unwrap()
+            secp.schnorrsig_sign(msg, seckey)
         })
     }
 
     #[test]
     fn test_schnorrsig_sign_no_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
-            secp.schnorrsig_sign_no_aux_rand(msg, seckey).unwrap()
+            secp.schnorrsig_sign_no_aux_rand(msg, seckey)
         })
     }
 
@@ -575,8 +573,7 @@ mod tests {
         let expected_sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
 
         let sig = secp
-            .schnorrsig_sign_with_aux_rand(&msg, &sk, &aux_rand)
-            .unwrap();
+            .schnorrsig_sign_with_aux_rand(&msg, &sk, &aux_rand);
 
         assert_eq!(expected_sig, sig);
     }
@@ -730,8 +727,7 @@ mod tests {
         let keypair = KeyPair::from_seckey_slice(&s, &[2; 32]).unwrap();
         let aux = [3; 32];
         let sig = s
-            .schnorrsig_sign_with_aux_rand(&msg, &keypair, &aux)
-            .unwrap();
+            .schnorrsig_sign_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORRSIG_SIGNATURE_SIZE] = [
             0x14, 0xd0, 0xbf, 0x1a, 0x89, 0x53, 0x50, 0x6f, 0xb4, 0x60, 0xf5, 0x8b, 0xe1, 0x41,
             0xaf, 0x76, 0x7f, 0xd1, 0x12, 0x53, 0x5f, 0xb3, 0x92, 0x2e, 0xf2, 0x17, 0x30, 0x8e,
