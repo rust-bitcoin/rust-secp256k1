@@ -35,19 +35,21 @@ macro_rules! impl_array_newtype {
             }
 
             #[inline]
-            /// Gets a reference to the underlying array
-            pub fn as_ref(&self) -> &[$ty; $len] {
-                let &$thing(ref dat) = self;
-                dat
-            }
-
-            #[inline]
             /// Returns the length of the object as an array
             pub fn len(&self) -> usize { $len }
 
             #[inline]
             /// Returns whether the object as an array is empty
             pub fn is_empty(&self) -> bool { false }
+        }
+
+        impl AsRef<[$ty; $len]> for $thing {
+            #[inline]
+            /// Gets a reference to the underlying array
+            fn as_ref(&self) -> &[$ty; $len] {
+                let &$thing(ref dat) = self;
+                dat
+            }
         }
 
         impl PartialEq for $thing {

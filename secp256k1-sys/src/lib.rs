@@ -43,6 +43,7 @@ pub const SECP256K1_START_VERIFY: c_uint = 1 | (1 << 8);
 /// Flag for context to enable signing precomputation
 pub const SECP256K1_START_SIGN: c_uint = 1 | (1 << 9);
 /// Flag for keys to indicate uncompressed serialization format
+#[allow(unused_parens)]
 pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1);
 /// Flag for keys to indicate compressed serialization format
 pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
@@ -629,7 +630,8 @@ pub unsafe extern "C" fn rustsecp256k1_v0_3_1_default_error_callback_fn(message:
     panic!("[libsecp256k1] internal consistency check failed {}", msg);
 }
 
-
+#[no_mangle]
+#[cfg(not(feature = "external-symbols"))]
 unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
     let mut ctr = 0;
     while *str_ptr != '\0' as c_char {
@@ -1160,11 +1162,13 @@ pub use self::fuzz_dummy::*;
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::CString;
-    use super::strlen;
-
+    #[no_mangle]
+    #[cfg(not(feature = "external-symbols"))]
     #[test]
     fn test_strlen() {
+        use std::ffi::CString;
+        use super::strlen;
+
         let orig = "test strlen \t \n";
         let test = CString::new(orig).unwrap();
 

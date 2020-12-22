@@ -40,6 +40,7 @@ impl AlignedType {
     }
 }
 
+#[cfg(all(feature = "std", not(feature = "external-symbols")))]
 pub(crate) const ALIGN_TO: usize = mem::align_of::<AlignedType>();
 
 
