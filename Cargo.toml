@@ -54,3 +54,7 @@ name = "sign_verify"
 [[example]]
 name = "generate_keys"
 required-features = ["rand"]
+
+[workspace]
+members = ["secp256k1-sys"]
+exclude = ["no_std_test"]

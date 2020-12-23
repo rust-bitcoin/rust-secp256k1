@@ -11,30 +11,33 @@ fi
 cargo --version
 rustc --version
 
+# Make all cargo invocations verbose
+export CARGO_TERM_VERBOSE=true
+
 # Defaults / sanity checks
-cargo build --verbose
-cargo test --verbose
+cargo build --all
+cargo test --all
 
 if [ "$DO_FEATURE_MATRIX" = true ]; then
-    cargo build --verbose --no-default-features
+    cargo build --all --no-default-features
     #This doesn't work but probably should --andrew
-    #cargo test --verbose --no-default-features
+    #cargo test --all --no-default-features
 
     # All features
-    cargo build --verbose --no-default-features --features="$FEATURES"
-    cargo test --verbose --features="$FEATURES"
+    cargo build --all --no-default-features --features="$FEATURES"
+    cargo test --all --features="$FEATURES"
     # Single features
     for feature in ${FEATURES}
     do
-        cargo build --verbose --no-default-features --features="$feature"
-        cargo test --verbose --features="$feature"
+        cargo build --all --no-default-features --features="$feature"
+        cargo test --all --features="$feature"
     done
 
-    # Other combos 
-    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --verbose
-    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --verbose --features="recovery"
-    cargo test --verbose --features="rand rand-std"
-    cargo test --verbose --features="rand serde"
+    # Other combos
+    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --all
+    RUSTFLAGS='--cfg=rust_secp_fuzz' cargo test --no-run --all --features="recovery"
+    cargo test --all --features="rand rand-std"
+    cargo test --all --features="rand serde"
 
     # Examples
     cargo run --example sign_verify
@@ -44,13 +47,13 @@ fi
 
 # Docs
 if [ "$DO_DOCS" = true ]; then
-    cargo doc --verbose --features="$FEATURES"
+    cargo doc --all --features="$FEATURES"
 fi
 
 # Webassembly stuff
 if [ "$DO_WASM" = true ]; then
     clang --version &&
-    CARGO_TARGET_DIR=wasm cargo install --verbose --force wasm-pack &&
+    CARGO_TARGET_DIR=wasm cargo install --force wasm-pack &&
     printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml &&
     CC=clang-9 wasm-pack build &&
     CC=clang-9 wasm-pack test --node;
@@ -62,16 +65,16 @@ if [ "$DO_ASAN" = true ]; then
     CC='clang -fsanitize=address -fno-omit-frame-pointer'                                        \
     RUSTFLAGS='-Zsanitizer=address -Clinker=clang -Cforce-frame-pointers=yes'                    \
     ASAN_OPTIONS='detect_leaks=1 detect_invalid_pointer_pairs=1 detect_stack_use_after_return=1' \
-    cargo test --lib --verbose --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
+    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
     cargo clean &&
     CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                         \
     RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes'   \
-    cargo test --lib --verbose --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
-    cd no_std_test && cargo run --release | grep -q "Verified Successfully"
+    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
+    cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
 fi
 
 # Bench
 if [ "$DO_BENCH" = true ]; then
-    cargo bench --features="unstable"
+    cargo bench --all --features="unstable"
 fi
 
