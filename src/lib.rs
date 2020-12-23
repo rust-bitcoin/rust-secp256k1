@@ -103,6 +103,7 @@
 //!     0xc9, 0x42, 0x8f, 0xca, 0x69, 0xc1, 0x32, 0xa2,
 //! ]).expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
 //!
+//! # #[cfg(not(rust_secp_fuzz))]
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
 //! ```
 //!
@@ -1221,6 +1222,7 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
     fn test_signature_serde() {
         use serde_test::{Configure, Token, assert_tokens};

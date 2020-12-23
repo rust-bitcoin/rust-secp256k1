@@ -97,13 +97,6 @@ pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
 #[derive(Clone, Debug)]
 #[repr(C)] pub struct Context(c_int);
 
-#[cfg(rust_secp_fuzz)]
-impl Context {
-    pub fn flags(&self) -> u32 {
-        self.0 as u32
-    }
-}
-
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
 pub struct PublicKey([c_uchar; 64]);

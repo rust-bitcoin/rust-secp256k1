@@ -235,6 +235,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
