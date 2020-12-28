@@ -151,7 +151,7 @@ impl SharedSecret {
                 xy.as_mut_ptr(),
                 point.as_ptr(),
                 scalar.as_ptr(),
-                c_callback,
+                Some(c_callback),
                 ptr::null_mut(),
             )
         };

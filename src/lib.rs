@@ -103,6 +103,7 @@
 //!     0xc9, 0x42, 0x8f, 0xca, 0x69, 0xc1, 0x32, 0xa2,
 //! ]).expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
 //!
+//! # #[cfg(not(rust_secp_fuzz))]
 //! assert!(secp.verify(&message, &sig, &public_key).is_ok());
 //! ```
 //!
@@ -735,6 +736,10 @@ impl<C: Signing> Secp256k1<C> {
                     }
 
                     entropy_p = extra_entropy.as_ptr() as *const ffi::types::c_void;
+
+                    // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
+                    #[cfg(rust_secp_fuzz)]
+                    return Signature::from(ret);
                 }
             }
     }
@@ -1097,9 +1102,12 @@ mod tests {
             if compact[0] < 0x80 {
                 assert_eq!(sig, low_r_sig);
             } else {
+                #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
                 assert_ne!(sig, low_r_sig);
             }
+            #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
             assert!(super::compact_sig_has_zero_first_bit(&low_r_sig.0));
+            #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
             assert!(super::der_length_check(&grind_r_sig.0, 70));
          }
     }
@@ -1172,6 +1180,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_low_s() {
         // nb this is a transaction on testnet
         // txid 8ccc87b72d766ab3128f03176bb1c98293f2d1f85ebfaf07b82cc81ea6891fa9
@@ -1193,6 +1202,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fuzz-sigs have fixed size/format
     fn test_low_r() {
         let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
@@ -1207,6 +1217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fuzz-sigs have fixed size/format
     fn test_grind_r() {
         let secp = Secp256k1::new();
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
@@ -1220,6 +1231,7 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
     fn test_signature_serde() {
         use serde_test::{Configure, Token, assert_tokens};

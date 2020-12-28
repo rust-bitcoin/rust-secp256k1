@@ -561,6 +561,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_schnorrsig_sign() {
         let secp = Secp256k1::new();
 
@@ -582,6 +583,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_schnorrsig_verify() {
         let secp = Secp256k1::new();
 
@@ -720,6 +722,7 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
+    #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
     fn test_signature_serde() {
         use serde_test::{assert_tokens, Configure, Token};
