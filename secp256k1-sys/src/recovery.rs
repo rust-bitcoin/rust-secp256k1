@@ -118,9 +118,8 @@ mod fuzz_dummy {
     ) -> c_int {
         let sig_sl = slice::from_raw_parts(sig as *const u8, 65);
         let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
-            println!("HMM0");
 
-        if sig_sl[64] > 4 {
+        if sig_sl[64] >= 4 {
             return 0;
         }
         // Pull the original pk out of the siganture
