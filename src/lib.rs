@@ -736,6 +736,10 @@ impl<C: Signing> Secp256k1<C> {
                     }
 
                     entropy_p = extra_entropy.as_ptr() as *const ffi::types::c_void;
+
+                    // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
+                    #[cfg(rust_secp_fuzz)]
+                    return Signature::from(ret);
                 }
             }
     }
@@ -1098,9 +1102,12 @@ mod tests {
             if compact[0] < 0x80 {
                 assert_eq!(sig, low_r_sig);
             } else {
+                #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
                 assert_ne!(sig, low_r_sig);
             }
+            #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
             assert!(super::compact_sig_has_zero_first_bit(&low_r_sig.0));
+            #[cfg(not(rust_secp_fuzz))]  // mocked sig generation doesn't produce low-R sigs
             assert!(super::der_length_check(&grind_r_sig.0, 70));
          }
     }
@@ -1195,6 +1202,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fuzz-sigs have fixed size/format
     fn test_low_r() {
         let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
@@ -1209,6 +1217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(rust_secp_fuzz))]  // fuzz-sigs have fixed size/format
     fn test_grind_r() {
         let secp = Secp256k1::new();
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
