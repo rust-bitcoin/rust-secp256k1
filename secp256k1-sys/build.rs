@@ -51,12 +51,6 @@ fn main() {
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
 
-    if let Ok(target_endian) = env::var("CARGO_CFG_TARGET_ENDIAN") {
-        if target_endian == "big" {
-            base_config.define("WORDS_BIGENDIAN", Some("1"));
-        }
-    }
-
     match &env::var("TARGET").unwrap() as &str {
         "wasm32-unknown-unknown"|"wasm32-wasi" =>
             { base_config.include("wasm-sysroot"); },
