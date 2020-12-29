@@ -1,15 +1,15 @@
-/**********************************************************************
- * Copyright (c) 2014, 2015 Pieter Wuille                             *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2014, 2015 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #include <string.h>
 #include <secp256k1.h>
 
 #include "lax_der_privatekey_parsing.h"
 
-int ec_privkey_import_der(const rustsecp256k1_v0_3_1_context* ctx, unsigned char *out32, const unsigned char *privkey, size_t privkeylen) {
+int ec_privkey_import_der(const rustsecp256k1_v0_4_0_context* ctx, unsigned char *out32, const unsigned char *privkey, size_t privkeylen) {
     const unsigned char *end = privkey + privkeylen;
     int lenb = 0;
     int len = 0;
@@ -46,17 +46,17 @@ int ec_privkey_import_der(const rustsecp256k1_v0_3_1_context* ctx, unsigned char
         return 0;
     }
     memcpy(out32 + 32 - privkey[1], privkey + 2, privkey[1]);
-    if (!rustsecp256k1_v0_3_1_ec_seckey_verify(ctx, out32)) {
+    if (!rustsecp256k1_v0_4_0_ec_seckey_verify(ctx, out32)) {
         memset(out32, 0, 32);
         return 0;
     }
     return 1;
 }
 
-int ec_privkey_export_der(const rustsecp256k1_v0_3_1_context *ctx, unsigned char *privkey, size_t *privkeylen, const unsigned char *key32, int compressed) {
-    rustsecp256k1_v0_3_1_pubkey pubkey;
+int ec_privkey_export_der(const rustsecp256k1_v0_4_0_context *ctx, unsigned char *privkey, size_t *privkeylen, const unsigned char *key32, int compressed) {
+    rustsecp256k1_v0_4_0_pubkey pubkey;
     size_t pubkeylen = 0;
-    if (!rustsecp256k1_v0_3_1_ec_pubkey_create(ctx, &pubkey, key32)) {
+    if (!rustsecp256k1_v0_4_0_ec_pubkey_create(ctx, &pubkey, key32)) {
         *privkeylen = 0;
         return 0;
     }
@@ -80,7 +80,7 @@ int ec_privkey_export_der(const rustsecp256k1_v0_3_1_context *ctx, unsigned char
         memcpy(ptr, key32, 32); ptr += 32;
         memcpy(ptr, middle, sizeof(middle)); ptr += sizeof(middle);
         pubkeylen = 33;
-        rustsecp256k1_v0_3_1_ec_pubkey_serialize(ctx, ptr, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED);
+        rustsecp256k1_v0_4_0_ec_pubkey_serialize(ctx, ptr, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED);
         ptr += pubkeylen;
         *privkeylen = ptr - privkey;
     } else {
@@ -105,7 +105,7 @@ int ec_privkey_export_der(const rustsecp256k1_v0_3_1_context *ctx, unsigned char
         memcpy(ptr, key32, 32); ptr += 32;
         memcpy(ptr, middle, sizeof(middle)); ptr += sizeof(middle);
         pubkeylen = 65;
-        rustsecp256k1_v0_3_1_ec_pubkey_serialize(ctx, ptr, &pubkeylen, &pubkey, SECP256K1_EC_UNCOMPRESSED);
+        rustsecp256k1_v0_4_0_ec_pubkey_serialize(ctx, ptr, &pubkeylen, &pubkey, SECP256K1_EC_UNCOMPRESSED);
         ptr += pubkeylen;
         *privkeylen = ptr - privkey;
     }

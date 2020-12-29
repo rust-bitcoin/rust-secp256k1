@@ -16,12 +16,12 @@ extern "C" {
  *  guaranteed to be portable between different platforms or versions. It is
  *  however guaranteed to be 64 bytes in size, and can be safely copied/moved.
  *  If you need to convert to a format suitable for storage, transmission, or
- *  comparison, use rustsecp256k1_v0_3_1_xonly_pubkey_serialize and
- *  rustsecp256k1_v0_3_1_xonly_pubkey_parse.
+ *  comparison, use rustsecp256k1_v0_4_0_xonly_pubkey_serialize and
+ *  rustsecp256k1_v0_4_0_xonly_pubkey_parse.
  */
 typedef struct {
     unsigned char data[64];
-} rustsecp256k1_v0_3_1_xonly_pubkey;
+} rustsecp256k1_v0_4_0_xonly_pubkey;
 
 /** Opaque data structure that holds a keypair consisting of a secret and a
  *  public key.
@@ -32,7 +32,7 @@ typedef struct {
  */
 typedef struct {
     unsigned char data[96];
-} rustsecp256k1_v0_3_1_keypair;
+} rustsecp256k1_v0_4_0_keypair;
 
 /** Parse a 32-byte sequence into a xonly_pubkey object.
  *
@@ -45,9 +45,9 @@ typedef struct {
  *               (cannot be NULL).
  *  In: input32: pointer to a serialized xonly_pubkey (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey_parse(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_xonly_pubkey* pubkey,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_xonly_pubkey_parse(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_xonly_pubkey* pubkey,
     const unsigned char *input32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
@@ -58,16 +58,16 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey
  *  Args:     ctx: a secp256k1 context object (cannot be NULL).
  *  Out: output32: a pointer to a 32-byte array to place the serialized key in
  *                 (cannot be NULL).
- *  In:    pubkey: a pointer to a rustsecp256k1_v0_3_1_xonly_pubkey containing an
+ *  In:    pubkey: a pointer to a rustsecp256k1_v0_4_0_xonly_pubkey containing an
  *                 initialized public key (cannot be NULL).
  */
-SECP256K1_API int rustsecp256k1_v0_3_1_xonly_pubkey_serialize(
-    const rustsecp256k1_v0_3_1_context* ctx,
+SECP256K1_API int rustsecp256k1_v0_4_0_xonly_pubkey_serialize(
+    const rustsecp256k1_v0_4_0_context* ctx,
     unsigned char *output32,
-    const rustsecp256k1_v0_3_1_xonly_pubkey* pubkey
+    const rustsecp256k1_v0_4_0_xonly_pubkey* pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
-/** Converts a rustsecp256k1_v0_3_1_pubkey into a rustsecp256k1_v0_3_1_xonly_pubkey.
+/** Converts a rustsecp256k1_v0_4_0_pubkey into a rustsecp256k1_v0_4_0_xonly_pubkey.
  *
  *  Returns: 1 if the public key was successfully converted
  *           0 otherwise
@@ -80,11 +80,11 @@ SECP256K1_API int rustsecp256k1_v0_3_1_xonly_pubkey_serialize(
  *                     set to 0 otherwise. (can be NULL)
  *  In:        pubkey: pointer to a public key that is converted (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey_from_pubkey(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_xonly_pubkey *xonly_pubkey,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_xonly_pubkey_from_pubkey(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_xonly_pubkey *xonly_pubkey,
     int *pk_parity,
-    const rustsecp256k1_v0_3_1_pubkey *pubkey
+    const rustsecp256k1_v0_4_0_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4);
 
 /** Tweak an x-only public key by adding the generator multiplied with tweak32
@@ -92,7 +92,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey
  *
  *  Note that the resulting point can not in general be represented by an x-only
  *  pubkey because it may have an odd Y coordinate. Instead, the output_pubkey
- *  is a normal rustsecp256k1_v0_3_1_pubkey.
+ *  is a normal rustsecp256k1_v0_4_0_pubkey.
  *
  *  Returns: 0 if the arguments are invalid or the resulting public key would be
  *           invalid (only when the tweak is the negation of the corresponding
@@ -106,24 +106,24 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey
  *  In: internal_pubkey: pointer to an x-only pubkey to apply the tweak to.
  *                       (cannot be NULL).
  *              tweak32: pointer to a 32-byte tweak. If the tweak is invalid
- *                       according to rustsecp256k1_v0_3_1_ec_seckey_verify, this function
+ *                       according to rustsecp256k1_v0_4_0_ec_seckey_verify, this function
  *                       returns 0. For uniformly random 32-byte arrays the
  *                       chance of being invalid is negligible (around 1 in
  *                       2^128) (cannot be NULL).
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_pubkey *output_pubkey,
-    const rustsecp256k1_v0_3_1_xonly_pubkey *internal_pubkey,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_xonly_pubkey_tweak_add(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_pubkey *output_pubkey,
+    const rustsecp256k1_v0_4_0_xonly_pubkey *internal_pubkey,
     const unsigned char *tweak32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
 /** Checks that a tweaked pubkey is the result of calling
- *  rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add with internal_pubkey and tweak32.
+ *  rustsecp256k1_v0_4_0_xonly_pubkey_tweak_add with internal_pubkey and tweak32.
  *
  *  The tweaked pubkey is represented by its 32-byte x-only serialization and
  *  its pk_parity, which can both be obtained by converting the result of
- *  tweak_add to a rustsecp256k1_v0_3_1_xonly_pubkey.
+ *  tweak_add to a rustsecp256k1_v0_4_0_xonly_pubkey.
  *
  *  Note that this alone does _not_ verify that the tweaked pubkey is a
  *  commitment. If the tweak is not chosen in a specific way, the tweaked pubkey
@@ -137,17 +137,17 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey
  *     tweaked_pk_parity: the parity of the tweaked pubkey (whose serialization
  *                        is passed in as tweaked_pubkey32). This must match the
  *                        pk_parity value that is returned when calling
- *                        rustsecp256k1_v0_3_1_xonly_pubkey with the tweaked pubkey, or
+ *                        rustsecp256k1_v0_4_0_xonly_pubkey with the tweaked pubkey, or
  *                        this function will fail.
  *       internal_pubkey: pointer to an x-only public key object to apply the
  *                        tweak to (cannot be NULL)
  *               tweak32: pointer to a 32-byte tweak (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add_check(
-    const rustsecp256k1_v0_3_1_context* ctx,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_xonly_pubkey_tweak_add_check(
+    const rustsecp256k1_v0_4_0_context* ctx,
     const unsigned char *tweaked_pubkey32,
     int tweaked_pk_parity,
-    const rustsecp256k1_v0_3_1_xonly_pubkey *internal_pubkey,
+    const rustsecp256k1_v0_4_0_xonly_pubkey *internal_pubkey,
     const unsigned char *tweak32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
 
@@ -159,9 +159,9 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_xonly_pubkey
  *  Out: keypair: pointer to the created keypair (cannot be NULL)
  *  In:   seckey: pointer to a 32-byte secret key (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_create(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_keypair *keypair,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_keypair_create(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_keypair *keypair,
     const unsigned char *seckey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
@@ -174,16 +174,16 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_crea
  *               (cannot be NULL)
  *  In: keypair: pointer to a keypair (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_pub(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_pubkey *pubkey,
-    const rustsecp256k1_v0_3_1_keypair *keypair
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_keypair_pub(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_pubkey *pubkey,
+    const rustsecp256k1_v0_4_0_keypair *keypair
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Get the x-only public key from a keypair.
  *
- *  This is the same as calling rustsecp256k1_v0_3_1_keypair_pub and then
- *  rustsecp256k1_v0_3_1_xonly_pubkey_from_pubkey.
+ *  This is the same as calling rustsecp256k1_v0_4_0_keypair_pub and then
+ *  rustsecp256k1_v0_4_0_xonly_pubkey_from_pubkey.
  *
  *  Returns: 0 if the arguments are invalid. 1 otherwise.
  *  Args:   ctx: pointer to a context object (cannot be NULL)
@@ -192,22 +192,22 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_pub(
  *               xonly_pubkey. If not, it's set to an invalid value (cannot be
  *               NULL).
  *    pk_parity: pointer to an integer that will be set to the pk_parity
- *               argument of rustsecp256k1_v0_3_1_xonly_pubkey_from_pubkey (can be NULL).
+ *               argument of rustsecp256k1_v0_4_0_xonly_pubkey_from_pubkey (can be NULL).
  *  In: keypair: pointer to a keypair (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_xonly_pub(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_xonly_pubkey *pubkey,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_keypair_xonly_pub(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_xonly_pubkey *pubkey,
     int *pk_parity,
-    const rustsecp256k1_v0_3_1_keypair *keypair
+    const rustsecp256k1_v0_4_0_keypair *keypair
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4);
 
 /** Tweak a keypair by adding tweak32 to the secret key and updating the public
  *  key accordingly.
  *
- *  Calling this function and then rustsecp256k1_v0_3_1_keypair_pub results in the same
- *  public key as calling rustsecp256k1_v0_3_1_keypair_xonly_pub and then
- *  rustsecp256k1_v0_3_1_xonly_pubkey_tweak_add.
+ *  Calling this function and then rustsecp256k1_v0_4_0_keypair_pub results in the same
+ *  public key as calling rustsecp256k1_v0_4_0_keypair_xonly_pub and then
+ *  rustsecp256k1_v0_4_0_xonly_pubkey_tweak_add.
  *
  *  Returns: 0 if the arguments are invalid or the resulting keypair would be
  *           invalid (only when the tweak is the negation of the keypair's
@@ -219,13 +219,13 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_xonl
  *                   an invalid value if this function returns 0 (cannot be
  *                   NULL).
  *  In:     tweak32: pointer to a 32-byte tweak. If the tweak is invalid according
- *                   to rustsecp256k1_v0_3_1_ec_seckey_verify, this function returns 0. For
+ *                   to rustsecp256k1_v0_4_0_ec_seckey_verify, this function returns 0. For
  *                   uniformly random 32-byte arrays the chance of being invalid
  *                   is negligible (around 1 in 2^128) (cannot be NULL).
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_3_1_keypair_xonly_tweak_add(
-    const rustsecp256k1_v0_3_1_context* ctx,
-    rustsecp256k1_v0_3_1_keypair *keypair,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_keypair_xonly_tweak_add(
+    const rustsecp256k1_v0_4_0_context* ctx,
+    rustsecp256k1_v0_4_0_keypair *keypair,
     const unsigned char *tweak32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 

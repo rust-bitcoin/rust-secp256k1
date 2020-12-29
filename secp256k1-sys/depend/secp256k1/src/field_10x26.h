@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014 Pieter Wuille                             *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_FIELD_REPR_H
 #define SECP256K1_FIELD_REPR_H
@@ -18,7 +18,7 @@ typedef struct {
     int magnitude;
     int normalized;
 #endif
-} rustsecp256k1_v0_3_1_fe;
+} rustsecp256k1_v0_4_0_fe;
 
 /* Unpacks a constant into a overlapping multi-limbed FE element. */
 #define SECP256K1_FE_CONST_INNER(d7, d6, d5, d4, d3, d2, d1, d0) { \
@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
     uint32_t n[8];
-} rustsecp256k1_v0_3_1_fe_storage;
+} rustsecp256k1_v0_4_0_fe_storage;
 
 #define SECP256K1_FE_STORAGE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) {{ (d0), (d1), (d2), (d3), (d4), (d5), (d6), (d7) }}
 #define SECP256K1_FE_STORAGE_CONST_GET(d) d.n[7], d.n[6], d.n[5], d.n[4],d.n[3], d.n[2], d.n[1], d.n[0]
