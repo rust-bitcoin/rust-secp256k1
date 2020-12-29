@@ -135,6 +135,7 @@ pub use secp256k1_sys as ffi;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
 #[cfg(all(test, target_arch = "wasm32"))] extern crate wasm_bindgen_test;
+#[cfg(feature = "zeroize")] extern crate zeroize;
 
 use core::{fmt, ptr, str};
 

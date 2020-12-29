@@ -36,6 +36,20 @@ before_script:
     fi
 ```
 
+## Zeroize
+
+Zeroizing secrets is supported using the `zeroize` feature. Enabling this
+feature changes the MSRV to 1.44 (see https://docs.rs/zeroize/1.2.0/zeroize/).
+
+The aim of the `zeroize` feature is to allow users of this library to reduce the
+number of copies of secrets in memory (by wrapping our types, implementing
+`Zeroize` and implementing `Drop` (i.e. derive `Zeroize`). Our aim is not to
+guarantee that there are no copies left un-zeroed in memory. Internally we
+absolutely do leave secrets on the stack.
+
+> I think even zeroing some out the copies is better than none, because every
+> copy makes a Heartbleed-like attack a little easier.
+
 ## Fuzzing
 
 If you want to fuzz this library, or any library which depends on it, you will

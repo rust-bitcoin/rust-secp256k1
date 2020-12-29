@@ -850,4 +850,20 @@ mod test {
         assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
     }
+
+    #[cfg(feature = "zeroize")]
+    #[test]
+    fn zeroize_secret_key() {
+        use zeroize::Zeroize;
+
+        let mut sk = SecretKey::new(&mut thread_rng());
+        sk.zeroize();
+
+        let ptr = &sk.0[0];
+
+        for _ in 0..32 {
+            assert_eq!(*ptr, 0x00);
+        }
+    }
 }
+

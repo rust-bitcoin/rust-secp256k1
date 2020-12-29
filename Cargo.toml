@@ -30,7 +30,7 @@ secp256k1-sys = { version = "0.4.0", default-features = false, path = "./secp256
 bitcoin_hashes = { version = "0.9", optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
-
+zeroize = { version = "1.2", default-features = false, optional = true }
 
 [dev-dependencies]
 rand = "0.6"

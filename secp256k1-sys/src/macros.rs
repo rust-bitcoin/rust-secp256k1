@@ -83,6 +83,14 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(feature = "zeroize")]
+        impl zeroize::Zeroize for $thing {
+            fn zeroize(&mut self) {
+                let &mut $thing(ref mut dat) = self;
+                dat.zeroize()
+            }
+        }
+
         impl ::core::ops::Index<usize> for $thing {
             type Output = $ty;
 
