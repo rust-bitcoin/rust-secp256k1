@@ -626,7 +626,6 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_0_default_error_callback_fn(message:
     panic!("[libsecp256k1] internal consistency check failed {}", msg);
 }
 
-#[no_mangle]
 #[cfg(not(rust_secp_no_symbol_renaming))]
 unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
     let mut ctr = 0;
@@ -761,7 +760,6 @@ pub use self::fuzz_dummy::*;
 
 #[cfg(test)]
 mod tests {
-    #[no_mangle]
     #[cfg(not(rust_secp_no_symbol_renaming))]
     #[test]
     fn test_strlen() {
