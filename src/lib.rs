@@ -646,6 +646,13 @@ impl<C: Context> Secp256k1<C> {
     pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0; 32];
         rng.fill_bytes(&mut seed);
+        self.seeded_randomize(&seed);
+    }
+
+    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance given 32 bytes of
+    /// cryptographically-secure random data;
+    /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell.
+    pub fn seeded_randomize(&mut self, seed: &[u8; 32]) {
         unsafe {
             let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_c_ptr());
             // This function cannot fail; it has an error return for future-proofing.
@@ -659,7 +666,6 @@ impl<C: Context> Secp256k1<C> {
             assert_eq!(err, 1);
         }
     }
-
 }
 
 fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
