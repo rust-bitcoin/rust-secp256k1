@@ -1,4 +1,17 @@
 
+# 0.20.0 - 2020-12-21
+
+* [remove `ffi::PublicKey::blank`](https://github.com/rust-bitcoin/rust-secp256k1/pull/232) and replace with unsafe [`ffi::PublicKey::new` and `ffi::PublicKey::from_array_unchecked`](https://github.com/rust-bitcoin/rust-secp256k1/pull/253/); similar for all other FFI types
+* [support wasm32-wasi target](https://github.com/rust-bitcoin/rust-secp256k1/pull/242)
+* [make the global-context feature depend on the rand-std feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/246)
+* [add a lexicographic ordering to `PublicKey`](https://github.com/rust-bitcoin/rust-secp256k1/pull/248) which does **not** match the ordering used by Bitcoin Core (matching this would be impossible as it requires tracking a compressedness flag, which libsecp256k1 does not have)
+* [implement BIP340 Schnorr signatures](https://github.com/rust-bitcoin/rust-secp256k1/pull/237)
+* [require use of new `AlignedType` in preallocated-context API to enforce alignment requirements](https://github.com/rust-bitcoin/rust-secp256k1/pull/233); previously it was possible to get UB by using misaligned memory stores
+* [enforce correct alignment when using preallocated context API](https://github.com/rust-bitcoin/rust-secp256k1/pull/233)
+* [stop using cargo features for dangerous build-breaking options, require setting `RUSTFLAGS` instead](https://github.com/rust-bitcoin/rust-secp256k1/pull/263)
+* [implement low-R signing and function to grind even smaller signatures](https://github.com/rust-bitcoin/rust-secp256k1/pull/259)
+* [remove endomorphism feature, following upstream in enabling it by default](https://github.com/rust-bitcoin/rust-secp256k1/pull/257)
+
 # 0.19.0 - 2020-08-27
 
 * **Update MSRV to 1.29.0**

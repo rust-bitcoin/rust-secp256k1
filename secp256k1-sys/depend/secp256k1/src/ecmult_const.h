@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2015 Andrew Poelstra                                 *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2015 Andrew Poelstra                                  *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_ECMULT_CONST_H
 #define SECP256K1_ECMULT_CONST_H
@@ -15,6 +15,6 @@
  * Here `bits` should be set to the maximum bitlength of the _absolute value_ of `q`, plus
  * one because we internally sometimes add 2 to the number during the WNAF conversion.
  */
-static void rustsecp256k1_v0_3_1_ecmult_const(rustsecp256k1_v0_3_1_gej *r, const rustsecp256k1_v0_3_1_ge *a, const rustsecp256k1_v0_3_1_scalar *q, int bits);
+static void rustsecp256k1_v0_4_0_ecmult_const(rustsecp256k1_v0_4_0_gej *r, const rustsecp256k1_v0_4_0_ge *a, const rustsecp256k1_v0_4_0_scalar *q, int bits);
 
 #endif /* SECP256K1_ECMULT_CONST_H */

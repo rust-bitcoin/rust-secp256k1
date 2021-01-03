@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014 Pieter Wuille                             *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014 Pieter Wuille                              *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_NUM_REPR_H
 #define SECP256K1_NUM_REPR_H
@@ -15,6 +15,6 @@ typedef struct {
     mp_limb_t data[2*NUM_LIMBS];
     int neg;
     int limbs;
-} rustsecp256k1_v0_3_1_num;
+} rustsecp256k1_v0_4_0_num;
 
 #endif /* SECP256K1_NUM_REPR_H */

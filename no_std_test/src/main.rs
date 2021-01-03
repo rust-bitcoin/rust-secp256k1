@@ -83,7 +83,7 @@ impl RngCore for FakeRng {
 
 #[start]
 fn start(_argc: isize, _argv: *const *const u8) -> isize {
-    let mut buf = [AlignedType::zeroed(); 37_000];
+    let mut buf = [AlignedType::zeroed(); 70_000];
     let size = Secp256k1::preallocate_size();
     unsafe { libc::printf("needed size: %d\n\0".as_ptr() as _, size) };
 

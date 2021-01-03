@@ -116,18 +116,13 @@ AC_ARG_ENABLE(exhaustive_tests,
     [use_exhaustive_tests=$enableval],
     [use_exhaustive_tests=yes])
 
-AC_ARG_ENABLE(endomorphism,
-    AS_HELP_STRING([--enable-endomorphism],[enable endomorphism [default=no]]),
-    [use_endomorphism=$enableval],
-    [use_endomorphism=no])
-
 AC_ARG_ENABLE(ecmult_static_precomputation,
     AS_HELP_STRING([--enable-ecmult-static-precomputation],[enable precomputed ecmult table for signing [default=auto]]),
     [use_ecmult_static_precomputation=$enableval],
     [use_ecmult_static_precomputation=auto])
 
 AC_ARG_ENABLE(module_ecdh,
-    AS_HELP_STRING([--enable-module-ecdh],[enable ECDH shared secret computation (experimental)]),
+    AS_HELP_STRING([--enable-module-ecdh],[enable ECDH shared secret computation]),
     [enable_module_ecdh=$enableval],
     [enable_module_ecdh=no])
 
@@ -164,8 +159,7 @@ AC_ARG_WITH([asm], [AS_HELP_STRING([--with-asm=x86_64|arm|no|auto],
 AC_ARG_WITH([ecmult-window], [AS_HELP_STRING([--with-ecmult-window=SIZE|auto],
 [window size for ecmult precomputation for verification, specified as integer in range [2..24].]
 [Larger values result in possibly better performance at the cost of an exponentially larger precomputed table.]
-[The table will store 2^(SIZE-2) * 64 bytes of data but can be larger in memory due to platform-specific padding and alignment.]
-[If the endomorphism optimization is enabled, two tables of this size are used instead of only one.]
+[The table will store 2^(SIZE-1) * 64 bytes of data but can be larger in memory due to platform-specific padding and alignment.]
 ["auto" is a reasonable setting for desktop machines (currently 15). [default=auto]]
 )],
 [req_ecmult_window=$withval], [req_ecmult_window=auto])
@@ -401,8 +395,8 @@ esac
 
 if test x"$use_tests" = x"yes"; then
   SECP_OPENSSL_CHECK
-  if test x"$has_openssl_ec" = x"yes"; then
-    if test x"$enable_openssl_tests" != x"no"; then
+  if test x"$enable_openssl_tests" != x"no" && test x"$has_openssl_ec" = x"yes"; then
+      enable_openssl_tests=yes
       AC_DEFINE(ENABLE_OPENSSL_TESTS, 1, [Define this symbol if OpenSSL EC functions are available])
       SECP_TEST_INCLUDES="$SSL_CFLAGS $CRYPTO_CFLAGS $CRYPTO_CPPFLAGS"
       SECP_TEST_LIBS="$CRYPTO_LIBS"
@@ -412,25 +406,22 @@ if test x"$use_tests" = x"yes"; then
         SECP_TEST_LIBS="$SECP_TEST_LIBS -lgdi32"
         ;;
       esac
-    fi
   else
     if test x"$enable_openssl_tests" = x"yes"; then
       AC_MSG_ERROR([OpenSSL tests requested but OpenSSL with EC support is not available])
     fi
+    enable_openssl_tests=no
   fi
 else
   if test x"$enable_openssl_tests" = x"yes"; then
     AC_MSG_ERROR([OpenSSL tests requested but tests are not enabled])
   fi
+  enable_openssl_tests=no
 fi
 
 if test x"$set_bignum" = x"gmp"; then
   SECP_LIBS="$SECP_LIBS $GMP_LIBS"
   SECP_INCLUDES="$SECP_INCLUDES $GMP_CPPFLAGS"
-fi
-
-if test x"$use_endomorphism" = x"yes"; then
-  AC_DEFINE(USE_ENDOMORPHISM, 1, [Define this symbol to use endomorphism optimization])
 fi
 
 if test x"$set_precomp" = x"yes"; then
@@ -468,14 +459,10 @@ if test x"$enable_experimental" = x"yes"; then
   AC_MSG_NOTICE([******])
   AC_MSG_NOTICE([WARNING: experimental build])
   AC_MSG_NOTICE([Experimental features do not have stable APIs or properties, and may not be safe for production use.])
-  AC_MSG_NOTICE([Building ECDH module: $enable_module_ecdh])
   AC_MSG_NOTICE([Building extrakeys module: $enable_module_extrakeys])
   AC_MSG_NOTICE([Building schnorrsig module: $enable_module_schnorrsig])
   AC_MSG_NOTICE([******])
 else
-  if test x"$enable_module_ecdh" = x"yes"; then
-    AC_MSG_ERROR([ECDH module is experimental. Use --enable-experimental to allow.])
-  fi
   if test x"$enable_module_extrakeys" = x"yes"; then
     AC_MSG_ERROR([extrakeys module is experimental. Use --enable-experimental to allow.])
   fi
@@ -514,10 +501,11 @@ AC_OUTPUT
 
 echo
 echo "Build Options:"
-echo "  with endomorphism       = $use_endomorphism"
 echo "  with ecmult precomp     = $set_precomp"
 echo "  with external callbacks = $use_external_default_callbacks"
 echo "  with benchmarks         = $use_benchmark"
+echo "  with tests              = $use_tests"
+echo "  with openssl tests      = $enable_openssl_tests"
 echo "  with coverage           = $enable_coverage"
 echo "  module ecdh             = $enable_module_ecdh"
 echo "  module recovery         = $enable_module_recovery"

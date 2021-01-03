@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2014-2015 Pieter Wuille                              *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2014-2015 Pieter Wuille                               *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #include "include/secp256k1.h"
 #include "include/secp256k1_recovery.h"
@@ -10,7 +10,7 @@
 #include "bench.h"
 
 typedef struct {
-    rustsecp256k1_v0_3_1_context *ctx;
+    rustsecp256k1_v0_4_0_context *ctx;
     unsigned char msg[32];
     unsigned char sig[64];
 } bench_recover_data;
@@ -18,16 +18,16 @@ typedef struct {
 void bench_recover(void* arg, int iters) {
     int i;
     bench_recover_data *data = (bench_recover_data*)arg;
-    rustsecp256k1_v0_3_1_pubkey pubkey;
+    rustsecp256k1_v0_4_0_pubkey pubkey;
     unsigned char pubkeyc[33];
 
     for (i = 0; i < iters; i++) {
         int j;
         size_t pubkeylen = 33;
-        rustsecp256k1_v0_3_1_ecdsa_recoverable_signature sig;
-        CHECK(rustsecp256k1_v0_3_1_ecdsa_recoverable_signature_parse_compact(data->ctx, &sig, data->sig, i % 2));
-        CHECK(rustsecp256k1_v0_3_1_ecdsa_recover(data->ctx, &pubkey, &sig, data->msg));
-        CHECK(rustsecp256k1_v0_3_1_ec_pubkey_serialize(data->ctx, pubkeyc, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED));
+        rustsecp256k1_v0_4_0_ecdsa_recoverable_signature sig;
+        CHECK(rustsecp256k1_v0_4_0_ecdsa_recoverable_signature_parse_compact(data->ctx, &sig, data->sig, i % 2));
+        CHECK(rustsecp256k1_v0_4_0_ecdsa_recover(data->ctx, &pubkey, &sig, data->msg));
+        CHECK(rustsecp256k1_v0_4_0_ec_pubkey_serialize(data->ctx, pubkeyc, &pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED));
         for (j = 0; j < 32; j++) {
             data->sig[j + 32] = data->msg[j];    /* Move former message to S. */
             data->msg[j] = data->sig[j];         /* Move former R to message. */
@@ -53,10 +53,10 @@ int main(void) {
 
     int iters = get_iters(20000);
 
-    data.ctx = rustsecp256k1_v0_3_1_context_create(SECP256K1_CONTEXT_VERIFY);
+    data.ctx = rustsecp256k1_v0_4_0_context_create(SECP256K1_CONTEXT_VERIFY);
 
     run_benchmark("ecdsa_recover", bench_recover, bench_recover_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_3_1_context_destroy(data.ctx);
+    rustsecp256k1_v0_4_0_context_destroy(data.ctx);
     return 0;
 }

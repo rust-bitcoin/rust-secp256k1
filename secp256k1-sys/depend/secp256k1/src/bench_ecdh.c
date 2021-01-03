@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2015 Pieter Wuille, Andrew Poelstra                  *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2015 Pieter Wuille, Andrew Poelstra                   *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #include <string.h>
 
@@ -12,8 +12,8 @@
 #include "bench.h"
 
 typedef struct {
-    rustsecp256k1_v0_3_1_context *ctx;
-    rustsecp256k1_v0_3_1_pubkey point;
+    rustsecp256k1_v0_4_0_context *ctx;
+    rustsecp256k1_v0_4_0_pubkey point;
     unsigned char scalar[32];
 } bench_ecdh_data;
 
@@ -31,7 +31,7 @@ static void bench_ecdh_setup(void* arg) {
     for (i = 0; i < 32; i++) {
         data->scalar[i] = i + 1;
     }
-    CHECK(rustsecp256k1_v0_3_1_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
+    CHECK(rustsecp256k1_v0_4_0_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
 }
 
 static void bench_ecdh(void* arg, int iters) {
@@ -40,7 +40,7 @@ static void bench_ecdh(void* arg, int iters) {
     bench_ecdh_data *data = (bench_ecdh_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        CHECK(rustsecp256k1_v0_3_1_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_4_0_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
     }
 }
 
@@ -50,10 +50,10 @@ int main(void) {
     int iters = get_iters(20000);
 
     /* create a context with no capabilities */
-    data.ctx = rustsecp256k1_v0_3_1_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
+    data.ctx = rustsecp256k1_v0_4_0_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
 
     run_benchmark("ecdh", bench_ecdh, bench_ecdh_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_3_1_context_destroy(data.ctx);
+    rustsecp256k1_v0_4_0_context_destroy(data.ctx);
     return 0;
 }

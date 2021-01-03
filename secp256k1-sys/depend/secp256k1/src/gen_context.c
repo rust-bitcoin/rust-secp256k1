@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields           *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014, 2015 Thomas Daede, Cory Fields            *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 // Autotools creates libsecp256k1-config.h, of which ECMULT_GEN_PREC_BITS is needed.
 // ifndef guard so downstream users can define their own if they do not use autotools.
@@ -26,13 +26,13 @@ static void default_error_callback_fn(const char* str, void* data) {
     abort();
 }
 
-static const rustsecp256k1_v0_3_1_callback default_error_callback = {
+static const rustsecp256k1_v0_4_0_callback default_error_callback = {
     default_error_callback_fn,
     NULL
 };
 
 int main(int argc, char **argv) {
-    rustsecp256k1_v0_3_1_ecmult_gen_context ctx;
+    rustsecp256k1_v0_4_0_ecmult_gen_context ctx;
     void *prealloc, *base;
     int inner;
     int outer;
@@ -54,12 +54,12 @@ int main(int argc, char **argv) {
     fprintf(fp, "#if ECMULT_GEN_PREC_N != %d || ECMULT_GEN_PREC_G != %d\n", ECMULT_GEN_PREC_N, ECMULT_GEN_PREC_G);
     fprintf(fp, "   #error configuration mismatch, invalid ECMULT_GEN_PREC_N, ECMULT_GEN_PREC_G. Try deleting ecmult_static_context.h before the build.\n");
     fprintf(fp, "#endif\n");
-    fprintf(fp, "static const rustsecp256k1_v0_3_1_ge_storage rustsecp256k1_v0_3_1_ecmult_static_context[ECMULT_GEN_PREC_N][ECMULT_GEN_PREC_G] = {\n");
+    fprintf(fp, "static const rustsecp256k1_v0_4_0_ge_storage rustsecp256k1_v0_4_0_ecmult_static_context[ECMULT_GEN_PREC_N][ECMULT_GEN_PREC_G] = {\n");
 
     base = checked_malloc(&default_error_callback, SECP256K1_ECMULT_GEN_CONTEXT_PREALLOCATED_SIZE);
     prealloc = base;
-    rustsecp256k1_v0_3_1_ecmult_gen_context_init(&ctx);
-    rustsecp256k1_v0_3_1_ecmult_gen_context_build(&ctx, &prealloc);
+    rustsecp256k1_v0_4_0_ecmult_gen_context_init(&ctx);
+    rustsecp256k1_v0_4_0_ecmult_gen_context_build(&ctx, &prealloc);
     for(outer = 0; outer != ECMULT_GEN_PREC_N; outer++) {
         fprintf(fp,"{\n");
         for(inner = 0; inner != ECMULT_GEN_PREC_G; inner++) {
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         }
     }
     fprintf(fp,"};\n");
-    rustsecp256k1_v0_3_1_ecmult_gen_context_clear(&ctx);
+    rustsecp256k1_v0_4_0_ecmult_gen_context_clear(&ctx);
     free(base);
 
     fprintf(fp, "#undef SC\n");

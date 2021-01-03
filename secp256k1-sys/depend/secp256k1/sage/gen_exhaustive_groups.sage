@@ -1,9 +1,4 @@
-# Define field size and field
-P = 2^256 - 2^32 - 977
-F = GF(P)
-BETA = F(0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee)
-
-assert(BETA != F(1) and BETA^3 == F(1))
+load("rustsecp256k1_v0_4_0_params.sage")
 
 orders_done = set()
 results = {}
@@ -100,13 +95,13 @@ for f in sorted(results.keys()):
     G = results[f]["G"]
     print("#  %s EXHAUSTIVE_TEST_ORDER == %i" % ("if" if first else "elif", f))
     first = False
-    print("static const rustsecp256k1_v0_3_1_ge rustsecp256k1_v0_3_1_ge_const_g = SECP256K1_GE_CONST(")
+    print("static const rustsecp256k1_v0_4_0_ge rustsecp256k1_v0_4_0_ge_const_g = SECP256K1_GE_CONST(")
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x," % tuple((int(G[0]) >> (32 * (7 - i))) & 0xffffffff for i in range(4)))
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x," % tuple((int(G[0]) >> (32 * (7 - i))) & 0xffffffff for i in range(4, 8)))
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x," % tuple((int(G[1]) >> (32 * (7 - i))) & 0xffffffff for i in range(4)))
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x" % tuple((int(G[1]) >> (32 * (7 - i))) & 0xffffffff for i in range(4, 8)))
     print(");")
-    print("static const rustsecp256k1_v0_3_1_fe rustsecp256k1_v0_3_1_fe_const_b = SECP256K1_FE_CONST(")
+    print("static const rustsecp256k1_v0_4_0_fe rustsecp256k1_v0_4_0_fe_const_b = SECP256K1_FE_CONST(")
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x," % tuple((int(b) >> (32 * (7 - i))) & 0xffffffff for i in range(4)))
     print("    0x%08x, 0x%08x, 0x%08x, 0x%08x" % tuple((int(b) >> (32 * (7 - i))) & 0xffffffff for i in range(4, 8)))
     print(");")

@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2020 Pieter Wuille                                   *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2020 Pieter Wuille                                    *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_ASSUMPTIONS_H
 #define SECP256K1_ASSUMPTIONS_H
@@ -16,7 +16,7 @@
    reduce the odds of experiencing an unwelcome surprise.
 */
 
-struct rustsecp256k1_v0_3_1_assumption_checker {
+struct rustsecp256k1_v0_4_0_assumption_checker {
     /* This uses a trick to implement a static assertion in C89: a type with an array of negative size is not
        allowed. */
     int dummy_array[(

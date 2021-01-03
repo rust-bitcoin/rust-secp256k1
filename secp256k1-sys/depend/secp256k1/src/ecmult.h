@@ -1,8 +1,8 @@
-/**********************************************************************
- * Copyright (c) 2013, 2014, 2017 Pieter Wuille, Andrew Poelstra      *
- * Distributed under the MIT software license, see the accompanying   *
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.*
- **********************************************************************/
+/***********************************************************************
+ * Copyright (c) 2013, 2014, 2017 Pieter Wuille, Andrew Poelstra       *
+ * Distributed under the MIT software license, see the accompanying    *
+ * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
+ ***********************************************************************/
 
 #ifndef SECP256K1_ECMULT_H
 #define SECP256K1_ECMULT_H
@@ -14,23 +14,21 @@
 
 typedef struct {
     /* For accelerating the computation of a*P + b*G: */
-    rustsecp256k1_v0_3_1_ge_storage (*pre_g)[];    /* odd multiples of the generator */
-#ifdef USE_ENDOMORPHISM
-    rustsecp256k1_v0_3_1_ge_storage (*pre_g_128)[]; /* odd multiples of 2^128*generator */
-#endif
-} rustsecp256k1_v0_3_1_ecmult_context;
+    rustsecp256k1_v0_4_0_ge_storage (*pre_g)[];    /* odd multiples of the generator */
+    rustsecp256k1_v0_4_0_ge_storage (*pre_g_128)[]; /* odd multiples of 2^128*generator */
+} rustsecp256k1_v0_4_0_ecmult_context;
 
 static const size_t SECP256K1_ECMULT_CONTEXT_PREALLOCATED_SIZE;
-static void rustsecp256k1_v0_3_1_ecmult_context_init(rustsecp256k1_v0_3_1_ecmult_context *ctx);
-static void rustsecp256k1_v0_3_1_ecmult_context_build(rustsecp256k1_v0_3_1_ecmult_context *ctx, void **prealloc);
-static void rustsecp256k1_v0_3_1_ecmult_context_finalize_memcpy(rustsecp256k1_v0_3_1_ecmult_context *dst, const rustsecp256k1_v0_3_1_ecmult_context *src);
-static void rustsecp256k1_v0_3_1_ecmult_context_clear(rustsecp256k1_v0_3_1_ecmult_context *ctx);
-static int rustsecp256k1_v0_3_1_ecmult_context_is_built(const rustsecp256k1_v0_3_1_ecmult_context *ctx);
+static void rustsecp256k1_v0_4_0_ecmult_context_init(rustsecp256k1_v0_4_0_ecmult_context *ctx);
+static void rustsecp256k1_v0_4_0_ecmult_context_build(rustsecp256k1_v0_4_0_ecmult_context *ctx, void **prealloc);
+static void rustsecp256k1_v0_4_0_ecmult_context_finalize_memcpy(rustsecp256k1_v0_4_0_ecmult_context *dst, const rustsecp256k1_v0_4_0_ecmult_context *src);
+static void rustsecp256k1_v0_4_0_ecmult_context_clear(rustsecp256k1_v0_4_0_ecmult_context *ctx);
+static int rustsecp256k1_v0_4_0_ecmult_context_is_built(const rustsecp256k1_v0_4_0_ecmult_context *ctx);
 
 /** Double multiply: R = na*A + ng*G */
-static void rustsecp256k1_v0_3_1_ecmult(const rustsecp256k1_v0_3_1_ecmult_context *ctx, rustsecp256k1_v0_3_1_gej *r, const rustsecp256k1_v0_3_1_gej *a, const rustsecp256k1_v0_3_1_scalar *na, const rustsecp256k1_v0_3_1_scalar *ng);
+static void rustsecp256k1_v0_4_0_ecmult(const rustsecp256k1_v0_4_0_ecmult_context *ctx, rustsecp256k1_v0_4_0_gej *r, const rustsecp256k1_v0_4_0_gej *a, const rustsecp256k1_v0_4_0_scalar *na, const rustsecp256k1_v0_4_0_scalar *ng);
 
-typedef int (rustsecp256k1_v0_3_1_ecmult_multi_callback)(rustsecp256k1_v0_3_1_scalar *sc, rustsecp256k1_v0_3_1_ge *pt, size_t idx, void *data);
+typedef int (rustsecp256k1_v0_4_0_ecmult_multi_callback)(rustsecp256k1_v0_4_0_scalar *sc, rustsecp256k1_v0_4_0_ge *pt, size_t idx, void *data);
 
 /**
  * Multi-multiply: R = inp_g_sc * G + sum_i ni * Ai.
@@ -43,6 +41,6 @@ typedef int (rustsecp256k1_v0_3_1_ecmult_multi_callback)(rustsecp256k1_v0_3_1_sc
  *          0 if there is not enough scratch space for a single point or
  *          callback returns 0
  */
-static int rustsecp256k1_v0_3_1_ecmult_multi_var(const rustsecp256k1_v0_3_1_callback* error_callback, const rustsecp256k1_v0_3_1_ecmult_context *ctx, rustsecp256k1_v0_3_1_scratch *scratch, rustsecp256k1_v0_3_1_gej *r, const rustsecp256k1_v0_3_1_scalar *inp_g_sc, rustsecp256k1_v0_3_1_ecmult_multi_callback cb, void *cbdata, size_t n);
+static int rustsecp256k1_v0_4_0_ecmult_multi_var(const rustsecp256k1_v0_4_0_callback* error_callback, const rustsecp256k1_v0_4_0_ecmult_context *ctx, rustsecp256k1_v0_4_0_scratch *scratch, rustsecp256k1_v0_4_0_gej *r, const rustsecp256k1_v0_4_0_scalar *inp_g_sc, rustsecp256k1_v0_4_0_ecmult_multi_callback cb, void *cbdata, size_t n);
 
 #endif /* SECP256K1_ECMULT_H */
