@@ -65,9 +65,23 @@ macro_rules! serde_impl(
                 use ::serde::de::Error;
                 use core::str::FromStr;
 
+                struct Visitor;
+
+                impl<'de> ::serde::de::Visitor<'de> for Visitor {
+                    type Value = $t;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                        write!(formatter, "a string")
+                    }
+
+                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> where
+                        E: Error, {
+                        $t::from_str(v).map_err(E::custom)
+                    }
+                }
+
                 if d.is_human_readable() {
-                    let sl: &str = ::serde::Deserialize::deserialize(d)?;
-                    $t::from_str(sl).map_err(D::Error::custom)
+                    d.deserialize_str(Visitor)
                 } else {
                     let sl: &[u8] = ::serde::Deserialize::deserialize(d)?;
                     if sl.len() != $len {
@@ -161,3 +175,51 @@ macro_rules! serde_impl_from_slice {
 macro_rules! serde_impl_from_slice(
     ($t:ident) => ()
 );
+
+#[cfg(all(test, feature = "serde"))]
+mod tests {
+    use std::{str::FromStr, fmt, io};
+    use serde_test::*;
+
+    #[derive(Debug)]
+    struct Foo([u8; 6]);
+    serde_impl!(Foo, 6);
+    impl_array_newtype!(Foo, u8, 6);
+
+    impl FromStr for Foo {
+        type Err = io::Error; // some dummy value to satisfy the compiler
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            let x = s.bytes().take(6).collect::<Vec<_>>();
+
+            Ok(Foo([x[0], x[1], x[2], x[3], x[4], x[5]]))
+        }
+    }
+
+    impl fmt::Display for Foo {
+        fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+            unimplemented!()
+        }
+    }
+
+
+    #[test]
+    fn deserialize_from_borrowed_string() {
+        let value = Foo(*b"foobar");
+        let tokens = [
+            Token::BorrowedStr("foobar")
+        ];
+
+        assert_de_tokens(&value.readable(), &tokens)
+    }
+
+    #[test]
+    fn deserialize_from_owned_string() {
+        let value = Foo(*b"foobar");
+        let tokens = [
+            Token::String("foobar")
+        ];
+
+        assert_de_tokens(&value.readable(), &tokens)
+    }
+}
