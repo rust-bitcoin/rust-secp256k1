@@ -52,7 +52,7 @@ extern "C" {
                                                          -> c_int;
 }
 
-#[cfg(not(rust_secp_fuzz))]
+#[cfg(not(fuzzing))]
 extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ecdsa_sign_recoverable")]
     pub fn secp256k1_ecdsa_sign_recoverable(cx: *const Context,
@@ -72,7 +72,7 @@ extern "C" {
 }
 
 
-#[cfg(rust_secp_fuzz)]
+#[cfg(fuzzing)]
 mod fuzz_dummy {
     use super::*;
     use std::slice;
@@ -146,6 +146,6 @@ mod fuzz_dummy {
         1
     }
 }
-#[cfg(rust_secp_fuzz)]
+#[cfg(fuzzing)]
 pub use self::fuzz_dummy::*;
 

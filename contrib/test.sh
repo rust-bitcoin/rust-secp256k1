@@ -34,14 +34,14 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     done
 
     # Other combos 
-    RUSTFLAGS='--cfg=rust_secp_fuzz' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all
-    RUSTFLAGS='--cfg=rust_secp_fuzz' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
     cargo test --all --features="rand rand-std"
     cargo test --all --features="rand serde"
 
     if [ "$DO_BENCH" = true ]; then  # proxy for us having a nightly compiler
         cargo test --all --all-features
-        RUSTFLAGS='--cfg=rust_secp_fuzz' RUSTDOCFLAGS='--cfg=rust_secp_fuzz' cargo test --all --all-features
+        RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --all-features
     fi
 
     # Examples
