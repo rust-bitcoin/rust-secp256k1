@@ -228,7 +228,7 @@ impl ::serde::Serialize for SecretKey {
 impl<'de> ::serde::Deserialize<'de> for SecretKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(super::serde_util::HexVisitor::new(
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte SecretKey"
             ))
         } else {
@@ -442,7 +442,7 @@ impl ::serde::Serialize for PublicKey {
 impl<'de> ::serde::Deserialize<'de> for PublicKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(super::serde_util::HexVisitor::new(
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "an ASCII hex string representing a public key"
             ))
         } else {

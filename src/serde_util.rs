@@ -3,21 +3,22 @@ use core::marker::PhantomData;
 use core::str::{self, FromStr};
 use serde::de;
 
-pub struct HexVisitor<T> {
+/// A serde visitor that works for `T`s implementing `FromStr`.
+pub struct FromStrVisitor<T> {
     expectation: &'static str,
     _pd: PhantomData<T>,
 }
 
-impl<T> HexVisitor<T> {
+impl<T> FromStrVisitor<T> {
     pub fn new(expectation: &'static str) -> Self {
-        HexVisitor {
+        FromStrVisitor {
             expectation,
             _pd: PhantomData,
         }
     }
 }
 
-impl<'de, T> de::Visitor<'de> for HexVisitor<T>
+impl<'de, T> de::Visitor<'de> for FromStrVisitor<T>
 where
     T: FromStr,
     <T as FromStr>::Err: fmt::Display,

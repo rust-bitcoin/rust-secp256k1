@@ -34,7 +34,7 @@ impl ::serde::Serialize for Signature {
 impl<'de> ::serde::Deserialize<'de> for Signature {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(super::serde_util::HexVisitor::new(
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 64 byte schnorr signature"
             ))
         } else {
@@ -417,7 +417,7 @@ impl ::serde::Serialize for PublicKey {
 impl<'de> ::serde::Deserialize<'de> for PublicKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(super::serde_util::HexVisitor::new(
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte schnorr public key"
             ))
         } else {

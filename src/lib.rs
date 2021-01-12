@@ -444,7 +444,7 @@ impl ::serde::Serialize for Signature {
 impl<'de> ::serde::Deserialize<'de> for Signature {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(serde_util::HexVisitor::new(
+            d.deserialize_str(serde_util::FromStrVisitor::new(
                 "a hex string representing a DER encoded Signature"
             ))
         } else {
