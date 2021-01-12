@@ -775,7 +775,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
-    fn test_signature_serde() {
+    fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 
         let s = Secp256k1::new();
@@ -796,8 +796,30 @@ mod tests {
             14d0bf1a8953506fb460f58be141af767fd112535fb3922ef217308e2c26706f1eeb432b3dba9a01082f9e4d4ef5678ad0d9d532c0dfa907b568722d0b0119ba\
         ";
 
+        static PK_BYTES: [u8; 32] = [
+            24, 132, 87, 129, 246, 49, 196, 143, 28, 151, 9, 226, 48, 146, 6, 125, 6, 131, 127,
+            48, 170, 12, 208, 84, 74, 200, 135, 254, 145, 221, 209, 102
+        ];
+        static PK_STR: &'static str = "\
+            18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+        ";
+        let pk = PublicKey::from_slice(&PK_BYTES).unwrap();
+
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES[..])]);
+
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
+
+        assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES[..])]);
+
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
     }
     #[test]
     fn test_addition() {
