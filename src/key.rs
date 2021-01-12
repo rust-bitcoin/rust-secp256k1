@@ -868,7 +868,7 @@ mod test {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_signature_serde() {
+    fn test_serde() {
         use serde_test::{Configure, Token, assert_tokens};
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,

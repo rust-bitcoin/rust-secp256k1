@@ -1241,7 +1241,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[cfg(not(rust_secp_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
-    fn test_signature_serde() {
+    fn test_serde() {
         use serde_test::{Configure, Token, assert_tokens};
 
         let s = Secp256k1::new();
