@@ -29,14 +29,6 @@ where
         formatter.write_str(self.expectation)
     }
 
-    fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
-        if let Ok(hex) = str::from_utf8(v) {
-            FromStr::from_str(hex).map_err(E::custom)
-        } else {
-            Err(E::invalid_value(de::Unexpected::Bytes(v), &self))
-        }
-    }
-
     fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
         FromStr::from_str(v).map_err(E::custom)
     }
