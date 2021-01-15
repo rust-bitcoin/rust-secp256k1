@@ -26,7 +26,7 @@
 #[cfg(any(test, feature = "std"))]
 extern crate core;
 
-#[cfg(rust_secp_fuzz)]
+#[cfg(fuzzing)]
 const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DISABLED_FOR_FUZZING: usize = 0;
 
 #[macro_use]
@@ -480,7 +480,7 @@ extern "C" {
     ) -> c_int;
 }
 
-#[cfg(not(rust_secp_fuzz))]
+#[cfg(not(fuzzing))]
 extern "C" {
     // ECDSA
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ecdsa_verify")]
@@ -666,7 +666,7 @@ impl<T> CPtr for [T] {
     }
 }
 
-#[cfg(rust_secp_fuzz)]
+#[cfg(fuzzing)]
 mod fuzz_dummy {
     use super::*;
 
@@ -755,7 +755,7 @@ mod fuzz_dummy {
     }
 }
 
-#[cfg(rust_secp_fuzz)]
+#[cfg(fuzzing)]
 pub use self::fuzz_dummy::*;
 
 #[cfg(test)]
