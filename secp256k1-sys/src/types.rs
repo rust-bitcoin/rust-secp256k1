@@ -16,8 +16,10 @@ pub type c_char = i8;
 /// We can replace this with `core::ffi::c_void` once we update the rustc version to >=1.30.0.
 #[repr(u8)]
 pub enum c_void {
-    #[doc(hidden)] __variant1,
-    #[doc(hidden)] __variant2,
+    #[doc(hidden)]
+    __variant1,
+    #[doc(hidden)]
+    __variant2,
 }
 
 impl fmt::Debug for c_void {
@@ -43,13 +45,12 @@ impl AlignedType {
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
 pub(crate) const ALIGN_TO: usize = mem::align_of::<AlignedType>();
 
-
 #[cfg(test)]
 mod tests {
     extern crate libc;
-    use std::os::raw;
-    use std::mem;
     use std::any::TypeId;
+    use std::mem;
+    use std::os::raw;
     use {types, AlignedType};
 
     #[test]
@@ -63,11 +64,10 @@ mod tests {
     }
 }
 
-
 #[doc(hidden)]
 #[cfg(target_arch = "wasm32")]
 pub fn sanity_checks_for_wasm() {
-    use std::mem::{size_of, align_of};
+    use core::mem::{align_of, size_of};
     extern "C" {
         pub static WASM32_INT_SIZE: c_uchar;
         pub static WASM32_INT_ALIGN: c_uchar;
