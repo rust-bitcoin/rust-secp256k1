@@ -507,7 +507,7 @@ impl<T: ThirtyTwoByteHash> From<T> for Message {
 }
 
 /// An ECDSA error
-#[derive(Copy, PartialEq, Eq, Clone, Debug)]
+#[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub enum Error {
     /// Signature failed verification
     IncorrectSignature,
