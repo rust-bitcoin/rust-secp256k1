@@ -158,7 +158,7 @@ use core::ops::Deref;
 use core::mem;
 use ffi::{CPtr, types::AlignedType};
 
-#[cfg(feature = "global-context")]
+#[cfg(feature = "global-context-less-secure")]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
@@ -1269,7 +1269,7 @@ mod tests {
 
     }
 
-    #[cfg(feature = "global-context")]
+    #[cfg(feature = "global-context-less-secure")]
     #[test]
     fn test_global_context() {
         use super::SECP256K1;
