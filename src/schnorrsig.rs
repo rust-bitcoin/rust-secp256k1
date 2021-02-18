@@ -706,6 +706,9 @@ mod tests {
             PublicKey::from_slice(&[0xff; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
         );
+        // In fuzzing mode restrictions on public key validity are much more
+        // relaxed, thus the invalid check below is expected to fail.
+        #[cfg(not(fuzzing))]
         assert_eq!(
             PublicKey::from_slice(&[0x55; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
@@ -724,7 +727,13 @@ mod tests {
 
         let s = Secp256k1::signing_only();
         let sk = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
+
+        // In fuzzing mode secret->public key derivation is different, so
+        // hard-code the epected result.
+        #[cfg(not(fuzzing))]
         let pk = PublicKey::from_keypair(&s, &sk);
+        #[cfg(fuzzing)]
+        let pk = PublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
         assert_eq!(
             pk.to_string(),
@@ -762,6 +771,9 @@ mod tests {
     }
 
     #[test]
+    // In fuzzing mode secret->public key derivation is different, so
+    // this test will never correctly derive the static pubkey.
+    #[cfg(not(fuzzing))]
     fn test_pubkey_serialize() {
         struct DumbRng(u32);
         impl RngCore for DumbRng {
