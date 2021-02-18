@@ -958,9 +958,14 @@ mod test {
         ";
 
         let s = Secp256k1::new();
-
         let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
+
+        // In fuzzing mode secret->public key derivation is different, so
+        // hard-code the epected result.
+        #[cfg(not(fuzzing))]
         let pk = PublicKey::from_secret_key(&s, &sk);
+        #[cfg(fuzzing)]
+        let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
         assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
