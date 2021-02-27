@@ -278,10 +278,6 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_context_preallocated_destroy")]
     pub fn secp256k1_context_preallocated_destroy(cx: *mut Context);
 
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_context_randomize")]
-    pub fn secp256k1_context_randomize(cx: *mut Context,
-                                       seed32: *const c_uchar)
-                                       -> c_int;
     // Signatures
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ecdsa_signature_parse_der")]
     pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
@@ -369,6 +365,10 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_context_preallocated_clone")]
     pub fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
 
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_context_randomize")]
+    pub fn secp256k1_context_randomize(cx: *mut Context,
+                                       seed32: *const c_uchar)
+                                       -> c_int;
     // Pubkeys
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ec_pubkey_parse")]
     pub fn secp256k1_ec_pubkey_parse(cx: *const Context, pk: *mut PublicKey,
@@ -736,6 +736,14 @@ mod fuzz_dummy {
         let flags = (orig_ptr as *mut c_uint).read();
         (new_ptr as *mut c_uint).write(flags);
         rustsecp256k1_v0_4_0_context_preallocated_clone(cx, prealloc)
+    }
+
+    pub unsafe fn secp256k1_context_randomize(cx: *mut Context,
+                                              _seed32: *const c_uchar)
+                                              -> c_int {
+        // This function is really slow, and unsuitable for fuzzing
+        check_context_flags(cx, 0);
+        1
     }
 
     unsafe fn check_context_flags(cx: *const Context, required_flags: c_uint) {
