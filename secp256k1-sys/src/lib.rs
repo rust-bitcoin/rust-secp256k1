@@ -669,6 +669,7 @@ impl<T> CPtr for [T] {
 #[cfg(fuzzing)]
 mod fuzz_dummy {
     use super::*;
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
     #[cfg(rust_secp_no_symbol_renaming)] compile_error!("We do not support fuzzing with rust_secp_no_symbol_renaming");
 
@@ -678,16 +679,55 @@ mod fuzz_dummy {
         fn rustsecp256k1_v0_4_0_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
     }
 
-    const CTX_SIZE: usize = 1024 * 1024 * 2;
+    #[cfg(feature = "lowmemory")]
+    const CTX_SIZE: usize = 1024 * 65;
+    #[cfg(not(feature = "lowmemory"))]
+    const CTX_SIZE: usize = 1024 * (1024 + 128);
     // Contexts
     pub unsafe fn secp256k1_context_preallocated_size(flags: c_uint) -> size_t {
         assert!(rustsecp256k1_v0_4_0_context_preallocated_size(flags) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
         CTX_SIZE
     }
+
+    static HAVE_PREALLOCATED_CONTEXT: AtomicUsize = AtomicUsize::new(0);
+    const HAVE_CONTEXT_NONE: usize = 0;
+    const HAVE_CONTEXT_WORKING: usize = 1;
+    const HAVE_CONTEXT_DONE: usize = 2;
+    static mut PREALLOCATED_CONTEXT: [u8; CTX_SIZE] = [0; CTX_SIZE];
     pub unsafe fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context {
+        // While applications should generally avoid creating too many contexts, sometimes fuzzers
+        // perform tasks repeatedly which real applications may only do rarely. Thus, we want to
+        // avoid being overly slow here. We do so by having a static context and copying it into
+        // new buffers instead of recalculating it. Because we shouldn't rely on std, we use a
+        // simple hand-written OnceFlag built out of an atomic to gate the global static.
+        let mut have_ctx = HAVE_PREALLOCATED_CONTEXT.load(Ordering::Relaxed);
+        while have_ctx != HAVE_CONTEXT_DONE {
+            if have_ctx == HAVE_CONTEXT_NONE {
+                have_ctx = HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_WORKING, Ordering::AcqRel);
+                if have_ctx == HAVE_CONTEXT_NONE {
+                    assert!(rustsecp256k1_v0_4_0_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
+                    assert_eq!(rustsecp256k1_v0_4_0_context_preallocated_create(
+                            PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
+                            SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
+                        PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
+                    assert_eq!(HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_DONE, Ordering::AcqRel),
+                        HAVE_CONTEXT_WORKING);
+                } else if have_ctx == HAVE_CONTEXT_DONE {
+                    // Another thread finished while we were swapping.
+                    HAVE_PREALLOCATED_CONTEXT.store(HAVE_CONTEXT_DONE, Ordering::Release);
+                }
+            } else {
+                // Another thread is building, just busy-loop until they're done.
+                assert_eq!(have_ctx, HAVE_CONTEXT_WORKING);
+                have_ctx = HAVE_PREALLOCATED_CONTEXT.load(Ordering::Acquire);
+                #[cfg(feature = "std")]
+                std::thread::yield_now();
+            }
+        }
+        ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
         let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
         (ptr as *mut c_uint).write(flags);
-        rustsecp256k1_v0_4_0_context_preallocated_create(prealloc, flags)
+        prealloc as *mut Context
     }
     pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *const Context) -> size_t { CTX_SIZE }
     pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
