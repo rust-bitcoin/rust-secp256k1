@@ -51,10 +51,9 @@ fn main() {
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
 
-    match &env::var("TARGET").unwrap() as &str {
-        "wasm32-unknown-unknown"|"wasm32-wasi" =>
-            { base_config.include("wasm-sysroot"); },
-        _ => {},
+    // Header files. WASM only.
+    if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "wasm32" {
+        base_config.include("wasm-sysroot");
     }
 
     // secp256k1
