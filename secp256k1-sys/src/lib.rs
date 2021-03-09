@@ -33,6 +33,11 @@ const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DI
 mod macros;
 pub mod types;
 
+#[cfg(feature = "ecdh")]
+mod ecdh;
+#[cfg(feature = "ecdh")]
+pub use ecdh::*;
+
 #[cfg(feature = "recovery")]
 pub mod recovery;
 
@@ -65,15 +70,6 @@ pub type NonceFn = Option<unsafe extern "C" fn(
     algo16: *const c_uchar,
     data: *mut c_void,
     attempt: c_uint,
-) -> c_int>;
-
-/// Hash function to use to post-process an ECDH point to get
-/// a shared secret.
-pub type EcdhHashFn = Option<unsafe extern "C" fn(
-    output: *mut c_uchar,
-    x: *const c_uchar,
-    y: *const c_uchar,
-    data: *mut c_void,
 ) -> c_int>;
 
 ///  Same as secp256k1_nonce function with the exception of accepting an
@@ -258,10 +254,6 @@ impl hash::Hash for KeyPair {
 }
 
 extern "C" {
-    /// Default ECDH hash function
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ecdh_hash_function_default")]
-    pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
-
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_nonce_function_rfc6979")]
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
 
@@ -406,16 +398,6 @@ extern "C" {
                                        ins: *const *const PublicKey,
                                        n: c_int)
                                        -> c_int;
-
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_ecdh")]
-    pub fn secp256k1_ecdh(
-        cx: *const Context,
-        output: *mut c_uchar,
-        pubkey: *const PublicKey,
-        seckey: *const c_uchar,
-        hashfp: EcdhHashFn,
-        data: *mut c_void,
-    ) -> c_int;
 
     // Extra keys
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_keypair_create")]
