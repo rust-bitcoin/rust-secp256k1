@@ -24,14 +24,14 @@ macro_rules! impl_array_newtype {
             /// Converts the object to a raw pointer for FFI interfacing
             pub fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
-                dat.as_ptr()
+                dat.as_ptr() as *const $ty
             }
 
             #[inline]
             /// Converts the object to a mutable raw pointer for FFI interfacing
             pub fn as_mut_ptr(&mut self) -> *mut $ty {
                 let &mut $thing(ref mut dat) = self;
-                dat.as_mut_ptr()
+                dat.as_mut_ptr() as *mut $ty
             }
 
             #[inline]
@@ -48,7 +48,7 @@ macro_rules! impl_array_newtype {
             /// Gets a reference to the underlying array
             fn as_ref(&self) -> &[$ty; $len] {
                 let &$thing(ref dat) = self;
-                dat
+                unsafe { &*dat.as_ptr() }
             }
         }
 
@@ -89,7 +89,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: usize) -> &$ty {
                 let &$thing(ref dat) = self;
-                &dat[index]
+                unsafe { &(&*dat.as_ptr())[index] }
             }
         }
 
@@ -99,7 +99,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::core::ops::Range<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[index]
+                unsafe { &(&*dat.as_ptr())[index] }
             }
         }
 
@@ -109,7 +109,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::core::ops::RangeTo<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[index]
+                unsafe { &(&*dat.as_ptr())[index] }
             }
         }
 
@@ -119,7 +119,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, index: ::core::ops::RangeFrom<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[index]
+                unsafe { &(&*dat.as_ptr())[index] }
             }
         }
 
@@ -129,7 +129,7 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn index(&self, _: ::core::ops::RangeFull) -> &[$ty] {
                 let &$thing(ref dat) = self;
-                &dat[..]
+                unsafe { &(&*dat.as_ptr())[..] }
             }
         }
         impl $crate::CPtr for $thing {

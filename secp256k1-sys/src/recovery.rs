@@ -15,18 +15,19 @@
 
 //! # FFI of the recovery module
 
+use core::mem::MaybeUninit;
 use ::types::*;
 use {Context, Signature, NonceFn, PublicKey};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
-pub struct RecoverableSignature([c_uchar; 65]);
+pub struct RecoverableSignature(MaybeUninit<[c_uchar; 65]>);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 impl_raw_debug!(RecoverableSignature);
 
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
+    pub fn new() -> RecoverableSignature { RecoverableSignature(MaybeUninit::uninit()) }
 }
 
 impl Default for RecoverableSignature {

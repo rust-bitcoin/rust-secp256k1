@@ -36,7 +36,7 @@ pub mod types;
 #[cfg(feature = "recovery")]
 pub mod recovery;
 
-use core::{hash, slice, ptr};
+use core::{hash, slice, ptr, mem::MaybeUninit};
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -99,7 +99,7 @@ pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
 
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
-pub struct PublicKey([c_uchar; 64]);
+pub struct PublicKey(MaybeUninit<[c_uchar; 64]>);
 impl_array_newtype!(PublicKey, c_uchar, 64);
 impl_raw_debug!(PublicKey);
 
@@ -110,7 +110,7 @@ impl PublicKey {
     /// the result is likely to be an assertation failure and process
     /// termination.
     pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
+        PublicKey(MaybeUninit::uninit())
     }
 
     /// Create a new public key usable for the FFI interface from raw bytes
@@ -121,7 +121,7 @@ impl PublicKey {
     /// that you obtained from the FFI interface of the same version of this
     /// library.
     pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        PublicKey(data)
+        PublicKey(MaybeUninit::new(data))
     }
 
     /// Returns the underlying FFI opaque representation of the public key
@@ -129,19 +129,20 @@ impl PublicKey {
     /// You should not use this unless you really know what you are doing. It is
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
+        unsafe { self.0.assume_init() }
     }
 }
 
 impl hash::Hash for PublicKey {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
+        let bytes: &[c_uchar] = unsafe { &*self.0.as_ptr() };
+        state.write(bytes)
     }
 }
 
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
-pub struct Signature([c_uchar; 64]);
+pub struct Signature(MaybeUninit<[c_uchar; 64]>);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
 
@@ -152,7 +153,7 @@ impl Signature {
     /// the result is likely to be an assertation failure and process
     /// termination.
     pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
+        Signature(MaybeUninit::uninit())
     }
 
     /// Create a new signature usable for the FFI interface from raw bytes
@@ -163,7 +164,7 @@ impl Signature {
     /// that you obtained from the FFI interface of the same version of this
     /// library.
     pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        Signature(data)
+        Signature(MaybeUninit::new(data))
     }
 
     /// Returns the underlying FFI opaque representation of the signature
@@ -171,12 +172,12 @@ impl Signature {
     /// You should not use this unless you really know what you are doing. It is
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
+        unsafe { self.0.assume_init() }
     }
 }
 
 #[repr(C)]
-pub struct XOnlyPublicKey([c_uchar; 64]);
+pub struct XOnlyPublicKey(MaybeUninit<[c_uchar; 64]>);
 impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
 impl_raw_debug!(XOnlyPublicKey);
 
@@ -187,7 +188,7 @@ impl XOnlyPublicKey {
     /// the result is likely to be an assertation failure and process
     /// termination.
     pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
+        XOnlyPublicKey(MaybeUninit::uninit())
     }
 
     /// Create a new x-only public key usable for the FFI interface from raw bytes
@@ -198,7 +199,7 @@ impl XOnlyPublicKey {
     /// that you obtained from the FFI interface of the same version of this
     /// library.
     pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        XOnlyPublicKey(data)
+        XOnlyPublicKey(MaybeUninit::new(data))
     }
 
     /// Returns the underlying FFI opaque representation of the x-only public key
@@ -206,18 +207,19 @@ impl XOnlyPublicKey {
     /// You should not use this unless you really know what you are doing. It is
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
+        unsafe { self.0.assume_init() }
     }
 }
 
 impl hash::Hash for XOnlyPublicKey {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
+        let bytes: &[c_uchar] = unsafe { &*self.0.as_ptr() };
+        state.write(bytes)
     }
 }
 
 #[repr(C)]
-pub struct KeyPair([c_uchar; 96]);
+pub struct KeyPair(MaybeUninit<[c_uchar; 96]>);
 impl_array_newtype!(KeyPair, c_uchar, 96);
 impl_raw_debug!(KeyPair);
 
@@ -228,7 +230,7 @@ impl KeyPair {
     /// the result is likely to be an assertation failure and process
     /// termination.
     pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 96])
+        KeyPair(MaybeUninit::uninit())
     }
 
     /// Create a new keypair usable for the FFI interface from raw bytes
@@ -239,7 +241,7 @@ impl KeyPair {
     /// that you obtained from the FFI interface of the same version of this
     /// library.
     pub unsafe fn from_array_unchecked(data: [c_uchar; 96]) -> Self {
-        KeyPair(data)
+        KeyPair(MaybeUninit::new(data))
     }
 
     /// Returns the underlying FFI opaque representation of the x-only public key
@@ -247,13 +249,14 @@ impl KeyPair {
     /// You should not use this unless you really know what you are doing. It is
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 96] {
-        self.0
+        unsafe { self.0.assume_init() }
     }
 }
 
 impl hash::Hash for KeyPair {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
+        let bytes: &[c_uchar] = unsafe { &*self.0.as_ptr() };
+        state.write(bytes)
     }
 }
 
