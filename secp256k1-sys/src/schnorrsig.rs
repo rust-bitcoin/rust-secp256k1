@@ -16,7 +16,8 @@
 //! # FFI of the schnorrsig module
 
 use ::types::*;
-use {Context, XOnlyPublicKey, KeyPair};
+use ::extrakeys::{XOnlyPublicKey, KeyPair};
+use Context;
 
 ///  Same as secp256k1_nonce function with the exception of accepting an
 ///  additional pubkey argument and not requiring an attempt argument. The pubkey

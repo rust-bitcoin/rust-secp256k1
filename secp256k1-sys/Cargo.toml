@@ -25,9 +25,10 @@ cc = "1.0.28"
 libc = "0.2"
 
 [features]
-default = ["std", "ecdh", "schnorrsig"]
+default = ["std", "ecdh", "extrakeys", "schnorrsig"]
 std = []
 lowmemory = []
 ecdh = []
+extrakeys = []
 recovery = []
-schnorrsig = []
+schnorrsig = ["extrakeys"]
