@@ -25,8 +25,9 @@ cc = "1.0.28"
 libc = "0.2"
 
 [features]
-default = ["std"]
+default = ["std", "ecdh", "schnorrsig"]
 std = []
 lowmemory = []
 ecdh = []
 recovery = []
+schnorrsig = []

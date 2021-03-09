@@ -41,6 +41,11 @@ pub use ecdh::*;
 #[cfg(feature = "recovery")]
 pub mod recovery;
 
+#[cfg(feature = "schnorrsig")]
+mod schnorrsig;
+#[cfg(feature = "schnorrsig")]
+pub use schnorrsig::*;
+
 use core::{hash, slice, ptr};
 use types::*;
 
@@ -70,20 +75,6 @@ pub type NonceFn = Option<unsafe extern "C" fn(
     algo16: *const c_uchar,
     data: *mut c_void,
     attempt: c_uint,
-) -> c_int>;
-
-///  Same as secp256k1_nonce function with the exception of accepting an
-///  additional pubkey argument and not requiring an attempt argument. The pubkey
-///  argument can protect signature schemes with key-prefixed challenge hash
-///  inputs against reusing the nonce when signing with the wrong precomputed
-///  pubkey.
-pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
-    nonce32: *mut c_uchar,
-    msg32: *const c_uchar,
-    key32: *const c_uchar,
-    xonly_pk32: *const c_uchar,
-    algo16: *const c_uchar,
-    data: *mut c_void,
 ) -> c_int>;
 
 /// A Secp256k1 context, containing various precomputed values and such
@@ -259,9 +250,6 @@ extern "C" {
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_nonce_function_default")]
     pub static secp256k1_nonce_function_default: NonceFn;
-
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_nonce_function_bip340")]
-    pub static secp256k1_nonce_function_bip340: SchnorrNonceFn;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_context_no_precomp")]
     pub static secp256k1_context_no_precomp: *const Context;
@@ -480,25 +468,6 @@ extern "C" {
                                 noncefn: NonceFn,
                                 noncedata: *const c_void)
                                 -> c_int;
-
-    // Schnorr Signatures
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_schnorrsig_sign")]
-    pub fn secp256k1_schnorrsig_sign(
-        cx: *const Context,
-        sig: *mut c_uchar,
-        msg32: *const c_uchar,
-        keypair: *const KeyPair,
-        noncefp: SchnorrNonceFn,
-        noncedata: *const c_void
-    ) -> c_int;
-
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_0_schnorrsig_verify")]
-    pub fn secp256k1_schnorrsig_verify(
-        cx: *const Context,
-        sig64: *const c_uchar,
-        msg32: *const c_uchar,
-        pubkey: *const XOnlyPublicKey,
-    ) -> c_int;
 }
 
 
@@ -690,49 +659,6 @@ mod fuzz_dummy {
         let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
         sig_sl[..32].copy_from_slice(msg_sl);
         sig_sl[32..].copy_from_slice(&new_pk.0[..32]);
-        1
-    }
-
-    /// Verifies that sig is msg32||pk[32..]
-    pub unsafe fn secp256k1_schnorrsig_verify(
-        cx: *const Context,
-        sig64: *const c_uchar,
-        msg32: *const c_uchar,
-        pubkey: *const XOnlyPublicKey,
-    ) -> c_int {
-        // Check context is built for verification
-        let mut new_pk = PublicKey::new();
-        let _ = secp256k1_xonly_pubkey_tweak_add(cx, &mut new_pk, pubkey, msg32);
-        // Actually verify
-        let sig_sl = slice::from_raw_parts(sig64 as *const u8, 64);
-        let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
-        if &sig_sl[..32] == msg_sl && sig_sl[32..] == (*pubkey).0[..32] {
-            1
-        } else {
-            0
-        }
-    }
-
-    /// Sets sig to msg32||pk[..32]
-    pub unsafe fn secp256k1_schnorrsig_sign(
-        cx: *const Context,
-        sig64: *mut c_uchar,
-        msg32: *const c_uchar,
-        keypair: *const KeyPair,
-        noncefp: SchnorrNonceFn,
-        noncedata: *const c_void
-    ) -> c_int {
-        // Check context is built for signing
-        let mut new_kp = KeyPair::new();
-        if secp256k1_keypair_create(cx, &mut new_kp, (*keypair).0.as_ptr()) != 1 {
-            return 0;
-        }
-        assert_eq!(new_kp, *keypair);
-        // Sign
-        let sig_sl = slice::from_raw_parts_mut(sig64 as *mut u8, 64);
-        let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
-        sig_sl[..32].copy_from_slice(msg_sl);
-        sig_sl[32..].copy_from_slice(&new_kp.0[32..64]);
         1
     }
 }

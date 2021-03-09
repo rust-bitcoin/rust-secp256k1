@@ -33,7 +33,6 @@ fn main() {
                .include("depend/secp256k1/src")
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
                .define("SECP256K1_BUILD", Some("1"))
-               .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
                .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
                .define("ECMULT_GEN_PREC_BITS", Some("4"))
                // TODO these three should be changed to use libgmp, at least until secp PR 290 is merged
@@ -53,6 +52,9 @@ fn main() {
 
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
+
+    #[cfg(feature = "schnorrsig")]
+    base_config.define("ENABLE_MODULE_SCHNORRSIG", Some("1"));
 
     match &env::var("TARGET").unwrap() as &str {
         "wasm32-unknown-unknown"|"wasm32-wasi" =>
