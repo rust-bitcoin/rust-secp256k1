@@ -938,7 +938,7 @@ mod tests {
 
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "assertion failed")]
     fn test_panic_raw_ctx() {
         let ctx_vrfy = Secp256k1::verification_only();
         let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};

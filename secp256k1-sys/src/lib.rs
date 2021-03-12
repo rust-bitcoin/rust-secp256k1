@@ -580,7 +580,7 @@ pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
 ///
 /// A callback function to be called when an illegal argument is passed to
 /// an API call. It will only trigger for violations that are mentioned
-/// explicitly in the header. **This will cause a panic**.
+/// explicitly in the header.
 ///
 /// The philosophy is that these shouldn't be dealt with through a
 /// specific return value, as calling code should not have branches to deal with
@@ -600,13 +600,14 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_0_default_illegal_callback_fn(messag
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
     let msg = str::from_utf8_unchecked(msg_slice);
-    panic!("[libsecp256k1] illegal argument. {}", msg);
+    #[cfg(feature = "std")]
+    println!("[libsecp256k1] illegal argument. {}", msg);
 }
 
 /// **This function is an override for the C function, this is the an edited version of the original description:**
 ///
 /// A callback function to be called when an internal consistency check
-/// fails. **This will cause a panic**.
+/// fails.
 ///
 /// This can only trigger in case of a hardware failure, miscompilation,
 /// memory corruption, serious bug in the library, or other error would can
@@ -623,7 +624,8 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_0_default_error_callback_fn(message:
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
     let msg = str::from_utf8_unchecked(msg_slice);
-    panic!("[libsecp256k1] internal consistency check failed {}", msg);
+    #[cfg(feature = "std")]
+    println!("[libsecp256k1] internal consistency check failed {}", msg);
 }
 
 #[cfg(not(rust_secp_no_symbol_renaming))]
