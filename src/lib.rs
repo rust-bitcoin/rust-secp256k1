@@ -938,14 +938,12 @@ mod tests {
 
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
-    #[should_panic]
-    fn test_panic_raw_ctx() {
+    #[ignore] // Panicking from C may trap (SIGILL) intentionally, so we test this manually.
+    fn test_panic_raw_ctx_should_terminate_abnormally() {
         let ctx_vrfy = Secp256k1::verification_only();
         let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
-        let (sk, _) = raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
-        let msg = Message::from_slice(&[2u8; 32]).unwrap();
-        // Try signing
-        raw_ctx_verify_as_full.sign(&msg, &sk);
+        // Generating a key pair in verify context will panic (ARG_CHECK).
+        raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
     }
 
     #[test]
