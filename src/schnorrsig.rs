@@ -113,6 +113,26 @@ impl KeyPair {
         &mut self.0
     }
 
+    /// Creates a Schnorr KeyPair directly from generic Secp256k1 secret key
+    ///
+    /// Panics if internal representation of the provided [`SecretKey`] does not
+    /// holds correct secret key value obtained from Secp256k1 library
+    /// previously
+    #[inline]
+    pub fn from_secret_key<C: Signing>(
+        secp: &Secp256k1<C>,
+        sk: ::key::SecretKey,
+    ) -> KeyPair {
+        unsafe {
+            let mut kp = ffi::KeyPair::new();
+            if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, sk.as_c_ptr()) == 1 {
+                KeyPair(kp)
+            } else {
+                panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
+            }
+        }
+    }
+
     /// Creates a Schnorr KeyPair directly from a secret key slice
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
