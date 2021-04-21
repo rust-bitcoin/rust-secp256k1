@@ -18,7 +18,33 @@ use {Message, Signing, Verification};
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
-serde_impl!(Signature, constants::SCHNORRSIG_SIGNATURE_SIZE);
+
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for Signature {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for Signature {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing 64 byte schnorr signature"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 64 bytes schnorr signature",
+                Signature::from_slice
+            ))
+        }
+    }
+}
 
 impl fmt::LowerHex for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -376,7 +402,32 @@ impl From<::key::PublicKey> for PublicKey {
     }
 }
 
-serde_impl_from_slice!(PublicKey);
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for PublicKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize())
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for PublicKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing 32 byte schnorr public key"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 32 bytes schnorr public key",
+                PublicKey::from_slice
+            ))
+        }
+    }
+}
 
 impl<C: Signing> Secp256k1<C> {
     fn schnorrsig_sign_helper(
@@ -724,7 +775,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
-    fn test_signature_serde() {
+    fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 
         let s = Secp256k1::new();
@@ -745,8 +796,30 @@ mod tests {
             14d0bf1a8953506fb460f58be141af767fd112535fb3922ef217308e2c26706f1eeb432b3dba9a01082f9e4d4ef5678ad0d9d532c0dfa907b568722d0b0119ba\
         ";
 
+        static PK_BYTES: [u8; 32] = [
+            24, 132, 87, 129, 246, 49, 196, 143, 28, 151, 9, 226, 48, 146, 6, 125, 6, 131, 127,
+            48, 170, 12, 208, 84, 74, 200, 135, 254, 145, 221, 209, 102
+        ];
+        static PK_STR: &'static str = "\
+            18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+        ";
+        let pk = PublicKey::from_slice(&PK_BYTES).unwrap();
+
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES[..])]);
+
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
+        assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
+
+        assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES[..])]);
+
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
     }
     #[test]
     fn test_addition() {

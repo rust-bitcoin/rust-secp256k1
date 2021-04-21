@@ -213,7 +213,32 @@ impl SecretKey {
     }
 }
 
-serde_impl!(SecretKey, constants::SECRET_KEY_SIZE);
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for SecretKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for SecretKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing 32 byte SecretKey"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 32 bytes SecretKey",
+                SecretKey::from_slice
+            ))
+        }
+    }
+}
 
 impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions
@@ -402,7 +427,32 @@ impl From<ffi::PublicKey> for PublicKey {
     }
 }
 
-serde_impl_from_slice!(PublicKey);
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for PublicKey {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize())
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for PublicKey {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "an ASCII hex string representing a public key"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "a bytestring representing a public key",
+                PublicKey::from_slice
+            ))
+        }
+    }
+}
 
 impl PartialOrd for PublicKey {
     fn partial_cmp(&self, other: &PublicKey) -> Option<::core::cmp::Ordering> {
@@ -818,7 +868,7 @@ mod test {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_signature_serde() {
+    fn test_serde() {
         use serde_test::{Configure, Token, assert_tokens};
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -846,8 +896,20 @@ mod test {
         let pk = PublicKey::from_secret_key(&s, &sk);
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
+        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+
         assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES)]);
+        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES)]);
+
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
+
     }
 }
