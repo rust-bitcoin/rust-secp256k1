@@ -51,7 +51,7 @@ impl str::FromStr for SecretKey {
     fn from_str(s: &str) -> Result<SecretKey, Error> {
         let mut res = [0; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) => Ok(SecretKey(res)),
+            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_slice(&res),
             _ => Err(Error::InvalidSecretKey)
         }
     }
@@ -525,6 +525,10 @@ mod test {
     fn invalid_secret_key() {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
+        assert_eq!(
+            SecretKey::from_str(&format!("0000000000000000000000000000000000000000000000000000000000000000")),
+            Err(InvalidSecretKey)
+        );
         // -1
         assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey));
         // Top of range
