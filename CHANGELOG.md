@@ -1,4 +1,10 @@
 
+# 0.20.2 - 2021-04-27
+
+* Fix some WASM build issues
+* Add [some missing `#derive`s to `Error`](https://github.com/rust-bitcoin/rust-secp256k1/pull/277/)
+* Add [serde support for Schnorr signatures and for deserializing from owned types](https://github.com/rust-bitcoin/rust-secp256k1/pull/270/)
+
 # 0.20.0 - 2020-12-21
 
 * [remove `ffi::PublicKey::blank`](https://github.com/rust-bitcoin/rust-secp256k1/pull/232) and replace with unsafe [`ffi::PublicKey::new` and `ffi::PublicKey::from_array_unchecked`](https://github.com/rust-bitcoin/rust-secp256k1/pull/253/); similar for all other FFI types
