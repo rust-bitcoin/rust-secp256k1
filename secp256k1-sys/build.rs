@@ -43,7 +43,9 @@ fn main() {
                .define("USE_SCALAR_INV_BUILTIN", Some("1"));
 
     if cfg!(feature = "lowmemory") {
-        base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume neglible memory
+        base_config.define("ECMULT_WINDOW_SIZE", Some("4")) // A low-enough value to consume neglible memory
+            .include("depend/config")
+            .define("USE_ECMULT_STATIC_PRECOMPUTATION", Some("1"));
     } else {
         base_config.define("ECMULT_WINDOW_SIZE", Some("15")); // This is the default in the configure file (`auto`)
     }
