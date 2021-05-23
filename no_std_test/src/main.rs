@@ -15,7 +15,7 @@
 //! # secp256k1 no-std test.
 //! This binary is a short smallest rust code to produce a working binary *without libstd*.
 //! This gives us 2 things:
-//!     1. Test that the parts of the code that should work in a no-std enviroment actually work.
+//!     1. Test that the parts of the code that should work in a no-std enviroment actually work. Note that this is not a comprehensive list.
 //!     2. Test that we don't accidentally import libstd into `secp256k1`.
 //!
 //! The first is tested using the following command `cargo run --release | grep -q "Verified Successfully"`.
@@ -95,6 +95,13 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
 
     let sig = secp.sign(&message, &secret_key);
     assert!(secp.verify(&message, &sig, &public_key).is_ok());
+
+    let rec_sig = secp.sign_recoverable(&message, &secret_key);
+    assert!(secp.verify(&message, &rec_sig.to_standard(), &public_key).is_ok());
+    assert_eq!(public_key, secp.recover(&message, &rec_sig).unwrap());
+    let (rec_id, data) = rec_sig.serialize_compact();
+    let new_rec_sig = recovery::RecoverableSignature::from_compact(&data, rec_id).unwrap();
+    assert_eq!(rec_sig, new_rec_sig);
 
     let mut cbor_ser = [0u8; 100];
     let writer = SliceWrite::new(&mut cbor_ser[..]);
