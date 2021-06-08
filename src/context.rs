@@ -8,10 +8,12 @@ use Secp256k1;
 #[cfg(feature = "std")]
 pub use self::std_only::*;
 
-#[cfg(feature = "global-context")]
+#[cfg(feature = "global-context-less-secure")]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
+    #[cfg(feature = "global-context")]
     use rand;
+
     use std::ops::Deref;
     use std::sync::Once;
     use {Secp256k1, All};
@@ -22,6 +24,9 @@ pub mod global {
     }
 
     /// A global, static context to avoid repeatedly creating contexts where one can't be passed
+    ///
+    /// If the global-context feature is enabled (and not just the global-context-less-secure),
+    /// this will have been randomized.
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
 
     impl Deref for GlobalContext {
@@ -32,7 +37,10 @@ pub mod global {
             static mut CONTEXT: Option<Secp256k1<All>> = None;
             ONCE.call_once(|| unsafe {
                 let mut ctx = Secp256k1::new();
-                ctx.randomize(&mut rand::thread_rng());
+                #[cfg(feature = "global-context")]
+                {
+                    ctx.randomize(&mut rand::thread_rng());
+                }
                 CONTEXT = Some(ctx);
             });
             unsafe { CONTEXT.as_ref().unwrap() }
