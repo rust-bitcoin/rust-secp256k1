@@ -43,10 +43,23 @@
 #![feature(start)]
 #![feature(core_intrinsics)]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 #![no_std]
 extern crate libc;
 extern crate secp256k1;
 extern crate serde_cbor;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+use core::alloc::Layout;
+
+#[cfg(feature = "alloc")]
+extern crate wee_alloc;
+
+#[cfg(feature = "alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use core::fmt::{self, write, Write};
 use core::intrinsics;
@@ -120,6 +133,17 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     assert_ne!(x_arr, [0u8; 32]);
     assert_ne!(&y_arr[..], &[0u8; 32][..]);
 
+    #[cfg(feature = "alloc")]
+    {
+        let secp_alloc = Secp256k1::new();
+        let public_key = PublicKey::from_secret_key(&secp_alloc, &secret_key);
+        let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+
+        let sig = secp_alloc.sign(&message, &secret_key);
+        assert!(secp_alloc.verify(&message, &sig, &public_key).is_ok());
+        unsafe { libc::printf("Verified alloc Successfully!\n\0".as_ptr() as _) };
+    }
+
     unsafe { libc::printf("Verified Successfully!\n\0".as_ptr() as _) };
     0
 }
@@ -169,5 +193,11 @@ fn panic(info: &PanicInfo) -> ! {
     let mut buf = Print::new();
     write(&mut buf, *msg).unwrap();
     buf.print();
+    intrinsics::abort()
+}
+
+#[alloc_error_handler]
+fn alloc_error(_layout: Layout) -> ! {
+    unsafe { libc::printf("alloc shi1\n\0".as_ptr() as _) };
     intrinsics::abort()
 }

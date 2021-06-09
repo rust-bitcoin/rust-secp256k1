@@ -5,8 +5,8 @@ use ffi::types::{c_uint, c_void};
 use Error;
 use Secp256k1;
 
-#[cfg(feature = "std")]
-pub use self::std_only::*;
+#[cfg(any(feature = "std", feature = "alloc"))]
+pub use self::alloc_only::*;
 
 #[cfg(feature = "global-context-less-secure")]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
@@ -93,14 +93,18 @@ mod private {
     impl<'buf> Sealed for SignOnlyPreallocated<'buf> {}
 }
 
-#[cfg(feature = "std")]
-mod std_only {
+#[cfg(any(feature = "std", feature = "alloc"))]
+mod alloc_only {
+    #[cfg(feature = "std")]
+    use std::alloc;
+    #[cfg(not(feature = "std"))]
+    use alloc::alloc;
+
     impl private::Sealed for SignOnly {}
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
 
     use super::*;
-    use std::alloc;
     const ALIGN_TO: usize = mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.

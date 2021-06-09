@@ -3,7 +3,11 @@ name = "no_std_test"
 version = "0.1.0"
 authors = ["Elichai Turkel <elichai.turkel@gmail.com>"]
 
+[features]
+alloc = ["secp256k1/alloc", "wee_alloc"]
+
 [dependencies]
+wee_alloc = { version = "0.4.5", optional = true }
 secp256k1 = { path = "../", default-features = false, features = ["serde", "rand", "recovery"] }
 libc = { version = "0.2", default-features = false }
 serde_cbor = { version = "0.10", default-features = false } # A random serializer that supports no-std.

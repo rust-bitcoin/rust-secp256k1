@@ -76,6 +76,7 @@ if [ "$DO_ASAN" = true ]; then
     RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes'   \
     cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
     cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
+    cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
 fi
 
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
