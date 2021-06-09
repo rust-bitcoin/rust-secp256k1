@@ -690,7 +690,13 @@ mod test {
 
         let s = Secp256k1::signing_only();
         let sk = SecretKey::from_slice(&SK_BYTES).expect("sk");
+
+        // In fuzzing mode secret->public key derivation is different, so
+        // hard-code the epected result.
+        #[cfg(not(fuzzing))]
         let pk = PublicKey::from_secret_key(&s, &sk);
+        #[cfg(fuzzing)]
+        let pk = PublicKey::from_slice(&[0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
         assert_eq!(
             sk.to_string(),
@@ -733,6 +739,9 @@ mod test {
     }
 
     #[test]
+    // In fuzzing mode the Y coordinate is expected to match the X, so this
+    // test uses invalid public keys.
+    #[cfg(not(fuzzing))]
     fn test_pubkey_serialize() {
         struct DumbRng(u32);
         impl RngCore for DumbRng {
@@ -841,7 +850,7 @@ mod test {
         assert_eq!(set.len(), COUNT);
     }
 
-    #[test]
+    #[cfg_attr(not(fuzzing), test)]
     fn pubkey_combine() {
         let compressed1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -861,7 +870,7 @@ mod test {
         assert_eq!(sum1.unwrap(), exp_sum);
     }
 
-    #[test]
+    #[cfg_attr(not(fuzzing), test)]
     fn pubkey_combine_keys() {
         let compressed1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -882,6 +891,24 @@ mod test {
         assert!(sum2.is_ok());
         assert_eq!(sum1, sum2);
         assert_eq!(sum1.unwrap(), exp_sum);
+    }
+
+    #[test]
+    fn create_pubkey_combine() {
+        let s = Secp256k1::new();
+
+        let (mut sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+
+        let sum1 = pk1.combine(&pk2);
+        assert!(sum1.is_ok());
+        let sum2 = pk2.combine(&pk1);
+        assert!(sum2.is_ok());
+        assert_eq!(sum1, sum2);
+
+        assert!(sk1.add_assign(&sk2.as_ref()[..]).is_ok());
+        let sksum = PublicKey::from_secret_key(&s, &sk1);
+        assert_eq!(Ok(sksum), sum1);
     }
 
     #[test]
@@ -931,9 +958,14 @@ mod test {
         ";
 
         let s = Secp256k1::new();
-
         let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
+
+        // In fuzzing mode secret->public key derivation is different, so
+        // hard-code the epected result.
+        #[cfg(not(fuzzing))]
         let pk = PublicKey::from_secret_key(&s, &sk);
+        #[cfg(fuzzing)]
+        let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
         assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
