@@ -20,7 +20,7 @@
 use core::{fmt, str};
 
 use super::{from_hex, Secp256k1};
-use super::Error::{self, InvalidPublicKey, InvalidSecretKey};
+use super::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
 use Signing;
 use Verification;
 use constants;
@@ -395,12 +395,16 @@ impl PublicKey {
 
     /// Adds the keys in the provided slice together, returning the sum. Returns
     /// an error if the result would be the point at infinity, i.e. we are adding
-    /// a point to its own negation
+    /// a point to its own negation, if the provided slice has no element in it,
+    /// or if the number of element it contains is greater than i32::MAX.
     pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, Error> {
         use core::mem::transmute;
         use core::i32::MAX;
 
-        debug_assert!(keys.len() < MAX as usize);
+        if keys.is_empty() || keys.len() > MAX as usize {
+            return Err(InvalidPublicKeySum);
+        }
+
         unsafe {
             let mut ret = ffi::PublicKey::new();
             let ptrs : &[*const ffi::PublicKey] =
@@ -414,7 +418,7 @@ impl PublicKey {
             {
                 Ok(PublicKey(ret))
             } else {
-                Err(InvalidPublicKey)
+                Err(InvalidPublicKeySum)
             }
         }
     }
@@ -891,6 +895,11 @@ mod test {
         assert!(sum2.is_ok());
         assert_eq!(sum1, sum2);
         assert_eq!(sum1.unwrap(), exp_sum);
+    }
+
+    #[cfg_attr(not(fuzzing), test)]
+    fn pubkey_combine_keys_empty_slice() {
+        assert!(PublicKey::combine_keys(&[]).is_err());
     }
 
     #[test]
