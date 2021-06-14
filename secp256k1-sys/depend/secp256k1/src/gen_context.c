@@ -4,15 +4,21 @@
  * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
  ***********************************************************************/
 
-// Autotools creates libsecp256k1-config.h, of which ECMULT_GEN_PREC_BITS is needed.
-// ifndef guard so downstream users can define their own if they do not use autotools.
+/* Autotools creates libsecp256k1-config.h, of which ECMULT_GEN_PREC_BITS is needed.
+   ifndef guard so downstream users can define their own if they do not use autotools. */
 #if !defined(ECMULT_GEN_PREC_BITS)
 #include "libsecp256k1-config.h"
 #endif
-#define USE_BASIC_CONFIG 1
-#include "basic-config.h"
 
-#include "include/secp256k1.h"
+/* We can't require the precomputed tables when creating them. */
+#undef USE_ECMULT_STATIC_PRECOMPUTATION
+
+/* In principle we could use external ASM, but this yields only a minor speedup in
+   build time and it's very complicated. In particular when cross-compiling, we'd
+   need to build the external ASM for the build and the host machine. */
+#undef USE_EXTERNAL_ASM
+
+#include "../include/secp256k1.h"
 #include "assumptions.h"
 #include "util.h"
 #include "field_impl.h"
@@ -26,13 +32,13 @@ static void default_error_callback_fn(const char* str, void* data) {
     abort();
 }
 
-static const rustsecp256k1_v0_4_0_callback default_error_callback = {
+static const rustsecp256k1_v0_4_1_callback default_error_callback = {
     default_error_callback_fn,
     NULL
 };
 
 int main(int argc, char **argv) {
-    rustsecp256k1_v0_4_0_ecmult_gen_context ctx;
+    rustsecp256k1_v0_4_1_ecmult_gen_context ctx;
     void *prealloc, *base;
     int inner;
     int outer;
@@ -47,19 +53,19 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    fprintf(fp, "#ifndef _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
-    fprintf(fp, "#define _SECP256K1_ECMULT_STATIC_CONTEXT_\n");
+    fprintf(fp, "#ifndef SECP256K1_ECMULT_STATIC_CONTEXT_H\n");
+    fprintf(fp, "#define SECP256K1_ECMULT_STATIC_CONTEXT_H\n");
     fprintf(fp, "#include \"src/group.h\"\n");
     fprintf(fp, "#define SC SECP256K1_GE_STORAGE_CONST\n");
     fprintf(fp, "#if ECMULT_GEN_PREC_N != %d || ECMULT_GEN_PREC_G != %d\n", ECMULT_GEN_PREC_N, ECMULT_GEN_PREC_G);
     fprintf(fp, "   #error configuration mismatch, invalid ECMULT_GEN_PREC_N, ECMULT_GEN_PREC_G. Try deleting ecmult_static_context.h before the build.\n");
     fprintf(fp, "#endif\n");
-    fprintf(fp, "static const rustsecp256k1_v0_4_0_ge_storage rustsecp256k1_v0_4_0_ecmult_static_context[ECMULT_GEN_PREC_N][ECMULT_GEN_PREC_G] = {\n");
+    fprintf(fp, "static const rustsecp256k1_v0_4_1_ge_storage rustsecp256k1_v0_4_1_ecmult_static_context[ECMULT_GEN_PREC_N][ECMULT_GEN_PREC_G] = {\n");
 
     base = checked_malloc(&default_error_callback, SECP256K1_ECMULT_GEN_CONTEXT_PREALLOCATED_SIZE);
     prealloc = base;
-    rustsecp256k1_v0_4_0_ecmult_gen_context_init(&ctx);
-    rustsecp256k1_v0_4_0_ecmult_gen_context_build(&ctx, &prealloc);
+    rustsecp256k1_v0_4_1_ecmult_gen_context_init(&ctx);
+    rustsecp256k1_v0_4_1_ecmult_gen_context_build(&ctx, &prealloc);
     for(outer = 0; outer != ECMULT_GEN_PREC_N; outer++) {
         fprintf(fp,"{\n");
         for(inner = 0; inner != ECMULT_GEN_PREC_G; inner++) {
@@ -77,7 +83,7 @@ int main(int argc, char **argv) {
         }
     }
     fprintf(fp,"};\n");
-    rustsecp256k1_v0_4_0_ecmult_gen_context_clear(&ctx);
+    rustsecp256k1_v0_4_1_ecmult_gen_context_clear(&ctx);
     free(base);
 
     fprintf(fp, "#undef SC\n");

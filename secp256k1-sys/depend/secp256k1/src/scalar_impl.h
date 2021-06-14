@@ -28,232 +28,13 @@
 #error "Please select wide multiplication implementation"
 #endif
 
-static const rustsecp256k1_v0_4_0_scalar rustsecp256k1_v0_4_0_scalar_one = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1);
-static const rustsecp256k1_v0_4_0_scalar rustsecp256k1_v0_4_0_scalar_zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
+static const rustsecp256k1_v0_4_1_scalar rustsecp256k1_v0_4_1_scalar_one = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1);
+static const rustsecp256k1_v0_4_1_scalar rustsecp256k1_v0_4_1_scalar_zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
 
-#ifndef USE_NUM_NONE
-static void rustsecp256k1_v0_4_0_scalar_get_num(rustsecp256k1_v0_4_0_num *r, const rustsecp256k1_v0_4_0_scalar *a) {
-    unsigned char c[32];
-    rustsecp256k1_v0_4_0_scalar_get_b32(c, a);
-    rustsecp256k1_v0_4_0_num_set_bin(r, c, 32);
-}
-
-/** secp256k1 curve order, see rustsecp256k1_v0_4_0_ecdsa_const_order_as_fe in ecdsa_impl.h */
-static void rustsecp256k1_v0_4_0_scalar_order_get_num(rustsecp256k1_v0_4_0_num *r) {
-#if defined(EXHAUSTIVE_TEST_ORDER)
-    static const unsigned char order[32] = {
-        0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,EXHAUSTIVE_TEST_ORDER
-    };
-#else
-    static const unsigned char order[32] = {
-        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
-        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
-        0xBA,0xAE,0xDC,0xE6,0xAF,0x48,0xA0,0x3B,
-        0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x41
-    };
-#endif
-    rustsecp256k1_v0_4_0_num_set_bin(r, order, 32);
-}
-#endif
-
-static int rustsecp256k1_v0_4_0_scalar_set_b32_seckey(rustsecp256k1_v0_4_0_scalar *r, const unsigned char *bin) {
+static int rustsecp256k1_v0_4_1_scalar_set_b32_seckey(rustsecp256k1_v0_4_1_scalar *r, const unsigned char *bin) {
     int overflow;
-    rustsecp256k1_v0_4_0_scalar_set_b32(r, bin, &overflow);
-    return (!overflow) & (!rustsecp256k1_v0_4_0_scalar_is_zero(r));
-}
-
-static void rustsecp256k1_v0_4_0_scalar_inverse(rustsecp256k1_v0_4_0_scalar *r, const rustsecp256k1_v0_4_0_scalar *x) {
-#if defined(EXHAUSTIVE_TEST_ORDER)
-    int i;
-    *r = 0;
-    for (i = 0; i < EXHAUSTIVE_TEST_ORDER; i++)
-        if ((i * *x) % EXHAUSTIVE_TEST_ORDER == 1)
-            *r = i;
-    /* If this VERIFY_CHECK triggers we were given a noninvertible scalar (and thus
-     * have a composite group order; fix it in exhaustive_tests.c). */
-    VERIFY_CHECK(*r != 0);
-}
-#else
-    rustsecp256k1_v0_4_0_scalar *t;
-    int i;
-    /* First compute xN as x ^ (2^N - 1) for some values of N,
-     * and uM as x ^ M for some values of M. */
-    rustsecp256k1_v0_4_0_scalar x2, x3, x6, x8, x14, x28, x56, x112, x126;
-    rustsecp256k1_v0_4_0_scalar u2, u5, u9, u11, u13;
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&u2, x);
-    rustsecp256k1_v0_4_0_scalar_mul(&x2, &u2,  x);
-    rustsecp256k1_v0_4_0_scalar_mul(&u5, &u2, &x2);
-    rustsecp256k1_v0_4_0_scalar_mul(&x3, &u5,  &u2);
-    rustsecp256k1_v0_4_0_scalar_mul(&u9, &x3, &u2);
-    rustsecp256k1_v0_4_0_scalar_mul(&u11, &u9, &u2);
-    rustsecp256k1_v0_4_0_scalar_mul(&u13, &u11, &u2);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x6, &u13);
-    rustsecp256k1_v0_4_0_scalar_sqr(&x6, &x6);
-    rustsecp256k1_v0_4_0_scalar_mul(&x6, &x6, &u11);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x8, &x6);
-    rustsecp256k1_v0_4_0_scalar_sqr(&x8, &x8);
-    rustsecp256k1_v0_4_0_scalar_mul(&x8, &x8,  &x2);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x14, &x8);
-    for (i = 0; i < 5; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(&x14, &x14);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(&x14, &x14, &x6);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x28, &x14);
-    for (i = 0; i < 13; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(&x28, &x28);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(&x28, &x28, &x14);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x56, &x28);
-    for (i = 0; i < 27; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(&x56, &x56);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(&x56, &x56, &x28);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x112, &x56);
-    for (i = 0; i < 55; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(&x112, &x112);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(&x112, &x112, &x56);
-
-    rustsecp256k1_v0_4_0_scalar_sqr(&x126, &x112);
-    for (i = 0; i < 13; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(&x126, &x126);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(&x126, &x126, &x14);
-
-    /* Then accumulate the final result (t starts at x126). */
-    t = &x126;
-    for (i = 0; i < 3; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u5); /* 101 */
-    for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u5); /* 101 */
-    for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u11); /* 1011 */
-    for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u11); /* 1011 */
-    for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 5; i++) { /* 00 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u13); /* 1101 */
-    for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u5); /* 101 */
-    for (i = 0; i < 3; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u9); /* 1001 */
-    for (i = 0; i < 6; i++) { /* 000 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u5); /* 101 */
-    for (i = 0; i < 10; i++) { /* 0000000 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 4; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x3); /* 111 */
-    for (i = 0; i < 9; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x8); /* 11111111 */
-    for (i = 0; i < 5; i++) { /* 0 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u9); /* 1001 */
-    for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u11); /* 1011 */
-    for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u13); /* 1101 */
-    for (i = 0; i < 5; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &x2); /* 11 */
-    for (i = 0; i < 6; i++) { /* 00 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u13); /* 1101 */
-    for (i = 0; i < 10; i++) { /* 000000 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u13); /* 1101 */
-    for (i = 0; i < 4; i++) {
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, &u9); /* 1001 */
-    for (i = 0; i < 6; i++) { /* 00000 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(t, t, x); /* 1 */
-    for (i = 0; i < 8; i++) { /* 00 */
-        rustsecp256k1_v0_4_0_scalar_sqr(t, t);
-    }
-    rustsecp256k1_v0_4_0_scalar_mul(r, t, &x6); /* 111111 */
-}
-
-SECP256K1_INLINE static int rustsecp256k1_v0_4_0_scalar_is_even(const rustsecp256k1_v0_4_0_scalar *a) {
-    return !(a->d[0] & 1);
-}
-#endif
-
-static void rustsecp256k1_v0_4_0_scalar_inverse_var(rustsecp256k1_v0_4_0_scalar *r, const rustsecp256k1_v0_4_0_scalar *x) {
-#if defined(USE_SCALAR_INV_BUILTIN)
-    rustsecp256k1_v0_4_0_scalar_inverse(r, x);
-#elif defined(USE_SCALAR_INV_NUM)
-    unsigned char b[32];
-    rustsecp256k1_v0_4_0_num n, m;
-    rustsecp256k1_v0_4_0_scalar t = *x;
-    rustsecp256k1_v0_4_0_scalar_get_b32(b, &t);
-    rustsecp256k1_v0_4_0_num_set_bin(&n, b, 32);
-    rustsecp256k1_v0_4_0_scalar_order_get_num(&m);
-    rustsecp256k1_v0_4_0_num_mod_inverse(&n, &n, &m);
-    rustsecp256k1_v0_4_0_num_get_bin(b, 32, &n);
-    rustsecp256k1_v0_4_0_scalar_set_b32(r, b, NULL);
-    /* Verify that the inverse was computed correctly, without GMP code. */
-    rustsecp256k1_v0_4_0_scalar_mul(&t, &t, r);
-    CHECK(rustsecp256k1_v0_4_0_scalar_is_one(&t));
-#else
-#error "Please select scalar inverse implementation"
-#endif
+    rustsecp256k1_v0_4_1_scalar_set_b32(r, bin, &overflow);
+    return (!overflow) & (!rustsecp256k1_v0_4_1_scalar_is_zero(r));
 }
 
 /* These parameters are generated using sage/gen_exhaustive_groups.sage. */
@@ -272,7 +53,7 @@ static void rustsecp256k1_v0_4_0_scalar_inverse_var(rustsecp256k1_v0_4_0_scalar 
  * nontrivial to get full test coverage for the exhaustive tests. We therefore
  * (arbitrarily) set r2 = k + 5 (mod n) and r1 = k - r2 * lambda (mod n).
  */
-static void rustsecp256k1_v0_4_0_scalar_split_lambda(rustsecp256k1_v0_4_0_scalar *r1, rustsecp256k1_v0_4_0_scalar *r2, const rustsecp256k1_v0_4_0_scalar *k) {
+static void rustsecp256k1_v0_4_1_scalar_split_lambda(rustsecp256k1_v0_4_1_scalar *r1, rustsecp256k1_v0_4_1_scalar *r2, const rustsecp256k1_v0_4_1_scalar *k) {
     *r2 = (*k + 5) % EXHAUSTIVE_TEST_ORDER;
     *r1 = (*k + (EXHAUSTIVE_TEST_ORDER - *r2) * EXHAUSTIVE_TEST_LAMBDA) % EXHAUSTIVE_TEST_ORDER;
 }
@@ -280,13 +61,13 @@ static void rustsecp256k1_v0_4_0_scalar_split_lambda(rustsecp256k1_v0_4_0_scalar
 /**
  * The Secp256k1 curve has an endomorphism, where lambda * (x, y) = (beta * x, y), where
  * lambda is: */
-static const rustsecp256k1_v0_4_0_scalar rustsecp256k1_v0_4_0_const_lambda = SECP256K1_SCALAR_CONST(
+static const rustsecp256k1_v0_4_1_scalar rustsecp256k1_v0_4_1_const_lambda = SECP256K1_SCALAR_CONST(
     0x5363AD4CUL, 0xC05C30E0UL, 0xA5261C02UL, 0x8812645AUL,
     0x122E22EAUL, 0x20816678UL, 0xDF02967CUL, 0x1B23BD72UL
 );
 
 #ifdef VERIFY
-static void rustsecp256k1_v0_4_0_scalar_split_lambda_verify(const rustsecp256k1_v0_4_0_scalar *r1, const rustsecp256k1_v0_4_0_scalar *r2, const rustsecp256k1_v0_4_0_scalar *k);
+static void rustsecp256k1_v0_4_1_scalar_split_lambda_verify(const rustsecp256k1_v0_4_1_scalar *r1, const rustsecp256k1_v0_4_1_scalar *r2, const rustsecp256k1_v0_4_1_scalar *k);
 #endif
 
 /*
@@ -339,44 +120,44 @@ static void rustsecp256k1_v0_4_0_scalar_split_lambda_verify(const rustsecp256k1_
  *
  * See proof below.
  */
-static void rustsecp256k1_v0_4_0_scalar_split_lambda(rustsecp256k1_v0_4_0_scalar *r1, rustsecp256k1_v0_4_0_scalar *r2, const rustsecp256k1_v0_4_0_scalar *k) {
-    rustsecp256k1_v0_4_0_scalar c1, c2;
-    static const rustsecp256k1_v0_4_0_scalar minus_b1 = SECP256K1_SCALAR_CONST(
+static void rustsecp256k1_v0_4_1_scalar_split_lambda(rustsecp256k1_v0_4_1_scalar *r1, rustsecp256k1_v0_4_1_scalar *r2, const rustsecp256k1_v0_4_1_scalar *k) {
+    rustsecp256k1_v0_4_1_scalar c1, c2;
+    static const rustsecp256k1_v0_4_1_scalar minus_b1 = SECP256K1_SCALAR_CONST(
         0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
         0xE4437ED6UL, 0x010E8828UL, 0x6F547FA9UL, 0x0ABFE4C3UL
     );
-    static const rustsecp256k1_v0_4_0_scalar minus_b2 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_4_1_scalar minus_b2 = SECP256K1_SCALAR_CONST(
         0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL,
         0x8A280AC5UL, 0x0774346DUL, 0xD765CDA8UL, 0x3DB1562CUL
     );
-    static const rustsecp256k1_v0_4_0_scalar g1 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_4_1_scalar g1 = SECP256K1_SCALAR_CONST(
         0x3086D221UL, 0xA7D46BCDUL, 0xE86C90E4UL, 0x9284EB15UL,
         0x3DAA8A14UL, 0x71E8CA7FUL, 0xE893209AUL, 0x45DBB031UL
     );
-    static const rustsecp256k1_v0_4_0_scalar g2 = SECP256K1_SCALAR_CONST(
+    static const rustsecp256k1_v0_4_1_scalar g2 = SECP256K1_SCALAR_CONST(
         0xE4437ED6UL, 0x010E8828UL, 0x6F547FA9UL, 0x0ABFE4C4UL,
         0x221208ACUL, 0x9DF506C6UL, 0x1571B4AEUL, 0x8AC47F71UL
     );
     VERIFY_CHECK(r1 != k);
     VERIFY_CHECK(r2 != k);
     /* these _var calls are constant time since the shift amount is constant */
-    rustsecp256k1_v0_4_0_scalar_mul_shift_var(&c1, k, &g1, 384);
-    rustsecp256k1_v0_4_0_scalar_mul_shift_var(&c2, k, &g2, 384);
-    rustsecp256k1_v0_4_0_scalar_mul(&c1, &c1, &minus_b1);
-    rustsecp256k1_v0_4_0_scalar_mul(&c2, &c2, &minus_b2);
-    rustsecp256k1_v0_4_0_scalar_add(r2, &c1, &c2);
-    rustsecp256k1_v0_4_0_scalar_mul(r1, r2, &rustsecp256k1_v0_4_0_const_lambda);
-    rustsecp256k1_v0_4_0_scalar_negate(r1, r1);
-    rustsecp256k1_v0_4_0_scalar_add(r1, r1, k);
+    rustsecp256k1_v0_4_1_scalar_mul_shift_var(&c1, k, &g1, 384);
+    rustsecp256k1_v0_4_1_scalar_mul_shift_var(&c2, k, &g2, 384);
+    rustsecp256k1_v0_4_1_scalar_mul(&c1, &c1, &minus_b1);
+    rustsecp256k1_v0_4_1_scalar_mul(&c2, &c2, &minus_b2);
+    rustsecp256k1_v0_4_1_scalar_add(r2, &c1, &c2);
+    rustsecp256k1_v0_4_1_scalar_mul(r1, r2, &rustsecp256k1_v0_4_1_const_lambda);
+    rustsecp256k1_v0_4_1_scalar_negate(r1, r1);
+    rustsecp256k1_v0_4_1_scalar_add(r1, r1, k);
 
 #ifdef VERIFY
-    rustsecp256k1_v0_4_0_scalar_split_lambda_verify(r1, r2, k);
+    rustsecp256k1_v0_4_1_scalar_split_lambda_verify(r1, r2, k);
 #endif
 }
 
 #ifdef VERIFY
 /*
- * Proof for rustsecp256k1_v0_4_0_scalar_split_lambda's bounds.
+ * Proof for rustsecp256k1_v0_4_1_scalar_split_lambda's bounds.
  *
  * Let
  *  - epsilon1 = 2^256 * |g1/2^384 - b2/d|
@@ -479,8 +260,8 @@ static void rustsecp256k1_v0_4_0_scalar_split_lambda(rustsecp256k1_v0_4_0_scalar
  *
  * Q.E.D.
  */
-static void rustsecp256k1_v0_4_0_scalar_split_lambda_verify(const rustsecp256k1_v0_4_0_scalar *r1, const rustsecp256k1_v0_4_0_scalar *r2, const rustsecp256k1_v0_4_0_scalar *k) {
-    rustsecp256k1_v0_4_0_scalar s;
+static void rustsecp256k1_v0_4_1_scalar_split_lambda_verify(const rustsecp256k1_v0_4_1_scalar *r1, const rustsecp256k1_v0_4_1_scalar *r2, const rustsecp256k1_v0_4_1_scalar *k) {
+    rustsecp256k1_v0_4_1_scalar s;
     unsigned char buf1[32];
     unsigned char buf2[32];
 
@@ -496,19 +277,19 @@ static void rustsecp256k1_v0_4_0_scalar_split_lambda_verify(const rustsecp256k1_
         0x8a, 0x65, 0x28, 0x7b, 0xd4, 0x71, 0x79, 0xfb, 0x2b, 0xe0, 0x88, 0x46, 0xce, 0xa2, 0x67, 0xed
     };
 
-    rustsecp256k1_v0_4_0_scalar_mul(&s, &rustsecp256k1_v0_4_0_const_lambda, r2);
-    rustsecp256k1_v0_4_0_scalar_add(&s, &s, r1);
-    VERIFY_CHECK(rustsecp256k1_v0_4_0_scalar_eq(&s, k));
+    rustsecp256k1_v0_4_1_scalar_mul(&s, &rustsecp256k1_v0_4_1_const_lambda, r2);
+    rustsecp256k1_v0_4_1_scalar_add(&s, &s, r1);
+    VERIFY_CHECK(rustsecp256k1_v0_4_1_scalar_eq(&s, k));
 
-    rustsecp256k1_v0_4_0_scalar_negate(&s, r1);
-    rustsecp256k1_v0_4_0_scalar_get_b32(buf1, r1);
-    rustsecp256k1_v0_4_0_scalar_get_b32(buf2, &s);
-    VERIFY_CHECK(rustsecp256k1_v0_4_0_memcmp_var(buf1, k1_bound, 32) < 0 || rustsecp256k1_v0_4_0_memcmp_var(buf2, k1_bound, 32) < 0);
+    rustsecp256k1_v0_4_1_scalar_negate(&s, r1);
+    rustsecp256k1_v0_4_1_scalar_get_b32(buf1, r1);
+    rustsecp256k1_v0_4_1_scalar_get_b32(buf2, &s);
+    VERIFY_CHECK(rustsecp256k1_v0_4_1_memcmp_var(buf1, k1_bound, 32) < 0 || rustsecp256k1_v0_4_1_memcmp_var(buf2, k1_bound, 32) < 0);
 
-    rustsecp256k1_v0_4_0_scalar_negate(&s, r2);
-    rustsecp256k1_v0_4_0_scalar_get_b32(buf1, r2);
-    rustsecp256k1_v0_4_0_scalar_get_b32(buf2, &s);
-    VERIFY_CHECK(rustsecp256k1_v0_4_0_memcmp_var(buf1, k2_bound, 32) < 0 || rustsecp256k1_v0_4_0_memcmp_var(buf2, k2_bound, 32) < 0);
+    rustsecp256k1_v0_4_1_scalar_negate(&s, r2);
+    rustsecp256k1_v0_4_1_scalar_get_b32(buf1, r2);
+    rustsecp256k1_v0_4_1_scalar_get_b32(buf2, &s);
+    VERIFY_CHECK(rustsecp256k1_v0_4_1_memcmp_var(buf1, k2_bound, 32) < 0 || rustsecp256k1_v0_4_1_memcmp_var(buf2, k2_bound, 32) < 0);
 }
 #endif /* VERIFY */
 #endif /* !defined(EXHAUSTIVE_TEST_ORDER) */
