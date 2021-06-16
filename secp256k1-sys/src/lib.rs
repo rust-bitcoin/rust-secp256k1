@@ -518,6 +518,20 @@ extern "C" {
         internal_pubkey: *const XOnlyPublicKey,
         tweak32: *const c_uchar,
     ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_sec")]
+    pub fn secp256k1_keypair_sec(
+        cx: *const Context,
+        output_seckey: *mut c_uchar,
+        keypair: *const KeyPair
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_pub")]
+    pub fn secp256k1_keypair_pub(
+        cx: *const Context,
+        output_pubkey: *mut PublicKey,
+        keypair: *const KeyPair
+    ) -> c_int;
 }
 
 /// A reimplementation of the C function `secp256k1_context_create` in rust.

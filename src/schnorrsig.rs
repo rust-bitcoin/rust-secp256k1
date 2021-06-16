@@ -13,6 +13,7 @@ use core::{fmt, ptr, str};
 use ffi::{self, CPtr};
 use {constants, Secp256k1};
 use {Message, Signing, Verification};
+use SecretKey;
 
 /// Represents a Schnorr signature.
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
@@ -449,6 +450,38 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
     }
 }
 
+impl SecretKey {
+    /// Creates a new secret key using data from BIP-340 [`KeyPair`]
+    pub fn from_keypair<V: Verification>(secp: &Secp256k1<V>, keypair: &KeyPair) -> Self {
+        let mut sk = [0; constants::SECRET_KEY_SIZE];
+        unsafe {
+            let ret = ffi::secp256k1_keypair_sec(
+                secp.ctx,
+                sk.as_mut_c_ptr(),
+                keypair.as_ptr()
+            );
+            debug_assert_eq!(ret, 1);
+        }
+        SecretKey(sk)
+    }
+}
+
+impl ::key::PublicKey {
+    /// Creates a new compressed public key key using data from BIP-340 [`KeyPair`]
+    pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> Self {
+        unsafe {
+            let mut pk = ffi::PublicKey::new();
+            let ret = ffi::secp256k1_keypair_pub(
+                secp.ctx,
+                &mut pk,
+                keypair.as_ptr()
+            );
+            debug_assert_eq!(ret, 1);
+            ::key::PublicKey(pk)
+        }
+    }
+}
+
 impl<C: Signing> Secp256k1<C> {
     fn schnorrsig_sign_helper(
         &self,
@@ -573,6 +606,7 @@ mod tests {
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
+    use SecretKey;
 
     macro_rules! hex_32 {
         ($hex:expr) => {{
@@ -669,7 +703,7 @@ mod tests {
     }
 
     #[test]
-    fn pubkey_from_slice() {
+    fn test_pubkey_from_slice() {
         assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
         assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
         let pk = PublicKey::from_slice(&[
@@ -681,12 +715,25 @@ mod tests {
     }
 
     #[test]
-    fn pubkey_serialize_roundtrip() {
+    fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
         let (_, pubkey) = secp.generate_schnorrsig_keypair(&mut thread_rng());
         let ser = pubkey.serialize();
         let pubkey2 = PublicKey::from_slice(&ser).unwrap();
         assert_eq!(pubkey, pubkey2);
+    }
+
+    #[test]
+    fn test_xonly_key_extraction() {
+        let secp = Secp256k1::new();
+        let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
+        let keypair = KeyPair::from_seckey_str(&secp, sk_str).unwrap();
+        let sk = SecretKey::from_keypair(&secp, &keypair);
+        assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
+        let pk = ::key::PublicKey::from_keypair(&secp, &keypair);
+        assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
+        let xpk = PublicKey::from_keypair(&secp, &keypair);
+        assert_eq!(PublicKey::from(pk), xpk);
     }
 
     #[test]
