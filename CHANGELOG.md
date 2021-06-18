@@ -1,4 +1,14 @@
 
+# 0.20.3 - 2021-06-10
+
+* Fix [`SecretKey` validation in `from_str`](https://github.com/rust-bitcoin/rust-secp256k1/pull/296)
+* Add [`global-context-less-secure` feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/279) which creates a non-randomized global context (and does not require `rand` or `std`)
+* Add [`schnorrsig::KeyPair::from_secret_key` convenience function](https://github.com/rust-bitcoin/rust-secp256k1/pull/294)
+* Add [`combine_keys` function to `PublicKey`](https://github.com/rust-bitcoin/rust-secp256k1/pull/291)
+* [Reduce symbol visibility in C compilation to allow LTO to work](https://github.com/rust-bitcoin/rust-secp256k1/pull/289)
+* Add [`alloc` feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/300) **requiring rustc 1.36+** to enable context creation without std
+* [Rewrite stubbed-out-for-fuzzing version of the library](https://github.com/rust-bitcoin/rust-secp256k1/pull/282) to improve fuzzer accessibility
+
 # 0.20.2 - 2021-04-27
 
 * Fix some WASM build issues
