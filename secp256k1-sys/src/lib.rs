@@ -348,6 +348,18 @@ extern "C" {
                                         sk: *mut c_uchar,
                                         tweak: *const c_uchar)
                                         -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_sec")]
+    pub fn secp256k1_keypair_sec(cx: *const Context,
+                                 output_seckey: *mut c_uchar,
+                                 keypair: *const KeyPair)
+                                 -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_pub")]
+    pub fn secp256k1_keypair_pub(cx: *const Context,
+                                 output_pubkey: *mut PublicKey,
+                                 keypair: *const KeyPair)
+                                 -> c_int;
 }
 
 #[cfg(not(fuzzing))]
@@ -517,20 +529,6 @@ extern "C" {
         tweaked_pubkey_parity: c_int,
         internal_pubkey: *const XOnlyPublicKey,
         tweak32: *const c_uchar,
-    ) -> c_int;
-
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_sec")]
-    pub fn secp256k1_keypair_sec(
-        cx: *const Context,
-        output_seckey: *mut c_uchar,
-        keypair: *const KeyPair
-    ) -> c_int;
-
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_pub")]
-    pub fn secp256k1_keypair_pub(
-        cx: *const Context,
-        output_pubkey: *mut PublicKey,
-        keypair: *const KeyPair
     ) -> c_int;
 }
 
