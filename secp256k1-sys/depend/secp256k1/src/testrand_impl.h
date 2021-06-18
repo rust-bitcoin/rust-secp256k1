@@ -14,38 +14,38 @@
 #include "testrand.h"
 #include "hash.h"
 
-static rustsecp256k1_v0_4_0_rfc6979_hmac_sha256 rustsecp256k1_v0_4_0_test_rng;
-static uint32_t rustsecp256k1_v0_4_0_test_rng_precomputed[8];
-static int rustsecp256k1_v0_4_0_test_rng_precomputed_used = 8;
-static uint64_t rustsecp256k1_v0_4_0_test_rng_integer;
-static int rustsecp256k1_v0_4_0_test_rng_integer_bits_left = 0;
+static rustsecp256k1_v0_4_1_rfc6979_hmac_sha256 rustsecp256k1_v0_4_1_test_rng;
+static uint32_t rustsecp256k1_v0_4_1_test_rng_precomputed[8];
+static int rustsecp256k1_v0_4_1_test_rng_precomputed_used = 8;
+static uint64_t rustsecp256k1_v0_4_1_test_rng_integer;
+static int rustsecp256k1_v0_4_1_test_rng_integer_bits_left = 0;
 
-SECP256K1_INLINE static void rustsecp256k1_v0_4_0_testrand_seed(const unsigned char *seed16) {
-    rustsecp256k1_v0_4_0_rfc6979_hmac_sha256_initialize(&rustsecp256k1_v0_4_0_test_rng, seed16, 16);
+SECP256K1_INLINE static void rustsecp256k1_v0_4_1_testrand_seed(const unsigned char *seed16) {
+    rustsecp256k1_v0_4_1_rfc6979_hmac_sha256_initialize(&rustsecp256k1_v0_4_1_test_rng, seed16, 16);
 }
 
-SECP256K1_INLINE static uint32_t rustsecp256k1_v0_4_0_testrand32(void) {
-    if (rustsecp256k1_v0_4_0_test_rng_precomputed_used == 8) {
-        rustsecp256k1_v0_4_0_rfc6979_hmac_sha256_generate(&rustsecp256k1_v0_4_0_test_rng, (unsigned char*)(&rustsecp256k1_v0_4_0_test_rng_precomputed[0]), sizeof(rustsecp256k1_v0_4_0_test_rng_precomputed));
-        rustsecp256k1_v0_4_0_test_rng_precomputed_used = 0;
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_4_1_testrand32(void) {
+    if (rustsecp256k1_v0_4_1_test_rng_precomputed_used == 8) {
+        rustsecp256k1_v0_4_1_rfc6979_hmac_sha256_generate(&rustsecp256k1_v0_4_1_test_rng, (unsigned char*)(&rustsecp256k1_v0_4_1_test_rng_precomputed[0]), sizeof(rustsecp256k1_v0_4_1_test_rng_precomputed));
+        rustsecp256k1_v0_4_1_test_rng_precomputed_used = 0;
     }
-    return rustsecp256k1_v0_4_0_test_rng_precomputed[rustsecp256k1_v0_4_0_test_rng_precomputed_used++];
+    return rustsecp256k1_v0_4_1_test_rng_precomputed[rustsecp256k1_v0_4_1_test_rng_precomputed_used++];
 }
 
-static uint32_t rustsecp256k1_v0_4_0_testrand_bits(int bits) {
+static uint32_t rustsecp256k1_v0_4_1_testrand_bits(int bits) {
     uint32_t ret;
-    if (rustsecp256k1_v0_4_0_test_rng_integer_bits_left < bits) {
-        rustsecp256k1_v0_4_0_test_rng_integer |= (((uint64_t)rustsecp256k1_v0_4_0_testrand32()) << rustsecp256k1_v0_4_0_test_rng_integer_bits_left);
-        rustsecp256k1_v0_4_0_test_rng_integer_bits_left += 32;
+    if (rustsecp256k1_v0_4_1_test_rng_integer_bits_left < bits) {
+        rustsecp256k1_v0_4_1_test_rng_integer |= (((uint64_t)rustsecp256k1_v0_4_1_testrand32()) << rustsecp256k1_v0_4_1_test_rng_integer_bits_left);
+        rustsecp256k1_v0_4_1_test_rng_integer_bits_left += 32;
     }
-    ret = rustsecp256k1_v0_4_0_test_rng_integer;
-    rustsecp256k1_v0_4_0_test_rng_integer >>= bits;
-    rustsecp256k1_v0_4_0_test_rng_integer_bits_left -= bits;
+    ret = rustsecp256k1_v0_4_1_test_rng_integer;
+    rustsecp256k1_v0_4_1_test_rng_integer >>= bits;
+    rustsecp256k1_v0_4_1_test_rng_integer_bits_left -= bits;
     ret &= ((~((uint32_t)0)) >> (32 - bits));
     return ret;
 }
 
-static uint32_t rustsecp256k1_v0_4_0_testrand_int(uint32_t range) {
+static uint32_t rustsecp256k1_v0_4_1_testrand_int(uint32_t range) {
     /* We want a uniform integer between 0 and range-1, inclusive.
      * B is the smallest number such that range <= 2**B.
      * two mechanisms implemented here:
@@ -77,25 +77,25 @@ static uint32_t rustsecp256k1_v0_4_0_testrand_int(uint32_t range) {
         mult = 1;
     }
     while(1) {
-        uint32_t x = rustsecp256k1_v0_4_0_testrand_bits(bits);
+        uint32_t x = rustsecp256k1_v0_4_1_testrand_bits(bits);
         if (x < trange) {
             return (mult == 1) ? x : (x % range);
         }
     }
 }
 
-static void rustsecp256k1_v0_4_0_testrand256(unsigned char *b32) {
-    rustsecp256k1_v0_4_0_rfc6979_hmac_sha256_generate(&rustsecp256k1_v0_4_0_test_rng, b32, 32);
+static void rustsecp256k1_v0_4_1_testrand256(unsigned char *b32) {
+    rustsecp256k1_v0_4_1_rfc6979_hmac_sha256_generate(&rustsecp256k1_v0_4_1_test_rng, b32, 32);
 }
 
-static void rustsecp256k1_v0_4_0_testrand_bytes_test(unsigned char *bytes, size_t len) {
+static void rustsecp256k1_v0_4_1_testrand_bytes_test(unsigned char *bytes, size_t len) {
     size_t bits = 0;
     memset(bytes, 0, len);
     while (bits < len * 8) {
         int now;
         uint32_t val;
-        now = 1 + (rustsecp256k1_v0_4_0_testrand_bits(6) * rustsecp256k1_v0_4_0_testrand_bits(5) + 16) / 31;
-        val = rustsecp256k1_v0_4_0_testrand_bits(1);
+        now = 1 + (rustsecp256k1_v0_4_1_testrand_bits(6) * rustsecp256k1_v0_4_1_testrand_bits(5) + 16) / 31;
+        val = rustsecp256k1_v0_4_1_testrand_bits(1);
         while (now > 0 && bits < len * 8) {
             bytes[bits / 8] |= val << (bits % 8);
             now--;
@@ -104,15 +104,15 @@ static void rustsecp256k1_v0_4_0_testrand_bytes_test(unsigned char *bytes, size_
     }
 }
 
-static void rustsecp256k1_v0_4_0_testrand256_test(unsigned char *b32) {
-    rustsecp256k1_v0_4_0_testrand_bytes_test(b32, 32);
+static void rustsecp256k1_v0_4_1_testrand256_test(unsigned char *b32) {
+    rustsecp256k1_v0_4_1_testrand_bytes_test(b32, 32);
 }
 
-static void rustsecp256k1_v0_4_0_testrand_flip(unsigned char *b, size_t len) {
-    b[rustsecp256k1_v0_4_0_testrand_int(len)] ^= (1 << rustsecp256k1_v0_4_0_testrand_int(8));
+static void rustsecp256k1_v0_4_1_testrand_flip(unsigned char *b, size_t len) {
+    b[rustsecp256k1_v0_4_1_testrand_int(len)] ^= (1 << rustsecp256k1_v0_4_1_testrand_int(8));
 }
 
-static void rustsecp256k1_v0_4_0_testrand_init(const char* hexseed) {
+static void rustsecp256k1_v0_4_1_testrand_init(const char* hexseed) {
     unsigned char seed16[16] = {0};
     if (hexseed && strlen(hexseed) != 0) {
         int pos = 0;
@@ -127,7 +127,7 @@ static void rustsecp256k1_v0_4_0_testrand_init(const char* hexseed) {
             pos++;
         }
     } else {
-        FILE *frand = fopen("/dev/urandom", "r");
+        FILE *frand = fopen("/dev/urandom", "rb");
         if ((frand == NULL) || fread(&seed16, 1, sizeof(seed16), frand) != sizeof(seed16)) {
             uint64_t t = time(NULL) * (uint64_t)1337;
             fprintf(stderr, "WARNING: could not read 16 bytes from /dev/urandom; falling back to insecure PRNG\n");
@@ -146,12 +146,12 @@ static void rustsecp256k1_v0_4_0_testrand_init(const char* hexseed) {
     }
 
     printf("random seed = %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", seed16[0], seed16[1], seed16[2], seed16[3], seed16[4], seed16[5], seed16[6], seed16[7], seed16[8], seed16[9], seed16[10], seed16[11], seed16[12], seed16[13], seed16[14], seed16[15]);
-    rustsecp256k1_v0_4_0_testrand_seed(seed16);
+    rustsecp256k1_v0_4_1_testrand_seed(seed16);
 }
 
-static void rustsecp256k1_v0_4_0_testrand_finish(void) {
+static void rustsecp256k1_v0_4_1_testrand_finish(void) {
     unsigned char run32[32];
-    rustsecp256k1_v0_4_0_testrand256(run32);
+    rustsecp256k1_v0_4_1_testrand256(run32);
     printf("random run = %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", run32[0], run32[1], run32[2], run32[3], run32[4], run32[5], run32[6], run32[7], run32[8], run32[9], run32[10], run32[11], run32[12], run32[13], run32[14], run32[15]);
 }
 

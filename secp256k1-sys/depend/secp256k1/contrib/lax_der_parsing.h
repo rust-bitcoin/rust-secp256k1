@@ -26,8 +26,8 @@
  * certain violations are easily supported. You may need to adapt it.
  *
  * Do not use this for new systems. Use well-defined DER or compact signatures
- * instead if you have the choice (see rustsecp256k1_v0_4_0_ecdsa_signature_parse_der and
- * rustsecp256k1_v0_4_0_ecdsa_signature_parse_compact).
+ * instead if you have the choice (see rustsecp256k1_v0_4_1_ecdsa_signature_parse_der and
+ * rustsecp256k1_v0_4_1_ecdsa_signature_parse_compact).
  *
  * The supported violations are:
  * - All numbers are parsed as nonnegative integers, even though X.609-0207
@@ -51,7 +51,13 @@
 #ifndef SECP256K1_CONTRIB_LAX_DER_PARSING_H
 #define SECP256K1_CONTRIB_LAX_DER_PARSING_H
 
+/* #include secp256k1.h only when it hasn't been included yet.
+   This enables this file to be #included directly in other project
+   files (such as tests.c) without the need to set an explicit -I flag,
+   which would be necessary to locate secp256k1.h. */
+#ifndef SECP256K1_H
 #include <secp256k1.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,9 +83,9 @@ extern "C" {
  *  encoded numbers are out of range, signature validation with it is
  *  guaranteed to fail for every message and public key.
  */
-int rustsecp256k1_v0_4_0_ecdsa_signature_parse_der_lax(
-    const rustsecp256k1_v0_4_0_context* ctx,
-    rustsecp256k1_v0_4_0_ecdsa_signature* sig,
+int rustsecp256k1_v0_4_1_ecdsa_signature_parse_der_lax(
+    const rustsecp256k1_v0_4_1_context* ctx,
+    rustsecp256k1_v0_4_1_ecdsa_signature* sig,
     const unsigned char *input,
     size_t inputlen
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);

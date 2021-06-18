@@ -15,7 +15,7 @@ extern "C" {
 
 /** A pointer to a function to deterministically generate a nonce.
  *
- *  Same as rustsecp256k1_v0_4_0_nonce function with the exception of accepting an
+ *  Same as rustsecp256k1_v0_4_1_nonce function with the exception of accepting an
  *  additional pubkey argument and not requiring an attempt argument. The pubkey
  *  argument can protect signature schemes with key-prefixed challenge hash
  *  inputs against reusing the nonce when signing with the wrong precomputed
@@ -35,7 +35,7 @@ extern "C" {
  *  Except for test cases, this function should compute some cryptographic hash of
  *  the message, the key, the pubkey, the algorithm description, and data.
  */
-typedef int (*rustsecp256k1_v0_4_0_nonce_function_hardened)(
+typedef int (*rustsecp256k1_v0_4_1_nonce_function_hardened)(
     unsigned char *nonce32,
     const unsigned char *msg32,
     const unsigned char *key32,
@@ -56,16 +56,16 @@ typedef int (*rustsecp256k1_v0_4_0_nonce_function_hardened)(
  *  bytes. Therefore, to create BIP-340 compliant signatures, algo16 must be set
  *  to "BIP0340/nonce\0\0\0"
  */
-SECP256K1_API extern const rustsecp256k1_v0_4_0_nonce_function_hardened rustsecp256k1_v0_4_0_nonce_function_bip340;
+SECP256K1_API extern const rustsecp256k1_v0_4_1_nonce_function_hardened rustsecp256k1_v0_4_1_nonce_function_bip340;
 
 /** Create a Schnorr signature.
  *
  *  Does _not_ strictly follow BIP-340 because it does not verify the resulting
- *  signature. Instead, you can manually use rustsecp256k1_v0_4_0_schnorrsig_verify and
+ *  signature. Instead, you can manually use rustsecp256k1_v0_4_1_schnorrsig_verify and
  *  abort if it fails.
  *
  *  Otherwise BIP-340 compliant if the noncefp argument is NULL or
- *  rustsecp256k1_v0_4_0_nonce_function_bip340 and the ndata argument is 32-byte auxiliary
+ *  rustsecp256k1_v0_4_1_nonce_function_bip340 and the ndata argument is 32-byte auxiliary
  *  randomness.
  *
  *  Returns 1 on success, 0 on failure.
@@ -73,18 +73,18 @@ SECP256K1_API extern const rustsecp256k1_v0_4_0_nonce_function_hardened rustsecp
  *  Out:   sig64: pointer to a 64-byte array to store the serialized signature (cannot be NULL)
  *  In:    msg32: the 32-byte message being signed (cannot be NULL)
  *       keypair: pointer to an initialized keypair (cannot be NULL)
- *       noncefp: pointer to a nonce generation function. If NULL, rustsecp256k1_v0_4_0_nonce_function_bip340 is used
+ *       noncefp: pointer to a nonce generation function. If NULL, rustsecp256k1_v0_4_1_nonce_function_bip340 is used
  *         ndata: pointer to arbitrary data used by the nonce generation
  *                function (can be NULL). If it is non-NULL and
- *                rustsecp256k1_v0_4_0_nonce_function_bip340 is used, then ndata must be a
+ *                rustsecp256k1_v0_4_1_nonce_function_bip340 is used, then ndata must be a
  *                pointer to 32-byte auxiliary randomness as per BIP-340.
  */
-SECP256K1_API int rustsecp256k1_v0_4_0_schnorrsig_sign(
-    const rustsecp256k1_v0_4_0_context* ctx,
+SECP256K1_API int rustsecp256k1_v0_4_1_schnorrsig_sign(
+    const rustsecp256k1_v0_4_1_context* ctx,
     unsigned char *sig64,
     const unsigned char *msg32,
-    const rustsecp256k1_v0_4_0_keypair *keypair,
-    rustsecp256k1_v0_4_0_nonce_function_hardened noncefp,
+    const rustsecp256k1_v0_4_1_keypair *keypair,
+    rustsecp256k1_v0_4_1_nonce_function_hardened noncefp,
     void *ndata
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
@@ -97,11 +97,11 @@ SECP256K1_API int rustsecp256k1_v0_4_0_schnorrsig_sign(
  *         msg32: the 32-byte message being verified (cannot be NULL)
  *        pubkey: pointer to an x-only public key to verify with (cannot be NULL)
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_0_schnorrsig_verify(
-    const rustsecp256k1_v0_4_0_context* ctx,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_1_schnorrsig_verify(
+    const rustsecp256k1_v0_4_1_context* ctx,
     const unsigned char *sig64,
     const unsigned char *msg32,
-    const rustsecp256k1_v0_4_0_xonly_pubkey *pubkey
+    const rustsecp256k1_v0_4_1_xonly_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
 #ifdef __cplusplus

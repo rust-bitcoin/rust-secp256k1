@@ -28,7 +28,13 @@
 #ifndef SECP256K1_CONTRIB_BER_PRIVATEKEY_H
 #define SECP256K1_CONTRIB_BER_PRIVATEKEY_H
 
+/* #include secp256k1.h only when it hasn't been included yet.
+   This enables this file to be #included directly in other project
+   files (such as tests.c) without the need to set an explicit -I flag,
+   which would be necessary to locate secp256k1.h. */
+#ifndef SECP256K1_H
 #include <secp256k1.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,10 +58,10 @@ extern "C" {
  *  simple 32-byte private keys are sufficient.
  *
  *  Note that this function does not guarantee correct DER output. It is
- *  guaranteed to be parsable by rustsecp256k1_v0_4_0_ec_privkey_import_der
+ *  guaranteed to be parsable by rustsecp256k1_v0_4_1_ec_privkey_import_der
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
-    const rustsecp256k1_v0_4_0_context* ctx,
+    const rustsecp256k1_v0_4_1_context* ctx,
     unsigned char *privkey,
     size_t *privkeylen,
     const unsigned char *seckey,
@@ -77,7 +83,7 @@ SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
  * key.
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_import_der(
-    const rustsecp256k1_v0_4_0_context* ctx,
+    const rustsecp256k1_v0_4_1_context* ctx,
     unsigned char *seckey,
     const unsigned char *privkey,
     size_t privkeylen
