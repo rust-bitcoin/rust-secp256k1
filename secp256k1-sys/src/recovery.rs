@@ -20,6 +20,7 @@ use {Context, Signature, NonceFn, PublicKey};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
+#[derive(Copy)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 impl_raw_debug!(RecoverableSignature);

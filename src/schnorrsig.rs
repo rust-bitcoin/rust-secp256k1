@@ -16,6 +16,7 @@ use {Message, Signing, Verification};
 use SecretKey;
 
 /// Represents a Schnorr signature.
+#[derive(Copy)]
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);

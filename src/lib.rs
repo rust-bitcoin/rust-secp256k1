@@ -458,6 +458,7 @@ impl<'de> ::serde::Deserialize<'de> for Signature {
 }
 
 /// A (hashed) message input to an ECDSA signature
+#[derive(Copy)]
 pub struct Message([u8; constants::MESSAGE_SIZE]);
 impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);

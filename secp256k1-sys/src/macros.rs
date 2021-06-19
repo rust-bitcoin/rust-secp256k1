@@ -68,8 +68,6 @@ macro_rules! impl_array_newtype {
             pub fn is_empty(&self) -> bool { false }
         }
 
-        impl Copy for $thing {}
-
         impl Clone for $thing {
             #[inline]
             fn clone(&self) -> $thing {
@@ -167,7 +165,7 @@ macro_rules! impl_raw_debug {
     ($thing:ident) => {
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                for i in self[..].iter().cloned() {
+                for i in &self[..] {
                     write!(f, "{:02x}", i)?;
                 }
                 Ok(())
