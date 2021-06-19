@@ -349,6 +349,12 @@ extern "C" {
                                         tweak: *const c_uchar)
                                         -> c_int;
 
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_ec_pubkey_cmp")]
+    pub fn secp256k1_ec_pubkey_cmp(cx: *const Context,
+                                   pubkey1: *const PublicKey,
+                                   pubkey2: *const PublicKey)
+                                   -> c_int;
+
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_sec")]
     pub fn secp256k1_keypair_sec(cx: *const Context,
                                  output_seckey: *mut c_uchar,
@@ -360,6 +366,12 @@ extern "C" {
                                  output_pubkey: *mut PublicKey,
                                  keypair: *const KeyPair)
                                  -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_xonly_pubkey_cmp")]
+    pub fn secp256k1_xonly_pubkey_cmp(cx: *const Context,
+                                      pubkey1: *const XOnlyPublicKey,
+                                      pubkey2: *const XOnlyPublicKey)
+                                      -> c_int;
 }
 
 #[cfg(not(fuzzing))]
