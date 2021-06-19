@@ -673,13 +673,16 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 
 impl PartialOrd for PublicKey {
     fn partial_cmp(&self, other: &PublicKey) -> Option<core::cmp::Ordering> {
-        self.serialize().partial_cmp(&other.serialize())
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for PublicKey {
     fn cmp(&self, other: &PublicKey) -> core::cmp::Ordering {
-        self.serialize().cmp(&other.serialize())
+        let ret = unsafe {
+            ffi::secp256k1_ec_pubkey_cmp(ffi::secp256k1_context_no_precomp, self.as_c_ptr(), other.as_c_ptr())
+        };
+        ret.cmp(&0i32)
     }
 }
 
