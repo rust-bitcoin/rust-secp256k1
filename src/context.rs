@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use core::mem::{self, ManuallyDrop};
+use core::mem::ManuallyDrop;
 use ffi::{self, CPtr, types::AlignedType};
 use ffi::types::{c_uint, c_void};
 use Error;
@@ -105,7 +105,7 @@ mod alloc_only {
     impl private::Sealed for VerifyOnly {}
 
     use super::*;
-    const ALIGN_TO: usize = mem::align_of::<AlignedType>();
+    const ALIGN_TO: usize = ::core::mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
     pub enum SignOnly {}
