@@ -29,7 +29,7 @@ use ffi::{self, CPtr};
 /// Secret 256-bit key used as `x` in an ECDSA signature
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
-impl_safe_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
+impl_ptr_newtype!(SecretKey, u8);
 impl_safe_debug!(SecretKey);
 
 impl str::FromStr for SecretKey {

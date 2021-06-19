@@ -13,10 +13,10 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-/// Implements array accessing methods for a type that must be considered safe
+/// Implements newtype wrapping methods
 #[macro_export]
-macro_rules! impl_safe_array_newtype {
-    ($thing:ident, $ty:ty, $len:expr) => {
+macro_rules! impl_ptr_newtype {
+    ($thing:ident, $ty:ty) => {
         impl $thing {
             #[inline]
             #[allow(unused)]
@@ -33,35 +33,19 @@ macro_rules! impl_safe_array_newtype {
                 let &mut $thing(ref mut dat) = self;
                 dat.as_mut_ptr()
             }
-
-            #[inline]
-            /// Returns the length of the object as an array
-            pub fn len(&self) -> usize { $len }
-
-            #[inline]
-            /// Returns whether the object as an array is empty
-            pub fn is_empty(&self) -> bool { false }
         }
 
         impl $crate::CPtr for $thing {
             type Target = $ty;
 
             fn as_c_ptr(&self) -> *const Self::Target {
-                if self.is_empty() {
-                    ::core::ptr::null()
-                } else {
-                    let &$thing(ref dat) = self;
-                    dat.as_ptr()
-                }
+                let &$thing(ref dat) = self;
+                dat.as_ptr()
             }
 
             fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-                if self.is_empty() {
-                    ::core::ptr::null::<Self::Target>() as *mut _
-                } else {
-                    let &mut $thing(ref mut dat) = self;
-                    dat.as_mut_ptr()
-                }
+                let &mut $thing(ref mut dat) = self;
+                dat.as_mut_ptr()
             }
         }
     }
@@ -72,7 +56,17 @@ macro_rules! impl_safe_array_newtype {
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl_safe_array_newtype!($thing, $ty, $len);
+        impl_ptr_newtype!($thing, $ty);
+
+        impl $thing {
+            #[inline]
+            /// Returns the length of the object as an array
+            pub fn len(&self) -> usize { $len }
+
+            #[inline]
+            /// Returns whether the object as an array is empty
+            pub fn is_empty(&self) -> bool { false }
+        }
 
         impl Copy for $thing {}
 
