@@ -224,6 +224,12 @@ pub struct KeyPair([c_uchar; 96]);
 impl_array_newtype!(KeyPair, c_uchar, 96);
 impl_raw_debug!(KeyPair);
 
+impl Drop for KeyPair {
+    fn drop(&mut self) {
+        self.0.copy_from_slice(&[0u8; 96]);
+    }
+}
+
 impl KeyPair {
     /// Creates an "uninitialized" FFI keypair which is zeroed out
     ///

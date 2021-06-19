@@ -32,6 +32,12 @@ pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
 impl_ptr_newtype!(SecretKey, u8);
 impl_safe_debug!(SecretKey);
 
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.0.copy_from_slice(&[0u8; constants::SECRET_KEY_SIZE]);
+    }
+}
+
 impl str::FromStr for SecretKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<SecretKey, Error> {
