@@ -80,7 +80,7 @@ impl str::FromStr for Signature {
 pub struct KeyPair(ffi::KeyPair);
 
 /// A Schnorr public key, used for verification of Schnorr signatures
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct PublicKey(ffi::XOnlyPublicKey);
 
 impl fmt::LowerHex for PublicKey {
@@ -108,6 +108,26 @@ impl str::FromStr for PublicKey {
                 PublicKey::from_slice(&res[0..constants::SCHNORRSIG_PUBLIC_KEY_SIZE])
             }
             _ => Err(InvalidPublicKey),
+        }
+    }
+}
+
+impl PartialOrd for PublicKey {
+    fn partial_cmp(&self, other: &PublicKey) -> Option<::core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PublicKey {
+    fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
+        let ret = unsafe {
+            ffi::secp256k1_xonly_pubkey_cmp(ffi::secp256k1_context_no_precomp, self.as_c_ptr(), other.as_c_ptr())
+        };
+        match ret {
+            0 => ::core::cmp::Ordering::Equal,
+            v if v < 0 => ::core::cmp::Ordering::Less,
+            v if v > 0 => ::core::cmp::Ordering::Greater,
+            _ => unreachable!()
         }
     }
 }
