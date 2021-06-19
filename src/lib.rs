@@ -995,7 +995,7 @@ mod tests {
         assert!(full.verify(&msg, &sig, &pk).is_ok());
 
         // Check that we can produce keys from slices with no precomputation
-        let (pk_slice, sk_slice) = (&pk.serialize(), &sk[..]);
+        let (pk_slice, sk_slice) = (&pk.serialize(), &sk.0[..]);
         let new_pk = PublicKey::from_slice(pk_slice).unwrap();
         let new_sk = SecretKey::from_slice(sk_slice).unwrap();
         assert_eq!(sk, new_sk);

@@ -27,8 +27,9 @@ use constants;
 use ffi::{self, CPtr};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
+impl_safe_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_safe_debug!(SecretKey);
 
 impl fmt::LowerHex for SecretKey {
@@ -220,7 +221,7 @@ impl ::serde::Serialize for SecretKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self[..])
+            s.serialize_bytes(&self.0[..])
         }
     }
 }
@@ -529,7 +530,7 @@ mod test {
         let s = Secp256k1::new();
 
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
+        assert_eq!(SecretKey::from_slice(&sk1.0[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
     }
@@ -784,13 +785,13 @@ mod test {
         let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
-        assert!(sk1.add_assign(&sk2[..]).is_ok());
-        assert!(pk1.add_exp_assign(&s, &sk2[..]).is_ok());
+        assert!(sk1.add_assign(&sk2.0[..]).is_ok());
+        assert!(pk1.add_exp_assign(&s, &sk2.0[..]).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
-        assert!(sk2.add_assign(&sk1[..]).is_ok());
-        assert!(pk2.add_exp_assign(&s, &sk1[..]).is_ok());
+        assert!(sk2.add_assign(&sk1.0[..]).is_ok());
+        assert!(pk2.add_exp_assign(&s, &sk1.0[..]).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
@@ -802,13 +803,13 @@ mod test {
         let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
-        assert!(sk1.mul_assign(&sk2[..]).is_ok());
-        assert!(pk1.mul_assign(&s, &sk2[..]).is_ok());
+        assert!(sk1.mul_assign(&sk2.0[..]).is_ok());
+        assert!(pk1.mul_assign(&s, &sk2.0[..]).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
-        assert!(sk2.mul_assign(&sk1[..]).is_ok());
-        assert!(pk2.mul_assign(&s, &sk1[..]).is_ok());
+        assert!(sk2.mul_assign(&sk1.0[..]).is_ok());
+        assert!(pk2.mul_assign(&s, &sk1.0[..]).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
@@ -818,7 +819,7 @@ mod test {
 
         let (mut sk, mut pk) = s.generate_keypair(&mut thread_rng());
 
-        let original_sk = sk;
+        let original_sk = sk.clone();
         let original_pk = pk;
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
@@ -913,7 +914,7 @@ mod test {
         assert!(sum2.is_ok());
         assert_eq!(sum1, sum2);
 
-        assert!(sk1.add_assign(&sk2.as_ref()[..]).is_ok());
+        assert!(sk1.add_assign(&sk2.0[..]).is_ok());
         let sksum = PublicKey::from_secret_key(&s, &sk1);
         assert_eq!(Ok(sksum), sum1);
     }
@@ -974,13 +975,13 @@ mod test {
         #[cfg(fuzzing)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
-        assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
-        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
-        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+        assert_tokens(&sk.clone().compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&sk.clone().compact(), &[Token::Bytes(&SK_BYTES)]);
+        assert_tokens(&sk.clone().compact(), &[Token::ByteBuf(&SK_BYTES)]);
 
-        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+        assert_tokens(&sk.clone().readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.clone().readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.clone().readable(), &[Token::String(SK_STR)]);
 
         assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
         assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES)]);

@@ -13,23 +13,23 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-// This is a macro that routinely comes in handy
+/// Implements array accessing methods for a type that must be considered safe
 #[macro_export]
-macro_rules! impl_array_newtype {
+macro_rules! impl_safe_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl Copy for $thing {}
-
         impl $thing {
             #[inline]
+            #[allow(unused)]
             /// Converts the object to a raw pointer for FFI interfacing
-            pub fn as_ptr(&self) -> *const $ty {
+            pub(crate) fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
                 dat.as_ptr()
             }
 
             #[inline]
+            #[allow(unused)]
             /// Converts the object to a mutable raw pointer for FFI interfacing
-            pub fn as_mut_ptr(&mut self) -> *mut $ty {
+            pub(crate) fn as_mut_ptr(&mut self) -> *mut $ty {
                 let &mut $thing(ref mut dat) = self;
                 dat.as_mut_ptr()
             }
@@ -41,6 +41,47 @@ macro_rules! impl_array_newtype {
             #[inline]
             /// Returns whether the object as an array is empty
             pub fn is_empty(&self) -> bool { false }
+        }
+
+        impl $crate::CPtr for $thing {
+            type Target = $ty;
+
+            fn as_c_ptr(&self) -> *const Self::Target {
+                if self.is_empty() {
+                    ::core::ptr::null()
+                } else {
+                    let &$thing(ref dat) = self;
+                    dat.as_ptr()
+                }
+            }
+
+            fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+                if self.is_empty() {
+                    ::core::ptr::null::<Self::Target>() as *mut _
+                } else {
+                    let &mut $thing(ref mut dat) = self;
+                    dat.as_mut_ptr()
+                }
+            }
+        }
+    }
+}
+
+/// Generates implementation of main array accessing methods for a newtype wrapping some inner array
+/// type
+#[macro_export]
+macro_rules! impl_array_newtype {
+    ($thing:ident, $ty:ty, $len:expr) => {
+        impl_safe_array_newtype!($thing, $ty, $len);
+
+        impl Copy for $thing {}
+
+        impl Clone for $thing {
+            #[inline]
+            fn clone(&self) -> $thing {
+                let &$thing(ref dat) = self;
+                $thing(dat.clone())
+            }
         }
 
         impl AsRef<[$ty; $len]> for $thing {
@@ -55,7 +96,7 @@ macro_rules! impl_array_newtype {
         impl PartialEq for $thing {
             #[inline]
             fn eq(&self, other: &$thing) -> bool {
-                &self[..] == &other[..]
+                &self.0[..] == &other[..]
             }
         }
 
@@ -72,14 +113,6 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> ::core::cmp::Ordering {
                 self[..].cmp(&other[..])
-            }
-        }
-
-        impl Clone for $thing {
-            #[inline]
-            fn clone(&self) -> $thing {
-                let &$thing(ref dat) = self;
-                $thing(dat.clone())
             }
         }
 
@@ -130,24 +163,6 @@ macro_rules! impl_array_newtype {
             fn index(&self, _: ::core::ops::RangeFull) -> &[$ty] {
                 let &$thing(ref dat) = self;
                 &dat[..]
-            }
-        }
-        impl $crate::CPtr for $thing {
-            type Target = $ty;
-            fn as_c_ptr(&self) -> *const Self::Target {
-                if self.is_empty() {
-                    ::core::ptr::null()
-                } else {
-                    self.as_ptr()
-                }
-            }
-
-            fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-                if self.is_empty() {
-                    ::core::ptr::null::<Self::Target>() as *mut _
-                } else {
-                    self.as_mut_ptr()
-                }
             }
         }
     }
