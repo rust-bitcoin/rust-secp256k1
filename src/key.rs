@@ -32,21 +32,6 @@ pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
 impl_safe_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_safe_debug!(SecretKey);
 
-impl fmt::LowerHex for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.0[..] {
-            write!(f, "{:02x}", *ch)?;
-        }
-        Ok(())
-    }
-}
-
-impl fmt::Display for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::LowerHex::fmt(self, f)
-    }
-}
-
 impl str::FromStr for SecretKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<SecretKey, Error> {
@@ -219,7 +204,8 @@ impl SecretKey {
 impl ::serde::Serialize for SecretKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
-            s.collect_str(self)
+            #[allow(deprecated)]
+            s.serialize_str(&self.format_secret_key())
         } else {
             s.serialize_bytes(&self.0[..])
         }
@@ -706,10 +692,11 @@ mod test {
         #[cfg(fuzzing)]
         let pk = PublicKey::from_slice(&[0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
+        #[allow(deprecated)] {
         assert_eq!(
-            sk.to_string(),
+            sk.format_secret_key(),
             "01010101010101010001020304050607ffff0000ffff00006363636363636363"
-        );
+        ) };
         assert_eq!(
             SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363").unwrap(),
             sk
