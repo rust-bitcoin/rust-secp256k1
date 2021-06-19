@@ -211,6 +211,12 @@ impl KeyPair {
         }
     }
 
+    /// Serialize the key pair as a secret key byte value
+    #[inline]
+    pub fn serialize_sec<V: Verification>(&self, secp: &Secp256k1<V>) -> [u8; constants::SECRET_KEY_SIZE] {
+        *SecretKey::from_keypair(secp, self).as_ref()
+    }
+
     /// Tweak a keypair by adding the given tweak to the secret key and updating the
     /// public key accordingly.
     /// Will return an error if the resulting key would be invalid or if
