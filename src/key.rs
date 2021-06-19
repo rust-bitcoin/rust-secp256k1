@@ -200,7 +200,7 @@ impl SecretKey {
     }
 }
 
-#[cfg(feature = "serde")]
+#[cfg(all(feature = "serde", feature = "serde-secrets"))]
 impl ::serde::Serialize for SecretKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -930,7 +930,7 @@ mod test {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_serde() {
+    fn test_serde_pk() {
         use serde_test::{Configure, Token, assert_tokens};
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -938,9 +938,6 @@ mod test {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static SK_STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
         static PK_BYTES: [u8; 33] = [
             0x02,
             0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
@@ -962,14 +959,6 @@ mod test {
         #[cfg(fuzzing)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
-        assert_tokens(&sk.clone().compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
-        assert_tokens(&sk.clone().compact(), &[Token::Bytes(&SK_BYTES)]);
-        assert_tokens(&sk.clone().compact(), &[Token::ByteBuf(&SK_BYTES)]);
-
-        assert_tokens(&sk.clone().readable(), &[Token::BorrowedStr(SK_STR)]);
-        assert_tokens(&sk.clone().readable(), &[Token::Str(SK_STR)]);
-        assert_tokens(&sk.clone().readable(), &[Token::String(SK_STR)]);
-
         assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
         assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES)]);
         assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES)]);
@@ -977,6 +966,30 @@ mod test {
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
+    }
 
+    #[cfg(all(feature = "serde", feature = "serde-secrets"))]
+    #[test]
+    fn test_serde_sk() {
+        use serde_test::{Configure, Token, assert_tokens};
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static SK_STR: &'static str = "\
+            01010101010101010001020304050607ffff0000ffff00006363636363636363\
+        ";
+
+        let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
+
+        assert_tokens(&sk.clone().compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&sk.clone().compact(), &[Token::Bytes(&SK_BYTES)]);
+        assert_tokens(&sk.clone().compact(), &[Token::ByteBuf(&SK_BYTES)]);
+
+        assert_tokens(&sk.clone().readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.clone().readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.clone().readable(), &[Token::String(SK_STR)]);
     }
 }

@@ -795,7 +795,7 @@ impl<C: Verification> Secp256k1<C> {
     /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
     /// verify-capable context.
     ///
-    /// ```rust
+    /// ```
     /// # #[cfg(feature="rand")] {
     /// # use secp256k1::rand::rngs::OsRng;
     /// # use secp256k1::{Secp256k1, Message, Error};
