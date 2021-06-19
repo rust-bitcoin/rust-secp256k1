@@ -76,8 +76,9 @@ impl str::FromStr for Signature {
 }
 
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Clone)]
 pub struct KeyPair(ffi::KeyPair);
+impl_safe_debug!(KeyPair);
 
 /// A Schnorr public key, used for verification of Schnorr signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]

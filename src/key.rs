@@ -29,7 +29,7 @@ use ffi::{self, CPtr};
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
-impl_pretty_debug!(SecretKey);
+impl_safe_debug!(SecretKey);
 
 impl fmt::LowerHex for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -675,8 +675,15 @@ mod test {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut DumbRng(0));
 
+        #[cfg(all(feature = "bitcoin_hashes", not(fuzzing)))]
         assert_eq!(&format!("{:?}", sk),
-                   "SecretKey(0100000000000000020000000000000003000000000000000400000000000000)");
+                   "SecretKey(#73e200e2...29d234a4)");
+        #[cfg(all(not(feature = "bitcoin_hashes"), feature = "std"))]
+        assert_eq!(&format!("{:?}", sk),
+                   "SecretKey(#a463cd1b7ffe86b0)");
+        #[allow(deprecated)] {
+        assert_eq!(sk.format_secret_key(),
+                   "0100000000000000020000000000000003000000000000000400000000000000"); };
     }
 
     #[test]
