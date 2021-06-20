@@ -27,7 +27,7 @@ use constants;
 use ffi::{self, CPtr};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature
-pub struct SecretKey(pub(crate) [u8; constants::SECRET_KEY_SIZE]);
+pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_pretty_debug!(SecretKey);
 
@@ -66,7 +66,7 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// A Secp256k1 public key, used for verification of signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 #[repr(transparent)]
-pub struct PublicKey(pub(crate) ffi::PublicKey);
+pub struct PublicKey(ffi::PublicKey);
 
 impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -147,6 +147,21 @@ impl SecretKey {
             }
             _ => Err(InvalidSecretKey)
         }
+    }
+
+    /// Creates a new secret key using data from BIP-340 [`::schnorrsig::KeyPair`]
+    #[inline]
+    pub fn from_keypair(keypair: &::schnorrsig::KeyPair) -> Self {
+        let mut sk = [0; constants::SECRET_KEY_SIZE];
+        unsafe {
+            let ret = ffi::secp256k1_keypair_sec(
+                ffi::secp256k1_context_no_precomp,
+                sk.as_mut_c_ptr(),
+                keypair.as_ptr()
+            );
+            debug_assert_eq!(ret, 1);
+        }
+        SecretKey(sk)
     }
 
     #[inline]
@@ -287,6 +302,21 @@ impl PublicKey {
             } else {
                 Err(InvalidPublicKey)
             }
+        }
+    }
+
+    /// Creates a new compressed public key key using data from BIP-340 [`::schnorrsig::KeyPair`]
+    #[inline]
+    pub fn from_keypair(keypair: &::schnorrsig::KeyPair) -> Self {
+        unsafe {
+            let mut pk = ffi::PublicKey::new();
+            let ret = ffi::secp256k1_keypair_pub(
+                ffi::secp256k1_context_no_precomp,
+                &mut pk,
+                keypair.as_ptr()
+            );
+            debug_assert_eq!(ret, 1);
+            PublicKey(pk)
         }
     }
 
