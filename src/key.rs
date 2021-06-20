@@ -2204,3 +2204,24 @@ mod test {
         assert_eq!(got, want)
     }
 }
+
+#[cfg(all(test, feature = "unstable"))]
+mod benches {
+    use test::Bencher;
+    use std::collections::BTreeSet;
+    use crate::PublicKey;
+    use crate::constants::GENERATOR_X;
+
+    #[bench]
+    fn bench_pk_ordering(b: &mut Bencher) {
+        let mut map = BTreeSet::new();
+        let mut g_slice = [02u8; 33];
+        g_slice[1..].copy_from_slice(&GENERATOR_X);
+        let g = PublicKey::from_slice(&g_slice).unwrap();
+        let mut pk = g;
+        b.iter(|| {
+            map.insert(pk);
+            pk = pk.combine(&pk).unwrap();
+        })
+    }
+}
