@@ -177,30 +177,30 @@ pub struct SerializedSignature {
 }
 
 impl fmt::Debug for Signature {
-fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    fmt::Display::fmt(self, f)
-}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
 }
 
 impl fmt::Display for Signature {
-fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let sig = self.serialize_der();
-    for v in sig.iter() {
-        write!(f, "{:02x}", v)?;
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let sig = self.serialize_der();
+        for v in sig.iter() {
+            write!(f, "{:02x}", v)?;
+        }
+        Ok(())
     }
-    Ok(())
-}
 }
 
 impl str::FromStr for Signature {
-type Err = Error;
-fn from_str(s: &str) -> Result<Signature, Error> {
-    let mut res = [0; 72];
-    match from_hex(s, &mut res) {
-        Ok(x) => Signature::from_der(&res[0..x]),
-        _ => Err(Error::InvalidSignature),
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Signature, Error> {
+        let mut res = [0; 72];
+        match from_hex(s, &mut res) {
+            Ok(x) => Signature::from_der(&res[0..x]),
+            _ => Err(Error::InvalidSignature),
+        }
     }
-}
 }
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
@@ -270,7 +270,7 @@ impl SerializedSignature {
 }
 
 impl Signature {
-#[inline]
+    #[inline]
     /// Converts a DER-encoded byte slice to a signature
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
         if data.is_empty() {return Err(Error::InvalidSignature);}
