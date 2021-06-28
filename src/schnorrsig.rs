@@ -167,7 +167,7 @@ impl KeyPair {
         data: &[u8],
     ) -> Result<KeyPair, Error> {
         if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
-            return Err(InvalidPublicKey);
+            return Err(InvalidSecretKey);
         }
 
         unsafe {
@@ -313,7 +313,7 @@ impl PublicKey {
 
     /// Tweak an x-only PublicKey by adding the generator multiplied with the given tweak to it.
     ///
-    /// Returns a boolean representing the parity of the tweaked key, which can be provided to 
+    /// Returns a boolean representing the parity of the tweaked key, which can be provided to
     /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
     /// it and checking equality. Will return an error if the resulting key would be invalid or
     /// if the tweak was not a 32-byte length slice.
