@@ -115,12 +115,14 @@ impl str::FromStr for PublicKey {
     }
 }
 
+#[cfg(not(fuzzing))]
 impl PartialOrd for PublicKey {
     fn partial_cmp(&self, other: &PublicKey) -> Option<::core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
+#[cfg(not(fuzzing))]
 impl Ord for PublicKey {
     fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
         let ret = unsafe {
