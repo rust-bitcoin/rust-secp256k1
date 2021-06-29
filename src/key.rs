@@ -82,6 +82,7 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// # }
 /// ```
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "fuzzing", derive(PartialOrd, Ord))]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
 
@@ -671,12 +672,14 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
     }
 }
 
+#[cfg(not(fuzzing))]
 impl PartialOrd for PublicKey {
     fn partial_cmp(&self, other: &PublicKey) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
+#[cfg(not(fuzzing))]
 impl Ord for PublicKey {
     fn cmp(&self, other: &PublicKey) -> core::cmp::Ordering {
         let ret = unsafe {
@@ -1899,6 +1902,7 @@ mod test {
         assert_eq!(Ok(sksum), sum1);
     }
 
+    #[cfg(not(fuzzing))]
     #[test]
     fn pubkey_equal() {
         let pk1 = PublicKey::from_slice(
@@ -1909,7 +1913,7 @@ mod test {
             &hex!("02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443"),
         ).unwrap();
 
-        assert!(pk1 == pk2);
+        assert_eq!(pk1, pk2);
         assert!(pk1 <= pk2);
         assert!(pk2 <= pk1);
         assert!(!(pk2 < pk1));
