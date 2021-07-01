@@ -32,7 +32,6 @@ fn main() {
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
                .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
-               .define("SECP256K1_BUILD", Some("1"))
                .define("SECP256K1_API", Some(""))
                .define("ENABLE_MODULE_ECDH", Some("1"))
                .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
@@ -42,7 +41,7 @@ fn main() {
                .define("USE_NUM_NONE", Some("1"))
                .define("USE_FIELD_INV_BUILTIN", Some("1"))
                .define("USE_SCALAR_INV_BUILTIN", Some("1"));
-    
+
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume neglible memory
     } else {
