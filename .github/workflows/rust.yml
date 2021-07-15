@@ -43,8 +43,6 @@ jobs:
             os: macos-latest
             cc: /usr/local/opt/llvm/bin/clang
             ar: /usr/local/opt/llvm/bin/llvm-ar
-        rust:
-          - stable
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Crate
@@ -53,7 +51,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           override: true
       - name: Building docs
         env:
