@@ -714,10 +714,19 @@ mod test {
             PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166").unwrap(),
             pk
         );
+        #[cfg(fuzzing)]
         assert_eq!(
             PublicKey::from_str("04\
                 18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
-                84B84DB303A340CD7D6823EE88174747D12A67D2F8F2F9BA40846EE5EE7A44F6"
+                aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ).unwrap(),
+            pk
+        );
+        #[cfg(not(fuzzing))]
+        assert_eq!(
+            PublicKey::from_str("04\
+                18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+                84b84db303a340cd7d6823ee88174747d12a67d2f8f2f9ba40846ee5ee7a44f6"
             ).unwrap(),
             pk
         );
