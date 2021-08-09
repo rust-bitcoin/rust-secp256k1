@@ -140,6 +140,8 @@ pub use secp256k1_sys as ffi;
 
 #[macro_use]
 mod macros;
+#[macro_use]
+mod secret;
 mod context;
 pub mod constants;
 pub mod ecdh;
@@ -851,8 +853,8 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
 }
 
 /// Utility function used to encode hex into a target u8 buffer. Returns
-/// a reference to the target buffer as an str.
-// it returns an error if the target buffer isn't big enough
+/// a reference to the target buffer as an str. Returns an error if the target
+/// buffer isn't big enough.
 #[inline]
 fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
     let hex_len = src.len() * 2;
