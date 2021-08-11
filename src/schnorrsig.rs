@@ -488,6 +488,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
         nonce_data: *const ffi::types::c_void,
+        adaptor: *const ffi::types::c_uchar,
     ) -> Signature {
         unsafe {
             let mut sig = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
@@ -499,7 +500,8 @@ impl<C: Signing> Secp256k1<C> {
                     msg.as_c_ptr(),
                     keypair.as_ptr(),
                     ffi::secp256k1_nonce_function_bip340,
-                    nonce_data
+                    nonce_data,
+                    adaptor,
                 )
             );
 
@@ -522,7 +524,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
     ) -> Signature {
-        self.schnorrsig_sign_helper(msg, keypair, ptr::null())
+        self.schnorrsig_sign_helper(msg, keypair, ptr::null(), ptr::null())
     }
 
     /// Create a Schnorr signature using the given auxiliary random data.
@@ -536,6 +538,7 @@ impl<C: Signing> Secp256k1<C> {
             msg,
             keypair,
             aux_rand.as_c_ptr() as *const ffi::types::c_void,
+            ptr::null(),
         )
     }
 
@@ -551,7 +554,55 @@ impl<C: Signing> Secp256k1<C> {
     ) -> Signature {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
-        self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
+        self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void, ptr::null())
+    }
+
+    /// Create an adaptor Schnorr signature using the ThreadRng to create auxilliary random data
+    #[cfg(any(test, feature = "rand-std"))]
+    pub fn schnorrsig_sign_with_adaptor(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        adaptor: &SecretKey,
+    ) -> Signature {
+        self.schnorrsig_sign_with_adaptor_rng(msg, keypair, adaptor)
+    }
+
+    /// Create an adaptor Schnorr signature using the given random number generator to
+    /// generate the auxiliary random data. Requires compilation with "rand"
+    /// feature.
+    #[cfg(any(test, feature = "rand"))]
+    pub fn schnorrsig_sign_with_adaptor_rng<R: Rng + CryptoRng>(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        adaptor: &SecretKey,
+        rng: &mut R,
+    ) -> Signature {
+        let mut aux = [0u8; 32];
+        rng.fill_bytes(&mut aux);
+        self.schnorrsig_sign_helper(msg, keypai, aux.as_c_ptr() as *const ffi::types::c_void, adaptor.as_c_ptr())
+    }
+
+    /// Create an adaptor Schnorr signature without using any auxiliary random data.
+    pub fn schnorrsig_sign_with_adaptor_no_aux_rand(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        adaptor: &SecretKey,
+    ) -> Signature {
+        self.schnorrsig_sign_helper(msg, keypair, ptr::null(), adaptor.as_c_ptr())
+    }
+
+    /// Create an adaptor Schnorr signature using the given auxiliary random data.
+    pub fn schnorrsig_sign_with_adaptor_aux_rand(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        aux_rand: &[u8; 32],
+        adaptor: &SecretKey,
+    ) -> Signature {
+        self.schnorrsig_sign_helper(msg, keypair, aux_rand.as_c_ptr() as *const ffi::types::c_void, adaptor.as_c_ptr())
     }
 
     /// Verify a Schnorr signature.

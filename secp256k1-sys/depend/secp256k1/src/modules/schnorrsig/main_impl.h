@@ -124,10 +124,11 @@ static void rustsecp256k1_v0_4_1_schnorrsig_challenge(rustsecp256k1_v0_4_1_scala
     rustsecp256k1_v0_4_1_scalar_set_b32(e, buf, NULL);
 }
 
-int rustsecp256k1_v0_4_1_schnorrsig_sign(const rustsecp256k1_v0_4_1_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_4_1_keypair *keypair, rustsecp256k1_v0_4_1_nonce_function_hardened noncefp, void *ndata) {
+int rustsecp256k1_v0_4_1_schnorrsig_sign(const rustsecp256k1_v0_4_1_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_4_1_keypair *keypair, rustsecp256k1_v0_4_1_nonce_function_hardened noncefp, void *ndata, const unsigned char *adaptor) {
     rustsecp256k1_v0_4_1_scalar sk;
     rustsecp256k1_v0_4_1_scalar e;
     rustsecp256k1_v0_4_1_scalar k;
+    rustsecp256k1_v0_4_1_scalar a;
     rustsecp256k1_v0_4_1_gej rj;
     rustsecp256k1_v0_4_1_ge pk;
     rustsecp256k1_v0_4_1_ge r;
@@ -144,6 +145,12 @@ int rustsecp256k1_v0_4_1_schnorrsig_sign(const rustsecp256k1_v0_4_1_context* ctx
 
     if (noncefp == NULL) {
         noncefp = rustsecp256k1_v0_4_1_nonce_function_bip340;
+    }
+
+    rustsecp256k1_v0_4_1_scalar_cmov(&a, &rustsecp256k1_v0_4_1_scalar_zero, adaptor == NULL);
+    if (adaptor != NULL) {
+        rustsecp256k1_v0_4_1_scalar_set_b32(&a, adaptor, NULL);
+	ret &= !rustsecp256k1_v0_4_1_scalar_is_zero(&a);
     }
 
     ret &= rustsecp256k1_v0_4_1_keypair_load(ctx, &sk, &pk, keypair);
@@ -177,9 +184,11 @@ int rustsecp256k1_v0_4_1_schnorrsig_sign(const rustsecp256k1_v0_4_1_context* ctx
     rustsecp256k1_v0_4_1_schnorrsig_challenge(&e, &sig64[0], msg32, pk_buf);
     rustsecp256k1_v0_4_1_scalar_mul(&e, &e, &sk);
     rustsecp256k1_v0_4_1_scalar_add(&e, &e, &k);
+    rustsecp256k1_v0_4_1_scalar_add(&e, &e, &a);
     rustsecp256k1_v0_4_1_scalar_get_b32(&sig64[32], &e);
 
     rustsecp256k1_v0_4_1_memczero(sig64, 64, !ret);
+    rustsecp256k1_v0_4_1_scalar_clear(&a);
     rustsecp256k1_v0_4_1_scalar_clear(&k);
     rustsecp256k1_v0_4_1_scalar_clear(&sk);
     memset(seckey, 0, sizeof(seckey));

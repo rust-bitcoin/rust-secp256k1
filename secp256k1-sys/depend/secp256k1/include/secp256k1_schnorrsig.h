@@ -78,6 +78,8 @@ SECP256K1_API extern const rustsecp256k1_v0_4_1_nonce_function_hardened rustsecp
  *                function (can be NULL). If it is non-NULL and
  *                rustsecp256k1_v0_4_1_nonce_function_bip340 is used, then ndata must be a
  *                pointer to 32-byte auxiliary randomness as per BIP-340.
+ *       adaptor: pointer to adaptor secret key to create an adaptor signature by adding the key to the signature
+ *                (can be NULL)
  */
 SECP256K1_API int rustsecp256k1_v0_4_1_schnorrsig_sign(
     const rustsecp256k1_v0_4_1_context* ctx,
@@ -85,7 +87,8 @@ SECP256K1_API int rustsecp256k1_v0_4_1_schnorrsig_sign(
     const unsigned char *msg32,
     const rustsecp256k1_v0_4_1_keypair *keypair,
     rustsecp256k1_v0_4_1_nonce_function_hardened noncefp,
-    void *ndata
+    void *ndata,
+    const unsigned char *adaptor
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
 /** Verify a Schnorr signature.

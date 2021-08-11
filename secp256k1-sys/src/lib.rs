@@ -458,7 +458,8 @@ extern "C" {
         msg32: *const c_uchar,
         keypair: *const KeyPair,
         noncefp: SchnorrNonceFn,
-        noncedata: *const c_void
+        noncedata: *const c_void,
+        adaptor: *const c_uchar,
     ) -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_schnorrsig_verify")]
