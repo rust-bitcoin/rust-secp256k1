@@ -93,8 +93,8 @@ SECP256K1_API int rustsecp256k1_v0_4_1_schnorrsig_sign(
 
 /** Verify a Schnorr signature.
  *
- *  Returns: 1: correct signature
- *           0: incorrect signature
+ *  Returns: 1: successful recovery
+ *           0: failed recovery
  *  Args:    ctx: a secp256k1 context object, initialized for verification.
  *  In:    sig64: pointer to the 64-byte signature to verify (cannot be NULL)
  *         msg32: the 32-byte message being verified (cannot be NULL)
@@ -106,6 +106,21 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_1_schnorrsig_v
     const unsigned char *msg32,
     const rustsecp256k1_v0_4_1_xonly_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
+
+/** Recover a secret key from a Schnorr signature and adaptor Schnorr signature.
+ *
+ *  Returns: 1: correct signature
+ *           0: incorrect signature
+ *  Args:
+ *  Out:        secret: pointer to a 32-byte array to store the recovered secret key (cannot be NULL)
+ *  In:          sig64: pointer to the 64-byte signature (cannot be NULL)
+ *       adaptor_sig64: pointer to the 64-byte adaptor signature (cannot be NULL)
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_4_1_schnorrsig_recover(
+   unsigned char *secret,
+   const unsigned char *sig64,
+   const unsigned char *adaptor_sig64
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 #ifdef __cplusplus
 }

@@ -789,6 +789,26 @@ void test_schnorrsig_taproot(void) {
     CHECK(rustsecp256k1_v0_4_1_xonly_pubkey_tweak_add_check(ctx, output_pk_bytes, pk_parity, &internal_pk, tweak) == 1);
 }
 
+void test_schnorrsig_sign_adaptor_recover(void) {
+    unsigned char sk[32];
+    unsigned char adaptor[32];
+    unsigned char recover[32];
+    unsigned char msg[32];
+    unsigned char sig[64];
+    unsigned char adaptor_sig[64];
+    rustsecp256k1_v0_4_1_keypair keypair;
+
+    rustsecp256k1_v0_4_1_testrand256(sk);
+    rustsecp256k1_v0_4_1_testrand256(adaptor);
+    CHECK(rustsecp256k1_v0_4_1_keypair_create(ctx, &keypair, sk));
+
+    rustsecp256k1_v0_4_1_testrand256(msg);
+    CHECK(rustsecp256k1_v0_4_1_schnorrsig_sign(ctx, adaptor_sig, msg, &keypair, NULL, NULL, adaptor));
+    CHECK(rustsecp256k1_v0_4_1_schnorrsig_sign(ctx, sig, msg, &keypair, NULL, NULL, NULL));
+    CHECK(rustsecp256k1_v0_4_1_schnorrsig_recover(recover, sig, adaptor_sig));
+    CHECK(rustsecp256k1_v0_4_1_memcmp_var(recover, adaptor, sizeof(recover)) == 0);
+}
+
 void run_schnorrsig_tests(void) {
     int i;
     run_nonce_function_bip340_tests();
@@ -799,6 +819,7 @@ void run_schnorrsig_tests(void) {
     for (i = 0; i < count; i++) {
         test_schnorrsig_sign();
         test_schnorrsig_sign_verify();
+	test_schnorrsig_sign_adaptor_recover();
     }
     test_schnorrsig_taproot();
 }

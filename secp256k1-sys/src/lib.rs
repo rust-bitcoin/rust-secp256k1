@@ -470,6 +470,13 @@ extern "C" {
         pubkey: *const XOnlyPublicKey,
     ) -> c_int;
 
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_schnorrsig_recover")]
+    pub fn secp256k1_schnorrsig_recover(
+        secret: *mut c_uchar,
+        sig: *const c_uchar,
+        adaptor_sig: *const c_uchar,
+    ) -> c_int;
+
     // Extra keys
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_4_1_keypair_create")]
     pub fn secp256k1_keypair_create(
@@ -1031,6 +1038,21 @@ mod fuzz_dummy {
         let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
         sig_sl[..32].copy_from_slice(msg_sl);
         sig_sl[32..].copy_from_slice(&new_kp.0[32..64]);
+        1
+    }
+
+    /// Sets secret to sig[32..], then adaptor_sig[32..]
+    pub unsafe fn secp256k1_schnorrsig_recover(
+        secret: *mut c_uchar,
+        sig: *const c_uchar,
+        adaptor_sig: *const c_uchar,
+    ) -> c_int {
+        // Recover
+        let sec_sl = slice::from_raw_parts_mut(secret as *mut u8, 32);
+        let sig_sl = slice::from_raw_parts(sig as *const u8, 64);
+        let adaptor_sl = slice::from_raw_parts(adaptor_sig as *const u8, 64);
+        sec_sl.copy_from_slice(&sig_sl[32..]);
+        sec_sl.copy_from_slice(&adaptor_sl[32..]);
         1
     }
 

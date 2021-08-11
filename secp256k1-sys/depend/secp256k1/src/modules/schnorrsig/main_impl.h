@@ -245,4 +245,32 @@ int rustsecp256k1_v0_4_1_schnorrsig_verify(const rustsecp256k1_v0_4_1_context* c
            rustsecp256k1_v0_4_1_fe_equal_var(&rx, &r.x);
 }
 
+int rustsecp256k1_v0_4_1_schnorrsig_recover(unsigned char *secret, const unsigned char *sig64, const unsigned char *adaptor_sig64) {
+    rustsecp256k1_v0_4_1_scalar e;
+    rustsecp256k1_v0_4_1_scalar a;
+    int ret = 1;
+    int overflow;
+
+    VERIFY_CHECK(secret != NULL);
+    VERIFY_CHECK(sig64 != NULL);
+    VERIFY_CHECK(adaptor_sig64 != NULL);
+
+    rustsecp256k1_v0_4_1_scalar_set_b32(&e, &sig64[32], &overflow);
+    ret &= !overflow;
+    rustsecp256k1_v0_4_1_scalar_set_b32(&a, &adaptor_sig64[32], &overflow);
+    ret &= !overflow;
+    ret &= !rustsecp256k1_v0_4_1_scalar_is_zero(&e);
+    ret &= !rustsecp256k1_v0_4_1_scalar_is_zero(&a);
+    
+    rustsecp256k1_v0_4_1_scalar_negate(&e, &e);
+    rustsecp256k1_v0_4_1_scalar_add(&a, &a, &e);
+    rustsecp256k1_v0_4_1_scalar_get_b32(secret, &a);
+    
+    rustsecp256k1_v0_4_1_scalar_clear(&e);
+    rustsecp256k1_v0_4_1_scalar_clear(&a);
+    rustsecp256k1_v0_4_1_memczero(secret, 32, !ret);
+
+    return ret;
+}
+
 #endif

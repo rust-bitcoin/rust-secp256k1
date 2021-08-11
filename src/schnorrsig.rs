@@ -565,7 +565,7 @@ impl<C: Signing> Secp256k1<C> {
         keypair: &KeyPair,
         adaptor: &SecretKey,
     ) -> Signature {
-        self.schnorrsig_sign_with_adaptor_rng(msg, keypair, adaptor)
+        self.schnorrsig_sign_with_adaptor_rng(msg, keypair, adaptor, &mut thread_rng())
     }
 
     /// Create an adaptor Schnorr signature using the given random number generator to
@@ -581,7 +581,7 @@ impl<C: Signing> Secp256k1<C> {
     ) -> Signature {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
-        self.schnorrsig_sign_helper(msg, keypai, aux.as_c_ptr() as *const ffi::types::c_void, adaptor.as_c_ptr())
+        self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void, adaptor.as_c_ptr())
     }
 
     /// Create an adaptor Schnorr signature without using any auxiliary random data.
@@ -626,6 +626,27 @@ impl<C: Signing> Secp256k1<C> {
                 Err(Error::InvalidSignature)
             }
         }
+    }
+
+    /// Recover a secret key from a Schnorr signature and adaptor Schnorr signature
+    pub fn schnorrsig_recover(
+        &self,
+        sig: &Signature,
+        adaptor_sig: &Signature,
+    ) -> Result<SecretKey, Error> {
+        let mut sec = [0u8; 32];
+        let res = unsafe {
+            if ffi::secp256k1_schnorrsig_recover(
+                    sec.as_mut_c_ptr(),
+                    sig.as_c_ptr(),
+                    adaptor_sig.as_c_ptr(),
+            ) == 0 {
+                Err(Error::InvalidSignature)
+            } else {
+                SecretKey::from_slice(&sec)
+            }
+        };
+        res
     }
 
     /// Generates a random Schnorr KeyPair and its associated Schnorr PublicKey.
@@ -983,5 +1004,31 @@ mod tests {
 
         assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
         assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
+    }
+
+    #[test]
+    fn test_schnorrsig_recover() {
+        let secp = Secp256k1::new();
+
+        let mut rng = thread_rng();
+        let (keypair, _) = secp.generate_schnorrsig_keypair(&mut rng);
+        let mut msg = [0; 32];
+        let mut adaptor = [0; 32];
+        let mut aux = [0; 32];
+
+        for _ in 0..100 {
+            rng.fill_bytes(&mut msg);
+            rng.fill_bytes(&mut adaptor);
+            rng.fill_bytes(&mut aux);
+            let msg = Message::from_slice(&msg).unwrap();
+            let adaptor = SecretKey::from_slice(&adaptor).unwrap();
+
+            let adaptor_sig = secp.schnorrsig_sign_with_adaptor_aux_rand(&msg, &keypair, &aux, &adaptor);
+            let sig = secp.schnorrsig_sign_with_aux_rand(&msg, &keypair, &aux);
+
+            let recover = secp.schnorrsig_recover(&sig, &adaptor_sig).unwrap();
+
+            assert_eq!(recover, adaptor);
+        }
     }
 }
