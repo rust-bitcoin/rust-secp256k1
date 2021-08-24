@@ -1,7 +1,7 @@
-extern crate secp256k1;
+extern crate secp256k1_abc;
 
-use secp256k1::rand::rngs::OsRng;
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use secp256k1_abc::rand::rngs::OsRng;
+use secp256k1_abc::{PublicKey, Secp256k1, SecretKey};
 
 fn main() {
     let secp = Secp256k1::new();

@@ -20,8 +20,7 @@ use core::ptr;
 use core::ops::{FnMut, Deref};
 
 use key::{SecretKey, PublicKey};
-use ffi::{self, CPtr};
-use secp256k1_sys::types::{c_int, c_uchar, c_void};
+use ffi::{self, CPtr, types::{c_int, c_uchar, c_void}};
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone)]
@@ -127,8 +126,8 @@ impl SharedSecret {
     /// `SharedSecret` can be easily created via the `From` impl from arrays.
     /// # Examples
     /// ```
-    /// # use secp256k1::ecdh::SharedSecret;
-    /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
+    /// # use secp256k1_abc::ecdh::SharedSecret;
+    /// # use secp256k1_abc::{Secp256k1, PublicKey, SecretKey};
     /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
     /// # let secp = Secp256k1::signing_only();
     /// # let secret_key = SecretKey::from_slice(&[3u8; 32]).unwrap();

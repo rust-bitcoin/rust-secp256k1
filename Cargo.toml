@@ -1,12 +1,12 @@
 [package]
-name = "secp256k1"
+name = "secp256k1-abc"
 version = "0.20.3"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
-repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
-documentation = "https://docs.rs/secp256k1/"
+homepage = "https://github.com/raipay/secp256k1-abc/"
+repository = "https://github.com/raipay/secp256k1-abc/"
+documentation = "https://docs.rs/secp256k1-abc/"
 description = "Rust bindings for Pieter Wuille's `libsecp256k1` library. Implements ECDSA for the SECG elliptic curve group secp256k1 and related utilities."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
@@ -19,17 +19,17 @@ features = [ "rand", "rand-std", "serde", "recovery" ]
 [features]
 unstable = ["recovery", "rand-std"]
 default = ["std"]
-std = ["secp256k1-sys/std"]
+std = ["secp256k1-sys-abc/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = []
 rand-std = ["rand/std"]
-recovery = ["secp256k1-sys/recovery"]
-lowmemory = ["secp256k1-sys/lowmemory"]
+recovery = ["secp256k1-sys-abc/recovery"]
+lowmemory = ["secp256k1-sys-abc/lowmemory"]
 global-context = ["std", "rand-std", "global-context-less-secure"]
 global-context-less-secure = []
 
 [dependencies]
-secp256k1-sys = { version = "0.4.1", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys-abc = { version = "0.4.1", default-features = false, path = "./secp256k1-sys-abc" }
 bitcoin_hashes = { version = "0.9", optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
@@ -58,5 +58,5 @@ name = "generate_keys"
 required-features = ["rand"]
 
 [workspace]
-members = ["secp256k1-sys"]
+members = ["secp256k1-sys-abc"]
 exclude = ["no_std_test"]

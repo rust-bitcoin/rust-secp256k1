@@ -16,7 +16,7 @@ use {Message, Signing, Verification};
 use SecretKey;
 
 /// Represents a Schnorr signature.
-pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
+pub struct Signature(pub(crate) [u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
 
@@ -339,7 +339,7 @@ impl PublicKey {
                 return Err(Error::InvalidTweak);
             }
 
-            let mut parity: ::secp256k1_sys::types::c_int = 0;
+            let mut parity: ::ffi::types::c_int = 0;
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
                 secp.ctx,
                 &mut self.0,

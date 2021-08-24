@@ -38,9 +38,9 @@
 //!
 //! ```rust
 //! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
-//! use secp256k1::rand::rngs::OsRng;
-//! use secp256k1::{Secp256k1, Message};
-//! use secp256k1::bitcoin_hashes::sha256;
+//! use secp256k1_abc::rand::rngs::OsRng;
+//! use secp256k1_abc::{Secp256k1, Message};
+//! use secp256k1_abc::bitcoin_hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
@@ -57,7 +57,7 @@
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
-//! use self::secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
+//! use self::secp256k1_abc::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
@@ -73,7 +73,7 @@
 //! Users who only want to verify signatures can use a cheaper context, like so:
 //!
 //! ```rust
-//! use secp256k1::{Secp256k1, Message, Signature, PublicKey};
+//! use secp256k1_abc::{Secp256k1, Message, Signature, PublicKey};
 //!
 //! let secp = Secp256k1::verification_only();
 //!
@@ -123,8 +123,8 @@
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 
 #[macro_use]
-pub extern crate secp256k1_sys;
-pub use secp256k1_sys as ffi;
+pub extern crate secp256k1_sys_abc;
+pub use secp256k1_sys_abc as ffi;
 
 #[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
@@ -146,6 +146,7 @@ pub mod constants;
 pub mod ecdh;
 pub mod key;
 pub mod schnorrsig;
+pub mod schnorrabc;
 #[cfg(feature = "recovery")]
 pub mod recovery;
 #[cfg(feature = "serde")]
@@ -1215,7 +1216,7 @@ mod tests {
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
         let msg = Message::from_slice(&msg).unwrap();
         let sk = SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead").unwrap();
-        let expected_sig = hex!("047dd4d049db02b430d24c41c7925b2725bcd5a85393513bdec04b4dc363632b1054d0180094122b380f4cfa391e6296244da773173e78fc745c1b9c79f7b713");
+        let expected_sig = hex!("02bdb3b9178d424b7f3b81f3c4e3f8feb699caac940eca8bb4ed8ce6abc9523244358e88e70b8e78a1ffe75288440a2ad84c3b79b56606faaea598f0d5ca6f75");
         let expected_sig = Signature::from_compact(&expected_sig).unwrap();
 
         let sig = secp.sign_low_r(&msg, &sk);
@@ -1230,7 +1231,7 @@ mod tests {
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
         let msg = Message::from_slice(&msg).unwrap();
         let sk = SecretKey::from_str("848355d75fe1c354cf05539bb29b2015f1863065bcb6766b44d399ab95c3fa0b").unwrap();
-        let expected_sig = Signature::from_str("304302202ffc447100d518c8ba643d11f3e6a83a8640488e7d2537b1954b942408be6ea3021f26e1248dd1e52160c3a38af9769d91a1a806cab5f9d508c103464d3c02d6e1").unwrap();
+        let expected_sig = Signature::from_str("3043021f4193abeb40007545ccd4c5213a2b4d7ee16af7941ae9a8f47562679601f6a7022014059a75d9cf3fd0b278b796adc7c4560d5216cf40a9a018b84c535ebf2246d2").unwrap();
 
         let sig = secp.sign_grind_r(&msg, &sk, 2);
 

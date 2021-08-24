@@ -1,0 +1,33 @@
+[package]
+name = "secp256k1-sys-abc"
+version = "0.4.1"
+authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
+            "Andrew Poelstra <apoelstra@wpsoftware.net>",
+            "Steven Roose <steven@stevenroose.org>",
+            "Tobias Ruck <ruck.tobias@gmail.com>" ]
+license = "CC0-1.0"
+homepage = "https://github.com/raipay/secp256k1-abc/"
+repository = "https://github.com/raipay/secp256k1-abc/"
+documentation = "https://docs.rs/secp256k1-sys-abc/"
+description = "FFI for Pieter Wuille's `libsecp256k1` library."
+keywords = [ "secp256k1", "libsecp256k1", "ffi" ]
+readme = "README.md"
+build = "build.rs"
+links = "secp256k1"
+
+# Should make docs.rs show all functions, even those behind non-default features
+[package.metadata.docs.rs]
+features = [ "recovery", "lowmemory" ]
+
+[build-dependencies]
+cc = "1.0.28"
+
+[dev-dependencies]
+libc = "0.2"
+
+[features]
+default = ["std"]
+recovery = []
+lowmemory = []
+std = []
+

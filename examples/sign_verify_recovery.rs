@@ -1,10 +1,10 @@
 
 extern crate bitcoin_hashes;
-extern crate secp256k1;
+extern crate secp256k1_abc;
 
 use bitcoin_hashes::{sha256, Hash};
-use secp256k1::recovery::{RecoverableSignature, RecoveryId};
-use secp256k1::{Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
+use secp256k1_abc::recovery::{RecoverableSignature, RecoveryId};
+use secp256k1_abc::{Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 fn recover<C: Verification>(secp: &Secp256k1<C>,msg: &[u8],sig: [u8; 64],recovery_id: u8) -> Result<PublicKey, Error> {
     let msg = sha256::Hash::hash(msg);
