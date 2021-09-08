@@ -211,6 +211,12 @@ impl KeyPair {
         }
     }
 
+    /// Serialize the key pair as a secret key byte value
+    #[inline]
+    pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+        *SecretKey::from_keypair(self).as_ref()
+    }
+
     /// Tweak a keypair by adding the given tweak to the secret key and updating the
     /// public key accordingly.
     /// Will return an error if the resulting key would be invalid or if
@@ -450,35 +456,31 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
     }
 }
 
-impl SecretKey {
-    /// Creates a new secret key using data from BIP-340 [`KeyPair`]
-    pub fn from_keypair<V: Verification>(secp: &Secp256k1<V>, keypair: &KeyPair) -> Self {
-        let mut sk = [0; constants::SECRET_KEY_SIZE];
-        unsafe {
-            let ret = ffi::secp256k1_keypair_sec(
-                secp.ctx,
-                sk.as_mut_c_ptr(),
-                keypair.as_ptr()
-            );
-            debug_assert_eq!(ret, 1);
-        }
-        SecretKey(sk)
+impl From<KeyPair> for SecretKey {
+    #[inline]
+    fn from(pair: KeyPair) -> Self {
+        SecretKey::from_keypair(&pair)
     }
 }
 
-impl ::key::PublicKey {
-    /// Creates a new compressed public key key using data from BIP-340 [`KeyPair`]
-    pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> Self {
-        unsafe {
-            let mut pk = ffi::PublicKey::new();
-            let ret = ffi::secp256k1_keypair_pub(
-                secp.ctx,
-                &mut pk,
-                keypair.as_ptr()
-            );
-            debug_assert_eq!(ret, 1);
-            ::key::PublicKey(pk)
-        }
+impl<'a> From<&'a KeyPair> for SecretKey {
+    #[inline]
+    fn from(pair: &'a KeyPair) -> Self {
+        SecretKey::from_keypair(pair)
+    }
+}
+
+impl From<KeyPair> for ::key::PublicKey {
+    #[inline]
+    fn from(pair: KeyPair) -> Self {
+        ::key::PublicKey::from_keypair(&pair)
+    }
+}
+
+impl<'a> From<&'a KeyPair> for ::key::PublicKey {
+    #[inline]
+    fn from(pair: &'a KeyPair) -> Self {
+        ::key::PublicKey::from_keypair(pair)
     }
 }
 
@@ -728,9 +730,9 @@ mod tests {
         let secp = Secp256k1::new();
         let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
         let keypair = KeyPair::from_seckey_str(&secp, sk_str).unwrap();
-        let sk = SecretKey::from_keypair(&secp, &keypair);
+        let sk = SecretKey::from_keypair(&keypair);
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
-        let pk = ::key::PublicKey::from_keypair(&secp, &keypair);
+        let pk = ::key::PublicKey::from_keypair(&keypair);
         assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
         let xpk = PublicKey::from_keypair(&secp, &keypair);
         assert_eq!(PublicKey::from(pk), xpk);
