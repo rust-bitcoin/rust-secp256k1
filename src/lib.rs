@@ -159,7 +159,7 @@ pub use key::KeyPair;
 pub use key::XOnlyPublicKey;
 pub use context::*;
 use core::marker::PhantomData;
-use core::{mem, fmt, ptr, str};
+use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context-less-secure")]
@@ -380,136 +380,7 @@ impl<C: Context> Secp256k1<C> {
     }
 }
 
-fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
-    let mut ser_ret = [0u8; 72];
-    let mut len: usize = ser_ret.len();
-    unsafe {
-        let err = ffi::secp256k1_ecdsa_signature_serialize_der(
-            ffi::secp256k1_context_no_precomp,
-            ser_ret.as_mut_c_ptr(),
-            &mut len,
-            sig,
-        );
-        debug_assert!(err == 1);
-    }
-    len <= max_len
-}
-
-fn compact_sig_has_zero_first_bit(sig: &ffi::Signature) -> bool {
-    let mut compact = [0u8; 64];
-    unsafe {
-        let err = ffi::secp256k1_ecdsa_signature_serialize_compact(
-            ffi::secp256k1_context_no_precomp,
-            compact.as_mut_c_ptr(),
-            sig,
-        );
-        debug_assert!(err == 1);
-    }
-    compact[0] < 0x80
-}
-
 impl<C: Signing> Secp256k1<C> {
-
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
-    /// Requires a signing-capable context.
-    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa instead.")]
-    pub fn sign(&self, msg: &Message, sk: &key::SecretKey) -> ecdsa::Signature {
-        self.sign_ecdsa(msg, sk)
-    }
-
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
-    /// Requires a signing-capable context.
-    pub fn sign_ecdsa(&self, msg: &Message, sk: &key::SecretKey) -> ecdsa::Signature {
-        unsafe {
-            let mut ret = ffi::Signature::new();
-            // We can assume the return value because it's not possible to construct
-            // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
-                                                 sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
-                                                 ptr::null()), 1);
-            ecdsa::Signature::from(ret)
-        }
-    }
-
-    fn sign_grind_with_check(
-        &self, msg: &Message,
-        sk: &SecretKey,
-        check: impl Fn(&ffi::Signature) -> bool) -> ecdsa::Signature {
-            let mut entropy_p : *const ffi::types::c_void = ptr::null();
-            let mut counter : u32 = 0;
-            let mut extra_entropy = [0u8; 32];
-            loop {
-                unsafe {
-                    let mut ret = ffi::Signature::new();
-                    // We can assume the return value because it's not possible to construct
-                    // an invalid signature from a valid `Message` and `SecretKey`
-                    assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
-                                                        sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
-                                                        entropy_p), 1);
-                    if check(&ret) {
-                        return ecdsa::Signature::from(ret);
-                    }
-
-                    counter += 1;
-                    // From 1.32 can use `to_le_bytes` instead
-                    let le_counter = counter.to_le();
-                    let le_counter_bytes : [u8; 4] = mem::transmute(le_counter);
-                    for (i, b) in le_counter_bytes.iter().enumerate() {
-                        extra_entropy[i] = *b;
-                    }
-
-                    entropy_p = extra_entropy.as_ptr() as *const ffi::types::c_void;
-
-                    // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
-                    #[cfg(fuzzing)]
-                    return ecdsa::Signature::from(ret);
-                }
-            }
-    }
-
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 - bytes_to_grund bytes. The number
-    /// of signing operation performed by this function is exponential in the
-    /// number of bytes grinded.
-    /// Requires a signing capable context.
-    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_grind_r instead.")]
-    pub fn sign_grind_r(&self, msg: &Message, sk: &SecretKey, bytes_to_grind: usize) -> ecdsa::Signature {
-        self.sign_ecdsa_grind_r(msg, sk, bytes_to_grind)
-    }
-
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 - bytes_to_grund bytes. The number
-    /// of signing operation performed by this function is exponential in the
-    /// number of bytes grinded.
-    /// Requires a signing capable context.
-    pub fn sign_ecdsa_grind_r(&self, msg: &Message, sk: &SecretKey, bytes_to_grind: usize) -> ecdsa::Signature {
-        let len_check = |s : &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
-        return self.sign_grind_with_check(msg, sk, len_check);
-    }
-
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 bytes and compatible with the low r
-    /// signature implementation of bitcoin core. In average, this function
-    /// will perform two signing operations.
-    /// Requires a signing capable context.
-    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_grind_r instead.")]
-    pub fn sign_low_r(&self, msg: &Message, sk: &SecretKey) -> ecdsa::Signature {
-        return self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
-    }
-
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 bytes and compatible with the low r
-    /// signature implementation of bitcoin core. In average, this function
-    /// will perform two signing operations.
-    /// Requires a signing capable context.
-    pub fn sign_ecdsa_low_r(&self, msg: &Message, sk: &SecretKey) -> ecdsa::Signature {
-        return self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
-    }
-
     /// Generates a random keypair. Convenience function for `key::SecretKey::new`
     /// and `key::PublicKey::from_secret_key`; call those functions directly for
     /// batch key generation. Requires a signing-capable context. Requires compilation
@@ -521,71 +392,6 @@ impl<C: Signing> Secp256k1<C> {
         let sk = key::SecretKey::new(rng);
         let pk = key::PublicKey::from_secret_key(self, &sk);
         (sk, pk)
-    }
-}
-
-impl<C: Verification> Secp256k1<C> {
-    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
-    /// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
-    /// be used for Bitcoin consensus checking since there may exist signatures
-    /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
-    /// verify-capable context.
-    ///
-    /// ```rust
-    /// # #[cfg(feature="rand")] {
-    /// # use secp256k1::rand::rngs::OsRng;
-    /// # use secp256k1::{Secp256k1, Message, Error};
-    /// #
-    /// # let secp = Secp256k1::new();
-    /// # let mut rng = OsRng::new().expect("OsRng");
-    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rng);
-    /// #
-    /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
-    /// let sig = secp.sign(&message, &secret_key);
-    /// assert_eq!(secp.verify(&message, &sig, &public_key), Ok(()));
-    ///
-    /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify(&message, &sig, &public_key), Err(Error::IncorrectSignature));
-    /// # }
-    /// ```
-    #[inline]
-    #[deprecated(since = "0.21.0", note = "Use verify_ecdsa instead")]
-    pub fn verify(&self, msg: &Message, sig: &ecdsa::Signature, pk: &PublicKey) -> Result<(), Error> {
-        self.verify_ecdsa(msg, sig, pk)
-    }
-
-    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
-    /// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
-    /// be used for Bitcoin consensus checking since there may exist signatures
-    /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
-    /// verify-capable context.
-    ///
-    /// ```rust
-    /// # #[cfg(feature="rand")] {
-    /// # use secp256k1::rand::rngs::OsRng;
-    /// # use secp256k1::{Secp256k1, Message, Error};
-    /// #
-    /// # let secp = Secp256k1::new();
-    /// # let mut rng = OsRng::new().expect("OsRng");
-    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rng);
-    /// #
-    /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
-    /// let sig = secp.sign_ecdsa(&message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Ok(()));
-    ///
-    /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature));
-    /// # }
-    /// ```
-    #[inline]
-    pub fn verify_ecdsa(&self, msg: &Message, sig: &ecdsa::Signature, pk: &PublicKey) -> Result<(), Error> {
-        unsafe {
-            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_c_ptr(), msg.as_c_ptr(), pk.as_c_ptr()) == 0 {
-                Err(Error::IncorrectSignature)
-            } else {
-                Ok(())
-            }
-        }
     }
 }
 
@@ -894,9 +700,9 @@ mod tests {
                 assert_ne!(sig, low_r_sig);
             }
             #[cfg(not(fuzzing))]  // mocked sig generation doesn't produce low-R sigs
-            assert!(super::compact_sig_has_zero_first_bit(&low_r_sig.0));
+            assert!(ecdsa::compact_sig_has_zero_first_bit(&low_r_sig.0));
             #[cfg(not(fuzzing))]  // mocked sig generation doesn't produce low-R sigs
-            assert!(super::der_length_check(&grind_r_sig.0, 70));
+            assert!(ecdsa::der_length_check(&grind_r_sig.0, 70));
          }
     }
 

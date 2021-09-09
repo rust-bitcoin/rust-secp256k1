@@ -589,7 +589,7 @@ impl KeyPair {
     /// Creates a new random secret key. Requires compilation with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
-    pub fn new<R: Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
+    pub fn new<R: ::rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
         let mut random_32_bytes = || {
             let mut ret = [0u8; 32];
             rng.fill_bytes(&mut ret);
