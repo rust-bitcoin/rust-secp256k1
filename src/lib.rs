@@ -148,7 +148,7 @@ mod key;
 pub mod constants;
 pub mod ecdh;
 pub mod ecdsa;
-pub mod schnorrsig;
+pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
 
