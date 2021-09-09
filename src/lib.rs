@@ -886,8 +886,7 @@ mod tests {
     use key::{SecretKey, PublicKey};
     use super::{from_hex, to_hex};
     use super::constants;
-    use super::{Secp256k1, Signature, Message};
-    use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
+    use super::{Secp256k1, Signature, Message, Error};
     use ffi::{self, types::AlignedType};
     use context::*;
 
@@ -1193,20 +1192,20 @@ mod tests {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
+        assert_eq!(s.verify(&msg, &sig, &pk), Err(Error::IncorrectSignature));
     }
 
     #[test]
     fn test_bad_slice() {
         assert_eq!(Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE + 1]),
-                   Err(InvalidSignature));
+                   Err(Error::InvalidSignature));
         assert_eq!(Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE]),
-                   Err(InvalidSignature));
+                   Err(Error::InvalidSignature));
 
         assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE - 1]),
-                   Err(InvalidMessage));
+                   Err(Error::InvalidMessage));
         assert_eq!(Message::from_slice(&[0; constants::MESSAGE_SIZE + 1]),
-                   Err(InvalidMessage));
+                   Err(Error::InvalidMessage));
         assert!(Message::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
         assert!(Message::from_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
     }
@@ -1253,7 +1252,7 @@ mod tests {
         let msg = Message::from_slice(&msg[..]).unwrap();
 
         // without normalization we expect this will fail
-        assert_eq!(secp.verify(&msg, &sig, &pk), Err(IncorrectSignature));
+        assert_eq!(secp.verify(&msg, &sig, &pk), Err(Error::IncorrectSignature));
         // after normalization it should pass
         sig.normalize_s();
         assert_eq!(secp.verify(&msg, &sig, &pk), Ok(()));
