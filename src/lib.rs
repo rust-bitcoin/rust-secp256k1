@@ -879,16 +879,11 @@ fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use rand::{RngCore, thread_rng};
     use std::str::FromStr;
     use std::marker::PhantomData;
-
-    use key::{SecretKey, PublicKey};
-    use super::{from_hex, to_hex};
-    use super::constants;
-    use super::{Secp256k1, Signature, Message, Error};
-    use ffi::{self, types::AlignedType};
-    use context::*;
+    use ffi::types::AlignedType;
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
