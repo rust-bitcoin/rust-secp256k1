@@ -40,7 +40,7 @@
 //! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
-//! use secp256k1::bitcoin_hashes::sha256;
+//! use secp256k1::hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
 //! let mut rng = OsRng::new().expect("OsRng");
@@ -126,7 +126,7 @@
 pub extern crate secp256k1_sys;
 pub use secp256k1_sys as ffi;
 
-#[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes;
+#[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes as hashes;
 #[cfg(all(test, feature = "unstable"))] extern crate test;
 #[cfg(any(test, feature = "rand"))] pub extern crate rand;
 #[cfg(any(test))] extern crate rand_core;
@@ -163,7 +163,7 @@ use ffi::{CPtr, types::AlignedType};
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
-use bitcoin_hashes::Hash;
+use hashes::Hash;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -212,21 +212,21 @@ pub trait ThirtyTwoByteHash {
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-impl ThirtyTwoByteHash for bitcoin_hashes::sha256::Hash {
+impl ThirtyTwoByteHash for hashes::sha256::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
     }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-impl ThirtyTwoByteHash for bitcoin_hashes::sha256d::Hash {
+impl ThirtyTwoByteHash for hashes::sha256d::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
     }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-impl<T: bitcoin_hashes::sha256t::Tag> ThirtyTwoByteHash for bitcoin_hashes::sha256t::Hash<T> {
+impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
     }
@@ -497,8 +497,8 @@ impl Message {
     /// assert_eq!(m1, m2);
     /// ```
     #[cfg(feature = "bitcoin_hashes")]
-    pub fn from_hashed_data<H: ThirtyTwoByteHash + bitcoin_hashes::Hash>(data: &[u8]) -> Self {
-        <H as bitcoin_hashes::Hash>::hash(data).into()
+    pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
+        <H as hashes::Hash>::hash(data).into()
     }
 }
 
@@ -1291,25 +1291,25 @@ mod tests {
     #[cfg(feature = "bitcoin_hashes")]
     #[test]
     fn test_from_hash() {
-        use bitcoin_hashes;
-        use bitcoin_hashes::Hash;
+        use hashes;
+        use hashes::Hash;
 
         let test_bytes = "Hello world!".as_bytes();
 
-        let hash = bitcoin_hashes::sha256::Hash::hash(test_bytes);
+        let hash = hashes::sha256::Hash::hash(test_bytes);
         let msg = Message::from(hash);
         assert_eq!(msg.0, hash.into_inner());
         assert_eq!(
             msg,
-            Message::from_hashed_data::<bitcoin_hashes::sha256::Hash>(test_bytes)
+            Message::from_hashed_data::<hashes::sha256::Hash>(test_bytes)
         );
 
-        let hash = bitcoin_hashes::sha256d::Hash::hash(test_bytes);
+        let hash = hashes::sha256d::Hash::hash(test_bytes);
         let msg = Message::from(hash);
         assert_eq!(msg.0, hash.into_inner());
         assert_eq!(
             msg,
-            Message::from_hashed_data::<bitcoin_hashes::sha256d::Hash>(test_bytes)
+            Message::from_hashed_data::<hashes::sha256d::Hash>(test_bytes)
         );
     }
 }

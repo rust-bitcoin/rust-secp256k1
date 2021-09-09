@@ -1,3 +1,6 @@
+# Unreleased
+
+* Rename `secp256k1::bitcoin_hashes` module to `secp256k1::hashes` to align with `bitcoin` crate naming.
 
 # 0.20.3 - 2021-06-10
 
@@ -35,7 +38,7 @@
 # 0.18.0 - 2020-08-26
 
 * Add feature-gated `bitcoin_hashes` dependency and [`ThirtyTwoByteHash` trait](https://github.com/rust-bitcoin/rust-secp256k1/pull/206/)
-* Add feature-gated [global static context](https://github.com/rust-bitcoin/rust-secp256k1/pull/224) 
+* Add feature-gated [global static context](https://github.com/rust-bitcoin/rust-secp256k1/pull/224)
 * Allow [all-zero messages](https://github.com/rust-bitcoin/rust-secp256k1/pull/207) to be constructed
 * Bump rust-secp-sys to 0.2.0
 
