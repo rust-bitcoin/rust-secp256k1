@@ -134,9 +134,9 @@ impl SecretKey {
         }
     }
 
-    /// Creates a new secret key using data from BIP-340 [`::schnorrsig::KeyPair`]
+    /// Creates a new secret key using data from BIP-340 [`KeyPair`]
     #[inline]
-    pub fn from_keypair(keypair: &::schnorrsig::KeyPair) -> Self {
+    pub fn from_keypair(keypair: &KeyPair) -> Self {
         let mut sk = [0u8; constants::SECRET_KEY_SIZE];
         unsafe {
             let ret = ffi::secp256k1_keypair_sec(
@@ -297,9 +297,9 @@ impl PublicKey {
         }
     }
 
-    /// Creates a new compressed public key key using data from BIP-340 [`::schnorrsig::KeyPair`]
+    /// Creates a new compressed public key key using data from BIP-340 [`KeyPair`]
     #[inline]
-    pub fn from_keypair(keypair: &::schnorrsig::KeyPair) -> Self {
+    pub fn from_keypair(keypair: &KeyPair) -> Self {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             let ret = ffi::secp256k1_keypair_pub(
@@ -502,6 +502,175 @@ impl PartialOrd for PublicKey {
 impl Ord for PublicKey {
     fn cmp(&self, other: &PublicKey) -> ::core::cmp::Ordering {
         self.serialize().cmp(&other.serialize())
+    }
+}
+
+/// Opaque data structure that holds a keypair consisting of a secret and a public key.
+#[derive(Clone)]
+pub struct KeyPair(ffi::KeyPair);
+impl_display_secret!(KeyPair);
+
+impl KeyPair {
+    /// Obtains a raw const pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_ptr(&self) -> *const ffi::KeyPair {
+        &self.0
+    }
+
+    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair {
+        &mut self.0
+    }
+
+    /// Creates a Schnorr KeyPair directly from generic Secp256k1 secret key
+    ///
+    /// # Panic
+    ///
+    /// Panics if internal representation of the provided [`SecretKey`] does not hold correct secret
+    /// key value obtained from Secp256k1 library previously, specifically when secret key value is
+    /// out-of-range (0 or in excess of the group order).
+    #[inline]
+    pub fn from_secret_key<C: Signing>(
+        secp: &Secp256k1<C>,
+        sk: SecretKey,
+    ) -> KeyPair {
+        unsafe {
+            let mut kp = ffi::KeyPair::new();
+            if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, sk.as_c_ptr()) == 1 {
+                KeyPair(kp)
+            } else {
+                panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
+            }
+        }
+    }
+
+    /// Creates a Schnorr KeyPair directly from a secret key slice.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if the provided data has an incorrect length, exceeds Secp256k1
+    /// field `p` value or the corresponding public key is not even.
+    #[inline]
+    pub fn from_seckey_slice<C: Signing>(
+        secp: &Secp256k1<C>,
+        data: &[u8],
+    ) -> Result<KeyPair, Error> {
+        if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
+            return Err(Error::InvalidSecretKey);
+        }
+
+        unsafe {
+            let mut kp = ffi::KeyPair::new();
+            if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, data.as_c_ptr()) == 1 {
+                Ok(KeyPair(kp))
+            } else {
+                Err(Error::InvalidSecretKey)
+            }
+        }
+    }
+
+    /// Creates a Schnorr KeyPair directly from a secret key string
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    #[inline]
+    pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<KeyPair, Error> {
+        let mut res = [0u8; constants::SECRET_KEY_SIZE];
+        match from_hex(s, &mut res) {
+            Ok(constants::SECRET_KEY_SIZE) => {
+                KeyPair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE])
+            }
+            _ => Err(Error::InvalidPublicKey),
+        }
+    }
+
+    /// Creates a new random secret key. Requires compilation with the "rand" feature.
+    #[inline]
+    #[cfg(any(test, feature = "rand"))]
+    pub fn new<R: Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
+        let mut random_32_bytes = || {
+            let mut ret = [0u8; 32];
+            rng.fill_bytes(&mut ret);
+            ret
+        };
+        let mut data = random_32_bytes();
+        unsafe {
+            let mut keypair = ffi::KeyPair::new();
+            while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
+                data = random_32_bytes();
+            }
+            KeyPair(keypair)
+        }
+    }
+
+    /// Serialize the key pair as a secret key byte value
+    #[inline]
+    pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+        *SecretKey::from_keypair(self).as_ref()
+    }
+
+    /// Tweak a keypair by adding the given tweak to the secret key and updating the public key
+    /// accordingly.
+    ///
+    /// Will return an error if the resulting key would be invalid or if the tweak was not a 32-byte
+    /// length slice.
+    ///
+    /// NB: Will not error if the tweaked public key has an odd value and can't be used for
+    ///     BIP 340-342 purposes.
+    // TODO: Add checked implementation
+    #[inline]
+    pub fn tweak_add_assign<C: Verification>(
+        &mut self,
+        secp: &Secp256k1<C>,
+        tweak: &[u8],
+    ) -> Result<(), Error> {
+        if tweak.len() != 32 {
+            return Err(Error::InvalidTweak);
+        }
+
+        unsafe {
+            let err = ffi::secp256k1_keypair_xonly_tweak_add(
+                secp.ctx,
+                &mut self.0,
+                tweak.as_c_ptr(),
+            );
+
+            if err == 1 {
+                Ok(())
+            } else {
+                Err(Error::InvalidTweak)
+            }
+        }
+    }
+}
+
+impl From<KeyPair> for SecretKey {
+    #[inline]
+    fn from(pair: KeyPair) -> Self {
+        SecretKey::from_keypair(&pair)
+    }
+}
+
+impl<'a> From<&'a KeyPair> for SecretKey {
+    #[inline]
+    fn from(pair: &'a KeyPair) -> Self {
+        SecretKey::from_keypair(pair)
+    }
+}
+
+impl From<KeyPair> for PublicKey {
+    #[inline]
+    fn from(pair: KeyPair) -> Self {
+        PublicKey::from_keypair(&pair)
+    }
+}
+
+impl<'a> From<&'a KeyPair> for PublicKey {
+    #[inline]
+    fn from(pair: &'a KeyPair) -> Self {
+        PublicKey::from_keypair(pair)
     }
 }
 
