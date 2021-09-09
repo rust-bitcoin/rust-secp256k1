@@ -117,13 +117,32 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
+    #[deprecated(since = "0.21.0", note = "Use sign_schnorr instead.")]
     pub fn schnorrsig_sign(&self, msg: &Message, keypair: &KeyPair) -> Signature {
+        self.sign_schnorr(msg, keypair)
+    }
+
+    /// Create a schnorr signature internally using the ThreadRng random number
+    /// generator to generate the auxiliary random data.
+    /// Requires compilation with "rand-std" feature.
+    #[cfg(any(test, feature = "rand-std"))]
+    pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         let mut rng = thread_rng();
-        self.schnorrsig_sign_with_rng(msg, keypair, &mut rng)
+        self.sign_schnorr_with_rng(msg, keypair, &mut rng)
     }
 
     /// Create a schnorr signature without using any auxiliary random data.
+    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_no_aux_rand instead.")]
     pub fn schnorrsig_sign_no_aux_rand(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+    ) -> Signature {
+        self.sign_schnorr_no_aux_rand(msg, keypair)
+    }
+
+    /// Create a schnorr signature without using any auxiliary random data.
+    pub fn sign_schnorr_no_aux_rand(
         &self,
         msg: &Message,
         keypair: &KeyPair,
@@ -132,7 +151,18 @@ impl<C: Signing> Secp256k1<C> {
     }
 
     /// Create a Schnorr signature using the given auxiliary random data.
+    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_aux_rand instead.")]
     pub fn schnorrsig_sign_with_aux_rand(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        aux_rand: &[u8; 32],
+    ) -> Signature {
+        self.sign_schnorr_with_aux_rand(msg, keypair, aux_rand)
+    }
+
+    /// Create a Schnorr signature using the given auxiliary random data.
+    pub fn sign_schnorr_with_aux_rand(
         &self,
         msg: &Message,
         keypair: &KeyPair,
@@ -149,7 +179,21 @@ impl<C: Signing> Secp256k1<C> {
     /// generate the auxiliary random data. Requires compilation with "rand"
     /// feature.
     #[cfg(any(test, feature = "rand"))]
+    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_rng instead.")]
     pub fn schnorrsig_sign_with_rng<R: Rng + CryptoRng>(
+        &self,
+        msg: &Message,
+        keypair: &KeyPair,
+        rng: &mut R,
+    ) -> Signature {
+        self.sign_schnorr_with_rng(msg, keypair, rng)
+    }
+
+    /// Create a schnorr signature using the given random number generator to
+    /// generate the auxiliary random data. Requires compilation with "rand"
+    /// feature.
+    #[cfg(any(test, feature = "rand"))]
+    pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
         &self,
         msg: &Message,
         keypair: &KeyPair,
@@ -161,7 +205,18 @@ impl<C: Signing> Secp256k1<C> {
     }
 
     /// Verify a Schnorr signature.
+    #[deprecated(since = "0.21.0", note = "Use verify_schnorr instead.")]
     pub fn schnorrsig_verify(
+        &self,
+        sig: &Signature,
+        msg: &Message,
+        pubkey: &XOnlyPublicKey,
+    ) -> Result<(), Error> {
+        self.verify_schnorr(sig, msg, pubkey)
+    }
+
+    /// Verify a Schnorr signature.
+    pub fn verify_schnorr(
         &self,
         sig: &Signature,
         msg: &Message,
@@ -237,7 +292,7 @@ mod tests {
 
             let sig = sign(&secp, &msg, &seckey, &mut rng);
 
-            assert!(secp.schnorrsig_verify(&sig, &msg, &pubkey).is_ok());
+            assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
         }
     }
 
@@ -246,28 +301,28 @@ mod tests {
         test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
             let mut aux_rand = [0u8; 32];
             rng.fill_bytes(&mut aux_rand);
-            secp.schnorrsig_sign_with_aux_rand(msg, seckey, &aux_rand)
+            secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
         })
     }
 
     #[test]
     fn test_schnorrsig_sign_with_rng_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, mut rng| {
-            secp.schnorrsig_sign_with_rng(msg, seckey, &mut rng)
+            secp.sign_schnorr_with_rng(msg, seckey, &mut rng)
         })
     }
 
     #[test]
     fn test_schnorrsig_sign_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
-            secp.schnorrsig_sign(msg, seckey)
+            secp.sign_schnorr(msg, seckey)
         })
     }
 
     #[test]
     fn test_schnorrsig_sign_no_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
-            secp.schnorrsig_sign_no_aux_rand(msg, seckey)
+            secp.sign_schnorr_no_aux_rand(msg, seckey)
         })
     }
 
@@ -288,7 +343,7 @@ mod tests {
         let expected_sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
 
         let sig = secp
-            .schnorrsig_sign_with_aux_rand(&msg, &sk, &aux_rand);
+            .sign_schnorr_with_aux_rand(&msg, &sk, &aux_rand);
 
         assert_eq!(expected_sig, sig);
     }
@@ -305,7 +360,7 @@ mod tests {
             XOnlyPublicKey::from_str("B33CC9EDC096D0A83416964BD3C6247B8FECD256E4EFA7870D2C854BDEB33390")
                 .unwrap();
 
-        assert!(secp.schnorrsig_verify(&sig, &msg, &pubkey).is_ok());
+        assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
     }
 
     #[test]
@@ -469,7 +524,7 @@ mod tests {
         let keypair = KeyPair::from_seckey_slice(&s, &[2; 32]).unwrap();
         let aux = [3u8; 32];
         let sig = s
-            .schnorrsig_sign_with_aux_rand(&msg, &keypair, &aux);
+            .sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORRSIG_SIGNATURE_SIZE] = [
             0x14, 0xd0, 0xbf, 0x1a, 0x89, 0x53, 0x50, 0x6f, 0xb4, 0x60, 0xf5, 0x8b, 0xe1, 0x41,
             0xaf, 0x76, 0x7f, 0xd1, 0x12, 0x53, 0x5f, 0xb3, 0x92, 0x2e, 0xf2, 0x17, 0x30, 0x8e,
