@@ -277,25 +277,6 @@ mod tests {
         }};
     }
 
-    fn test_schnorrsig_sign_helper(
-        sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
-    ) {
-        let secp = Secp256k1::new();
-
-        let mut rng = thread_rng();
-        let (seckey, pubkey) = secp.generate_schnorrsig_keypair(&mut rng);
-        let mut msg = [0u8; 32];
-
-        for _ in 0..100 {
-            rng.fill_bytes(&mut msg);
-            let msg = Message::from_slice(&msg).unwrap();
-
-            let sig = sign(&secp, &msg, &seckey, &mut rng);
-
-            assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
-        }
-    }
-
     #[test]
     fn test_schnorrsig_sign_with_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
@@ -324,6 +305,25 @@ mod tests {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr_no_aux_rand(msg, seckey)
         })
+    }
+
+    fn test_schnorrsig_sign_helper(
+        sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
+    ) {
+        let secp = Secp256k1::new();
+
+        let mut rng = thread_rng();
+        let (seckey, pubkey) = secp.generate_schnorrsig_keypair(&mut rng);
+        let mut msg = [0u8; 32];
+
+        for _ in 0..100 {
+            rng.fill_bytes(&mut msg);
+            let msg = Message::from_slice(&msg).unwrap();
+
+            let sig = sign(&secp, &msg, &seckey, &mut rng);
+
+            assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
+        }
     }
 
     #[test]
