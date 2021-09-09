@@ -90,7 +90,7 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// use secp256k1::key::ONE_KEY;
+    /// use secp256k1::ONE_KEY;
     /// let key = ONE_KEY;
     /// // Normal display hides value
     /// assert_eq!(
@@ -123,7 +123,7 @@ impl KeyPair {
     /// # Example
     ///
     /// ```
-    /// use secp256k1::key::ONE_KEY;
+    /// use secp256k1::ONE_KEY;
     /// use secp256k1::schnorrsig::KeyPair;
     /// use secp256k1::Secp256k1;
     ///

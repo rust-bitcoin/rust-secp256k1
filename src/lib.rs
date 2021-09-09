@@ -143,9 +143,10 @@ mod macros;
 #[macro_use]
 mod secret;
 mod context;
+mod key;
+
 pub mod constants;
 pub mod ecdh;
-pub mod key;
 pub mod schnorrsig;
 #[cfg(feature = "recovery")]
 pub mod recovery;
@@ -154,6 +155,7 @@ mod serde_util;
 
 pub use key::SecretKey;
 pub use key::PublicKey;
+pub use key::ONE_KEY;
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
