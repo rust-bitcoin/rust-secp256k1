@@ -43,6 +43,9 @@ jobs:
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1.2.0
+        with:
+          key: ${{ matrix.feature }}${{ matrix.os }}
       - name: Checkout Toolchain
         uses: actions-rs/toolchain@v1
         with:
