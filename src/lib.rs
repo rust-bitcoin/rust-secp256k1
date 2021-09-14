@@ -151,8 +151,7 @@ pub mod recovery;
 #[cfg(feature = "serde")]
 mod serde_util;
 
-pub use key::SecretKey;
-pub use key::PublicKey;
+pub use key::{SecretKey, PublicKey, XOnlyPubkey, KeyPair};
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
