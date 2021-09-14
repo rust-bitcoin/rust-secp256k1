@@ -81,9 +81,9 @@ pub struct KeyPair(ffi::KeyPair);
 
 /// A Schnorr public key, used for verification of Schnorr signatures
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
-pub struct PublicKey(ffi::XOnlyPublicKey);
+pub struct XOnlyPubkey(ffi::XOnlyPublicKey);
 
-impl fmt::LowerHex for PublicKey {
+impl fmt::LowerHex for XOnlyPubkey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ser = self.serialize();
         for ch in &ser[..] {
@@ -93,19 +93,19 @@ impl fmt::LowerHex for PublicKey {
     }
 }
 
-impl fmt::Display for PublicKey {
+impl fmt::Display for XOnlyPubkey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::LowerHex::fmt(self, f)
     }
 }
 
-impl str::FromStr for PublicKey {
+impl str::FromStr for XOnlyPubkey {
     type Err = Error;
-    fn from_str(s: &str) -> Result<PublicKey, Error> {
+    fn from_str(s: &str) -> Result<XOnlyPubkey, Error> {
         let mut res = [0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SCHNORRSIG_PUBLIC_KEY_SIZE) => {
-                PublicKey::from_slice(&res[0..constants::SCHNORRSIG_PUBLIC_KEY_SIZE])
+                XOnlyPubkey::from_slice(&res[0..constants::SCHNORRSIG_PUBLIC_KEY_SIZE])
             }
             _ => Err(InvalidPublicKey),
         }
@@ -247,7 +247,7 @@ impl KeyPair {
     }
 }
 
-impl PublicKey {
+impl XOnlyPubkey {
     /// Obtains a raw const pointer suitable for use with FFI functions
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey {
@@ -262,7 +262,7 @@ impl PublicKey {
 
     /// Creates a new Schnorr public key from a Schnorr key pair
     #[inline]
-    pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> PublicKey {
+    pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> XOnlyPubkey {
         let mut pk_parity = 0;
         unsafe {
             let mut xonly_pk = ffi::XOnlyPublicKey::new();
@@ -273,13 +273,13 @@ impl PublicKey {
                 keypair.as_ptr(),
             );
             debug_assert_eq!(ret, 1);
-            PublicKey(xonly_pk)
+            XOnlyPubkey(xonly_pk)
         }
     }
 
     /// Creates a Schnorr public key directly from a slice
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
+    pub fn from_slice(data: &[u8]) -> Result<XOnlyPubkey, Error> {
         if data.is_empty() || data.len() != constants::SCHNORRSIG_PUBLIC_KEY_SIZE {
             return Err(InvalidPublicKey);
         }
@@ -292,7 +292,7 @@ impl PublicKey {
                 data.as_c_ptr(),
             ) == 1
             {
-                Ok(PublicKey(pk))
+                Ok(XOnlyPubkey(pk))
             } else {
                 Err(InvalidPublicKey)
             }
@@ -392,7 +392,7 @@ impl PublicKey {
     }
 }
 
-impl CPtr for PublicKey {
+impl CPtr for XOnlyPubkey {
     type Target = ffi::XOnlyPublicKey;
     fn as_c_ptr(&self) -> *const Self::Target {
         self.as_ptr()
@@ -404,15 +404,15 @@ impl CPtr for PublicKey {
 }
 
 /// Creates a new Schnorr public key from a FFI x-only public key
-impl From<ffi::XOnlyPublicKey> for PublicKey {
+impl From<ffi::XOnlyPublicKey> for XOnlyPubkey {
     #[inline]
-    fn from(pk: ffi::XOnlyPublicKey) -> PublicKey {
-        PublicKey(pk)
+    fn from(pk: ffi::XOnlyPublicKey) -> XOnlyPubkey {
+        XOnlyPubkey(pk)
     }
 }
 
-impl From<::key::PublicKey> for PublicKey {
-    fn from(src: ::key::PublicKey) -> PublicKey {
+impl From<::key::PublicKey> for XOnlyPubkey {
+    fn from(src: ::key::PublicKey) -> XOnlyPubkey {
         unsafe {
             let mut pk = ffi::XOnlyPublicKey::new();
             assert_eq!(
@@ -424,13 +424,13 @@ impl From<::key::PublicKey> for PublicKey {
                     src.as_c_ptr(),
                 )
             );
-            PublicKey(pk)
+            XOnlyPubkey(pk)
         }
     }
 }
 
 #[cfg(feature = "serde")]
-impl ::serde::Serialize for PublicKey {
+impl ::serde::Serialize for XOnlyPubkey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
@@ -441,7 +441,7 @@ impl ::serde::Serialize for PublicKey {
 }
 
 #[cfg(feature = "serde")]
-impl<'de> ::serde::Deserialize<'de> for PublicKey {
+impl<'de> ::serde::Deserialize<'de> for XOnlyPubkey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
@@ -450,7 +450,7 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
         } else {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "raw 32 bytes schnorr public key",
-                PublicKey::from_slice
+                XOnlyPubkey::from_slice
             ))
         }
     }
@@ -561,7 +561,7 @@ impl<C: Signing> Secp256k1<C> {
         &self,
         sig: &Signature,
         msg: &Message,
-        pubkey: &PublicKey,
+        pubkey: &XOnlyPubkey,
     ) -> Result<(), Error> {
         unsafe {
             let ret = ffi::secp256k1_schnorrsig_verify(
@@ -589,9 +589,9 @@ impl<C: Signing> Secp256k1<C> {
     pub fn generate_schnorrsig_keypair<R: Rng + ?Sized>(
         &self,
         rng: &mut R,
-    ) -> (KeyPair, PublicKey) {
+    ) -> (KeyPair, XOnlyPubkey) {
         let sk = KeyPair::new(self, rng);
-        let pubkey = PublicKey::from_keypair(self, &sk);
+        let pubkey = XOnlyPubkey::from_keypair(self, &sk);
         (sk, pubkey)
     }
 }
@@ -600,7 +600,7 @@ impl<C: Signing> Secp256k1<C> {
 mod tests {
     use super::super::Error::InvalidPublicKey;
     use super::super::{constants, from_hex, All, Message, Secp256k1};
-    use super::{KeyPair, PublicKey, Signature};
+    use super::{KeyPair, XOnlyPubkey, Signature};
     use rand::{rngs::ThreadRng, thread_rng, Error, ErrorKind, RngCore};
     use rand_core::impls;
     use std::iter;
@@ -698,7 +698,7 @@ mod tests {
         let msg = Message::from_slice(&hex_msg).unwrap();
         let sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
         let pubkey =
-            PublicKey::from_str("B33CC9EDC096D0A83416964BD3C6247B8FECD256E4EFA7870D2C854BDEB33390")
+            XOnlyPubkey::from_str("B33CC9EDC096D0A83416964BD3C6247B8FECD256E4EFA7870D2C854BDEB33390")
                 .unwrap();
 
         assert!(secp.schnorrsig_verify(&sig, &msg, &pubkey).is_ok());
@@ -706,9 +706,9 @@ mod tests {
 
     #[test]
     fn test_pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
-        let pk = PublicKey::from_slice(&[
+        assert_eq!(XOnlyPubkey::from_slice(&[]), Err(InvalidPublicKey));
+        assert_eq!(XOnlyPubkey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+        let pk = XOnlyPubkey::from_slice(&[
             0xB3, 0x3C, 0xC9, 0xED, 0xC0, 0x96, 0xD0, 0xA8, 0x34, 0x16, 0x96, 0x4B, 0xD3, 0xC6,
             0x24, 0x7B, 0x8F, 0xEC, 0xD2, 0x56, 0xE4, 0xEF, 0xA7, 0x87, 0x0D, 0x2C, 0x85, 0x4B,
             0xDE, 0xB3, 0x33, 0x90,
@@ -721,7 +721,7 @@ mod tests {
         let secp = Secp256k1::new();
         let (_, pubkey) = secp.generate_schnorrsig_keypair(&mut thread_rng());
         let ser = pubkey.serialize();
-        let pubkey2 = PublicKey::from_slice(&ser).unwrap();
+        let pubkey2 = XOnlyPubkey::from_slice(&ser).unwrap();
         assert_eq!(pubkey, pubkey2);
     }
 
@@ -734,35 +734,35 @@ mod tests {
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = ::key::PublicKey::from_keypair(&keypair);
         assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
-        let xpk = PublicKey::from_keypair(&secp, &keypair);
-        assert_eq!(PublicKey::from(pk), xpk);
+        let xpk = XOnlyPubkey::from_keypair(&secp, &keypair);
+        assert_eq!(XOnlyPubkey::from(pk), xpk);
     }
 
     #[test]
     fn test_pubkey_from_bad_slice() {
         // Bad sizes
         assert_eq!(
-            PublicKey::from_slice(&[0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE - 1]),
+            XOnlyPubkey::from_slice(&[0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE - 1]),
             Err(InvalidPublicKey)
         );
         assert_eq!(
-            PublicKey::from_slice(&[0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE + 1]),
+            XOnlyPubkey::from_slice(&[0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE + 1]),
             Err(InvalidPublicKey)
         );
 
         // Bad parse
         assert_eq!(
-            PublicKey::from_slice(&[0xff; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
+            XOnlyPubkey::from_slice(&[0xff; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
         );
         // In fuzzing mode restrictions on public key validity are much more
         // relaxed, thus the invalid check below is expected to fail.
         #[cfg(not(fuzzing))]
         assert_eq!(
-            PublicKey::from_slice(&[0x55; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
+            XOnlyPubkey::from_slice(&[0x55; constants::SCHNORRSIG_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
         );
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        assert_eq!(XOnlyPubkey::from_slice(&[]), Err(InvalidPublicKey));
     }
 
     #[test]
@@ -780,43 +780,43 @@ mod tests {
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the epected result.
         #[cfg(not(fuzzing))]
-        let pk = PublicKey::from_keypair(&s, &sk);
+        let pk = XOnlyPubkey::from_keypair(&s, &sk);
         #[cfg(fuzzing)]
-        let pk = PublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
+        let pk = XOnlyPubkey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
         assert_eq!(
             pk.to_string(),
             "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166"
         );
         assert_eq!(
-            PublicKey::from_str("18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166")
+            XOnlyPubkey::from_str("18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166")
                 .unwrap(),
             pk
         );
 
-        assert!(PublicKey::from_str(
+        assert!(XOnlyPubkey::from_str(
             "00000000000000000000000000000000000000000000000000000000000000000"
         )
         .is_err());
-        assert!(PublicKey::from_str(
+        assert!(XOnlyPubkey::from_str(
             "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16601"
         )
         .is_err());
-        assert!(PublicKey::from_str(
+        assert!(XOnlyPubkey::from_str(
             "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16"
         )
         .is_err());
-        assert!(PublicKey::from_str(
+        assert!(XOnlyPubkey::from_str(
             "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
         )
         .is_err());
-        assert!(PublicKey::from_str(
+        assert!(XOnlyPubkey::from_str(
             "xx18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
         )
         .is_err());
 
         let long_str: String = iter::repeat('a').take(1024 * 1024).collect();
-        assert!(PublicKey::from_str(&long_str).is_err());
+        assert!(XOnlyPubkey::from_str(&long_str).is_err());
     }
 
     #[test]
@@ -884,7 +884,7 @@ mod tests {
         static PK_STR: &'static str = "\
             18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
         ";
-        let pk = PublicKey::from_slice(&PK_BYTES).unwrap();
+        let pk = XOnlyPubkey::from_slice(&PK_BYTES).unwrap();
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
         assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES[..])]);
@@ -913,7 +913,7 @@ mod tests {
             let orig_pk = pk;
             kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
             let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
-            assert_eq!(PublicKey::from_keypair(&s, &kp), pk);
+            assert_eq!(XOnlyPubkey::from_keypair(&s, &kp), pk);
             assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
         }
     }
@@ -929,8 +929,8 @@ mod tests {
         )
         .unwrap();
 
-        let pk1 = PublicKey::from(kpk1);
-        let pk2 = PublicKey::from(kpk2);
+        let pk1 = XOnlyPubkey::from(kpk1);
+        let pk2 = XOnlyPubkey::from(kpk2);
 
         assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
         assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
