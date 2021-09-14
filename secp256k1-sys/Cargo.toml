@@ -30,5 +30,6 @@ libc = "0.2"
 default = ["std"]
 recovery = []
 lowmemory = []
-std = []
+std = ["alloc"]
+alloc = []
 

@@ -5,8 +5,8 @@ use crate::{Error, Secp256k1};
 use crate::ffi::{self, CPtr, types::AlignedType};
 use crate::ffi::types::{c_uint, c_void};
 
-#[cfg(any(feature = "std", feature = "alloc"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub use self::alloc_only::*;
 
 #[cfg(all(feature = "global-context", feature = "std"))]
@@ -103,13 +103,10 @@ mod private {
     impl<'buf> Sealed for SignOnlyPreallocated<'buf> {}
 }
 
-#[cfg(any(feature = "std", feature = "alloc"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc"))))]
 mod alloc_only {
-    #[cfg(not(feature = "std"))]
-    use alloc::alloc;
-    #[cfg(feature = "std")]
-    use std::alloc;
+    use crate::alloc::alloc;
 
     use core::marker::PhantomData;
 

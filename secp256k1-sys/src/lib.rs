@@ -25,6 +25,9 @@
 #[cfg(any(test, feature = "std"))]
 extern crate core;
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 #[cfg(fuzzing)]
 const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DISABLED_FOR_FUZZING: usize = 0;
 
@@ -540,11 +543,11 @@ extern "C" {
 ///
 /// The newly created secp256k1 raw context.
 #[no_mangle]
-#[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_5_0_context_create(flags: c_uint) -> *mut Context {
     use core::mem;
-    use std::alloc;
+    use crate::alloc::alloc;
     assert!(ALIGN_TO >= mem::align_of::<usize>());
     assert!(ALIGN_TO >= mem::align_of::<&usize>());
     assert!(ALIGN_TO >= mem::size_of::<usize>());
@@ -560,8 +563,8 @@ pub unsafe extern "C" fn rustsecp256k1_v0_5_0_context_create(flags: c_uint) -> *
     secp256k1_context_preallocated_create(ptr, flags)
 }
 
-#[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
     rustsecp256k1_v0_5_0_context_create(flags)
 }
@@ -573,10 +576,10 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 /// The pointer shouldn't be used after passing to this function, consider it as passing it to `free()`.
 ///
 #[no_mangle]
-#[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_5_0_context_destroy(ctx: *mut Context) {
-    use std::alloc;
+    use crate::alloc::alloc;
     secp256k1_context_preallocated_destroy(ctx);
     let ptr = (ctx as *mut u8).sub(ALIGN_TO);
     let bytes = (ptr as *mut usize).read();
@@ -584,8 +587,8 @@ pub unsafe extern "C" fn rustsecp256k1_v0_5_0_context_destroy(ctx: *mut Context)
     alloc::dealloc(ptr, layout);
 }
 
-#[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
     rustsecp256k1_v0_5_0_context_destroy(ctx)
 }
