@@ -16,22 +16,18 @@
 //! Public and secret keys.
 //!
 
-#[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 use core::{fmt, ptr, str};
 use core::ops::BitXor;
 
-use super::{from_hex, Secp256k1};
-use super::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use ::{Signing};
-use Verification;
-use constants;
-use ffi::{self, CPtr};
+use crate::{constants, from_hex, Secp256k1, Signing, Verification};
+use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
+use crate::ffi::{self, CPtr, impl_array_newtype};
 
 #[cfg(feature = "global-context")]
-use {Message, ecdsa, SECP256K1};
+use crate::{Message, ecdsa, SECP256K1};
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
-use schnorr;
+use crate::schnorr;
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
@@ -122,7 +118,7 @@ impl str::FromStr for PublicKey {
 }
 
 #[cfg(any(test, feature = "rand"))]
-fn random_32_bytes<R: Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
+fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
     rng.fill_bytes(&mut ret);
     ret
@@ -142,7 +138,7 @@ impl SecretKey {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn new<R: Rng + ?Sized>(rng: &mut R) -> SecretKey {
+    pub fn new<R: rand::Rng + ?Sized>(rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(
@@ -321,11 +317,11 @@ impl SecretKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for SecretKey {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for SecretKey {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
-            s.serialize_str(::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+            s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(&self[..])
         }
@@ -334,8 +330,8 @@ impl ::serde::Serialize for SecretKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for SecretKey {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for SecretKey {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte SecretKey"
@@ -671,8 +667,8 @@ impl From<ffi::PublicKey> for PublicKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for PublicKey {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for PublicKey {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
@@ -683,8 +679,8 @@ impl ::serde::Serialize for PublicKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for PublicKey {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
+impl<'de> serde::Deserialize<'de> for PublicKey {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "an ASCII hex string representing a public key"
@@ -699,13 +695,13 @@ impl<'de> ::serde::Deserialize<'de> for PublicKey {
 }
 
 impl PartialOrd for PublicKey {
-    fn partial_cmp(&self, other: &PublicKey) -> Option<::core::cmp::Ordering> {
+    fn partial_cmp(&self, other: &PublicKey) -> Option<core::cmp::Ordering> {
         self.serialize().partial_cmp(&other.serialize())
     }
 }
 
 impl Ord for PublicKey {
-    fn cmp(&self, other: &PublicKey) -> ::core::cmp::Ordering {
+    fn cmp(&self, other: &PublicKey) -> core::cmp::Ordering {
         self.serialize().cmp(&other.serialize())
     }
 }
@@ -837,7 +833,7 @@ impl KeyPair {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn new<R: ::rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
+    pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
         let mut random_32_bytes = || {
             let mut ret = [0u8; 32];
             rng.fill_bytes(&mut ret);
@@ -992,11 +988,11 @@ impl str::FromStr for KeyPair {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for KeyPair {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for KeyPair {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
-            s.serialize_str(::to_hex(&self.secret_bytes(), &mut buf)
+            s.serialize_str(crate::to_hex(&self.secret_bytes(), &mut buf)
                 .expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(&self.0[..])
@@ -1006,8 +1002,8 @@ impl ::serde::Serialize for KeyPair {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for KeyPair {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for KeyPair {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte KeyPair"
@@ -1360,7 +1356,7 @@ impl fmt::Display for InvalidParityValue {
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl ::std::error::Error for InvalidParityValue {}
+impl std::error::Error for InvalidParityValue {}
 
 impl From<InvalidParityValue> for Error {
     fn from(error: InvalidParityValue) -> Self {
@@ -1371,8 +1367,8 @@ impl From<InvalidParityValue> for Error {
 /// The parity is serialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for Parity {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for Parity {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_u8(self.to_u8())
     }
 }
@@ -1380,11 +1376,11 @@ impl ::serde::Serialize for Parity {
 /// The parity is deserialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for Parity {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for Parity {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> ::serde::de::Visitor<'de> for Visitor
+        impl<'de> serde::de::Visitor<'de> for Visitor
         {
             type Value = Parity;
 
@@ -1393,7 +1389,7 @@ impl<'de> ::serde::Deserialize<'de> for Parity {
             }
 
             fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
-                where E: ::serde::de::Error
+                where E: serde::de::Error
             {
                 use serde::de::Unexpected;
 
@@ -1425,8 +1421,8 @@ impl From<ffi::XOnlyPublicKey> for XOnlyPublicKey {
     }
 }
 
-impl From<::key::PublicKey> for XOnlyPublicKey {
-    fn from(src: ::key::PublicKey) -> XOnlyPublicKey {
+impl From<PublicKey> for XOnlyPublicKey {
+    fn from(src: PublicKey) -> XOnlyPublicKey {
         unsafe {
             let mut pk = ffi::XOnlyPublicKey::new();
             assert_eq!(
@@ -1445,8 +1441,8 @@ impl From<::key::PublicKey> for XOnlyPublicKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for XOnlyPublicKey {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for XOnlyPublicKey {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
@@ -1457,8 +1453,8 @@ impl ::serde::Serialize for XOnlyPublicKey {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte schnorr public key"
@@ -1486,8 +1482,7 @@ impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
 #[cfg(all(feature = "global-context", feature = "serde"))]
 pub mod serde_keypair {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use key::KeyPair;
-    use key::SecretKey;
+    use crate::key::{KeyPair, SecretKey};
 
     #[allow(missing_docs)]
     pub fn serialize<S>(key: &KeyPair, serializer: S) -> Result<S::Ok, S::Error>
@@ -1505,7 +1500,7 @@ pub mod serde_keypair {
         let secret_key = SecretKey::deserialize(deserializer)?;
 
         Ok(KeyPair::from_secret_key(
-            &::SECP256K1,
+            &crate::SECP256K1,
             &secret_key,
         ))
     }
@@ -1514,22 +1509,20 @@ pub mod serde_keypair {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod test {
-    use super::*;
-
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    use core::iter;
     use core::str::FromStr;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
     use rand::{Error, ErrorKind, RngCore, thread_rng};
+
     #[cfg(any(feature = "alloc", feature = "std"))]
     use rand_core::impls;
 
-    use constants;
-    use Error::{InvalidPublicKey, InvalidSecretKey};
-
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    use super::{XOnlyPublicKey, PublicKey, Secp256k1, SecretKey, KeyPair, Parity};
+    use crate::{constants, from_hex, to_hex};
+    use crate::Error::{InvalidPublicKey, InvalidSecretKey};
 
     macro_rules! hex {
         ($hex:expr) => ({
@@ -1781,7 +1774,7 @@ mod test {
         assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
         assert!(PublicKey::from_str("xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
 
-        let long_str: String = iter::repeat('a').take(1024 * 1024).collect();
+        let long_str: String = core::iter::repeat('a').take(1024 * 1024).collect();
         assert!(SecretKey::from_str(&long_str).is_err());
         assert!(PublicKey::from_str(&long_str).is_err());
     }
@@ -2095,7 +2088,7 @@ mod test {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{Configure, Token, assert_tokens};
         use super::serde_keypair;
-        use key::KeyPair;
+        use crate::key::KeyPair;
 
         // Normally users would derive the serde traits, but we can't easily enable the serde macros
         // here, so they are implemented manually to be able to test the behaviour.
@@ -2125,7 +2118,7 @@ mod test {
             01010101010101010001020304050607ffff0000ffff00006363636363636363\
         ";
 
-        let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&::SECP256K1, &SK_BYTES).unwrap());
+        let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
 
         assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
         assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);

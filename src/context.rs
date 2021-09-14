@@ -1,9 +1,9 @@
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
-use ffi::{self, CPtr, types::AlignedType};
-use ffi::types::{c_uint, c_void};
-use Error;
-use Secp256k1;
+
+use crate::{Error, Secp256k1};
+use crate::ffi::{self, CPtr, types::AlignedType};
+use crate::ffi::types::{c_uint, c_void};
 
 #[cfg(any(feature = "std", feature = "alloc"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
@@ -13,12 +13,11 @@ pub use self::alloc_only::*;
 #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {
-    #[cfg(feature = "rand-std")]
-    use rand;
 
     use std::ops::Deref;
     use std::sync::Once;
-    use {Secp256k1, All};
+
+    use crate::{All, Secp256k1};
 
     /// Proxy struct for global `SECP256K1` context.
     #[derive(Debug, Copy, Clone)]
@@ -107,10 +106,16 @@ mod private {
 #[cfg(any(feature = "std", feature = "alloc"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 mod alloc_only {
-    #[cfg(feature = "std")]
-    use std::alloc;
     #[cfg(not(feature = "std"))]
     use alloc::alloc;
+    #[cfg(feature = "std")]
+    use std::alloc;
+
+    use core::marker::PhantomData;
+
+    use super::private;
+    use crate::ffi::{self, types::{c_uint, c_void}};
+    use crate::{Secp256k1, Signing, Verification, Context, AlignedType};
 
     #[cfg(feature = "rand-std")]
     use rand;
@@ -119,8 +124,7 @@ mod alloc_only {
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
 
-    use super::*;
-    const ALIGN_TO: usize = ::core::mem::align_of::<AlignedType>();
+    const ALIGN_TO: usize = core::mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]

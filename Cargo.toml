@@ -10,7 +10,7 @@ documentation = "https://docs.rs/secp256k1/"
 description = "Rust wrapper library for Pieter Wuille's `libsecp256k1`. Implements ECDSA and BIP 340 signatures for the SECG elliptic curve group secp256k1 and related utilities."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
-autoexamples = false # Remove when edition 2018 https://github.com/rust-lang/cargo/issues/5330
+edition = "2018"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]

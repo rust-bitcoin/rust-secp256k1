@@ -18,12 +18,10 @@
 //!
 
 use core::ptr;
-use key;
+use crate::{key, Secp256k1, Message, Error, Verification, Signing, ecdsa::Signature};
 use super::ffi as super_ffi;
 use self::super_ffi::CPtr;
-use ffi::recovery as ffi;
-use super::*;
-use {Verification, Secp256k1, Signing, Message};
+use crate::ffi::recovery as ffi;
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -127,7 +125,7 @@ impl RecoverableSignature {
     #[cfg(feature = "global-context")]
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
-        SECP256K1.recover_ecdsa(msg, self)
+        crate::SECP256K1.recover_ecdsa(msg, self)
     }
 }
 
@@ -235,9 +233,10 @@ impl<C: Verification> Secp256k1<C> {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use super::*;
     use rand::{RngCore, thread_rng};
-    use key::SecretKey;
+
+    use crate::{Error, SecretKey, Secp256k1, Message};
+    use super::{RecoveryId, RecoverableSignature};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;

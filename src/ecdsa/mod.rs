@@ -2,8 +2,8 @@
 
 use core::{fmt, str, ops, ptr, mem};
 
-use {Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
-use ffi::CPtr;
+use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
+use crate::ffi::CPtr;
 
 #[cfg(feature = "recovery")]
 mod recovery;
@@ -13,7 +13,7 @@ mod recovery;
 pub use self::recovery::{RecoveryId, RecoverableSignature};
 
 #[cfg(feature = "global-context")]
-use SECP256K1;
+use crate::SECP256K1;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -304,8 +304,8 @@ impl From<ffi::Signature> for Signature {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for Signature {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for Signature {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
@@ -316,14 +316,14 @@ impl ::serde::Serialize for Signature {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for Signature {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for Signature {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(::serde_util::FromStrVisitor::new(
+            d.deserialize_str(crate::serde_util::FromStrVisitor::new(
                 "a hex string representing a DER encoded Signature"
             ))
         } else {
-            d.deserialize_bytes(::serde_util::BytesVisitor::new(
+            d.deserialize_bytes(crate::serde_util::BytesVisitor::new(
                 "raw byte stream, that represents a DER encoded Signature",
                 Signature::from_der
             ))

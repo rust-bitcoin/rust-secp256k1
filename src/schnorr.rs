@@ -2,19 +2,17 @@
 //! Support for Schnorr signatures.
 //!
 
-#[cfg(any(test, feature = "rand-std"))]
-use rand::thread_rng;
+use core::{fmt, ptr, str};
+
 #[cfg(any(test, feature = "rand"))]
 use rand::{CryptoRng, Rng};
 
-use super::{from_hex, Error};
-use core::{fmt, ptr, str};
-use ffi::{self, CPtr};
-use {constants, Secp256k1};
-use {Message, Signing, Verification, KeyPair, XOnlyPublicKey};
+use crate::{constants, Error, from_hex, Message, Secp256k1, Signing, Verification};
+use crate::key::{KeyPair, XOnlyPublicKey};
+use crate::ffi::{self, CPtr, impl_array_newtype};
 
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
-use SECP256K1;
+use crate::SECP256K1;
 
 /// Represents a Schnorr signature.
 pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
@@ -22,9 +20,8 @@ impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for Signature {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for Signature {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
@@ -34,9 +31,8 @@ impl ::serde::Serialize for Signature {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for Signature {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for Signature {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 64 byte schnorr signature"
@@ -139,8 +135,7 @@ impl<C: Signing> Secp256k1<C> {
     #[cfg(any(test, feature = "rand-std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
-        let mut rng = thread_rng();
-        self.sign_schnorr_with_rng(msg, keypair, &mut rng)
+        self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
     }
 
     /// Create a schnorr signature without using any auxiliary random data.
@@ -276,20 +271,16 @@ impl <C: Signing> Secp256k1<C> {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use std::iter;
-    use std::str::FromStr;
+    use core::str::FromStr;
 
-    use rand::rngs::ThreadRng;
-    use rand::{Error, ErrorKind, RngCore, thread_rng};
+    use rand::{Error, ErrorKind, RngCore, rngs::ThreadRng, thread_rng};
     use rand_core::impls;
-
-    use {constants, Error::InvalidPublicKey, from_hex, Message, Secp256k1, SecretKey};
-
-    #[cfg(any(feature = "std", feature = "alloc"))]
-    use All;
-
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
+    use crate::schnorr::{KeyPair, XOnlyPublicKey, Signature};
+    use crate::Error::InvalidPublicKey;
 
     use super::*;
 
@@ -338,7 +329,7 @@ mod tests {
 
     #[cfg(all(feature = "std", feature = "rand-std"))]
     fn sign_helper(
-        sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
+        sign: fn(&Secp256k1<crate::All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
     ) {
         let secp = Secp256k1::new();
 
@@ -429,8 +420,8 @@ mod tests {
         let keypair = KeyPair::from_seckey_str(&secp, sk_str).unwrap();
         let sk = SecretKey::from_keypair(&keypair);
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
-        let pk = ::key::PublicKey::from_keypair(&keypair);
-        assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
+        let pk = crate::key::PublicKey::from_keypair(&keypair);
+        assert_eq!(crate::key::PublicKey::from_secret_key(&secp, &sk), pk);
         let (xpk, _parity) = keypair.x_only_public_key();
         assert_eq!(XOnlyPublicKey::from(pk), xpk);
     }
@@ -515,7 +506,7 @@ mod tests {
         )
         .is_err());
 
-        let long_str: String = iter::repeat('a').take(1024 * 1024).collect();
+        let long_str: String = core::iter::repeat('a').take(1024 * 1024).collect();
         assert!(XOnlyPublicKey::from_str(&long_str).is_err());
     }
 
