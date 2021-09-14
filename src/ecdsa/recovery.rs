@@ -36,7 +36,7 @@ impl RecoveryId {
 /// Allows library users to create valid recovery IDs from i32.
 pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
     match id {
-        0 | 1 | 2 | 3 => Ok(RecoveryId(id)),
+        0..=3 => Ok(RecoveryId(id)),
         _ => Err(Error::InvalidRecoveryId)
     }
 }

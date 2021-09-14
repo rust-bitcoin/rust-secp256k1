@@ -120,7 +120,7 @@ impl SerializedSignature {
     /// Convert the serialized signature into the Signature struct.
     /// (This DER deserializes it)
     pub fn to_signature(&self) -> Result<Signature, Error> {
-        Signature::from_der(&self)
+        Signature::from_der(self)
     }
 
     /// Create a SerializedSignature from a Signature.

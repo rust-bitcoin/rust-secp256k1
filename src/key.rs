@@ -16,13 +16,14 @@
 //! Public and secret keys.
 //!
 
-
 use core::{fmt, ptr, str};
 use core::ops::BitXor;
+use core::convert::TryFrom;
 
 use crate::{constants, from_hex, Secp256k1, Signing, Verification};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
 use crate::ffi::{self, CPtr, impl_array_newtype};
+use crate::ffi::types::c_uint;
 
 #[cfg(feature = "global-context")]
 use crate::{Message, ecdsa, SECP256K1};
@@ -162,9 +163,8 @@ impl SecretKey {
     /// ```
     #[inline]
     pub fn from_slice(data: &[u8])-> Result<SecretKey, Error> {
-        match data.len() {
-            constants::SECRET_KEY_SIZE => {
-                let mut ret = [0u8; constants::SECRET_KEY_SIZE];
+        match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
+            Ok(data) => {
                 unsafe {
                     if ffi::secp256k1_ec_seckey_verify(
                         ffi::secp256k1_context_no_precomp,
@@ -174,10 +174,9 @@ impl SecretKey {
                         return Err(InvalidSecretKey);
                     }
                 }
-                ret[..].copy_from_slice(data);
-                Ok(SecretKey(ret))
+                Ok(SecretKey(data))
             }
-            _ => Err(InvalidSecretKey)
+            Err(_) => Err(InvalidSecretKey)
         }
     }
 
@@ -458,39 +457,32 @@ impl PublicKey {
     /// represented by only a single bit, as x determines it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::PUBLIC_KEY_SIZE];
-
-        unsafe {
-            let mut ret_len = constants::PUBLIC_KEY_SIZE as usize;
-            let err = ffi::secp256k1_ec_pubkey_serialize(
-                ffi::secp256k1_context_no_precomp,
-                ret.as_mut_c_ptr(),
-                &mut ret_len,
-                self.as_c_ptr(),
-                ffi::SECP256K1_SER_COMPRESSED,
-            );
-            debug_assert_eq!(err, 1);
-            debug_assert_eq!(ret_len, ret.len());
-        }
+        self.serialize_internal(&mut ret, ffi::SECP256K1_SER_COMPRESSED);
         ret
     }
 
+    #[inline]
     /// Serializes the key as a byte-encoded pair of values, in uncompressed form.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        self.serialize_internal(&mut ret, ffi::SECP256K1_SER_UNCOMPRESSED);
+        ret
+    }
 
-        unsafe {
-            let mut ret_len = constants::UNCOMPRESSED_PUBLIC_KEY_SIZE as usize;
-            let err = ffi::secp256k1_ec_pubkey_serialize(
+    #[inline(always)]
+    fn serialize_internal(&self, ret: &mut [u8], flag: c_uint) {
+        let mut ret_len = ret.len();
+        let res = unsafe {
+            ffi::secp256k1_ec_pubkey_serialize(
                 ffi::secp256k1_context_no_precomp,
                 ret.as_mut_c_ptr(),
                 &mut ret_len,
                 self.as_c_ptr(),
-                ffi::SECP256K1_SER_UNCOMPRESSED,
-            );
-            debug_assert_eq!(err, 1);
-            debug_assert_eq!(ret_len, ret.len());
-        }
-        ret
+                flag,
+            )
+        };
+        debug_assert_eq!(res, 1);
+        debug_assert_eq!(ret_len, ret.len());
     }
 
     #[inline]
