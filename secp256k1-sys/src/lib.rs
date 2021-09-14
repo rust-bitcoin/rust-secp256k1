@@ -17,10 +17,7 @@
 //! not be needed for most users.
 
 // Coding conventions
-#![deny(non_upper_case_globals)]
-#![deny(non_camel_case_types)]
-#![deny(non_snake_case)]
-#![deny(unused_mut)]
+#![deny(non_upper_case_globals, non_camel_case_types, non_snake_case, unused_mut)]
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -31,7 +28,6 @@ extern crate core;
 #[cfg(fuzzing)]
 const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DISABLED_FOR_FUZZING: usize = 0;
 
-#[macro_use]
 mod macros;
 pub mod types;
 

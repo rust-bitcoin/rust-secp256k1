@@ -69,14 +69,14 @@ macro_rules! impl_array_newtype {
 
         impl PartialOrd for $thing {
             #[inline]
-            fn partial_cmp(&self, other: &$thing) -> Option<::core::cmp::Ordering> {
+            fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
                 self[..].partial_cmp(&other[..])
             }
         }
 
         impl Ord for $thing {
             #[inline]
-            fn cmp(&self, other: &$thing) -> ::core::cmp::Ordering {
+            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
                 self[..].cmp(&other[..])
             }
         }
@@ -89,7 +89,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl ::core::ops::Index<usize> for $thing {
+        impl core::ops::Index<usize> for $thing {
             type Output = $ty;
 
             #[inline]
@@ -99,41 +99,41 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl ::core::ops::Index<::core::ops::Range<usize>> for $thing {
+        impl core::ops::Index<core::ops::Range<usize>> for $thing {
             type Output = [$ty];
 
             #[inline]
-            fn index(&self, index: ::core::ops::Range<usize>) -> &[$ty] {
+            fn index(&self, index: core::ops::Range<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
                 &dat[index]
             }
         }
 
-        impl ::core::ops::Index<::core::ops::RangeTo<usize>> for $thing {
+        impl core::ops::Index<core::ops::RangeTo<usize>> for $thing {
             type Output = [$ty];
 
             #[inline]
-            fn index(&self, index: ::core::ops::RangeTo<usize>) -> &[$ty] {
+            fn index(&self, index: core::ops::RangeTo<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
                 &dat[index]
             }
         }
 
-        impl ::core::ops::Index<::core::ops::RangeFrom<usize>> for $thing {
+        impl core::ops::Index<core::ops::RangeFrom<usize>> for $thing {
             type Output = [$ty];
 
             #[inline]
-            fn index(&self, index: ::core::ops::RangeFrom<usize>) -> &[$ty] {
+            fn index(&self, index: core::ops::RangeFrom<usize>) -> &[$ty] {
                 let &$thing(ref dat) = self;
                 &dat[index]
             }
         }
 
-        impl ::core::ops::Index<::core::ops::RangeFull> for $thing {
+        impl core::ops::Index<core::ops::RangeFull> for $thing {
             type Output = [$ty];
 
             #[inline]
-            fn index(&self, _: ::core::ops::RangeFull) -> &[$ty] {
+            fn index(&self, _: core::ops::RangeFull) -> &[$ty] {
                 let &$thing(ref dat) = self;
                 &dat[..]
             }
@@ -142,7 +142,7 @@ macro_rules! impl_array_newtype {
             type Target = $ty;
             fn as_c_ptr(&self) -> *const Self::Target {
                 if self.is_empty() {
-                    ::core::ptr::null()
+                    core::ptr::null()
                 } else {
                     self.as_ptr()
                 }
@@ -150,7 +150,7 @@ macro_rules! impl_array_newtype {
 
             fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
                 if self.is_empty() {
-                    ::core::ptr::null::<Self::Target>() as *mut _
+                    core::ptr::null::<Self::Target>() as *mut _
                 } else {
                     self.as_mut_ptr()
                 }
@@ -162,8 +162,8 @@ macro_rules! impl_array_newtype {
 #[macro_export]
 macro_rules! impl_raw_debug {
     ($thing:ident) => {
-        impl ::core::fmt::Debug for $thing {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        impl core::fmt::Debug for $thing {
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 for i in self[..].iter().cloned() {
                     write!(f, "{:02x}", i)?;
                 }
