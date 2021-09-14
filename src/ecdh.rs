@@ -169,6 +169,7 @@ impl SharedSecret {
 
 #[cfg(test)]
 mod tests {
+    use core::ptr;
     use rand::thread_rng;
     use super::SharedSecret;
     use super::super::Secp256k1;
@@ -224,7 +225,7 @@ mod tests {
         let x = [5u8; 32];
         let y = [7u8; 32];
         let mut output = [0u8; 64];
-        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), ::ptr::null_mut()) };
+        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), ptr::null_mut()) };
         assert_eq!(res, 1);
         let mut new_x = [0u8; 32];
         let mut new_y = [0u8; 32];

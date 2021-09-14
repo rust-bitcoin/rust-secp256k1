@@ -19,12 +19,13 @@
 
 use core::ptr;
 use key;
-use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
+use super::{Secp256k1, Message, Error, Verification, Signing};
 use super::ffi as super_ffi;
 pub use key::SecretKey;
 pub use key::PublicKey;
 use self::super_ffi::CPtr;
 
+use ecdsa::Signature;
 use ffi::recovery as ffi;
 
 /// A tag used for recovering the public key from a compact signature

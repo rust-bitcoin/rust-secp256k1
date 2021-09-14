@@ -2,7 +2,7 @@ extern crate bitcoin_hashes;
 extern crate secp256k1;
 
 use bitcoin_hashes::{sha256, Hash};
-use secp256k1::{Error, Message, PublicKey, Secp256k1, SecretKey, Signature, Signing, Verification};
+use secp256k1::{Error, Message, PublicKey, Secp256k1, SecretKey, ecdsa::Signature, Signing, Verification};
 
 fn verify<C: Verification>(secp: &Secp256k1<C>, msg: &[u8], sig: [u8; 64], pubkey: [u8; 33]) -> Result<bool, Error> {
     let msg = sha256::Hash::hash(msg);

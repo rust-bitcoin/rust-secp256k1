@@ -920,14 +920,6 @@ mod test {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    macro_rules! hex {
-        ($hex:expr) => ({
-            let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
-            result
-        });
-    }
-
     #[test]
     fn skey_from_slice() {
         let sk = SecretKey::from_slice(&[1; 31]);
