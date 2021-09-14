@@ -47,8 +47,7 @@
 //! use secp256k1::hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
-//! let mut rng = OsRng::new().expect("OsRng");
-//! let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+//! let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
 //! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
@@ -1068,38 +1067,16 @@ mod benches {
     use test::{Bencher, black_box};
 
     use rand::{RngCore, thread_rng};
+    use rand::rngs::mock::StepRng;
 
     use super::{Message, Secp256k1};
 
     #[bench]
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn generate(bh: &mut Bencher) {
-        struct CounterRng(u64);
-        impl RngCore for CounterRng {
-            fn next_u32(&mut self) -> u32 {
-                self.next_u64() as u32
-            }
-
-            fn next_u64(&mut self) -> u64 {
-                self.0 += 1;
-                self.0
-            }
-
-            fn fill_bytes(&mut self, dest: &mut [u8]) {
-                for chunk in dest.chunks_mut(64/8) {
-                    let rand: [u8; 64/8] = unsafe {std::mem::transmute(self.next_u64())};
-                    chunk.copy_from_slice(&rand[..chunk.len()]);
-                }
-            }
-
-            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-                Ok(self.fill_bytes(dest))
-            }
-        }
-
 
         let s = Secp256k1::new();
-        let mut r = CounterRng(0);
+        let mut r = StepRng::new(1, 1);
         bh.iter( || {
             let (sk, pk) = s.generate_keypair(&mut r);
             black_box(sk);

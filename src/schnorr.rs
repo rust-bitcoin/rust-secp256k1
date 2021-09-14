@@ -273,8 +273,7 @@ impl <C: Signing> Secp256k1<C> {
 mod tests {
     use core::str::FromStr;
 
-    use rand::{Error, ErrorKind, RngCore, rngs::ThreadRng, thread_rng};
-    use rand_core::impls;
+    use rand::{RngCore, rngs::ThreadRng, thread_rng};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
@@ -516,26 +515,9 @@ mod tests {
     #[cfg(not(fuzzing))]
     #[cfg(all(feature = "rand", any(feature = "alloc", feature = "std")))]
     fn test_pubkey_serialize() {
-        struct DumbRng(u32);
-        impl RngCore for DumbRng {
-            fn next_u32(&mut self) -> u32 {
-                self.0 = self.0.wrapping_add(1);
-                self.0
-            }
-            fn next_u64(&mut self) -> u64 {
-                self.next_u32() as u64
-            }
-            fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
-            }
-
-            fn fill_bytes(&mut self, dest: &mut [u8]) {
-                impls::fill_bytes_via_next(self, dest);
-            }
-        }
-
+        use rand::rngs::mock::StepRng;
         let secp = Secp256k1::new();
-        let kp = KeyPair::new(&secp, &mut DumbRng(0));
+        let kp = KeyPair::new(&secp, &mut StepRng::new(1, 1));
         let (pk, _parity) = kp.x_only_public_key();
         assert_eq!(
             &pk.serialize()[..],

@@ -1512,10 +1512,7 @@ mod test {
     use core::str::FromStr;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
-    use rand::{Error, ErrorKind, RngCore, thread_rng};
-
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    use rand_core::impls;
+    use rand::{Error, RngCore, thread_rng, rngs::mock::StepRng};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -1594,7 +1591,6 @@ mod test {
     #[test]
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_out_of_range() {
-
         struct BadRng(u8);
         impl RngCore for BadRng {
             fn next_u32(&mut self) -> u32 { unimplemented!() }
@@ -1687,28 +1683,9 @@ mod test {
     #[test]
     #[cfg(all(feature = "rand", any(feature = "alloc", feature = "std")))]
     fn test_debug_output() {
-        use to_hex;
-
-        struct DumbRng(u32);
-        impl RngCore for DumbRng {
-            fn next_u32(&mut self) -> u32 {
-                self.0 = self.0.wrapping_add(1);
-                self.0
-            }
-            fn next_u64(&mut self) -> u64 {
-                self.next_u32() as u64
-            }
-            fn fill_bytes(&mut self, dest: &mut [u8]) {
-                impls::fill_bytes_via_next(self, dest);
-            }
-
-            fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
-            }
-        }
 
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut DumbRng(0));
+        let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
 
         assert_eq!(&format!("{:?}", sk),
                    "SecretKey(#d3e0c51a23169bb5)");
@@ -1785,26 +1762,9 @@ mod test {
     #[cfg(not(fuzzing))]
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_pubkey_serialize() {
-        struct DumbRng(u32);
-        impl RngCore for DumbRng {
-            fn next_u32(&mut self) -> u32 {
-                self.0 = self.0.wrapping_add(1);
-                self.0
-            }
-            fn next_u64(&mut self) -> u64 {
-                self.next_u32() as u64
-            }
-            fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), Error> {
-                Err(Error::new(ErrorKind::Unavailable, "not implemented"))
-            }
-
-            fn fill_bytes(&mut self, dest: &mut [u8]) {
-                impls::fill_bytes_via_next(self, dest);
-            }
-        }
 
         let s = Secp256k1::new();
-        let (_, pk1) = s.generate_keypair(&mut DumbRng(0));
+        let (_, pk1) = s.generate_keypair(&mut StepRng::new(1,1));
         assert_eq!(&pk1.serialize_uncompressed()[..],
                    &[4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165, 110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245, 3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163][..]);
         assert_eq!(&pk1.serialize()[..],
