@@ -932,7 +932,7 @@ mod fuzz_dummy {
         let scalar_slice = slice::from_raw_parts(scalar, 32);
         let pk_slice = &(*point).0[..32];
 
-        let mut res_arr = [0; 32];
+        let mut res_arr = [0u8; 32];
         for i in 0..32 {
             res_arr[i] = scalar_slice[i] ^ pk_slice[i] ^ 1;
         }
@@ -1123,7 +1123,7 @@ mod fuzz_dummy {
         check_context_flags(cx, SECP256K1_START_VERIFY);
         let mut pk = PublicKey::new();
         pk.0.copy_from_slice(&(*keypair).0[32..]);
-        let mut sk = [0; 32];
+        let mut sk = [0u8; 32];
         sk.copy_from_slice(&(*keypair).0[..32]);
         assert_eq!(secp256k1_ec_pubkey_tweak_add(cx, &mut pk, tweak32), 1);
         assert_eq!(secp256k1_ec_seckey_tweak_add(cx, (&mut sk[..]).as_mut_ptr(), tweak32), 1);
