@@ -232,6 +232,12 @@ impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     }
 }
 
+impl ThirtyTwoByteHash for Message {
+    fn into_32(self) -> [u8; 32] {
+        self.0
+    }
+}
+
 impl SerializedSignature {
     /// Get a pointer to the underlying data with the specified capacity.
     pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
