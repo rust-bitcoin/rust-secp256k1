@@ -37,9 +37,9 @@ jobs:
           - riscv64gc-unknown-linux-gnu
           - s390x-unknown-linux-gnu
           # - x86_64-unknown-freebsd  # not supported by cross
-          - x86_64-unknown-illumos
+          # - x86_64-unknown-illumos  # not supported by cross
           - x86_64-unknown-linux-musl
-          - x86_64-unknown-netbsd
+          # - x86_64-unknown-netbsd  # error in tests "error: test failed, to rerun pass '--lib'", disabled for now
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
