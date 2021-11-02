@@ -137,10 +137,11 @@ pub use secp256k1_sys as ffi;
 #[cfg(all(test, target_arch = "wasm32"))] extern crate wasm_bindgen_test;
 #[cfg(feature = "alloc")] extern crate alloc;
 
-use core::{fmt, ptr, str};
 
 #[macro_use]
 mod macros;
+#[macro_use]
+mod secret;
 mod context;
 pub mod constants;
 pub mod ecdh;
@@ -156,7 +157,7 @@ pub use key::PublicKey;
 pub use context::*;
 use core::marker::PhantomData;
 use core::ops::Deref;
-use core::mem;
+use core::{mem, fmt, ptr, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context-less-secure")]
@@ -851,6 +852,28 @@ fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
     Ok(idx / 2)
 }
 
+/// Utility function used to encode hex into a target u8 buffer. Returns
+/// a reference to the target buffer as an str. Returns an error if the target
+/// buffer isn't big enough.
+#[inline]
+fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
+    let hex_len = src.len() * 2;
+    if target.len() < hex_len {
+        return Err(());
+    }
+    const HEX_TABLE: [u8; 16] = *b"0123456789abcdef";
+
+    let mut i = 0;
+    for &b in src {
+        target[i] = HEX_TABLE[usize::from(b >> 4)];
+        target[i+1] = HEX_TABLE[usize::from(b & 0b00001111)];
+        i +=2 ;
+    }
+    let result = &target[..hex_len];
+    debug_assert!(str::from_utf8(result).is_ok());
+    return unsafe { Ok(str::from_utf8_unchecked(result)) };
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -859,7 +882,7 @@ mod tests {
     use std::marker::PhantomData;
 
     use key::{SecretKey, PublicKey};
-    use super::from_hex;
+    use super::{from_hex, to_hex};
     use super::constants;
     use super::{Secp256k1, Signature, Message};
     use super::Error::{InvalidMessage, IncorrectSignature, InvalidSignature};
@@ -1184,6 +1207,32 @@ mod tests {
                    Err(InvalidMessage));
         assert!(Message::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
         assert!(Message::from_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
+    }
+
+    #[test]
+    fn test_hex() {
+        let mut rng = thread_rng();
+        const AMOUNT: usize = 1024;
+        for i in 0..AMOUNT {
+            // 255 isn't a valid utf8 character.
+            let mut hex_buf = [255u8; AMOUNT*2];
+            let mut src_buf = [0u8; AMOUNT];
+            let mut result_buf = [0u8; AMOUNT];
+            let src = &mut src_buf[0..i];
+            rng.fill_bytes(src);
+
+            let hex = to_hex(src, &mut hex_buf).unwrap();
+            assert_eq!(from_hex(hex, &mut result_buf).unwrap(), i);
+            assert_eq!(src, &result_buf[..i]);
+        }
+
+
+        assert!(to_hex(&[1;2], &mut [0u8; 3]).is_err());
+        assert!(to_hex(&[1;2], &mut [0u8; 4]).is_ok());
+        assert!(from_hex("deadbeaf", &mut [0u8; 3]).is_err());
+        assert!(from_hex("deadbeaf", &mut [0u8; 4]).is_ok());
+        assert!(from_hex("a", &mut [0u8; 4]).is_err());
+        assert!(from_hex("ag", &mut [0u8; 4]).is_err());
     }
 
     #[test]

@@ -21,7 +21,7 @@ use core::{fmt, str};
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use Signing;
+use ::{Signing};
 use Verification;
 use constants;
 use ffi::{self, CPtr};
@@ -29,22 +29,7 @@ use ffi::{self, CPtr};
 /// Secret 256-bit key used as `x` in an ECDSA signature
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
-impl_pretty_debug!(SecretKey);
-
-impl fmt::LowerHex for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.0[..] {
-            write!(f, "{:02x}", *ch)?;
-        }
-        Ok(())
-    }
-}
-
-impl fmt::Display for SecretKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::LowerHex::fmt(self, f)
-    }
-}
+impl_display_secret!(SecretKey);
 
 impl str::FromStr for SecretKey {
     type Err = Error;
@@ -164,6 +149,12 @@ impl SecretKey {
         SecretKey(sk)
     }
 
+    /// Serialize the secret key as byte value
+    #[inline]
+    pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+        self.0
+    }
+
     #[inline]
     /// Negates one secret key.
     pub fn negate_assign(
@@ -233,7 +224,8 @@ impl SecretKey {
 impl ::serde::Serialize for SecretKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
-            s.collect_str(self)
+            let mut buf = [0u8; 64];
+            s.serialize_str(::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(&self[..])
         }
@@ -516,7 +508,7 @@ impl Ord for PublicKey {
 #[cfg(test)]
 mod test {
     use Secp256k1;
-    use from_hex;
+    use {from_hex, to_hex};
     use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
     use super::{PublicKey, SecretKey};
     use super::super::constants;
@@ -710,7 +702,11 @@ mod test {
         let (sk, _) = s.generate_keypair(&mut DumbRng(0));
 
         assert_eq!(&format!("{:?}", sk),
-                   "SecretKey(0100000000000000020000000000000003000000000000000400000000000000)");
+                   "SecretKey(#d3e0c51a23169bb5)");
+
+        let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
+        assert_eq!(to_hex(&sk[..], &mut buf).unwrap(),
+                   "0100000000000000020000000000000003000000000000000400000000000000");
     }
 
     #[test]
@@ -733,7 +729,7 @@ mod test {
         let pk = PublicKey::from_slice(&[0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
         assert_eq!(
-            sk.to_string(),
+            sk.display_secret().to_string(),
             "01010101010101010001020304050607ffff0000ffff00006363636363636363"
         );
         assert_eq!(
