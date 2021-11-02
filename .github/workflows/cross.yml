@@ -1,0 +1,60 @@
+on: [push, pull_request]
+
+name: Cross testing
+
+jobs:
+
+  Cross:
+    name: Cross
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          ############ Tier 1
+          - aarch64-unknown-linux-gnu
+          # - i686-pc-windows-gnu  # not supported by cross
+          # - i686-pc-windows-msvc  # not supported by cross
+          - i686-unknown-linux-gnu
+          # - x86_64-apple-darwin  # proprietary apple stuff
+          - x86_64-pc-windows-gnu
+          # - x86_64-pc-windows-msvc  # not supported by cross
+          - x86_64-unknown-linux-gnu
+          ############ Tier 2 with Host Tools
+          # - aarch64-apple-darwin  # proprietary apple stuff
+          # - aarch64-pc-windows-msvc  # not supported by cross
+          - aarch64-unknown-linux-musl
+          - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabihf
+          - mips-unknown-linux-gnu
+          - mips64-unknown-linux-gnuabi64
+          - mips64el-unknown-linux-gnuabi64
+          - mipsel-unknown-linux-gnu
+          - powerpc-unknown-linux-gnu
+          # - powerpc64-unknown-linux-gnu  # not supported by cross
+          - powerpc64le-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+          # - x86_64-unknown-freebsd  # not supported by cross
+          # - x86_64-unknown-illumos  # not supported by cross
+          - x86_64-unknown-linux-musl
+          # - x86_64-unknown-netbsd  # error in tests "error: test failed, to rerun pass '--lib'", disabled for now
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1.2.0
+        with:
+          key: ${{ matrix.feature }}${{ matrix.os }}
+      - name: Checkout Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install target
+        run: rustup target add ${{ matrix.arch }}
+      - name: install cross
+        run: cargo install cross
+      - name: run cross test
+        run: cross test --target ${{ matrix.arch }}
