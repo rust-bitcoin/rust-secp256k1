@@ -196,7 +196,7 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 impl str::FromStr for Signature {
 type Err = Error;
 fn from_str(s: &str) -> Result<Signature, Error> {
-    let mut res = [0; 72];
+    let mut res = [0u8; 72];
     match from_hex(s, &mut res) {
         Ok(x) => Signature::from_der(&res[0..x]),
         _ => Err(Error::InvalidSignature),
@@ -398,7 +398,7 @@ impl Signature {
     #[inline]
     /// Serializes the signature in compact format
     pub fn serialize_compact(&self) -> [u8; 64] {
-        let mut ret = [0; 64];
+        let mut ret = [0u8; 64];
         unsafe {
             let err = ffi::secp256k1_ecdsa_signature_serialize_compact(
                 ffi::secp256k1_context_no_precomp,
@@ -474,7 +474,7 @@ impl Message {
     pub fn from_slice(data: &[u8]) -> Result<Message, Error> {
         match data.len() {
             constants::MESSAGE_SIZE => {
-                let mut ret = [0; constants::MESSAGE_SIZE];
+                let mut ret = [0u8; constants::MESSAGE_SIZE];
                 ret[..].copy_from_slice(data);
                 Ok(Message(ret))
             }
@@ -648,7 +648,7 @@ impl<C: Context> Secp256k1<C> {
     /// compilation with "rand" feature.
     #[cfg(any(test, feature = "rand"))]
     pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
-        let mut seed = [0; 32];
+        let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
         self.seeded_randomize(&seed);
     }
@@ -673,7 +673,7 @@ impl<C: Context> Secp256k1<C> {
 }
 
 fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
-    let mut ser_ret = [0; 72];
+    let mut ser_ret = [0u8; 72];
     let mut len: usize = ser_ret.len();
     unsafe {
         let err = ffi::secp256k1_ecdsa_signature_serialize_der(
@@ -688,7 +688,7 @@ fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
 }
 
 fn compact_sig_has_zero_first_bit(sig: &ffi::Signature) -> bool {
-    let mut compact = [0; 64];
+    let mut compact = [0u8; 64];
     unsafe {
         let err = ffi::secp256k1_ecdsa_signature_serialize_compact(
             ffi::secp256k1_context_no_precomp,
@@ -1030,7 +1030,7 @@ mod tests {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
 
-        let mut msg = [0; 32];
+        let mut msg = [0u8; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
@@ -1116,7 +1116,7 @@ mod tests {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
 
-        let mut msg = [0; 32];
+        let mut msg = [0u8; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
@@ -1149,8 +1149,8 @@ mod tests {
 
         // Wild keys: 1, CURVE_ORDER - 1
         // Wild msgs: 1, CURVE_ORDER - 1
-        let mut wild_keys = [[0; 32]; 2];
-        let mut wild_msgs = [[0; 32]; 2];
+        let mut wild_keys = [[0u8; 32]; 2];
+        let mut wild_msgs = [[0u8; 32]; 2];
 
         wild_keys[0][0] = 1;
         wild_msgs[0][0] = 1;

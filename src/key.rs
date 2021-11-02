@@ -34,7 +34,7 @@ impl_display_secret!(SecretKey);
 impl str::FromStr for SecretKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<SecretKey, Error> {
-        let mut res = [0; constants::SECRET_KEY_SIZE];
+        let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_slice(&res),
             _ => Err(Error::InvalidSecretKey)
@@ -72,7 +72,7 @@ impl fmt::Display for PublicKey {
 impl str::FromStr for PublicKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<PublicKey, Error> {
-        let mut res = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        let mut res = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::PUBLIC_KEY_SIZE) => {
                 PublicKey::from_slice(
@@ -117,7 +117,7 @@ impl SecretKey {
     pub fn from_slice(data: &[u8])-> Result<SecretKey, Error> {
         match data.len() {
             constants::SECRET_KEY_SIZE => {
-                let mut ret = [0; constants::SECRET_KEY_SIZE];
+                let mut ret = [0u8; constants::SECRET_KEY_SIZE];
                 unsafe {
                     if ffi::secp256k1_ec_seckey_verify(
                         ffi::secp256k1_context_no_precomp,
@@ -137,7 +137,7 @@ impl SecretKey {
     /// Creates a new secret key using data from BIP-340 [`::schnorrsig::KeyPair`]
     #[inline]
     pub fn from_keypair(keypair: &::schnorrsig::KeyPair) -> Self {
-        let mut sk = [0; constants::SECRET_KEY_SIZE];
+        let mut sk = [0u8; constants::SECRET_KEY_SIZE];
         unsafe {
             let ret = ffi::secp256k1_keypair_sec(
                 ffi::secp256k1_context_no_precomp,
@@ -317,7 +317,7 @@ impl PublicKey {
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
-        let mut ret = [0; constants::PUBLIC_KEY_SIZE];
+        let mut ret = [0u8; constants::PUBLIC_KEY_SIZE];
 
         unsafe {
             let mut ret_len = constants::PUBLIC_KEY_SIZE as usize;
@@ -336,7 +336,7 @@ impl PublicKey {
 
     /// Serialize the key as a byte-encoded pair of values, in uncompressed form
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
-        let mut ret = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        let mut ret = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
         unsafe {
             let mut ret_len = constants::UNCOMPRESSED_PUBLIC_KEY_SIZE as usize;

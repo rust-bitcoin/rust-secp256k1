@@ -65,7 +65,7 @@ impl fmt::Display for Signature {
 impl str::FromStr for Signature {
     type Err = Error;
     fn from_str(s: &str) -> Result<Signature, Error> {
-        let mut res = [0; constants::SCHNORRSIG_SIGNATURE_SIZE];
+        let mut res = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SCHNORRSIG_SIGNATURE_SIZE) => {
                 Signature::from_slice(&res[0..constants::SCHNORRSIG_SIGNATURE_SIZE])
@@ -103,7 +103,7 @@ impl fmt::Display for PublicKey {
 impl str::FromStr for PublicKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<PublicKey, Error> {
-        let mut res = [0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
+        let mut res = [0u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SCHNORRSIG_PUBLIC_KEY_SIZE) => {
                 PublicKey::from_slice(&res[0..constants::SCHNORRSIG_PUBLIC_KEY_SIZE])
@@ -119,7 +119,7 @@ impl Signature {
     pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
         match data.len() {
             constants::SCHNORRSIG_SIGNATURE_SIZE => {
-                let mut ret = [0; constants::SCHNORRSIG_SIGNATURE_SIZE];
+                let mut ret = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
                 ret[..].copy_from_slice(data);
                 Ok(Signature(ret))
             }
@@ -184,7 +184,7 @@ impl KeyPair {
     /// Creates a Schnorr KeyPair directly from a secret key string
     #[inline]
     pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<KeyPair, Error> {
-        let mut res = [0; constants::SECRET_KEY_SIZE];
+        let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => {
                 KeyPair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE])
@@ -305,7 +305,7 @@ impl PublicKey {
     /// the y-coordinate is represented by only a single bit, as x determines
     /// it up to one bit.
     pub fn serialize(&self) -> [u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE] {
-        let mut ret = [0; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
+        let mut ret = [0u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
 
         unsafe {
             let err = ffi::secp256k1_xonly_pubkey_serialize(
@@ -613,7 +613,7 @@ mod tests {
 
     macro_rules! hex_32 {
         ($hex:expr) => {{
-            let mut result = [0; 32];
+            let mut result = [0u8; 32];
             from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
@@ -626,7 +626,7 @@ mod tests {
 
         let mut rng = thread_rng();
         let (seckey, pubkey) = secp.generate_schnorrsig_keypair(&mut rng);
-        let mut msg = [0; 32];
+        let mut msg = [0u8; 32];
 
         for _ in 0..100 {
             rng.fill_bytes(&mut msg);
@@ -641,7 +641,7 @@ mod tests {
     #[test]
     fn test_schnorrsig_sign_with_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
-            let mut aux_rand = [0; 32];
+            let mut aux_rand = [0u8; 32];
             rng.fill_bytes(&mut aux_rand);
             secp.schnorrsig_sign_with_aux_rand(msg, seckey, &aux_rand)
         })
@@ -864,7 +864,7 @@ mod tests {
 
         let msg = Message::from_slice(&[1; 32]).unwrap();
         let keypair = KeyPair::from_seckey_slice(&s, &[2; 32]).unwrap();
-        let aux = [3; 32];
+        let aux = [3u8; 32];
         let sig = s
             .schnorrsig_sign_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORRSIG_SIGNATURE_SIZE] = [
