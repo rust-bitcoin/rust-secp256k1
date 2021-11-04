@@ -61,6 +61,12 @@ macro_rules! impl_array_newtype {
 
         impl Eq for $thing {}
 
+        impl ::core::hash::Hash for $thing {
+            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+                (&self[..]).hash(state)
+            }
+        }
+
         impl PartialOrd for $thing {
             #[inline]
             fn partial_cmp(&self, other: &$thing) -> Option<::core::cmp::Ordering> {

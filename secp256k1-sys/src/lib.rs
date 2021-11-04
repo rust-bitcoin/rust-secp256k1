@@ -36,7 +36,7 @@ pub mod types;
 #[cfg(feature = "recovery")]
 pub mod recovery;
 
-use core::{hash, slice, ptr};
+use core::{slice, ptr};
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -133,12 +133,6 @@ impl PublicKey {
     }
 }
 
-impl hash::Hash for PublicKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
-    }
-}
-
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
 pub struct Signature([c_uchar; 64]);
@@ -210,12 +204,6 @@ impl XOnlyPublicKey {
     }
 }
 
-impl hash::Hash for XOnlyPublicKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
-    }
-}
-
 #[repr(C)]
 pub struct KeyPair([c_uchar; 96]);
 impl_array_newtype!(KeyPair, c_uchar, 96);
@@ -248,12 +236,6 @@ impl KeyPair {
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 96] {
         self.0
-    }
-}
-
-impl hash::Hash for KeyPair {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        state.write(&self.0)
     }
 }
 
