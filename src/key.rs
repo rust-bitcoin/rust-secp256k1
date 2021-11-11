@@ -297,7 +297,7 @@ impl PublicKey {
         }
     }
 
-    /// Creates a new compressed public key key using data from BIP-340 [`KeyPair`]
+    /// Creates a new compressed public key using data from BIP-340 [`KeyPair`].
     #[inline]
     pub fn from_keypair(keypair: &KeyPair) -> Self {
         unsafe {
