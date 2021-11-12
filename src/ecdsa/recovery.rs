@@ -19,13 +19,11 @@
 
 use core::ptr;
 use key;
-use super::{Secp256k1, Message, Error, Signature, Verification, Signing};
 use super::ffi as super_ffi;
-pub use key::SecretKey;
-pub use key::PublicKey;
 use self::super_ffi::CPtr;
-
 use ffi::recovery as ffi;
+use super::*;
+use {Verification, Secp256k1, Signing, Message};
 
 /// A tag used for recovering the public key from a compact signature
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -148,9 +146,14 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
-    pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey)
-                            -> RecoverableSignature {
+    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_recoverable instead.")]
+    pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
+        self.sign_ecdsa_recoverable(msg, sk)
+    }
 
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// Requires a signing-capable context.
+    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
         let mut ret = ffi::RecoverableSignature::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -175,7 +178,14 @@ impl<C: Signing> Secp256k1<C> {
 impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
-    pub fn recover(&self, msg: &Message, sig: &RecoverableSignature)
+    #[deprecated(since = "0.21.0", note = "Use recover_ecdsa instead.")]
+    pub fn recover(&self, msg: &Message, sig: &RecoverableSignature) -> Result<key::PublicKey, Error> {
+        self.recover_ecdsa(msg, sig)
+    }
+
+    /// Determines the public key for which `sig` is a valid signature for
+    /// `msg`. Requires a verify-capable context.
+    pub fn recover_ecdsa(&self, msg: &Message, sig: &RecoverableSignature)
                    -> Result<key::PublicKey, Error> {
 
         unsafe {
@@ -192,12 +202,9 @@ impl<C: Verification> Secp256k1<C> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use rand::{RngCore, thread_rng};
-
     use key::SecretKey;
-    use super::{RecoveryId, RecoverableSignature};
-    use super::super::{Secp256k1, Message};
-    use super::super::Error::{IncorrectSignature, InvalidSignature};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -275,7 +282,7 @@ mod tests {
         let mut msg = [0u8; 32];
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
-        assert_eq!(s.verify(&msg, &sig, &pk), Err(IncorrectSignature));
+        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
 
         let recovered_key = s.recover(&msg, &sigr).unwrap();
         assert!(recovered_key != pk);
@@ -306,7 +313,7 @@ mod tests {
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
-        assert_eq!(s.recover(&msg, &sig), Err(InvalidSignature));
+        assert_eq!(s.recover(&msg, &sig), Err(Error::InvalidSignature));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId(0)).unwrap();
         assert!(s.recover(&msg, &sig).is_ok());

@@ -15,7 +15,7 @@
 //! Helpers for displaying secret values
 
 use ::core::fmt;
-use ::{SecretKey, schnorrsig::KeyPair, to_hex};
+use ::{SecretKey, KeyPair, to_hex};
 use constants::SECRET_KEY_SIZE;
 
 macro_rules! impl_display_secret {
@@ -90,7 +90,7 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// use secp256k1::key::ONE_KEY;
+    /// use secp256k1::ONE_KEY;
     /// let key = ONE_KEY;
     /// // Normal display hides value
     /// assert_eq!(
@@ -123,8 +123,8 @@ impl KeyPair {
     /// # Example
     ///
     /// ```
-    /// use secp256k1::key::ONE_KEY;
-    /// use secp256k1::schnorrsig::KeyPair;
+    /// use secp256k1::ONE_KEY;
+    /// use secp256k1::KeyPair;
     /// use secp256k1::Secp256k1;
     ///
     /// let secp = Secp256k1::new();

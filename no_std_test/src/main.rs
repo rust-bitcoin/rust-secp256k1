@@ -106,14 +106,14 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 
-    let sig = secp.sign(&message, &secret_key);
-    assert!(secp.verify(&message, &sig, &public_key).is_ok());
+    let sig = secp.sign_ecdsa(&message, &secret_key);
+    assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
 
-    let rec_sig = secp.sign_recoverable(&message, &secret_key);
-    assert!(secp.verify(&message, &rec_sig.to_standard(), &public_key).is_ok());
-    assert_eq!(public_key, secp.recover(&message, &rec_sig).unwrap());
+    let rec_sig = secp.sign_ecdsa_recoverable(&message, &secret_key);
+    assert!(secp.verify_ecdsa(&message, &rec_sig.to_standard(), &public_key).is_ok());
+    assert_eq!(public_key, secp.recover_ecdsa(&message, &rec_sig).unwrap());
     let (rec_id, data) = rec_sig.serialize_compact();
-    let new_rec_sig = recovery::RecoverableSignature::from_compact(&data, rec_id).unwrap();
+    let new_rec_sig = ecdsa::RecoverableSignature::from_compact(&data, rec_id).unwrap();
     assert_eq!(rec_sig, new_rec_sig);
 
     let mut cbor_ser = [0u8; 100];
@@ -121,7 +121,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let mut ser = Serializer::new(writer);
     sig.serialize(&mut ser).unwrap();
     let size = ser.into_inner().bytes_written();
-    let new_sig: Signature = de::from_mut_slice(&mut cbor_ser[..size]).unwrap();
+    let new_sig: ecdsa::Signature = de::from_mut_slice(&mut cbor_ser[..size]).unwrap();
     assert_eq!(sig, new_sig);
 
     let _ = SharedSecret::new(&public_key, &secret_key);
