@@ -11,7 +11,7 @@ pub use self::alloc_only::*;
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
-/// Module implementing a singleton pattern for a global `Secp256k1` context
+/// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {
     #[cfg(feature = "rand-std")]
     use rand;
@@ -20,7 +20,7 @@ pub mod global {
     use std::sync::Once;
     use {Secp256k1, All};
 
-    /// Proxy struct for global `SECP256K1` context
+    /// Proxy struct for global `SECP256K1` context.
     #[derive(Debug, Copy, Clone)]
     pub struct GlobalContext {
         __private: (),
@@ -98,8 +98,8 @@ pub struct AllPreallocated<'buf> {
 mod private {
     use super::*;
     // A trick to prevent users from implementing a trait.
-    // on one hand this trait is public, on the other it's in a private module
-    // so it's not visible to anyone besides it's parent (the context module)
+    // On one hand this trait is public, on the other it's in a private module
+    // so it's not visible to anyone besides it's parent (the context module).
     pub trait Sealed {}
 
     impl<'buf> Sealed for AllPreallocated<'buf> {}
@@ -289,7 +289,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     const DESCRIPTION: &'static str = "verification only";
 
     unsafe fn deallocate(_ptr: *mut u8, _size: usize) {
-        // Allocated by the user
+        // Allocated by the user.
     }
 }
 
@@ -298,7 +298,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     const DESCRIPTION: &'static str = "all capabilities";
 
     unsafe fn deallocate(_ptr: *mut u8, _size: usize) {
-        // Allocated by the user
+        // Allocated by the user.
     }
 }
 
@@ -328,7 +328,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     pub fn preallocated_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context
+    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context.
     pub fn preallocate_size() -> usize {
         Self::preallocate_size_gen()
     }
@@ -354,12 +354,12 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
 }
 
 impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
-    /// Creates a new Secp256k1 context that can only be used for signing
+    /// Creates a new Secp256k1 context that can only be used for signing.
     pub fn preallocated_signing_only(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context
+    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context.
     #[inline]
     pub fn preallocate_signing_size() -> usize {
         Self::preallocate_size_gen()
@@ -374,7 +374,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// * The capabilities (All/SignOnly/VerifyOnly) of the context *must* match the flags passed to libsecp256k1
     /// when generating the context.
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
-    /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.,
+    /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.
     ///
     pub unsafe fn from_raw_signining_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
         ManuallyDrop::new(Secp256k1 {
@@ -391,7 +391,7 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
-    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context
+    /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for the context.
     #[inline]
     pub fn preallocate_verification_size() -> usize {
         Self::preallocate_size_gen()
@@ -406,7 +406,7 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// * The capabilities (All/SignOnly/VerifyOnly) of the context *must* match the flags passed to libsecp256k1
     /// when generating the context.
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
-    /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.,
+    /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.
     ///
     pub unsafe fn from_raw_verification_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<VerifyOnlyPreallocated<'buf>>> {
         ManuallyDrop::new(Secp256k1 {

@@ -205,7 +205,7 @@ pub use context::global::SECP256K1;
 use hashes::Hash;
 
 // Backwards compatible changes
-/// Schnorr Sig related methods
+/// Schnorr Signature related methods.
 #[deprecated(since = "0.21.0", note = "Use schnorr instead.")]
 pub mod schnorrsig {
     #[deprecated(since = "0.21.0", note = "Use crate::XOnlyPublicKey instead.")]
@@ -255,7 +255,7 @@ impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     }
 }
 
-/// A (hashed) message input to an ECDSA signature
+/// A (hashed) message input to an ECDSA signature.
 pub struct Message([u8; constants::MESSAGE_SIZE]);
 impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
@@ -302,7 +302,7 @@ impl Message {
 }
 
 impl<T: ThirtyTwoByteHash> From<T> for Message {
-    /// Converts a 32-byte hash directly to a message without error paths
+    /// Converts a 32-byte hash directly to a message without error paths.
     fn from(t: T) -> Message {
         Message(t.into_32())
     }
@@ -314,21 +314,21 @@ pub enum Error {
     /// Signature failed verification
     IncorrectSignature,
     /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
-    /// constant)
+    /// constant).
     InvalidMessage,
-    /// Bad public key
+    /// Bad public key.
     InvalidPublicKey,
-    /// Bad signature
+    /// Bad signature.
     InvalidSignature,
-    /// Bad secret key
+    /// Bad secret key.
     InvalidSecretKey,
-    /// Bad recovery id
+    /// Bad recovery id.
     InvalidRecoveryId,
     /// Invalid tweak for add_*_assign or mul_*_assign
     InvalidTweak,
-    /// Didn't pass enough memory to context creation with preallocated memory
+    /// Didn't pass enough memory to context creation with preallocated memory.
     NotEnoughMemory,
-    /// Bad set of public keys
+    /// Bad set of public keys.
     InvalidPublicKeySum,
     /// The only valid parity values are 0 or 1.
     InvalidParityValue,
@@ -351,7 +351,7 @@ impl Error {
     }
 }
 
-// Passthrough Debug to Display, since errors should be user-visible
+// Passthrough Debug to Display, since errors should be user-visible.
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         f.write_str(self.as_str())
@@ -363,16 +363,16 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 
-/// The secp256k1 engine, used to execute all signature operations
+/// The secp256k1 engine, used to execute all signature operations.
 pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
     phantom: PhantomData<C>,
     size: usize,
 }
 
-// The underlying secp context does not contain any references to memory it does not own
+// The underlying secp context does not contain any references to memory it does not own.
 unsafe impl<C: Context> Send for Secp256k1<C> {}
-// The API does not permit any mutation of `Secp256k1` objects except through `&mut` references
+// The API does not permit any mutation of `Secp256k1` objects except through `&mut` references.
 unsafe impl<C: Context> Sync for Secp256k1<C> {}
 
 impl<C: Context> PartialEq for Secp256k1<C> {
@@ -406,7 +406,7 @@ impl<C: Context> Secp256k1<C> {
         &self.ctx
     }
 
-    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all)
+    /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all).
     pub fn preallocate_size_gen() -> usize {
         let word_size = mem::size_of::<AlignedType>();
         let bytes = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };

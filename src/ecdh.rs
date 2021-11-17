@@ -13,7 +13,7 @@
 //
 
 //! # ECDH
-//! Support for shared secret computations
+//! Support for shared secret computations.
 //!
 
 use core::ptr;

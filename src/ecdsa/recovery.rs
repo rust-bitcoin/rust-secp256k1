@@ -25,11 +25,11 @@ use ffi::recovery as ffi;
 use super::*;
 use {Verification, Secp256k1, Signing, Message};
 
-/// A tag used for recovering the public key from a compact signature
+/// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoveryId(i32);
 
-/// An ECDSA signature with a recovery ID for pubkey recovery
+/// An ECDSA signature with a recovery ID for pubkey recovery.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
@@ -53,8 +53,7 @@ pub fn to_i32(self) -> i32 {
 impl RecoverableSignature {
     #[inline]
     /// Converts a compact-encoded byte slice to a signature. This
-    /// representation is nonstandard and defined by the libsecp256k1
-    /// library.
+    /// representation is nonstandard and defined by the libsecp256k1 library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
         if data.is_empty() {return Err(Error::InvalidSignature);}
 
@@ -77,20 +76,20 @@ impl RecoverableSignature {
         }
     }
 
-    /// Obtains a raw pointer suitable for use with FFI functions
+    /// Obtains a raw pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::RecoverableSignature {
         &self.0
     }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
         &mut self.0
     }
 
     #[inline]
-    /// Serializes the recoverable signature in compact format
+    /// Serializes the recoverable signature in compact format.
     pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
         let mut ret = [0u8; 64];
         let mut recid = 0i32;
@@ -107,7 +106,7 @@ impl RecoverableSignature {
     }
 
     /// Converts a recoverable signature to a non-recoverable one (this is needed
-    /// for verification
+    /// for verification).
     #[inline]
     pub fn to_standard(&self) -> Signature {
         unsafe {
@@ -135,7 +134,7 @@ impl CPtr for RecoverableSignature {
     }
 }
 
-/// Creates a new recoverable signature from a FFI one
+/// Creates a new recoverable signature from a FFI one.
 impl From<ffi::RecoverableSignature> for RecoverableSignature {
     #[inline]
     fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
@@ -144,7 +143,7 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 }
 
 impl<C: Signing> Secp256k1<C> {
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce.
     /// Requires a signing-capable context.
     #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_recoverable instead.")]
     pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
