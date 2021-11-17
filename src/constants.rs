@@ -16,31 +16,31 @@
 //! # Constants
 //! Constants related to the API and the underlying curve.
 
-/// The size (in bytes) of a message
+/// The size (in bytes) of a message.
 pub const MESSAGE_SIZE: usize = 32;
 
-/// The size (in bytes) of a secret key
+/// The size (in bytes) of a secret key.
 pub const SECRET_KEY_SIZE: usize = 32;
 
 /// The size (in bytes) of a serialized public key.
 pub const PUBLIC_KEY_SIZE: usize = 33;
 
-/// The size (in bytes) of an serialized uncompressed public key
+/// The size (in bytes) of an serialized uncompressed public key.
 pub const UNCOMPRESSED_PUBLIC_KEY_SIZE: usize = 65;
 
-/// The maximum size of a signature
+/// The maximum size of a signature.
 pub const MAX_SIGNATURE_SIZE: usize = 72;
 
-/// The maximum size of a compact signature
+/// The maximum size of a compact signature.
 pub const COMPACT_SIGNATURE_SIZE: usize = 64;
 
-/// Size of a Schnorr signature
+/// The size of a Schnorr signature.
 pub const SCHNORRSIG_SIGNATURE_SIZE: usize = 64;
 
-/// Size of a Schnorr public key
+/// The size of a Schnorr public key.
 pub const SCHNORRSIG_PUBLIC_KEY_SIZE: usize = 32;
 
-/// Size of a key pair
+/// The size of a key pair.
 pub const KEY_PAIR_SIZE: usize = 96;
 
 /// The Prime for the secp256k1 field element.
