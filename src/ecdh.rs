@@ -12,7 +12,6 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! # ECDH
 //! Support for shared secret computations.
 //!
 

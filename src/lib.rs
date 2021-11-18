@@ -13,7 +13,6 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! # Secp256k1
 //! Rust bindings for Pieter Wuille's secp256k1 library, which is used for
 //! fast and accurate manipulation of ECDSA signatures on the secp256k1
 //! curve. Such signatures are used extensively by the Bitcoin network

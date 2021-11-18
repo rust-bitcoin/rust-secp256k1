@@ -13,9 +13,9 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! # Recovery module
 //! Provides a signing function that allows recovering the public key from the
 //! signature.
+//!
 
 use core::ptr;
 use key;
