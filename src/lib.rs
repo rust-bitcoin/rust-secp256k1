@@ -324,7 +324,7 @@ pub enum Error {
     InvalidSecretKey,
     /// Bad recovery id.
     InvalidRecoveryId,
-    /// Invalid tweak for add_*_assign or mul_*_assign
+    /// Invalid tweak for `add_*_assign` or `mul_*_assign`.
     InvalidTweak,
     /// Didn't pass enough memory to context creation with preallocated memory.
     NotEnoughMemory,
