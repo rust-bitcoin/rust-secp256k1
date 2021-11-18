@@ -414,9 +414,10 @@ impl<C: Context> Secp256k1<C> {
         (bytes + word_size - 1) / word_size
     }
 
-    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance;
-    /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell. Requires
-    /// compilation with "rand" feature.
+    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance.
+    ///
+    /// Requires compilation with "rand" feature. See comment by Gregory Maxwell in
+    /// [libsecp256k1](https://github.com/bitcoin-core/secp256k1/commit/d2275795ff22a6f4738869f5528fbbb61738aa48).
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
