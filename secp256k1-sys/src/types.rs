@@ -42,6 +42,9 @@ impl AlignedType {
     }
 }
 
+/// A static zeroed out AlignedType for use in static assignments of [AlignedType; _]
+pub static ZERO_ALIGNED: AlignedType = AlignedType([0u8; 16]);
+
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
 pub(crate) const ALIGN_TO: usize = mem::align_of::<AlignedType>();
 
