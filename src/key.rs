@@ -674,6 +674,49 @@ impl<'a> From<&'a KeyPair> for PublicKey {
     }
 }
 
+impl str::FromStr for KeyPair {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let ctx = unsafe {
+            Secp256k1::from_raw_all(ffi::secp256k1_context_no_precomp as *mut ffi::Context)
+        };
+        KeyPair::from_seckey_str(&ctx, s)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl ::serde::Serialize for KeyPair {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            let mut buf = [0u8; 64];
+            s.serialize_str(::to_hex(&self.serialize_secret(), &mut buf)
+                .expect("fixed-size hex serialization"))
+        } else {
+            s.serialize_bytes(&self.0[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for KeyPair {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing 32 byte KeyPair"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 32 bytes KeyPair",
+                |data| unsafe {
+                    let ctx = Secp256k1::from_raw_all(ffi::secp256k1_context_no_precomp as *mut ffi::Context);
+                    KeyPair::from_seckey_slice(&ctx, data)
+                }
+            ))
+        }
+    }
+}
+
 /// A x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
