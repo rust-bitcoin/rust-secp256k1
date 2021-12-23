@@ -722,12 +722,12 @@ impl XOnlyPublicKey {
 
     /// Creates a new Schnorr public key from a Schnorr key pair.
     #[inline]
-    pub fn from_keypair<C: Signing>(secp: &Secp256k1<C>, keypair: &KeyPair) -> XOnlyPublicKey {
+    pub fn from_keypair(keypair: &KeyPair) -> XOnlyPublicKey {
         let mut pk_parity = 0;
         unsafe {
             let mut xonly_pk = ffi::XOnlyPublicKey::new();
             let ret = ffi::secp256k1_keypair_xonly_pub(
-                secp.ctx,
+                ffi::secp256k1_context_no_precomp,
                 &mut xonly_pk,
                 &mut pk_parity,
                 keypair.as_ptr(),
