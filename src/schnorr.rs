@@ -11,7 +11,7 @@ use super::{from_hex, Error};
 use core::{fmt, ptr, str};
 use ffi::{self, CPtr};
 use {constants, Secp256k1};
-use {Message, Signing, KeyPair, XOnlyPublicKey};
+use {Message, Signing, Verification, KeyPair, XOnlyPublicKey};
 
 /// Represents a Schnorr signature.
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
@@ -203,7 +203,9 @@ impl<C: Signing> Secp256k1<C> {
         rng.fill_bytes(&mut aux);
         self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
     }
+}
 
+impl<C: Verification> Secp256k1<C> {
     /// Verify a Schnorr signature.
     #[deprecated(since = "0.21.0", note = "Use verify_schnorr instead.")]
     pub fn schnorrsig_verify(
@@ -237,6 +239,9 @@ impl<C: Signing> Secp256k1<C> {
             }
         }
     }
+}
+
+impl <C: Signing> Secp256k1<C> {
 
     /// Generates a random Schnorr KeyPair and its associated Schnorr PublicKey.
     /// Convenience function for `schnorrsig::KeyPair::new` and
@@ -250,7 +255,7 @@ impl<C: Signing> Secp256k1<C> {
         rng: &mut R,
     ) -> (KeyPair, XOnlyPublicKey) {
         let sk = KeyPair::new(self, rng);
-        let pubkey = XOnlyPublicKey::from_keypair(self, &sk);
+        let pubkey = XOnlyPublicKey::from_keypair(&sk);
         (sk, pubkey)
     }
 }
@@ -393,7 +398,7 @@ mod tests {
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = ::key::PublicKey::from_keypair(&keypair);
         assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
-        let xpk = XOnlyPublicKey::from_keypair(&secp, &keypair);
+        let xpk = XOnlyPublicKey::from_keypair(&keypair);
         assert_eq!(XOnlyPublicKey::from(pk), xpk);
     }
 
@@ -433,13 +438,12 @@ mod tests {
             0x63, 0x63, 0x63, 0x63,
         ];
 
-        let s = Secp256k1::signing_only();
         let sk = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the epected result.
         #[cfg(not(fuzzing))]
-        let pk = XOnlyPublicKey::from_keypair(&s, &sk);
+        let pk = XOnlyPublicKey::from_keypair(&sk);
         #[cfg(fuzzing)]
         let pk = XOnlyPublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
@@ -572,7 +576,7 @@ mod tests {
             let orig_pk = pk;
             kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
             let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
-            assert_eq!(XOnlyPublicKey::from_keypair(&s, &kp), pk);
+            assert_eq!(XOnlyPublicKey::from_keypair(&kp), pk);
             assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
         }
     }
