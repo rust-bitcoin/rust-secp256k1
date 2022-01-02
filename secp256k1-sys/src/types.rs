@@ -40,6 +40,9 @@ impl AlignedType {
     pub fn zeroed() -> Self {
         AlignedType([0u8; 16])
     }
+
+    /// A static zeroed out AlignedType for use in static assignments of [AlignedType; _]
+    const ZERO: AlignedType = AlignedType([0u8; 16]);
 }
 
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
