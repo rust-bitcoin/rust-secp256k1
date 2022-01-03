@@ -636,12 +636,11 @@ impl KeyPair {
                 &mut self.0,
                 tweak.as_c_ptr(),
             );
-
-            if err == 1 {
-                Ok(())
-            } else {
-                Err(Error::InvalidTweak)
+            if err != 1 {
+                return Err(Error::InvalidTweak);
             }
+
+            Ok(())
         }
     }
 }
@@ -846,7 +845,6 @@ impl XOnlyPublicKey {
                 self.as_c_ptr(),
                 tweak.as_c_ptr(),
             );
-
             if err != 1 {
                 return Err(Error::InvalidTweak);
             }
