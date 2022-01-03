@@ -824,15 +824,18 @@ impl XOnlyPublicKey {
 
     /// Tweak an x-only PublicKey by adding the generator multiplied with the given tweak to it.
     ///
-    /// Returns a boolean representing the parity of the tweaked key, which can be provided to
+    /// # Return
+    /// An opaque type representing the parity of the tweaked key, this should be provided to
     /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
-    /// it and checking equality. Will return an error if the resulting key would be invalid or
-    /// if the tweak was not a 32-byte length slice.
+    /// it and checking equality.
+    ///
+    /// # Error
+    /// If the resulting key would be invalid or if the tweak was not a 32-byte length slice.
     pub fn tweak_add_assign<V: Verification>(
         &mut self,
         secp: &Secp256k1<V>,
         tweak: &[u8],
-    ) -> Result<bool, Error> {
+    ) -> Result<Parity, Error> {
         if tweak.len() != 32 {
             return Err(Error::InvalidTweak);
         }
@@ -856,12 +859,11 @@ impl XOnlyPublicKey {
                 &mut parity,
                 &pubkey,
             );
-
             if err == 0 {
-                Err(Error::InvalidPublicKey)
-            } else {
-                Ok(parity != 0)
+                return Err(Error::InvalidPublicKey);
             }
+
+            Ok(parity.into())
         }
     }
 
@@ -878,7 +880,7 @@ impl XOnlyPublicKey {
         &self,
         secp: &Secp256k1<V>,
         tweaked_key: &Self,
-        tweaked_parity: bool,
+        tweaked_parity: Parity,
         tweak: [u8; 32],
     ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
@@ -886,13 +888,28 @@ impl XOnlyPublicKey {
             let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
                 secp.ctx,
                 tweaked_ser.as_c_ptr(),
-                if tweaked_parity { 1 } else { 0 },
+                tweaked_parity.into(),
                 &self.0,
                 tweak.as_c_ptr(),
             );
 
             err == 1
         }
+    }
+}
+
+/// Opaque type used to hold the parity passed between FFI function calls.
+pub struct Parity(i32);
+
+impl From<i32> for Parity {
+    fn from(parity: i32) -> Parity {
+        Parity(parity)
+    }
+}
+
+impl From<Parity> for i32 {
+    fn from(parity: Parity) -> i32 {
+        parity.0
     }
 }
 
