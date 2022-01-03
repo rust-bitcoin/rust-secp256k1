@@ -867,7 +867,7 @@ impl XOnlyPublicKey {
         }
     }
 
-    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly
+    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly.
     ///
     /// Should be called on the original untweaked key. Takes the tweaked key and
     /// output parity from `tweak_add_assign` as input.
@@ -876,6 +876,9 @@ impl XOnlyPublicKey {
     /// and checking equality. However, in future this API will support batch
     /// verification, which is significantly faster, so it is wise to design
     /// protocols with this in mind.
+    ///
+    /// # Return
+    /// True if tweak and check is successful, false otherwise.
     pub fn tweak_add_check<V: Verification>(
         &self,
         secp: &Secp256k1<V>,
