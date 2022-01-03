@@ -1476,4 +1476,38 @@ mod test {
         assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
 
     }
+
+    #[test]
+    fn test_tweak_add_assign_then_tweak_add_check() {
+        let s = Secp256k1::new();
+
+        for _ in 0..10 {
+            let mut tweak = [0u8; 32];
+            thread_rng().fill_bytes(&mut tweak);
+            let (mut kp, mut pk) = s.generate_schnorrsig_keypair(&mut thread_rng());
+            let orig_pk = pk;
+            kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            assert_eq!(XOnlyPublicKey::from_keypair(&kp), pk);
+            assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
+        }
+    }
+
+    #[test]
+    fn test_from_key_pubkey() {
+        let kpk1 = PublicKey::from_str(
+            "02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443",
+        )
+        .unwrap();
+        let kpk2 = PublicKey::from_str(
+            "0384526253c27c7aef56c7b71a5cd25bebb66dddda437826defc5b2568bde81f07",
+        )
+        .unwrap();
+
+        let pk1 = XOnlyPublicKey::from(kpk1);
+        let pk2 = XOnlyPublicKey::from(kpk2);
+
+        assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
+        assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
+    }
 }
