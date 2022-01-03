@@ -964,16 +964,16 @@ impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
 
 #[cfg(test)]
 mod test {
-    use Secp256k1;
-    use {from_hex, to_hex};
-    use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
-    use super::{PublicKey, SecretKey};
-    use super::super::constants;
+    use super::*;
+
+    use std::iter;
+    use std::str::FromStr;
 
     use rand::{Error, ErrorKind, RngCore, thread_rng};
     use rand_core::impls;
-    use std::iter;
-    use std::str::FromStr;
+
+    use {to_hex, constants};
+    use Error::{InvalidPublicKey, InvalidSecretKey};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
