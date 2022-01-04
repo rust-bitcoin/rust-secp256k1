@@ -112,19 +112,19 @@
 //!
 //! ## Crate features/optional dependencies
 //!
-//! The crate provides following opt-in Cargo features:
+//! This crate provides the following opt-in Cargo features:
 //!
 //! * `std` - use standard Rust library, enabled by default.
 //! * `alloc` - use the `alloc` standard Rust library to provide heap allocations.
-//! * `rand` - use `rand` library to provide random generator (to e.g. generate keys)
+//! * `rand` - use `rand` library to provide random generator (e.g. to generate keys).
 //! * `rand-std` - use `rand` library with its `std` feature enabled. (Implies `rand`.)
-//! * `recovery` - enable functions that can compute the public key from signature
-//! * `lowmemory` - optimize the library for low-memory environments
+//! * `recovery` - enable functions that can compute the public key from signature.
+//! * `lowmemory` - optimize the library for low-memory environments.
 //! * `global-context` - enable use of global secp256k1 context. (Implies `std`, `rand-std` and
 //!                      `global-context-less-secure`.)
 //! * `global-context-less-secure` - enables global context and opts-in to lower security.
-//! * `serde` - implements serialization and deserialization for types in this crate using `serde`
-//! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions)
+//! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
+//! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
 
 // Coding conventions
 #![deny(non_upper_case_globals)]
