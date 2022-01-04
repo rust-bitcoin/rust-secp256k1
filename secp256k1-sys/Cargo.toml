@@ -17,6 +17,7 @@ links = "rustsecp256k1_v0_4_1"
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
 features = [ "recovery", "lowmemory" ]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [build-dependencies]
 cc = "1.0.28"

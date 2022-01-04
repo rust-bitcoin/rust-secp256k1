@@ -6,9 +6,11 @@ use Error;
 use Secp256k1;
 
 #[cfg(any(feature = "std", feature = "alloc"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 pub use self::alloc_only::*;
 
 #[cfg(feature = "global-context-less-secure")]
+#[cfg_attr(docsrs, doc(cfg(feature = "global-context-less-secure")))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
     #[cfg(feature = "global-context")]
@@ -94,6 +96,7 @@ mod private {
 }
 
 #[cfg(any(feature = "std", feature = "alloc"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 mod alloc_only {
     #[cfg(feature = "std")]
     use std::alloc;
@@ -108,12 +111,15 @@ mod alloc_only {
     const ALIGN_TO: usize = ::core::mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     pub enum SignOnly {}
 
     /// Represents the set of capabilities needed for verification.
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     pub enum VerifyOnly {}
 
     /// Represents the set of all capabilities.
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     pub enum All {}
 
     impl Signing for SignOnly {}

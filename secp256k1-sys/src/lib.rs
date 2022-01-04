@@ -23,6 +23,8 @@
 #![deny(unused_mut)]
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 #[cfg(any(test, feature = "std"))]
 extern crate core;
 
@@ -34,6 +36,7 @@ mod macros;
 pub mod types;
 
 #[cfg(feature = "recovery")]
+#[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub mod recovery;
 
 use core::{slice, ptr};
@@ -524,6 +527,7 @@ extern "C" {
 //  In:      flags: which parts of the context to initialize.
 #[no_mangle]
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_4_1_context_create(flags: c_uint) -> *mut Context {
     use core::mem;
     use std::alloc;
@@ -543,6 +547,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_1_context_create(flags: c_uint) -> *
 }
 
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
     rustsecp256k1_v0_4_1_context_create(flags)
 }
@@ -555,6 +560,7 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 ///
 #[no_mangle]
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_4_1_context_destroy(ctx: *mut Context) {
     use std::alloc;
     secp256k1_context_preallocated_destroy(ctx);
@@ -565,6 +571,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_1_context_destroy(ctx: *mut Context)
 }
 
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
     rustsecp256k1_v0_4_1_context_destroy(ctx)
 }

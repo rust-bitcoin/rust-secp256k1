@@ -110,6 +110,21 @@
 //! Observe that the same code using, say [`signing_only`](struct.Secp256k1.html#method.signing_only)
 //! to generate a context would simply not compile.
 //!
+//! ## Crate features/optional dependencies
+//!
+//! The crate provides following opt-in Cargo features:
+//!
+//! * `std` - use standard Rust library, enabled by default.
+//! * `alloc` - use the `alloc` standard Rust library to provide heap allocations.
+//! * `rand` - use `rand` library to provide random generator (to e.g. generate keys)
+//! * `rand-std` - use `rand` library with its `std` feature enabled. (Implies `rand`.)
+//! * `recovery` - enable functions that can compute the public key from signature
+//! * `lowmemory` - optimize the library for low-memory environments
+//! * `global-context` - enable use of global secp256k1 context. (Implies `std`, `rand-std` and
+//!                      `global-context-less-secure`.)
+//! * `global-context-less-secure` - enables global context and opts-in to lower security.
+//! * `serde` - implements serialization and deserialization for types in this crate using `serde`
+//! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions)
 
 // Coding conventions
 #![deny(non_upper_case_globals)]
@@ -121,21 +136,35 @@
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 pub extern crate secp256k1_sys;
 pub use secp256k1_sys as ffi;
 
-#[cfg(feature = "bitcoin_hashes")] pub extern crate bitcoin_hashes as hashes;
-#[cfg(all(test, feature = "unstable"))] extern crate test;
-#[cfg(any(test, feature = "rand"))] pub extern crate rand;
-#[cfg(any(test))] extern crate rand_core;
-#[cfg(feature = "serde")] pub extern crate serde;
-#[cfg(all(test, feature = "serde"))] extern crate serde_test;
-#[cfg(any(test, feature = "rand"))] use rand::Rng;
-#[cfg(any(test, feature = "std"))] extern crate core;
-#[cfg(all(test, target_arch = "wasm32"))] extern crate wasm_bindgen_test;
-#[cfg(feature = "alloc")] extern crate alloc;
+#[cfg(feature = "bitcoin_hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+pub extern crate bitcoin_hashes as hashes;
+#[cfg(all(test, feature = "unstable"))]
+extern crate test;
+#[cfg(any(test, feature = "rand"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+pub extern crate rand;
+#[cfg(any(test))]
+extern crate rand_core;
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+pub extern crate serde;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_test;
+#[cfg(any(test, feature = "rand"))]
+use rand::Rng;
+#[cfg(any(test, feature = "std"))]
+extern crate core;
+#[cfg(all(test, target_arch = "wasm32"))]
+extern crate wasm_bindgen_test;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 
 #[macro_use]
@@ -163,6 +192,7 @@ use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context-less-secure")]
+#[cfg_attr(docsrs, doc(cfg(feature = "global-context-less-secure")))]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
@@ -196,6 +226,7 @@ pub trait ThirtyTwoByteHash {
 }
 
 #[cfg(feature = "bitcoin_hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
@@ -203,6 +234,7 @@ impl ThirtyTwoByteHash for hashes::sha256::Hash {
 }
 
 #[cfg(feature = "bitcoin_hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256d::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
@@ -210,6 +242,7 @@ impl ThirtyTwoByteHash for hashes::sha256d::Hash {
 }
 
 #[cfg(feature = "bitcoin_hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
 impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
@@ -256,6 +289,7 @@ impl Message {
     /// assert_eq!(m1, m2);
     /// ```
     #[cfg(feature = "bitcoin_hashes")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
     }
@@ -316,6 +350,7 @@ impl fmt::Display for Error {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for Error {}
 
 
@@ -374,6 +409,7 @@ impl<C: Context> Secp256k1<C> {
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell. Requires
     /// compilation with "rand" feature.
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
@@ -406,6 +442,7 @@ impl<C: Signing> Secp256k1<C> {
     /// with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn generate_keypair<R: Rng + ?Sized>(&self, rng: &mut R)
                                     -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(rng);
