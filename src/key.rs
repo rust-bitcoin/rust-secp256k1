@@ -636,12 +636,11 @@ impl KeyPair {
                 &mut self.0,
                 tweak.as_c_ptr(),
             );
-
-            if err == 1 {
-                Ok(())
-            } else {
-                Err(Error::InvalidTweak)
+            if err != 1 {
+                return Err(Error::InvalidTweak);
             }
+
+            Ok(())
         }
     }
 }
@@ -825,15 +824,18 @@ impl XOnlyPublicKey {
 
     /// Tweak an x-only PublicKey by adding the generator multiplied with the given tweak to it.
     ///
-    /// Returns a boolean representing the parity of the tweaked key, which can be provided to
+    /// # Return
+    /// An opaque type representing the parity of the tweaked key, this should be provided to
     /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
-    /// it and checking equality. Will return an error if the resulting key would be invalid or
-    /// if the tweak was not a 32-byte length slice.
+    /// it and checking equality.
+    ///
+    /// # Error
+    /// If the resulting key would be invalid or if the tweak was not a 32-byte length slice.
     pub fn tweak_add_assign<V: Verification>(
         &mut self,
         secp: &Secp256k1<V>,
         tweak: &[u8],
-    ) -> Result<bool, Error> {
+    ) -> Result<Parity, Error> {
         if tweak.len() != 32 {
             return Err(Error::InvalidTweak);
         }
@@ -846,7 +848,6 @@ impl XOnlyPublicKey {
                 self.as_c_ptr(),
                 tweak.as_c_ptr(),
             );
-
             if err != 1 {
                 return Err(Error::InvalidTweak);
             }
@@ -858,16 +859,15 @@ impl XOnlyPublicKey {
                 &mut parity,
                 &pubkey,
             );
-
             if err == 0 {
-                Err(Error::InvalidPublicKey)
-            } else {
-                Ok(parity != 0)
+                return Err(Error::InvalidPublicKey);
             }
+
+            Ok(parity.into())
         }
     }
 
-    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly
+    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly.
     ///
     /// Should be called on the original untweaked key. Takes the tweaked key and
     /// output parity from `tweak_add_assign` as input.
@@ -876,11 +876,14 @@ impl XOnlyPublicKey {
     /// and checking equality. However, in future this API will support batch
     /// verification, which is significantly faster, so it is wise to design
     /// protocols with this in mind.
+    ///
+    /// # Return
+    /// True if tweak and check is successful, false otherwise.
     pub fn tweak_add_check<V: Verification>(
         &self,
         secp: &Secp256k1<V>,
         tweaked_key: &Self,
-        tweaked_parity: bool,
+        tweaked_parity: Parity,
         tweak: [u8; 32],
     ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
@@ -888,13 +891,28 @@ impl XOnlyPublicKey {
             let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
                 secp.ctx,
                 tweaked_ser.as_c_ptr(),
-                if tweaked_parity { 1 } else { 0 },
+                tweaked_parity.into(),
                 &self.0,
                 tweak.as_c_ptr(),
             );
 
             err == 1
         }
+    }
+}
+
+/// Opaque type used to hold the parity passed between FFI function calls.
+pub struct Parity(i32);
+
+impl From<i32> for Parity {
+    fn from(parity: i32) -> Parity {
+        Parity(parity)
+    }
+}
+
+impl From<Parity> for i32 {
+    fn from(parity: Parity) -> i32 {
+        parity.0
     }
 }
 
@@ -964,16 +982,16 @@ impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
 
 #[cfg(test)]
 mod test {
-    use Secp256k1;
-    use {from_hex, to_hex};
-    use super::super::Error::{InvalidPublicKey, InvalidSecretKey};
-    use super::{PublicKey, SecretKey};
-    use super::super::constants;
+    use super::*;
+
+    use std::iter;
+    use std::str::FromStr;
 
     use rand::{Error, ErrorKind, RngCore, thread_rng};
     use rand_core::impls;
-    use std::iter;
-    use std::str::FromStr;
+
+    use {to_hex, constants};
+    use Error::{InvalidPublicKey, InvalidSecretKey};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -1475,5 +1493,39 @@ mod test {
         assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
 
+    }
+
+    #[test]
+    fn test_tweak_add_assign_then_tweak_add_check() {
+        let s = Secp256k1::new();
+
+        for _ in 0..10 {
+            let mut tweak = [0u8; 32];
+            thread_rng().fill_bytes(&mut tweak);
+            let (mut kp, mut pk) = s.generate_schnorrsig_keypair(&mut thread_rng());
+            let orig_pk = pk;
+            kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            assert_eq!(XOnlyPublicKey::from_keypair(&kp), pk);
+            assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
+        }
+    }
+
+    #[test]
+    fn test_from_key_pubkey() {
+        let kpk1 = PublicKey::from_str(
+            "02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443",
+        )
+        .unwrap();
+        let kpk2 = PublicKey::from_str(
+            "0384526253c27c7aef56c7b71a5cd25bebb66dddda437826defc5b2568bde81f07",
+        )
+        .unwrap();
+
+        let pk1 = XOnlyPublicKey::from(kpk1);
+        let pk2 = XOnlyPublicKey::from(kpk2);
+
+        assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
+        assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
     }
 }
