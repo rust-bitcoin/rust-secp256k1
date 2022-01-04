@@ -122,7 +122,7 @@
 //! * `lowmemory` - optimize the library for low-memory environments.
 //! * `global-context` - enable use of global secp256k1 context. (Implies `std`, `rand-std` and
 //!                      `global-context-less-secure`.)
-//! * `global-context-less-secure` - enables global context and opts-in to lower security.
+//! * `global-context-less-secure` - enables global context without extra sidechannel protection.
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
 //! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
 
