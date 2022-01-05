@@ -112,6 +112,9 @@
 //!
 //! ## Crate features/optional dependencies
 //!
+//! This crate supports `no_std` however **you should check the documentation of
+//! [`ffi::set_abort_handler`] if you intend to use it without `std`!**
+//!
 //! This crate provides the following opt-in Cargo features:
 //!
 //! * `std` - use standard Rust library, enabled by default.
@@ -578,10 +581,30 @@ mod tests {
         drop(ctx_vrfy);
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), feature = "std"))]
     #[test]
-    #[ignore] // Panicking from C may trap (SIGILL) intentionally, so we test this manually.
+    #[ignore] // Aborting intentionally, so we test this manually.
     fn test_panic_raw_ctx_should_terminate_abnormally() {
+        let ctx_vrfy = Secp256k1::verification_only();
+        let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
+        // Generating a key pair in verify context will panic (ARG_CHECK).
+        raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
+    }
+
+    #[cfg(all(not(target_arch = "wasm32"), feature = "std"))]
+    #[test]
+    #[ignore] // Aborting intentionally, so we test this manually.
+    fn test_custom_abort_handler() {
+        fn custom_abort(message: &dyn std::fmt::Display) -> ! {
+            eprintln!("this is a custom abort handler: {}", message);
+            std::process::abort()
+        }
+        static CUSTOM_ABORT: fn (&dyn std::fmt::Display) -> ! = custom_abort;
+
+        unsafe {
+            ffi::set_abort_handler(&CUSTOM_ABORT);
+        }
+
         let ctx_vrfy = Secp256k1::verification_only();
         let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
         // Generating a key pair in verify context will panic (ARG_CHECK).
