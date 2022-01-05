@@ -753,7 +753,7 @@ mod fuzz_dummy {
     const CTX_SIZE: usize = 1024 * (1024 + 128);
     // Contexts
     pub unsafe fn secp256k1_context_preallocated_size(flags: c_uint) -> size_t {
-        assert!(rustsecp256k1_v0_4_1_context_preallocated_size(flags) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
+        assert!(rustsecp256k1_v0_4_1_context_preallocated_size(flags) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
         CTX_SIZE
     }
 
@@ -778,7 +778,7 @@ mod fuzz_dummy {
 
         if should_initialize {
             HAVE_PREALLOCATED_CONTEXT.run(|| {
-                assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
+                assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
                 assert_eq!(rustsecp256k1_v0_4_1_context_preallocated_create(
                         PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
                         SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
@@ -789,14 +789,14 @@ mod fuzz_dummy {
         }
 
         ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
-        let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
         (ptr as *mut c_uint).write(flags);
         prealloc as *mut Context
     }
     pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *const Context) -> size_t { CTX_SIZE }
     pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
-        let orig_ptr = (cx as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
-        let new_ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        let orig_ptr = (cx as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
+        let new_ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
         let flags = (orig_ptr as *mut c_uint).read();
         (new_ptr as *mut c_uint).write(flags);
         rustsecp256k1_v0_4_1_context_preallocated_clone(cx, prealloc)
@@ -815,7 +815,7 @@ mod fuzz_dummy {
         let cx_flags = if cx == secp256k1_context_no_precomp {
             1
         } else {
-            let ptr = (cx as *const u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+            let ptr = (cx as *const u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
             (ptr as *const c_uint).read()
         };
         assert_eq!(cx_flags & 1, 1); // SECP256K1_FLAGS_TYPE_CONTEXT
