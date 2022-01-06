@@ -1084,7 +1084,7 @@ mod test {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
         assert_eq!(
-            SecretKey::from_str(&format!("0000000000000000000000000000000000000000000000000000000000000000")),
+            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
             Err(InvalidSecretKey)
         );
         // -1
