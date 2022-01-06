@@ -181,11 +181,7 @@ pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
 
-pub use key::SecretKey;
-pub use key::PublicKey;
-pub use key::ONE_KEY;
-pub use key::KeyPair;
-pub use key::XOnlyPublicKey;
+pub use key::{SecretKey, PublicKey, ONE_KEY, KeyPair, XOnlyPublicKey, Parity};
 pub use context::*;
 use core::marker::PhantomData;
 use core::{mem, fmt, str};
