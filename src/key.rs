@@ -910,6 +910,7 @@ impl XOnlyPublicKey {
 }
 
 /// Opaque type used to hold the parity passed between FFI function calls.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct Parity(i32);
 
 impl From<i32> for Parity {
@@ -921,6 +922,39 @@ impl From<i32> for Parity {
 impl From<Parity> for i32 {
     fn from(parity: Parity) -> i32 {
         parity.0
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl ::serde::Serialize for Parity {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_i32(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> ::serde::Deserialize<'de> for Parity {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        struct I32Visitor;
+
+        impl<'de> ::serde::de::Visitor<'de> for I32Visitor
+        {
+            type Value = Parity;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("Expecting a 4 byte int i32")
+            }
+
+            fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
+                where E: ::serde::de::Error
+            {
+                Ok(Parity::from(v))
+            }
+        }
+
+        d.deserialize_i32(I32Visitor)
     }
 }
 
