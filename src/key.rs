@@ -95,9 +95,10 @@ fn random_32_bytes<R: Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
 }
 
 impl SecretKey {
-    /// Creates a new random secret key. Requires compilation with the "rand" feature.
+    /// Generates a new random secret key.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: Rng + ?Sized>(rng: &mut R) -> SecretKey {
         let mut data = random_32_bytes(rng);
         unsafe {
@@ -221,6 +222,7 @@ impl SecretKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for SecretKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -233,6 +235,7 @@ impl ::serde::Serialize for SecretKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for SecretKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -467,6 +470,7 @@ impl From<ffi::PublicKey> for PublicKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for PublicKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -478,6 +482,7 @@ impl ::serde::Serialize for PublicKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for PublicKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
         if d.is_human_readable() {
@@ -586,9 +591,10 @@ impl KeyPair {
         }
     }
 
-    /// Creates a new random secret key. Requires compilation with the "rand" feature.
+    /// Generates a new random secret key.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: ::rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
         let mut random_32_bytes = || {
             let mut ret = [0u8; 32];
@@ -685,6 +691,7 @@ impl str::FromStr for KeyPair {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for KeyPair {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -698,6 +705,7 @@ impl ::serde::Serialize for KeyPair {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for KeyPair {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -954,6 +962,7 @@ impl From<::key::PublicKey> for XOnlyPublicKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for XOnlyPublicKey {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -965,6 +974,7 @@ impl ::serde::Serialize for XOnlyPublicKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {

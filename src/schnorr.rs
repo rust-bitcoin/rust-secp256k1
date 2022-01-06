@@ -19,6 +19,7 @@ impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for Signature {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -30,6 +31,7 @@ impl ::serde::Serialize for Signature {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for Signature {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -117,6 +119,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     #[deprecated(since = "0.21.0", note = "Use sign_schnorr instead.")]
     pub fn schnorrsig_sign(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         self.sign_schnorr(msg, keypair)
@@ -126,6 +129,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         let mut rng = thread_rng();
         self.sign_schnorr_with_rng(msg, keypair, &mut rng)
@@ -179,6 +183,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generate the auxiliary random data. Requires compilation with "rand"
     /// feature.
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_rng instead.")]
     pub fn schnorrsig_sign_with_rng<R: Rng + CryptoRng>(
         &self,
@@ -193,6 +198,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generate the auxiliary random data. Requires compilation with "rand"
     /// feature.
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
         &self,
         msg: &Message,
@@ -250,6 +256,7 @@ impl <C: Signing> Secp256k1<C> {
     /// with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn generate_schnorrsig_keypair<R: Rng + ?Sized>(
         &self,
         rng: &mut R,

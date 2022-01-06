@@ -9,6 +9,7 @@ use ffi::CPtr;
 mod recovery;
 
 #[cfg(feature = "recovery")]
+#[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub use self::recovery::{RecoveryId, RecoverableSignature};
 
 /// An ECDSA signature
@@ -279,6 +280,7 @@ impl From<ffi::Signature> for Signature {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for Signature {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -290,6 +292,7 @@ impl ::serde::Serialize for Signature {
 }
 
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for Signature {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
