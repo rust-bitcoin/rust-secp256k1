@@ -759,10 +759,6 @@ mod fuzz_dummy {
 
     static HAVE_PREALLOCATED_CONTEXT: once::Once = once::Once::INIT;
     static mut PREALLOCATED_CONTEXT: [u8; CTX_SIZE] = [0; CTX_SIZE];
-    #[cfg(feature = "std")]
-    thread_local! {
-        static CACHE_HAVE_PREALLOCATED_CONTEXT: std::cell::Cell<bool> = std::cell::Cell::new(false);
-    }
     pub unsafe fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context {
         // While applications should generally avoid creating too many contexts, sometimes fuzzers
         // perform tasks repeatedly which real applications may only do rarely. Thus, we want to
@@ -770,23 +766,13 @@ mod fuzz_dummy {
         // new buffers instead of recalculating it. Because we shouldn't rely on std, we use a
         // simple hand-written OnceFlag built out of an atomic to gate the global static.
 
-        #[cfg(feature = "std")]
-        let should_initialize = !CACHE_HAVE_PREALLOCATED_CONTEXT.with(|value| value.get());
-
-        #[cfg(not(feature = "std"))]
-        let should_initialize = true;
-
-        if should_initialize {
-            HAVE_PREALLOCATED_CONTEXT.run(|| {
-                assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
-                assert_eq!(rustsecp256k1_v0_4_1_context_preallocated_create(
-                        PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
-                        SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
-                    PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
-            });
-            #[cfg(feature = "std")]
-            CACHE_HAVE_PREALLOCATED_CONTEXT.with(|value| value.set(true));
-        }
+        HAVE_PREALLOCATED_CONTEXT.run(|| {
+            assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
+            assert_eq!(rustsecp256k1_v0_4_1_context_preallocated_create(
+                    PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
+                    SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
+                PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
+        });
 
         ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
         let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
