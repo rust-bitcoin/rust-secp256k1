@@ -386,7 +386,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing capable context.
     pub fn sign_ecdsa_grind_r(&self, msg: &Message, sk: &SecretKey, bytes_to_grind: usize) -> Signature {
         let len_check = |s : &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
-        return self.sign_grind_with_check(msg, sk, len_check);
+        self.sign_grind_with_check(msg, sk, len_check)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
@@ -397,7 +397,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing capable context.
     #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_grind_r instead.")]
     pub fn sign_low_r(&self, msg: &Message, sk: &SecretKey) -> Signature {
-        return self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
+        self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
@@ -407,7 +407,7 @@ impl<C: Signing> Secp256k1<C> {
     /// will perform two signing operations.
     /// Requires a signing capable context.
     pub fn sign_ecdsa_low_r(&self, msg: &Message, sk: &SecretKey) -> Signature {
-        return self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
+        self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
     }
 }
 
