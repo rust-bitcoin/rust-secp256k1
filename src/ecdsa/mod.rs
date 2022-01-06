@@ -32,7 +32,19 @@ impl fmt::Debug for Signature {
 impl fmt::Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let sig = self.serialize_der();
-        for v in sig.iter() {
+        sig.fmt(f)
+    }
+}
+
+impl fmt::Debug for SerializedSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl fmt::Display for SerializedSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for v in self.data.iter().take(self.len) {
             write!(f, "{:02x}", v)?;
         }
         Ok(())
