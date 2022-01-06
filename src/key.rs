@@ -910,6 +910,7 @@ impl XOnlyPublicKey {
 }
 
 /// Opaque type used to hold the parity passed between FFI function calls.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Parity(i32);
 
 impl From<i32> for Parity {
