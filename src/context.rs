@@ -51,7 +51,7 @@ pub mod global {
 }
 
 
-/// A trait for all kinds of Context's that Lets you define the exact flags and a function to deallocate memory.
+/// A trait for all kinds of Context's that lets you define the exact flags and a function to deallocate memory.
 /// It shouldn't be possible to implement this for types outside this crate.
 pub unsafe trait Context : private::Sealed {
     /// Flags for the ffi.
