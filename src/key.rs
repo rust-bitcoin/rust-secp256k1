@@ -511,7 +511,8 @@ impl Ord for PublicKey {
 }
 
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
-#[derive(Clone)]
+// Should secrets implement Copy: https://github.com/rust-bitcoin/rust-secp256k1/issues/363
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
 
@@ -1084,7 +1085,7 @@ mod test {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
         assert_eq!(
-            SecretKey::from_str(&format!("0000000000000000000000000000000000000000000000000000000000000000")),
+            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
             Err(InvalidSecretKey)
         );
         // -1

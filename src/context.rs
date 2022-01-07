@@ -69,16 +69,19 @@ pub trait Signing: Context {}
 pub trait Verification: Context {}
 
 /// Represents the set of capabilities needed for signing with a user preallocated memory.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SignOnlyPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
 /// Represents the set of capabilities needed for verification with a user preallocated memory.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VerifyOnlyPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
 /// Represents the set of all capabilities with a user preallocated memory.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AllPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
@@ -112,14 +115,17 @@ mod alloc_only {
 
     /// Represents the set of capabilities needed for signing.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum SignOnly {}
 
     /// Represents the set of capabilities needed for verification.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum VerifyOnly {}
 
     /// Represents the set of all capabilities.
     #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum All {}
 
     impl Signing for SignOnly {}

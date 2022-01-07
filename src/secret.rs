@@ -57,6 +57,7 @@ macro_rules! impl_display_secret {
 ///
 /// [`Display`]: fmt::Display
 /// [`Debug`]: fmt::Debug
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DisplaySecret {
     secret: [u8; SECRET_KEY_SIZE]
 }
