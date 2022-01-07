@@ -188,7 +188,7 @@ use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context-less-secure")]
-#[cfg_attr(docsrs, doc(cfg(feature = "global-context-less-secure")))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
