@@ -10,7 +10,7 @@ use Secp256k1;
 pub use self::alloc_only::*;
 
 #[cfg(feature = "global-context-less-secure")]
-#[cfg_attr(docsrs, doc(cfg(feature = "global-context-less-secure")))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
     #[cfg(feature = "global-context")]

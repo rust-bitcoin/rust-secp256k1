@@ -14,7 +14,7 @@ autoexamples = false # Remove when edition 2018 https://github.com/rust-lang/car
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "rand", "rand-std", "serde", "recovery" ]
+features = [ "rand", "rand-std", "serde", "bitcoin_hashes", "recovery", "global-context" ]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
