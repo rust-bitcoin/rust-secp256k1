@@ -638,7 +638,7 @@ fn abort_fallback(message: impl core::fmt::Display) -> ! {
 
 /// Ensures that types both sides of cast stay in sync and only the constness changes.
 ///
-/// This elliminates the risk that if we change the type signature of abort handler the cast
+/// This eliminates the risk that if we change the type signature of abort handler the cast
 /// silently converts the types and causes UB.
 fn ptr_mut_to_const_cast<T>(ptr: *mut T) -> *const T {
     ptr as _
@@ -646,7 +646,7 @@ fn ptr_mut_to_const_cast<T>(ptr: *mut T) -> *const T {
 
 /// Ensures that types both sides of cast stay in sync and only the constness changes.
 ///
-/// This elliminates the risk that if we change the type signature of abort handler the cast
+/// This eliminates the risk that if we change the type signature of abort handler the cast
 /// silently converts the types and causes UB.
 fn ptr_const_to_mut_cast<T>(ptr: *const T) -> *mut T {
     ptr as _
