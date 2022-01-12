@@ -650,6 +650,12 @@ impl KeyPair {
             Ok(())
         }
     }
+
+    /// Gets the [XOnlyPublicKey] for this [KeyPair].
+    #[inline]
+    pub fn public_key(&self) -> XOnlyPublicKey {
+        XOnlyPublicKey::from_keypair(self)
+    }
 }
 
 impl From<KeyPair> for SecretKey {
@@ -1547,7 +1553,10 @@ mod test {
         for _ in 0..10 {
             let mut tweak = [0u8; 32];
             thread_rng().fill_bytes(&mut tweak);
-            let (mut kp, mut pk) = s.generate_schnorrsig_keypair(&mut thread_rng());
+
+            let mut kp = KeyPair::new(&s, &mut thread_rng());
+            let mut pk = kp.public_key();
+
             let orig_pk = pk;
             kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
             let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
