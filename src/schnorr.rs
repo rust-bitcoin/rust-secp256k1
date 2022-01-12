@@ -248,15 +248,14 @@ impl<C: Verification> Secp256k1<C> {
 }
 
 impl <C: Signing> Secp256k1<C> {
-
-    /// Generates a random Schnorr KeyPair and its associated Schnorr PublicKey.
-    /// Convenience function for `schnorrsig::KeyPair::new` and
-    /// `schnorrsig::PublicKey::from_keypair`; call those functions directly for
-    /// batch key generation. Requires a signing-capable context. Requires compilation
-    /// with the "rand" feature.
+    /// Generates a random Schnorr `KeyPair` and its associated Schnorr `XOnlyPublicKey`.
+    ///
+    /// Convenience function for [KeyPair::new] and [KeyPair::public_key].
+    /// Requires a signing-capable context and requires compilation with the "rand" feature.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+    #[deprecated(since = "0.21.0", note = "Use kp = KeyPair::new() and kp.public_key()")]
     pub fn generate_schnorrsig_keypair<R: Rng + ?Sized>(
         &self,
         rng: &mut R,
@@ -325,16 +324,18 @@ mod tests {
         let secp = Secp256k1::new();
 
         let mut rng = thread_rng();
-        let (seckey, pubkey) = secp.generate_schnorrsig_keypair(&mut rng);
+        let kp = KeyPair::new(&secp, &mut rng);
+        let pk = kp.public_key();
+
         let mut msg = [0u8; 32];
 
         for _ in 0..100 {
             rng.fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
 
-            let sig = sign(&secp, &msg, &seckey, &mut rng);
+            let sig = sign(&secp, &msg, &kp, &mut rng);
 
-            assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
+            assert!(secp.verify_schnorr(&sig, &msg, &pk).is_ok());
         }
     }
 
@@ -390,10 +391,12 @@ mod tests {
     #[test]
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
-        let (_, pubkey) = secp.generate_schnorrsig_keypair(&mut thread_rng());
-        let ser = pubkey.serialize();
+        let kp = KeyPair::new(&secp, &mut thread_rng());
+        let pk = kp.public_key();
+
+        let ser = pk.serialize();
         let pubkey2 = XOnlyPublicKey::from_slice(&ser).unwrap();
-        assert_eq!(pubkey, pubkey2);
+        assert_eq!(pk, pubkey2);
     }
 
     #[test]
@@ -405,7 +408,7 @@ mod tests {
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = ::key::PublicKey::from_keypair(&keypair);
         assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
-        let xpk = XOnlyPublicKey::from_keypair(&keypair);
+        let xpk = keypair.public_key();
         assert_eq!(XOnlyPublicKey::from(pk), xpk);
     }
 
@@ -445,12 +448,12 @@ mod tests {
             0x63, 0x63, 0x63, 0x63,
         ];
 
-        let sk = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
+        let kp = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the epected result.
         #[cfg(not(fuzzing))]
-        let pk = XOnlyPublicKey::from_keypair(&sk);
+        let pk = kp.public_key();
         #[cfg(fuzzing)]
         let pk = XOnlyPublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
@@ -512,10 +515,11 @@ mod tests {
             }
         }
 
-        let s = Secp256k1::new();
-        let (_, pubkey) = s.generate_schnorrsig_keypair(&mut DumbRng(0));
+        let secp = Secp256k1::new();
+        let kp = KeyPair::new(&secp, &mut DumbRng(0));
+        let pk = kp.public_key();
         assert_eq!(
-            &pubkey.serialize()[..],
+            &pk.serialize()[..],
             &[
                 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9,
                 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
