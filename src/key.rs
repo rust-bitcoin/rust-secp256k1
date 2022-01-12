@@ -650,6 +650,12 @@ impl KeyPair {
             Ok(())
         }
     }
+
+    /// Gets the [XOnlyPublicKey] for this [KeyPair].
+    #[inline]
+    pub fn public_key(&self) -> XOnlyPublicKey {
+        XOnlyPublicKey::from_keypair(self)
+    }
 }
 
 impl From<KeyPair> for SecretKey {
