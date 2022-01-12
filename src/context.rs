@@ -21,6 +21,7 @@ pub mod global {
     use {Secp256k1, All};
 
     /// Proxy struct for global `SECP256K1` context
+    #[derive(Debug, Copy, Clone)]
     pub struct GlobalContext {
         __private: (),
     }
