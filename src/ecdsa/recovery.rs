@@ -223,16 +223,16 @@ mod tests {
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
 
         // Try signing
-        assert_eq!(sign.sign_recoverable(&msg, &sk), full.sign_recoverable(&msg, &sk));
-        let sigr = full.sign_recoverable(&msg, &sk);
+        assert_eq!(sign.sign_ecdsa_recoverable(&msg, &sk), full.sign_ecdsa_recoverable(&msg, &sk));
+        let sigr = full.sign_ecdsa_recoverable(&msg, &sk);
 
         // Try pk recovery
-        assert!(vrfy.recover(&msg, &sigr).is_ok());
-        assert!(full.recover(&msg, &sigr).is_ok());
+        assert!(vrfy.recover_ecdsa(&msg, &sigr).is_ok());
+        assert!(full.recover_ecdsa(&msg, &sigr).is_ok());
 
-        assert_eq!(vrfy.recover(&msg, &sigr),
-                   full.recover(&msg, &sigr));
-        assert_eq!(full.recover(&msg, &sigr), Ok(pk));
+        assert_eq!(vrfy.recover_ecdsa(&msg, &sigr),
+                   full.recover_ecdsa(&msg, &sigr));
+        assert_eq!(full.recover_ecdsa(&msg, &sigr), Ok(pk));
     }
 
     #[test]
@@ -252,7 +252,7 @@ mod tests {
         let sk = SecretKey::from_slice(&one).unwrap();
         let msg = Message::from_slice(&one).unwrap();
 
-        let sig = s.sign_recoverable(&msg, &sk);
+        let sig = s.sign_ecdsa_recoverable(&msg, &sk);
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
             0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
@@ -276,7 +276,7 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let sigr = s.sign_recoverable(&msg, &sk);
+        let sigr = s.sign_ecdsa_recoverable(&msg, &sk);
         let sig = sigr.to_standard();
 
         let mut msg = [0u8; 32];
@@ -284,7 +284,7 @@ mod tests {
         let msg = Message::from_slice(&msg).unwrap();
         assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
 
-        let recovered_key = s.recover(&msg, &sigr).unwrap();
+        let recovered_key = s.recover_ecdsa(&msg, &sigr).unwrap();
         assert!(recovered_key != pk);
     }
 
@@ -299,9 +299,9 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let sig = s.sign_recoverable(&msg, &sk);
+        let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
-        assert_eq!(s.recover(&msg, &sig), Ok(pk));
+        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
     }
 
     #[test]
@@ -313,10 +313,10 @@ mod tests {
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
-        assert_eq!(s.recover(&msg, &sig), Err(Error::InvalidSignature));
+        assert_eq!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId(0)).unwrap();
-        assert!(s.recover(&msg, &sig).is_ok());
+        assert!(s.recover_ecdsa(&msg, &sig).is_ok());
     }
 
     #[test]
@@ -384,7 +384,7 @@ mod benches {
         thread_rng().fill_bytes(&mut msg);
         let msg = Message::from_slice(&msg).unwrap();
         let (sk, _) = s.generate_keypair(&mut thread_rng());
-        let sig = s.sign_recoverable(&msg, &sk);
+        let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
         bh.iter(|| {
             let res = s.recover(&msg, &sig).unwrap();
