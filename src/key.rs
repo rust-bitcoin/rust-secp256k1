@@ -13,7 +13,8 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! # Public and secret keys
+//! Public and secret keys.
+//!
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
