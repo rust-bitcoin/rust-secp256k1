@@ -27,7 +27,20 @@ use Verification;
 use constants;
 use ffi::{self, CPtr};
 
-/// Secret 256-bit key used as `x` in an ECDSA signature
+/// Secret 256-bit key used as `x` in an ECDSA signature.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # #[cfg(feature="rand")] {
+/// use secp256k1::{rand, Secp256k1, SecretKey};
+///
+/// let secp = Secp256k1::new();
+/// let secret_key = SecretKey::new(&mut rand::thread_rng());
+/// # }
+/// ```
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_display_secret!(SecretKey);
@@ -49,7 +62,19 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 1]);
 
-/// A Secp256k1 public key, used for verification of signatures
+/// A Secp256k1 public key, used for verification of signatures.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use secp256k1::{SecretKey, Secp256k1, PublicKey};
+///
+/// let secp = Secp256k1::new();
+/// let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
+/// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+/// ```
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
@@ -97,6 +122,15 @@ fn random_32_bytes<R: Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
 
 impl SecretKey {
     /// Generates a new random secret key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, SecretKey};
+    /// let secret_key = SecretKey::new(&mut rand::thread_rng());
+    /// # }
+    /// ```
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
@@ -114,7 +148,14 @@ impl SecretKey {
         SecretKey(data)
     }
 
-    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key
+    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use secp256k1::SecretKey;
+    /// let sk = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
+    /// ```
     #[inline]
     pub fn from_slice(data: &[u8])-> Result<SecretKey, Error> {
         match data.len() {
@@ -136,7 +177,19 @@ impl SecretKey {
         }
     }
 
-    /// Creates a new secret key using data from BIP-340 [`KeyPair`]
+    /// Creates a new secret key using data from BIP-340 [`KeyPair`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
+    /// let secret_key = SecretKey::from_keypair(&key_pair);
+    /// # }
+    /// ```
     #[inline]
     pub fn from_keypair(keypair: &KeyPair) -> Self {
         let mut sk = [0u8; constants::SECRET_KEY_SIZE];
@@ -253,19 +306,31 @@ impl<'de> ::serde::Deserialize<'de> for SecretKey {
 }
 
 impl PublicKey {
-    /// Obtains a raw const pointer suitable for use with FFI functions
+    /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
         &self.0
     }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey {
         &mut self.0
     }
 
-    /// Creates a new public key from a secret key.
+    /// Creates a new public key from a [`SecretKey`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let secret_key = SecretKey::new(&mut rand::thread_rng());
+    /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+    /// # }
+    /// ```
     #[inline]
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
                            sk: &SecretKey)
@@ -302,6 +367,18 @@ impl PublicKey {
     }
 
     /// Creates a new compressed public key using data from BIP-340 [`KeyPair`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1, PublicKey, KeyPair};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
+    /// let public_key = PublicKey::from_keypair(&key_pair);
+    /// # }
+    /// ```
     #[inline]
     pub fn from_keypair(keypair: &KeyPair) -> Self {
         unsafe {
@@ -412,17 +489,52 @@ impl PublicKey {
         }
     }
 
-    /// Adds a second key to this one, returning the sum. Returns an error if
-    /// the result would be the point at infinity, i.e. we are adding this point
-    /// to its own negation
+    /// Adds a second key to this one, returning the sum.
+    ///
+    /// # Errors
+    ///
+    /// If the result would be the point at infinity, i.e. adding this point to its own negation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let mut rng = rand::thread_rng();
+    /// let (_, pk1) = secp.generate_keypair(&mut rng);
+    /// let (_, pk2) = secp.generate_keypair(&mut rng);
+    /// let sum = pk1.combine(&pk2).expect("It's improbable to fail for 2 random public keys");
+    /// # }
+    ///```
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         PublicKey::combine_keys(&[self, other])
     }
 
-    /// Adds the keys in the provided slice together, returning the sum. Returns
-    /// an error if the result would be the point at infinity, i.e. we are adding
-    /// a point to its own negation, if the provided slice has no element in it,
-    /// or if the number of element it contains is greater than i32::MAX.
+    /// Adds the keys in the provided slice together, returning the sum.
+    ///
+    /// # Errors
+    ///
+    /// Errors under any of the following conditions:
+    /// - The result would be the point at infinity, i.e. adding a point to its own negation.
+    /// - The provided slice is empty.
+    /// - The number of elements in the provided slice is greater than `i32::MAX`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1, PublicKey};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let mut rng = rand::thread_rng();
+    /// let (_, pk1) = secp.generate_keypair(&mut rng);
+    /// let (_, pk2) = secp.generate_keypair(&mut rng);
+    /// let (_, pk3) = secp.generate_keypair(&mut rng);
+    /// let sum = PublicKey::combine_keys(&[&pk1, &pk2, &pk3]).expect("It's improbable to fail for 3 random public keys");
+    /// # }
+    /// ```
     pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, Error> {
         use core::mem::transmute;
         use core::i32::MAX;
@@ -514,6 +626,7 @@ impl Ord for PublicKey {
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
 ///
 /// # Serde support
+///
 /// [`Serialize`] and [`Deserialize`] are not implemented for this type, even with the `serde`
 /// feature active. This is due to security considerations, see the [`serde_keypair`] documentation
 /// for details.
@@ -522,29 +635,41 @@ impl Ord for PublicKey {
 /// deserialized by annotating them with `#[serde(with = "secp256k1::serde_keypair")]`
 /// inside structs or enums for which [`Serialize`] and [`Deserialize`] are being derived.
 ///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # #[cfg(feature="rand")] {
+/// use secp256k1::{rand, KeyPair, Secp256k1};
+///
+/// let secp = Secp256k1::new();
+/// let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
+/// let key_pair = KeyPair::from_secret_key(&secp, secret_key);
+/// # }
+/// ```
 /// [`Deserialize`]: serde::Deserialize
 /// [`Serialize`]: serde::Serialize
-// Should secrets implement Copy: https://github.com/rust-bitcoin/rust-secp256k1/issues/363
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
 
 impl KeyPair {
-    /// Obtains a raw const pointer suitable for use with FFI functions
+    /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::KeyPair {
         &self.0
     }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair {
         &mut self.0
     }
 
-    /// Creates a Schnorr KeyPair directly from generic Secp256k1 secret key
+    /// Creates a Schnorr KeyPair directly from generic Secp256k1 secret key.
     ///
-    /// # Panic
+    /// # Panics
     ///
     /// Panics if internal representation of the provided [`SecretKey`] does not hold correct secret
     /// key value obtained from Secp256k1 library previously, specifically when secret key value is
@@ -606,6 +731,16 @@ impl KeyPair {
     }
 
     /// Generates a new random secret key.
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
+    /// # }
+    /// ```
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
@@ -625,20 +760,38 @@ impl KeyPair {
         }
     }
 
-    /// Serialize the key pair as a secret key byte value
+    /// Serializes the key pair as a secret key byte value.
     #[inline]
     pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         *SecretKey::from_keypair(self).as_ref()
     }
 
-    /// Tweak a keypair by adding the given tweak to the secret key and updating the public key
+    /// Tweaks a keypair by adding the given tweak to the secret key and updating the public key
     /// accordingly.
     ///
-    /// Will return an error if the resulting key would be invalid or if the tweak was not a 32-byte
+    /// # Errors
+    ///
+    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
     /// length slice.
     ///
     /// NB: Will not error if the tweaked public key has an odd value and can't be used for
     ///     BIP 340-342 purposes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::rand::{RngCore, thread_rng};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let mut tweak = [0u8; 32];
+    /// thread_rng().fill_bytes(&mut tweak);
+    ///
+    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// key_pair.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// # }
+    /// ```
     // TODO: Add checked implementation
     #[inline]
     pub fn tweak_add_assign<C: Verification>(
@@ -744,7 +897,21 @@ impl<'de> ::serde::Deserialize<'de> for KeyPair {
     }
 }
 
-/// A x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
+/// An x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # #[cfg(feature="rand")] {
+/// use secp256k1::{rand, Secp256k1, KeyPair, XOnlyPublicKey};
+///
+/// let secp = Secp256k1::new();
+/// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
+/// let xonly = XOnlyPublicKey::from_keypair(&key_pair);
+/// # }
+/// ```
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
 
@@ -850,15 +1017,34 @@ impl XOnlyPublicKey {
         ret
     }
 
-    /// Tweak an x-only PublicKey by adding the generator multiplied with the given tweak to it.
+    /// Tweaks an x-only PublicKey by adding the generator multiplied with the given tweak to it.
     ///
-    /// # Return
+    /// # Returns
+    ///
     /// An opaque type representing the parity of the tweaked key, this should be provided to
     /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
     /// it and checking equality.
     ///
-    /// # Error
+    /// # Errors
+    ///
     /// If the resulting key would be invalid or if the tweak was not a 32-byte length slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::rand::{RngCore, thread_rng};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let mut tweak = [0u8; 32];
+    /// thread_rng().fill_bytes(&mut tweak);
+    ///
+    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// let mut public_key = key_pair.public_key();
+    /// public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// # }
+    /// ```
     pub fn tweak_add_assign<V: Verification>(
         &mut self,
         secp: &Secp256k1<V>,
@@ -895,18 +1081,37 @@ impl XOnlyPublicKey {
         }
     }
 
-    /// Verify that a tweak produced by `tweak_add_assign` was computed correctly.
+    /// Verifies that a tweak produced by [`XOnlyPublicKey::tweak_add_assign`] was computed correctly.
     ///
-    /// Should be called on the original untweaked key. Takes the tweaked key and
-    /// output parity from `tweak_add_assign` as input.
+    /// Should be called on the original untweaked key. Takes the tweaked key and output parity from
+    /// [`XOnlyPublicKey::tweak_add_assign`] as input.
     ///
-    /// Currently this is not much more efficient than just recomputing the tweak
-    /// and checking equality. However, in future this API will support batch
-    /// verification, which is significantly faster, so it is wise to design
-    /// protocols with this in mind.
+    /// Currently this is not much more efficient than just recomputing the tweak and checking
+    /// equality. However, in future this API will support batch verification, which is
+    /// significantly faster, so it is wise to design protocols with this in mind.
     ///
-    /// # Return
+    /// # Returns
+    ///
     /// True if tweak and check is successful, false otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="rand")] {
+    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::rand::{thread_rng, RngCore};
+    ///
+    /// let secp = Secp256k1::new();
+    /// let mut tweak = [0u8; 32];
+    /// thread_rng().fill_bytes(&mut tweak);
+    ///
+    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// let mut public_key = key_pair.public_key();
+    /// let original = public_key;
+    /// let parity = public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// assert!(original.tweak_add_check(&secp, &public_key, parity, tweak));
+    /// # }
+    /// ```
     pub fn tweak_add_check<V: Verification>(
         &self,
         secp: &Secp256k1<V>,
