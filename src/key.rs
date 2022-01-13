@@ -204,7 +204,7 @@ impl SecretKey {
         SecretKey(sk)
     }
 
-    /// Serialize the secret key as byte value
+    /// Serializes the secret key as byte value.
     #[inline]
     pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         self.0
@@ -225,9 +225,12 @@ impl SecretKey {
     }
 
     #[inline]
-    /// Adds one secret key to another, modulo the curve order. WIll
-    /// return an error if the resulting key would be invalid or if
-    /// the tweak was not a 32-byte length slice.
+    /// Adds one secret key to another, modulo the curve order.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
+    /// length slice.
     pub fn add_assign(
         &mut self,
         other: &[u8],
@@ -345,7 +348,7 @@ impl PublicKey {
         }
     }
 
-    /// Creates a public key directly from a slice
+    /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         if data.is_empty() {return Err(Error::InvalidPublicKey);}
@@ -394,9 +397,8 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Serialize the key as a byte-encoded pair of values. In compressed form
-    /// the y-coordinate is represented by only a single bit, as x determines
-    /// it up to one bit.
+    /// Serializes the key as a byte-encoded pair of values. In compressed form the y-coordinate is
+    /// represented by only a single bit, as x determines it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::PUBLIC_KEY_SIZE];
 
@@ -415,7 +417,7 @@ impl PublicKey {
         ret
     }
 
-    /// Serialize the key as a byte-encoded pair of values, in uncompressed form
+    /// Serializes the key as a byte-encoded pair of values, in uncompressed form.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
 
@@ -435,8 +437,7 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Negates the pk to the pk `self` in place
-    /// Will return an error if the pk would be invalid.
+    /// Negates the public key in place.
     pub fn negate_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>
@@ -448,9 +449,12 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Adds the pk corresponding to `other` to the pk `self` in place
-    /// Will return an error if the resulting key would be invalid or
-    /// if the tweak was not a 32-byte length slice.
+    /// Adds the `other` public key to `self` in place.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
+    /// length slice.
     pub fn add_exp_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
@@ -469,9 +473,12 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Muliplies the pk `self` in place by the scalar `other`
-    /// Will return an error if the resulting key would be invalid or
-    /// if the tweak was not a 32-byte length slice.
+    /// Muliplies the public key in place by the scalar `other`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
+    /// length slice.
     pub fn mul_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
@@ -667,7 +674,7 @@ impl KeyPair {
         &mut self.0
     }
 
-    /// Creates a Schnorr KeyPair directly from generic Secp256k1 secret key.
+    /// Creates a Schnorr [`KeyPair`] directly from generic Secp256k1 secret key.
     ///
     /// # Panics
     ///
@@ -689,7 +696,7 @@ impl KeyPair {
         }
     }
 
-    /// Creates a Schnorr KeyPair directly from a secret key slice.
+    /// Creates a Schnorr [`KeyPair`] directly from a secret key slice.
     ///
     /// # Errors
     ///
@@ -714,7 +721,7 @@ impl KeyPair {
         }
     }
 
-    /// Creates a Schnorr KeyPair directly from a secret key string
+    /// Creates a Schnorr [`KeyPair`] directly from a secret key string.
     ///
     /// # Errors
     ///
@@ -945,13 +952,13 @@ impl str::FromStr for XOnlyPublicKey {
 }
 
 impl XOnlyPublicKey {
-    /// Obtains a raw const pointer suitable for use with FFI functions
+    /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey {
         &self.0
     }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
+    /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey {
         &mut self.0
@@ -974,12 +981,12 @@ impl XOnlyPublicKey {
         }
     }
 
-    /// Creates a Schnorr public key directly from a slice
+    /// Creates a Schnorr public key directly from a slice.
     ///
     /// # Errors
     ///
     /// Returns [`Error::InvalidPublicKey`] if the length of the data slice is not 32 bytes or the
-    /// slice does not represent a valid Secp256k1 point x coordinate
+    /// slice does not represent a valid Secp256k1 point x coordinate.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
         if data.is_empty() || data.len() != constants::SCHNORRSIG_PUBLIC_KEY_SIZE {
@@ -1002,7 +1009,7 @@ impl XOnlyPublicKey {
     }
 
     #[inline]
-    /// Serialize the key as a byte-encoded x coordinate value (32 bytes).
+    /// Serializes the key as a byte-encoded x coordinate value (32 bytes).
     pub fn serialize(&self) -> [u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
 
@@ -1194,7 +1201,7 @@ impl CPtr for XOnlyPublicKey {
     }
 }
 
-/// Creates a new Schnorr public key from a FFI x-only public key
+/// Creates a new Schnorr public key from a FFI x-only public key.
 impl From<ffi::XOnlyPublicKey> for XOnlyPublicKey {
     #[inline]
     fn from(pk: ffi::XOnlyPublicKey) -> XOnlyPublicKey {
