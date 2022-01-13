@@ -434,10 +434,8 @@ impl<C: Context> Secp256k1<C> {
 }
 
 impl<C: Signing> Secp256k1<C> {
-    /// Generates a random keypair. Convenience function for `key::SecretKey::new`
-    /// and `key::PublicKey::from_secret_key`; call those functions directly for
-    /// batch key generation. Requires a signing-capable context. Requires compilation
-    /// with the "rand" feature.
+    /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
+    /// [`PublicKey::from_secret_key`].
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
