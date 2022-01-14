@@ -387,7 +387,7 @@ mod benches {
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
         bh.iter(|| {
-            let res = s.recover(&msg, &sig).unwrap();
+            let res = s.recover_ecdsa(&msg, &sig).unwrap();
             black_box(res);
         });
     }
