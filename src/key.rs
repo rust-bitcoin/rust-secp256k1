@@ -511,6 +511,18 @@ impl Ord for PublicKey {
 }
 
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
+///
+/// # Serde support
+/// [`Serialize`] and [`Deserialize`] are not implemented for this type, even with the `serde`
+/// feature active. This is due to security considerations, see the [`serde_keypair`] documentation
+/// for details.
+///
+/// If the `serde` and `global-context[-less-secure]` features are active `KeyPair`s can be serialized and
+/// deserialized by annotating them with `#[serde(with = "secp256k1::serde_keypair")]`
+/// inside structs or enums for which [`Serialize`] and [`Deserialize`] are being derived.
+///
+/// [`Deserialize`]: serde::Deserialize
+/// [`Serialize`]: serde::Serialize
 // Should secrets implement Copy: https://github.com/rust-bitcoin/rust-secp256k1/issues/363
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KeyPair(ffi::KeyPair);
@@ -1028,6 +1040,45 @@ impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
                 XOnlyPublicKey::from_slice
             ))
         }
+    }
+}
+
+/// Serde implementation for the [`KeyPair`] type.
+///
+/// Only the secret key part of the [`KeyPair`] is serialized using the [`SecretKey`] serde
+/// implementation, meaning the public key has to be regenerated on deserialization.
+///
+/// **Attention:** The deserialization algorithm uses the [global context] to generate the public key
+/// belonging to the secret key to form a [`KeyPair`]. The typical caveats regarding use of the
+/// [global context] with secret data apply.
+///
+/// [`SecretKey`]: crate::SecretKey
+/// [global context]: crate::SECP256K1
+#[cfg(all(feature = "global-context-less-secure", feature = "serde"))]
+pub mod serde_keypair {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use key::KeyPair;
+    use key::SecretKey;
+
+    #[allow(missing_docs)]
+    pub fn serialize<S>(key: &KeyPair, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        SecretKey::from_keypair(key).serialize(serializer)
+    }
+
+    #[allow(missing_docs)]
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<KeyPair, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        let secret_key = SecretKey::deserialize(deserializer)?;
+
+        Ok(KeyPair::from_secret_key(
+            &::SECP256K1,
+            secret_key,
+        ))
     }
 }
 
@@ -1581,5 +1632,52 @@ mod test {
 
         assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
         assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
+    }
+
+    #[test]
+    #[cfg(all(feature = "global-context-less-secure", feature = "serde"))]
+    fn test_serde_keypair() {
+        use serde::{Deserialize, Deserializer, Serialize, Serializer};
+        use serde_test::{Configure, Token, assert_tokens};
+        use super::serde_keypair;
+        use key::KeyPair;
+
+        // Normally users would derive the serde traits, but we can't easily enable the serde macros
+        // here, so they are implemented manually to be able to test the behaviour.
+        #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+        struct KeyPairWrapper(KeyPair);
+
+        impl<'de> Deserialize<'de> for KeyPairWrapper {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where D: Deserializer<'de> {
+                serde_keypair::deserialize(deserializer).map(KeyPairWrapper)
+            }
+        }
+
+        impl Serialize for KeyPairWrapper {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+                serde_keypair::serialize(&self.0, serializer)
+            }
+        }
+
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static SK_STR: &'static str = "\
+            01010101010101010001020304050607ffff0000ffff00006363636363636363\
+        ";
+
+        let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&::SECP256K1, &SK_BYTES).unwrap());
+
+        assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
+        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
+        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+
+        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
     }
 }
