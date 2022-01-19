@@ -381,7 +381,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
     /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 - bytes_to_grund bytes. The number
+    /// a signature that is less than 71 - `bytes_to_grind` bytes. The number
     /// of signing operation performed by this function is exponential in the
     /// number of bytes grinded.
     /// Requires a signing capable context.
@@ -392,7 +392,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
     /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 - bytes_to_grund bytes. The number
+    /// a signature that is less than 71 - `bytes_to_grind` bytes. The number
     /// of signing operation performed by this function is exponential in the
     /// number of bytes grinded.
     /// Requires a signing capable context.
