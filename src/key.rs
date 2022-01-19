@@ -18,6 +18,7 @@
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 use core::{fmt, ptr, str};
+use core::ops::BitXor;
 
 use super::{from_hex, Secp256k1};
 use super::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
@@ -890,7 +891,7 @@ impl XOnlyPublicKey {
                 return Err(Error::InvalidPublicKey);
             }
 
-            Ok(parity.into())
+            Parity::from_i32(parity)
         }
     }
 
@@ -918,7 +919,7 @@ impl XOnlyPublicKey {
             let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
                 secp.ctx,
                 tweaked_ser.as_c_ptr(),
-                tweaked_parity.into(),
+                tweaked_parity.to_i32(),
                 &self.0,
                 tweak.as_c_ptr(),
             );
@@ -928,19 +929,69 @@ impl XOnlyPublicKey {
     }
 }
 
-/// Opaque type used to hold the parity passed between FFI function calls.
+/// Represents the parity passed between FFI function calls.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
-pub struct Parity(i32);
+pub enum Parity {
+    /// Even parity.
+    Even = 0,
+    /// Odd parity.
+    Odd = 1,
+}
+
+impl Parity {
+    /// Converts parity into a integer (byte) value.
+    pub fn to_u8(self) -> u8 {
+        self as u8
+    }
+
+    /// Converts parity into a integer value.
+    pub fn to_i32(self) -> i32 {
+        self as i32
+    }
+
+    /// Constructs a [`Parity`] from a byte.
+    pub fn from_u8(parity: u8) -> Result<Parity, Error> {
+        Parity::from_i32(parity as i32)
+    }
+
+    /// Constructs a [`Parity`] from a signed integer.
+    pub fn from_i32(parity: i32) -> Result<Parity, Error> {
+        match parity {
+            0 => Ok(Parity::Even),
+            1 => Ok(Parity::Odd),
+            _ => Err(Error::InvalidParityValue),
+        }
+    }
+}
 
 impl From<i32> for Parity {
+    /// Please note, this method is deprecated and will be removed in an upcoming release, it
+    /// is not equivalent to `from_u32()`, it is better to use `Parity::from_u32`.
     fn from(parity: i32) -> Parity {
-        Parity(parity)
+        if parity % 2 == 0 {
+            Parity::Even
+        } else {
+            Parity::Odd
+        }
     }
 }
 
 impl From<Parity> for i32 {
     fn from(parity: Parity) -> i32 {
-        parity.0
+        parity.to_i32()
+    }
+}
+
+impl BitXor for Parity {
+    type Output = Parity;
+
+    fn bitxor(self, rhs: Parity) -> Self::Output {
+        // This works because Parity has only two values (i.e. only 1 bit of information).
+        if self == rhs {
+            Parity::Even        // 1^1==0 and 0^0==0
+        } else {
+            Parity::Odd         // 1^0==1 and 0^1==1
+        }
     }
 }
 
@@ -948,7 +999,7 @@ impl From<Parity> for i32 {
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for Parity {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_i32(self.0)
+        s.serialize_i32(self.to_i32())
     }
 }
 
@@ -969,7 +1020,7 @@ impl<'de> ::serde::Deserialize<'de> for Parity {
             fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
                 where E: ::serde::de::Error
             {
-                Ok(Parity::from(v))
+                Parity::from_i32(v).map_err(E::custom)
             }
         }
 
