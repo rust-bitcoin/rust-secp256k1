@@ -982,6 +982,7 @@ mod fuzz_dummy {
         cx: *const Context,
         sig64: *const c_uchar,
         msg32: *const c_uchar,
+        msglen: size_t,
         pubkey: *const XOnlyPublicKey,
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_VERIFY);
@@ -990,7 +991,7 @@ mod fuzz_dummy {
         let _ = secp256k1_xonly_pubkey_tweak_add(cx, &mut new_pk, pubkey, msg32);
         // Actually verify
         let sig_sl = slice::from_raw_parts(sig64 as *const u8, 64);
-        let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
+        let msg_sl = slice::from_raw_parts(msg32 as *const u8, msglen);
         if &sig_sl[..32] == msg_sl && sig_sl[32..] == (*pubkey).0[..32] {
             1
         } else {
@@ -1004,8 +1005,7 @@ mod fuzz_dummy {
         sig64: *mut c_uchar,
         msg32: *const c_uchar,
         keypair: *const KeyPair,
-        _noncefp: SchnorrNonceFn,
-        _noncedata: *const c_void
+        _aux_rand32: *const c_uchar
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_SIGN);
         // Check context is built for signing
