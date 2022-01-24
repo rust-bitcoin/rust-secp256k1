@@ -22,6 +22,7 @@
 //! To minimize dependencies, some functions are feature-gated. To generate
 //! random keys or to re-randomize a context object, compile with the "rand"
 //! feature. To de/serialize objects with serde, compile with "serde".
+//! **Important**: `serde` encoding is **not** the same as consensus encoding!
 //!
 //! Where possible, the bindings use the Rust type system to ensure that
 //! API usage errors are impossible. For example, the library uses context
@@ -124,6 +125,7 @@
 //!                      `global-context-less-secure`.)
 //! * `global-context-less-secure` - enables global context without extra sidechannel protection.
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
+//!           **Important**: `serde` encoding is **not** the same as consensus encoding!
 //! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
 
 // Coding conventions
