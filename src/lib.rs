@@ -322,6 +322,8 @@ pub enum Error {
     NotEnoughMemory,
     /// Bad set of public keys
     InvalidPublicKeySum,
+    /// The only valid parity values are 0 or 1.
+    InvalidParityValue,
 }
 
 impl Error {
@@ -336,6 +338,7 @@ impl Error {
             Error::InvalidTweak => "secp: bad tweak",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
             Error::InvalidPublicKeySum => "secp: the sum of public keys was invalid or the input vector lengths was less than 1",
+            Error::InvalidParityValue => "The only valid parity values are 0 or 1",
         }
     }
 }
