@@ -650,10 +650,9 @@ mod tests {
     #[ignore] // Panicking from C may trap (SIGILL) intentionally, so we test this manually.
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_panic_raw_ctx_should_terminate_abnormally() {
-        let ctx_vrfy = Secp256k1::verification_only();
-        let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
-        // Generating a key pair in verify context will panic (ARG_CHECK).
-        raw_ctx_verify_as_full.generate_keypair(&mut thread_rng());
+        // Trying to use an all-zeros public key should cause an ARG_CHECK to trigger.
+        let pk = PublicKey::from(unsafe { ffi::PublicKey::new() });
+        pk.serialize();
     }
 
     #[test]
