@@ -35,6 +35,7 @@ pub mod global {
     impl Deref for GlobalContext {
         type Target = Secp256k1<All>;
 
+        #[allow(unused_mut)]    // Unused when "global-context" is not enabled.
         fn deref(&self) -> &Self::Target {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;
