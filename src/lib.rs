@@ -58,13 +58,13 @@
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
-//! use self::secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
+//! use secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 //! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
-//! // See the above example for how to use this library together with bitcoin_hashes.
+//! // See the above example for how to use this library together with `bitcoin_hashes`.
 //! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
@@ -439,10 +439,8 @@ impl<C: Context> Secp256k1<C> {
 }
 
 impl<C: Signing> Secp256k1<C> {
-    /// Generates a random keypair. Convenience function for `key::SecretKey::new`
-    /// and `key::PublicKey::from_secret_key`; call those functions directly for
-    /// batch key generation. Requires a signing-capable context. Requires compilation
-    /// with the "rand" feature.
+    /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
+    /// [`PublicKey::from_secret_key`].
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
