@@ -80,7 +80,9 @@ if [ "$DO_ASAN" = true ]; then
 fi
 
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
-cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
+cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGABRT\\|SIGILL\\|panicked at '\[libsecp256k1\]"
+# Test custom handler
+cargo test -- --ignored --nocapture --exact 'tests::test_custom_abort_handler' 2>&1 | tee /dev/stderr | grep '^this is a custom abort handler:'
 
 # Bench
 if [ "$DO_BENCH" = true ]; then

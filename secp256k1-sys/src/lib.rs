@@ -40,6 +40,7 @@ pub mod types;
 pub mod recovery;
 
 use core::{slice, ptr};
+use core::sync::atomic::AtomicPtr;
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -576,6 +577,91 @@ pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
     rustsecp256k1_v0_4_1_context_destroy(ctx)
 }
 
+static ABORT_HANDLER: AtomicPtr<fn(&dyn core::fmt::Display) -> !> = AtomicPtr::new(core::ptr::null_mut());
+
+/// Registers custom abort handler globally.
+///
+/// libsecp256k1 may want to abort in case of invalid inputs. These are definitely bugs.
+/// The default handler aborts with `std` and **loops forever without `std`**.
+/// You can provide your own handler if you wish to override this behavior.
+///
+/// This function is `unsafe` because the supplied handler MUST NOT unwind
+/// since unwinding would cross FFI boundary.
+/// Double panic is *also* wrong!
+///
+/// Supplying panicking function may be safe if your program is compiled with `panic = "abort"`.
+/// It's **not** recommended to call this function from library crates - only binaries, somewhere
+/// near the beginning of `main()`.
+///
+/// The parameter passed to the handler is an error message that can be displayed (logged).
+///
+/// Note that the handler is a reference to function pointer rather than a function pointer itself
+/// because of [a missing Rust feature](https://github.com/rust-lang/rfcs/issues/2481).
+/// It's a bit tricky to use it, so here's an example:
+///
+/// ```
+/// fn custom_abort(message: &dyn std::fmt::Display) -> ! {
+///     eprintln!("this is a custom abort handler: {}", message);
+///     std::process::abort()
+/// }
+/// // We need to put the function pointer into a static variable because we need a 'static
+/// // reference to variable holding function pointer.
+/// static CUSTOM_ABORT: fn (&dyn std::fmt::Display) -> ! = custom_abort;
+///
+/// unsafe {
+///     secp256k1_sys::set_abort_handler(&CUSTOM_ABORT);
+/// }
+/// ```
+///
+/// The function does not guarantee any memory ordering so you MUST NOT abuse it for synchronization!
+/// Use some other synchronization primitive if you need to synchronize.
+pub unsafe fn set_abort_handler(handler: &'static fn(&dyn core::fmt::Display) -> !) {
+    ABORT_HANDLER.store(ptr_const_to_mut_cast(handler), core::sync::atomic::Ordering::Relaxed);
+}
+
+/// FFI-safe replacement for panic
+///
+/// Prints to stderr and aborts with `std`, loops forever without `std`.
+#[cfg_attr(not(feature = "std"), allow(unused))]
+fn abort_fallback(message: impl core::fmt::Display) -> ! {
+    #[cfg(feature = "std")]
+    {
+        eprintln!("[libsecp256k1] {}", message);
+        std::process::abort()
+    }
+    #[cfg(not(feature = "std"))]
+    {
+        // no better way to "abort" without std :(
+        loop {}
+    }
+}
+
+/// Ensures that types both sides of cast stay in sync and only the constness changes.
+///
+/// This eliminates the risk that if we change the type signature of abort handler the cast
+/// silently converts the types and causes UB.
+fn ptr_mut_to_const_cast<T>(ptr: *mut T) -> *const T {
+    ptr as _
+}
+
+/// Ensures that types both sides of cast stay in sync and only the constness changes.
+///
+/// This eliminates the risk that if we change the type signature of abort handler the cast
+/// silently converts the types and causes UB.
+fn ptr_const_to_mut_cast<T>(ptr: *const T) -> *mut T {
+    ptr as _
+}
+
+fn abort_with_message(message: impl core::fmt::Display) -> ! {
+    unsafe {
+        let handler = ptr_mut_to_const_cast(ABORT_HANDLER.load(core::sync::atomic::Ordering::Relaxed));
+        if !handler.is_null() {
+            (*handler)(&message)
+        } else {
+            abort_fallback(message)
+        }
+    }
+}
 
 /// **This function is an override for the C function, this is the an edited version of the original description:**
 ///
@@ -601,7 +687,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_1_default_illegal_callback_fn(messag
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
     let msg = str::from_utf8_unchecked(msg_slice);
-    panic!("[libsecp256k1] illegal argument. {}", msg);
+    abort_with_message(format_args!("illegal argument. {}", msg));
 }
 
 /// **This function is an override for the C function, this is the an edited version of the original description:**
@@ -624,7 +710,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_4_1_default_error_callback_fn(message:
     use core::str;
     let msg_slice = slice::from_raw_parts(message as *const u8, strlen(message));
     let msg = str::from_utf8_unchecked(msg_slice);
-    panic!("[libsecp256k1] internal consistency check failed {}", msg);
+    abort_with_message(format_args!("internal consistency check failed {}", msg));
 }
 
 #[cfg(not(rust_secp_no_symbol_renaming))]
@@ -833,7 +919,7 @@ mod fuzz_dummy {
             *output = 4;
             ptr::copy((*pk).0.as_ptr(), output.offset(1), 64);
         } else {
-            panic!("Bad flags");
+            abort_with_message(format_args!("Bad flags"));
         }
         1
      }
