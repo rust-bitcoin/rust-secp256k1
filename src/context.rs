@@ -16,7 +16,7 @@ pub mod global {
     #[cfg(feature = "global-context")]
     use rand;
 
-    use std::ops::Deref;
+    use core::ops::Deref;
     use std::sync::Once;
     use {Secp256k1, All};
 
