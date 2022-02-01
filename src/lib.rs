@@ -20,9 +20,13 @@
 //! and its derivatives.
 //!
 //! To minimize dependencies, some functions are feature-gated. To generate
-//! random keys or to re-randomize a context object, compile with the "rand"
-//! feature. To de/serialize objects with serde, compile with "serde".
-//! **Important**: `serde` encoding is **not** the same as consensus encoding!
+//! random keys or to re-randomize a context object, compile with the
+//! `rand-std` feature. If you are willing to use the `rand-std` feature, we
+//! have enabled an additional defense-in-depth sidechannel protection for
+//! our context objects, which re-blinds certain operations on secret key
+//! data. To de/serialize objects with serde, compile with "serde".
+//! **Important**: `serde` encoding is **not** the same as consensus
+//! encoding!
 //!
 //! Where possible, the bindings use the Rust type system to ensure that
 //! API usage errors are impossible. For example, the library uses context
