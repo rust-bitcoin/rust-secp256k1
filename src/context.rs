@@ -9,11 +9,11 @@ use Secp256k1;
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 pub use self::alloc_only::*;
 
-#[cfg(all(feature = "global-context-less-secure", feature = "std"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
+#[cfg(all(feature = "global-context", feature = "std"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
-    #[cfg(feature = "global-context")]
+    #[cfg(feature = "rand-std")]
     use rand;
 
     use std::ops::Deref;
@@ -26,22 +26,29 @@ pub mod global {
         __private: (),
     }
 
-    /// A global, static context to avoid repeatedly creating contexts where one can't be passed
+    /// A global static context to avoid repeatedly creating contexts.
     ///
-    /// If the global-context feature is enabled (and not just the global-context-less-secure),
-    /// this will have been randomized.
+    /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+    ///
+    /// ```
+    /// # #[cfg(all(feature = "global-context", feature = "rand-std"))] {
+    /// use secp256k1::{PublicKey, SECP256K1};
+    /// use secp256k1::rand::thread_rng;
+    /// let _ = SECP256K1.generate_keypair(&mut thread_rng());
+    /// # }
+    /// ```
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
 
     impl Deref for GlobalContext {
         type Target = Secp256k1<All>;
 
-        #[allow(unused_mut)]    // Unused when "global-context" is not enabled.
+        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
         fn deref(&self) -> &Self::Target {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;
             ONCE.call_once(|| unsafe {
                 let mut ctx = Secp256k1::new();
-                #[cfg(feature = "global-context")]
+                #[cfg(feature = "rand-std")]
                 {
                     ctx.randomize(&mut rand::thread_rng());
                 }

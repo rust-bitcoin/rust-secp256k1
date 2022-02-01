@@ -641,7 +641,7 @@ impl Ord for PublicKey {
 /// feature active. This is due to security considerations, see the [`serde_keypair`] documentation
 /// for details.
 ///
-/// If the `serde` and `global-context[-less-secure]` features are active `KeyPair`s can be serialized and
+/// If the `serde` and `global-context` features are active `KeyPair`s can be serialized and
 /// deserialized by annotating them with `#[serde(with = "secp256k1::serde_keypair")]`
 /// inside structs or enums for which [`Serialize`] and [`Deserialize`] are being derived.
 ///
@@ -1320,7 +1320,7 @@ impl<'de> ::serde::Deserialize<'de> for XOnlyPublicKey {
 ///
 /// [`SecretKey`]: crate::SecretKey
 /// [global context]: crate::SECP256K1
-#[cfg(all(feature = "global-context-less-secure", feature = "serde"))]
+#[cfg(all(feature = "global-context", feature = "serde"))]
 pub mod serde_keypair {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use key::KeyPair;
@@ -1924,7 +1924,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "global-context-less-secure", feature = "serde"))]
+    #[cfg(all(feature = "global-context", feature = "serde"))]
     fn test_serde_keypair() {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{Configure, Token, assert_tokens};
