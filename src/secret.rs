@@ -22,7 +22,6 @@ macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
         #[cfg(feature = "std")]
-        #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 use ::core::hash::Hasher;
@@ -42,6 +41,33 @@ macro_rules! impl_display_secret {
                 f.debug_tuple(stringify!($thing))
                     .field(&format_args!("#{:016x}", hash))
                     .finish()
+            }
+        }
+
+        #[cfg(all(not(feature = "std"), feature = "bitcoin_hashes"))]
+        impl ::core::fmt::Debug for $thing {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                use hashes::{sha256, Hash, HashEngine};
+
+                let tag = "rust-secp256k1DEBUG";
+
+                let mut engine = sha256::Hash::engine();
+                let tag_hash = sha256::Hash::hash(tag.as_bytes());
+                engine.input(&tag_hash[..]);
+                engine.input(&tag_hash[..]);
+                engine.input(&self.serialize_secret());
+                let hash = sha256::Hash::from_engine(engine);
+
+                f.debug_tuple(stringify!($thing))
+                    .field(&format_args!("#{:016x}", hash))
+                    .finish()
+            }
+        }
+
+        #[cfg(all(not(feature = "std"), not(feature = "bitcoin_hashes")))]
+        impl ::core::fmt::Debug for $thing {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                write!(f, "<secret requires std feature to display>")
             }
         }
      }
@@ -92,6 +118,7 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
+    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
     /// use secp256k1::ONE_KEY;
     /// let key = ONE_KEY;
     /// // Normal display hides value
@@ -108,6 +135,7 @@ impl SecretKey {
     ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
     ///     format!("{:?}", key.display_secret())
     /// );
+    /// # }
     /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
@@ -125,6 +153,7 @@ impl KeyPair {
     /// # Example
     ///
     /// ```
+    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
     /// use secp256k1::ONE_KEY;
     /// use secp256k1::KeyPair;
     /// use secp256k1::Secp256k1;
@@ -147,6 +176,8 @@ impl KeyPair {
     ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
     ///     format!("{:?}", key.display_secret())
     /// );
+    /// # }
+    /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
         DisplaySecret { secret: self.serialize_secret() }
