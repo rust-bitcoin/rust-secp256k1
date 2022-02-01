@@ -115,6 +115,9 @@ mod alloc_only {
     #[cfg(not(feature = "std"))]
     use alloc::alloc;
 
+    #[cfg(feature = "rand-std")]
+    use rand;
+
     impl private::Sealed for SignOnly {}
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
@@ -174,7 +177,10 @@ mod alloc_only {
     }
 
     impl<C: Context> Secp256k1<C> {
-        /// Lets you create a context in a generic manner(sign/verify/all)
+        /// Lets you create a context in a generic manner (sign/verify/all).
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
         pub fn gen_new() -> Secp256k1<C> {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
@@ -182,30 +188,43 @@ mod alloc_only {
             let size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
             let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
             let ptr = unsafe {alloc::alloc(layout)};
-            Secp256k1 {
+            let mut ctx = Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
                 phantom: PhantomData,
                 size,
+            };
+
+            #[cfg(feature = "rand-std")]
+            {
+                ctx.randomize(&mut rand::thread_rng());
             }
+
+            ctx
         }
     }
 
     impl Secp256k1<All> {
-        /// Creates a new Secp256k1 context with all capabilities
+        /// Creates a new Secp256k1 context with all capabilities.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
         pub fn new() -> Secp256k1<All> {
             Secp256k1::gen_new()
         }
     }
 
     impl Secp256k1<SignOnly> {
-        /// Creates a new Secp256k1 context that can only be used for signing
+        /// Creates a new Secp256k1 context that can only be used for signing.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
         pub fn signing_only() -> Secp256k1<SignOnly> {
             Secp256k1::gen_new()
         }
     }
 
     impl Secp256k1<VerifyOnly> {
-        /// Creates a new Secp256k1 context that can only be used for verification
+        /// Creates a new Secp256k1 context that can only be used for verification.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
         pub fn verification_only() -> Secp256k1<VerifyOnly> {
             Secp256k1::gen_new()
         }
