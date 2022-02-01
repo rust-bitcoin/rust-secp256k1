@@ -45,9 +45,9 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     fi
 
     # Examples
-    cargo run --example sign_verify
-    cargo run --example sign_verify_recovery --features=recovery
-    cargo run --example generate_keys --features=rand
+    cargo run --example sign_verify --features=std
+    cargo run --example sign_verify_recovery --features=std,recovery
+    cargo run --example generate_keys --features=std,rand-std
 fi
 
 # Docs
