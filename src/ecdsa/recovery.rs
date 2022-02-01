@@ -201,6 +201,7 @@ impl<C: Verification> Secp256k1<C> {
 
 
 #[cfg(test)]
+#[allow(unused_imports)]
 mod tests {
     use super::*;
     use rand::{RngCore, thread_rng};
@@ -210,6 +211,7 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -243,6 +245,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -266,6 +269,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -289,6 +293,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn sign_with_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -305,6 +310,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn bad_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());

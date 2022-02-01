@@ -1,6 +1,7 @@
 #!/bin/sh -ex
 
-FEATURES="bitcoin_hashes global-context lowmemory rand rand-std recovery serde"
+# TODO: Add "alloc" once we bump MSRV to past 1.29
+FEATURES="bitcoin_hashes global-context lowmemory rand rand-std recovery serde std"
 
 # Use toolchain if explicitly specified
 if [ -n "$TOOLCHAIN" ]
@@ -20,17 +21,16 @@ cargo test --all
 
 if [ "$DO_FEATURE_MATRIX" = true ]; then
     cargo build --all --no-default-features
-    #This doesn't work but probably should --andrew
-    #cargo test --all --no-default-features
+    cargo test --all --no-default-features
 
     # All features
     cargo build --all --no-default-features --features="$FEATURES"
-    cargo test --all --features="$FEATURES"
+    cargo test --all --no-default-features --features="$FEATURES"
     # Single features
     for feature in ${FEATURES}
     do
         cargo build --all --no-default-features --features="$feature"
-        cargo test --all --features="$feature"
+        cargo test --all --no-default-features --features="$feature"
     done
 
     # Other combos 

@@ -127,6 +127,7 @@ impl SharedSecret {
     /// `SharedSecret` can be easily created via the `From` impl from arrays.
     /// # Examples
     /// ```
+    /// # #[cfg(any(feature = "alloc", features = "std"))] {
     /// # use secp256k1::ecdh::SharedSecret;
     /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
     /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
@@ -139,7 +140,7 @@ impl SharedSecret {
     ///     let hash: [u8; 32] = sha2(&x,&y);
     ///     hash.into()
     /// });
-    ///
+    /// # }
     /// ```
     pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, mut hash_function: F) -> SharedSecret
         where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
@@ -168,6 +169,7 @@ impl SharedSecret {
 }
 
 #[cfg(test)]
+#[allow(unused_imports)]
 mod tests {
     use super::*;
     use rand::thread_rng;
@@ -177,6 +179,7 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn ecdh() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
@@ -190,6 +193,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn ecdh_with_hash() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
@@ -203,6 +207,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
     fn ecdh_with_hash_callback() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());

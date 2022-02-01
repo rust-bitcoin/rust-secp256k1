@@ -9,7 +9,7 @@ use Secp256k1;
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 pub use self::alloc_only::*;
 
-#[cfg(feature = "global-context-less-secure")]
+#[cfg(all(feature = "global-context-less-secure", feature = "std"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
@@ -35,6 +35,7 @@ pub mod global {
     impl Deref for GlobalContext {
         type Target = Secp256k1<All>;
 
+        #[allow(unused_mut)]    // Unused when "global-context" is not enabled.
         fn deref(&self) -> &Self::Target {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;

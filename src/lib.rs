@@ -38,7 +38,7 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature="rand", feature="bitcoin_hashes"))] {
+//! # #[cfg(all(feature="rand", feature="bitcoin_hashes", any(feature = "alloc", feature = "std")))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::sha256;
@@ -58,6 +58,7 @@
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
+//! # #[cfg(any(feature = "alloc", features = "std"))] {
 //! use secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
@@ -69,11 +70,13 @@
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
+//! # }
 //! ```
 //!
 //! Users who only want to verify signatures can use a cheaper context, like so:
 //!
 //! ```rust
+//! # #[cfg(any(feature = "alloc", feature = "std"))] {
 //! use secp256k1::{Secp256k1, Message, ecdsa, PublicKey};
 //!
 //! let secp = Secp256k1::verification_only();
@@ -106,6 +109,7 @@
 //!
 //! # #[cfg(not(fuzzing))]
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
+//! # }
 //! ```
 //!
 //! Observe that the same code using, say [`signing_only`](struct.Secp256k1.html#method.signing_only)
@@ -506,8 +510,7 @@ fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
 mod tests {
     use super::*;
     use rand::{RngCore, thread_rng};
-    use std::str::FromStr;
-    use std::marker::PhantomData;
+    use core::str::FromStr;
     use ffi::types::AlignedType;
 
     #[cfg(target_arch = "wasm32")]
@@ -523,6 +526,7 @@ mod tests {
 
 
     #[test]
+    #[cfg(feature = "std")]
     fn test_manual_create_destroy() {
         let ctx_full = unsafe { ffi::secp256k1_context_create(AllPreallocated::FLAGS) };
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
@@ -551,6 +555,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_raw_ctx() {
         use std::mem::ManuallyDrop;
 
@@ -586,6 +591,7 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     #[ignore] // Panicking from C may trap (SIGILL) intentionally, so we test this manually.
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_panic_raw_ctx_should_terminate_abnormally() {
         let ctx_vrfy = Secp256k1::verification_only();
         let raw_ctx_verify_as_full = unsafe {Secp256k1::from_raw_all(ctx_vrfy.ctx)};
@@ -618,6 +624,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -647,6 +654,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn signature_serialize_roundtrip() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -733,6 +741,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn sign_and_verify_ecdsa() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -764,6 +773,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn sign_and_verify_extreme() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -797,6 +807,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -858,6 +869,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_low_s() {
         // nb this is a transaction on testnet
         // txid 8ccc87b72d766ab3128f03176bb1c98293f2d1f85ebfaf07b82cc81ea6891fa9
@@ -880,6 +892,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fuzz-sigs have fixed size/format
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_low_r() {
         let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
@@ -895,6 +908,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fuzz-sigs have fixed size/format
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_grind_r() {
         let secp = Secp256k1::new();
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
@@ -909,6 +923,7 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(any(feature = "alloc", feature = "std"))]
     #[test]
     fn test_serde() {
         use serde_test::{Configure, Token, assert_tokens};
@@ -992,6 +1007,7 @@ mod benches {
     use super::{Secp256k1, Message};
 
     #[bench]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn generate(bh: &mut Bencher) {
         struct CounterRng(u64);
         impl RngCore for CounterRng {
@@ -1027,6 +1043,7 @@ mod benches {
     }
 
     #[bench]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn bench_sign_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
@@ -1041,6 +1058,7 @@ mod benches {
     }
 
     #[bench]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn bench_verify_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
