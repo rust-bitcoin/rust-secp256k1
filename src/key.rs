@@ -1572,6 +1572,7 @@ mod test {
             0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
         ];
 
+        #[cfg(not(fuzzing))]
         let s = Secp256k1::signing_only();
         let sk = SecretKey::from_slice(&SK_BYTES).expect("sk");
 
@@ -1739,7 +1740,8 @@ mod test {
         assert_eq!(set.len(), COUNT);
     }
 
-    #[cfg_attr(not(fuzzing), test)]
+    #[test]
+    #[cfg(not(fuzzing))]
     fn pubkey_combine() {
         let compressed1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -1759,7 +1761,8 @@ mod test {
         assert_eq!(sum1.unwrap(), exp_sum);
     }
 
-    #[cfg_attr(not(fuzzing), test)]
+    #[test]
+    #[cfg(not(fuzzing))]
     fn pubkey_combine_keys() {
         let compressed1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -1782,7 +1785,8 @@ mod test {
         assert_eq!(sum1.unwrap(), exp_sum);
     }
 
-    #[cfg_attr(not(fuzzing), test)]
+    #[test]
+    #[cfg(not(fuzzing))]
     fn pubkey_combine_keys_empty_slice() {
         assert!(PublicKey::combine_keys(&[]).is_err());
     }
@@ -1852,6 +1856,7 @@ mod test {
             0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
         ";
 
+        #[cfg(not(fuzzing))]
         let s = Secp256k1::new();
         let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
 
