@@ -1577,7 +1577,7 @@ mod test {
         let sk = SecretKey::from_slice(&SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
-        // hard-code the epected result.
+        // hard-code the expected result.
         #[cfg(not(fuzzing))]
         let pk = PublicKey::from_secret_key(&s, &sk);
         #[cfg(fuzzing)]
@@ -1861,7 +1861,7 @@ mod test {
         let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
 
         // In fuzzing mode secret->public key derivation is different, so
-        // hard-code the epected result.
+        // hard-code the expected result.
         #[cfg(not(fuzzing))]
         let pk = PublicKey::from_secret_key(&s, &sk);
         #[cfg(fuzzing)]

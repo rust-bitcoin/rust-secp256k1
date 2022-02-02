@@ -470,7 +470,7 @@ mod tests {
             let kp = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
 
             // In fuzzing mode secret->public key derivation is different, so
-            // hard-code the epected result.
+            // hard-code the expected result.
             kp.public_key()
         };
         #[cfg(fuzzing)]
