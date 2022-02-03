@@ -53,7 +53,7 @@
 //! # }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand` and `bitcoin_hashes`
+//! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `bitcoin_hashes`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
 //!
