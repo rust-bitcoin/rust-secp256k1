@@ -431,7 +431,7 @@ impl<C: Verification> Secp256k1<C> {
     /// verify-capable context.
     ///
     /// ```rust
-    /// # #[cfg(feature="rand")] {
+    /// # #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))] {
     /// # use secp256k1::rand::rngs::OsRng;
     /// # use secp256k1::{Secp256k1, Message, Error};
     /// #
@@ -460,7 +460,7 @@ impl<C: Verification> Secp256k1<C> {
     /// verify-capable context.
     ///
     /// ```rust
-    /// # #[cfg(feature="rand")] {
+    /// # #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))] {
     /// # use secp256k1::rand::rngs::OsRng;
     /// # use secp256k1::{Secp256k1, Message, Error};
     /// #

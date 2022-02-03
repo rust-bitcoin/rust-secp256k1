@@ -49,14 +49,15 @@ rand = { version = "0.6", features = ["wasm-bindgen"] }
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["recovery"]
+required-features = ["std", "recovery"]
 
 [[example]]
 name = "sign_verify"
+required-features = ["std"]
 
 [[example]]
 name = "generate_keys"
-required-features = ["rand"]
+required-features = ["std", "rand-std"]
 
 [workspace]
 members = ["secp256k1-sys"]

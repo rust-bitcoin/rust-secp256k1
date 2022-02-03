@@ -267,19 +267,26 @@ impl <C: Signing> Secp256k1<C> {
 }
 
 #[cfg(test)]
+#[allow(unused_imports)]
 mod tests {
-    use super::super::Error::InvalidPublicKey;
-    use super::super::{constants, from_hex, All, Message, Secp256k1};
-    use super::{KeyPair, XOnlyPublicKey, Signature};
-    use rand::{rngs::ThreadRng, thread_rng, Error, ErrorKind, RngCore};
-    use rand_core::impls;
     use std::iter;
     use std::str::FromStr;
 
+    use rand::rngs::ThreadRng;
+    use rand::{Error, ErrorKind, RngCore, thread_rng};
+    use rand_core::impls;
+
+    use {constants, Error::InvalidPublicKey, from_hex, Message, Secp256k1, SecretKey};
+
+    #[cfg(any(feature = "std", feature = "alloc"))]
+    use All;
+
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
-    use SecretKey;
 
+    use super::*;
+
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0u8; 32];
@@ -289,6 +296,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn test_schnorrsig_sign_with_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
             let mut aux_rand = [0u8; 32];
@@ -298,6 +306,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn test_schnorrsig_sign_with_rng_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, mut rng| {
             secp.sign_schnorr_with_rng(msg, seckey, &mut rng)
@@ -305,6 +314,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn test_schnorrsig_sign_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr(msg, seckey)
@@ -312,12 +322,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn test_schnorrsig_sign_no_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr_no_aux_rand(msg, seckey)
         })
     }
 
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn test_schnorrsig_sign_helper(
         sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
     ) {
@@ -340,6 +352,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     fn test_schnorrsig_sign() {
         let secp = Secp256k1::new();
@@ -363,6 +376,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_schnorrsig_verify() {
         let secp = Secp256k1::new();
 
@@ -389,6 +403,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
         let kp = KeyPair::new(&secp, &mut thread_rng());
@@ -400,6 +415,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_xonly_key_extraction() {
         let secp = Secp256k1::new();
         let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
@@ -440,20 +456,23 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "std")]
     fn test_pubkey_display_output() {
-        let secp = Secp256k1::new();
-        static SK_BYTES: [u8; 32] = [
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
-            0x06, 0x07, 0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x63, 0x63, 0x63, 0x63,
-            0x63, 0x63, 0x63, 0x63,
-        ];
-
-        let kp = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
-
-        // In fuzzing mode secret->public key derivation is different, so
-        // hard-code the epected result.
         #[cfg(not(fuzzing))]
-        let pk = kp.public_key();
+        let pk = {
+            let secp = Secp256k1::new();
+            static SK_BYTES: [u8; 32] = [
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                0x06, 0x07, 0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x63, 0x63, 0x63, 0x63,
+                0x63, 0x63, 0x63, 0x63,
+            ];
+
+            let kp = KeyPair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
+
+            // In fuzzing mode secret->public key derivation is different, so
+            // hard-code the expected result.
+            kp.public_key()
+        };
         #[cfg(fuzzing)]
         let pk = XOnlyPublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
 
@@ -496,6 +515,7 @@ mod tests {
     // In fuzzing mode secret->public key derivation is different, so
     // this test will never correctly derive the static pubkey.
     #[cfg(not(fuzzing))]
+    #[cfg(all(feature = "rand", any(feature = "alloc", feature = "std")))]
     fn test_pubkey_serialize() {
         struct DumbRng(u32);
         impl RngCore for DumbRng {
@@ -527,9 +547,9 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "serde")]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[test]
+    #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
     fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 
