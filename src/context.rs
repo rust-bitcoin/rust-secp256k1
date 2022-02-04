@@ -9,11 +9,11 @@ use Secp256k1;
 #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
 pub use self::alloc_only::*;
 
-#[cfg(all(feature = "global-context-less-secure", feature = "std"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
+#[cfg(all(feature = "global-context", feature = "std"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context
 pub mod global {
-    #[cfg(feature = "global-context")]
+    #[cfg(feature = "rand-std")]
     use rand;
 
     use std::ops::Deref;
@@ -26,22 +26,29 @@ pub mod global {
         __private: (),
     }
 
-    /// A global, static context to avoid repeatedly creating contexts where one can't be passed
+    /// A global static context to avoid repeatedly creating contexts.
     ///
-    /// If the global-context feature is enabled (and not just the global-context-less-secure),
-    /// this will have been randomized.
+    /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+    ///
+    /// ```
+    /// # #[cfg(all(feature = "global-context", feature = "rand-std"))] {
+    /// use secp256k1::{PublicKey, SECP256K1};
+    /// use secp256k1::rand::thread_rng;
+    /// let _ = SECP256K1.generate_keypair(&mut thread_rng());
+    /// # }
+    /// ```
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
 
     impl Deref for GlobalContext {
         type Target = Secp256k1<All>;
 
-        #[allow(unused_mut)]    // Unused when "global-context" is not enabled.
+        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
         fn deref(&self) -> &Self::Target {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;
             ONCE.call_once(|| unsafe {
                 let mut ctx = Secp256k1::new();
-                #[cfg(feature = "global-context")]
+                #[cfg(feature = "rand-std")]
                 {
                     ctx.randomize(&mut rand::thread_rng());
                 }
@@ -108,6 +115,9 @@ mod alloc_only {
     #[cfg(not(feature = "std"))]
     use alloc::alloc;
 
+    #[cfg(feature = "rand-std")]
+    use rand;
+
     impl private::Sealed for SignOnly {}
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
@@ -167,7 +177,23 @@ mod alloc_only {
     }
 
     impl<C: Context> Secp256k1<C> {
-        /// Lets you create a context in a generic manner(sign/verify/all)
+        /// Lets you create a context in a generic manner (sign/verify/all).
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+        /// If `rand-std` feature is not enabled please consider randomizing the context as follows:
+        /// ```
+        /// # #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))] {
+        /// # use secp256k1::Secp256k1;
+        /// # use secp256k1::rand::{thread_rng, RngCore};
+        /// let mut ctx = Secp256k1::new();
+        /// # let mut rng = thread_rng();
+        /// # let mut seed = [0u8; 32];
+        /// # rng.fill_bytes(&mut seed);
+        /// // let seed = <32 bytes of random data>
+        /// ctx.seeded_randomize(&seed);
+        /// # }
+        /// ```
+        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
         pub fn gen_new() -> Secp256k1<C> {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
@@ -175,30 +201,49 @@ mod alloc_only {
             let size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
             let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
             let ptr = unsafe {alloc::alloc(layout)};
-            Secp256k1 {
+            let mut ctx = Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
                 phantom: PhantomData,
                 size,
+            };
+
+            #[cfg(feature = "rand-std")]
+            {
+                ctx.randomize(&mut rand::thread_rng());
             }
+
+            ctx
         }
     }
 
     impl Secp256k1<All> {
-        /// Creates a new Secp256k1 context with all capabilities
+        /// Creates a new Secp256k1 context with all capabilities.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+        /// If `rand-std` feature is not enabled please consider randomizing the context (see docs
+        /// for `Secp256k1::gen_new()`).
         pub fn new() -> Secp256k1<All> {
             Secp256k1::gen_new()
         }
     }
 
     impl Secp256k1<SignOnly> {
-        /// Creates a new Secp256k1 context that can only be used for signing
+        /// Creates a new Secp256k1 context that can only be used for signing.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+        /// If `rand-std` feature is not enabled please consider randomizing the context (see docs
+        /// for `Secp256k1::gen_new()`).
         pub fn signing_only() -> Secp256k1<SignOnly> {
             Secp256k1::gen_new()
         }
     }
 
     impl Secp256k1<VerifyOnly> {
-        /// Creates a new Secp256k1 context that can only be used for verification
+        /// Creates a new Secp256k1 context that can only be used for verification.
+        ///
+        /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
+        /// If `rand-std` feature is not enabled please consider randomizing the context (see docs
+        /// for `Secp256k1::gen_new()`).
         pub fn verification_only() -> Secp256k1<VerifyOnly> {
             Secp256k1::gen_new()
         }

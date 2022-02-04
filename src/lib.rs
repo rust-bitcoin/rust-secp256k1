@@ -20,9 +20,13 @@
 //! and its derivatives.
 //!
 //! To minimize dependencies, some functions are feature-gated. To generate
-//! random keys or to re-randomize a context object, compile with the "rand"
-//! feature. To de/serialize objects with serde, compile with "serde".
-//! **Important**: `serde` encoding is **not** the same as consensus encoding!
+//! random keys or to re-randomize a context object, compile with the
+//! `rand-std` feature. If you are willing to use the `rand-std` feature, we
+//! have enabled an additional defense-in-depth sidechannel protection for
+//! our context objects, which re-blinds certain operations on secret key
+//! data. To de/serialize objects with serde, compile with "serde".
+//! **Important**: `serde` encoding is **not** the same as consensus
+//! encoding!
 //!
 //! Where possible, the bindings use the Rust type system to ensure that
 //! API usage errors are impossible. For example, the library uses context
@@ -125,9 +129,7 @@
 //! * `rand-std` - use `rand` library with its `std` feature enabled. (Implies `rand`.)
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
-//! * `global-context` - enable use of global secp256k1 context. (Implies `std`, `rand-std` and
-//!                      `global-context-less-secure`.)
-//! * `global-context-less-secure` - enables global context without extra sidechannel protection.
+//! * `global-context` - enable use of global secp256k1 context (implies `std`).
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
 //!           **Important**: `serde` encoding is **not** the same as consensus encoding!
 //! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
@@ -195,8 +197,8 @@ use core::marker::PhantomData;
 use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
-#[cfg(feature = "global-context-less-secure")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context-less-secure"))))]
+#[cfg(feature = "global-context")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context"))))]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
@@ -955,7 +957,7 @@ mod tests {
 
     }
 
-    #[cfg(feature = "global-context-less-secure")]
+    #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
         use super::SECP256K1;
