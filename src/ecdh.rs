@@ -23,7 +23,23 @@ use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
-/// A tag used for recovering the public key from a compact signature
+/// Enables two parties to create a shared secret without revealing their own secrets.
+///
+/// # Examples
+///
+/// ```
+/// # #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))] {
+/// # use secp256k1::Secp256k1;
+/// # use secp256k1::ecdh::SharedSecret;
+/// # use secp256k1::rand::thread_rng;
+/// let s = Secp256k1::new();
+/// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+/// let sec1 = SharedSecret::new(&pk1, &sk2);
+/// let sec2 = SharedSecret::new(&pk2, &sk1);
+/// assert_eq!(sec1, sec2);
+/// # }
+// ```
 #[derive(Copy, Clone)]
 pub struct SharedSecret {
     data: [u8; 256],
