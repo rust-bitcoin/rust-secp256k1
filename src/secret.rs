@@ -67,7 +67,7 @@ macro_rules! impl_display_secret {
         #[cfg(all(not(feature = "std"), not(feature = "bitcoin_hashes")))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(f, "<secret requires std feature to display>")
+                write!(f, "<secret requires std or bitcoin_hashes feature to display>")
             }
         }
      }
