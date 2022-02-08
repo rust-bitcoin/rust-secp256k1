@@ -13,6 +13,9 @@ use ffi::{self, CPtr};
 use {constants, Secp256k1};
 use {Message, Signing, Verification, KeyPair, XOnlyPublicKey};
 
+#[cfg(all(feature  = "global-context", feature = "rand-std"))]
+use SECP256K1;
+
 /// Represents a Schnorr signature.
 pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
@@ -87,6 +90,14 @@ impl Signature {
             }
             _ => Err(Error::InvalidSignature),
         }
+    }
+
+    /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(all(feature = "global-context", feature = "rand-std"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
+    pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
+        SECP256K1.verify_schnorr(self, msg, pk)
     }
 }
 

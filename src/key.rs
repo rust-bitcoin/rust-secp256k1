@@ -28,6 +28,11 @@ use Verification;
 use constants;
 use ffi::{self, CPtr};
 
+#[cfg(feature = "global-context")]
+use {Message, ecdsa, SECP256K1};
+#[cfg(all(feature  = "global-context", feature = "rand-std"))]
+use schnorr;
+
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
 /// # Examples
@@ -279,6 +284,14 @@ impl SecretKey {
             }
         }
     }
+
+    /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
+    pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature {
+        SECP256K1.sign_ecdsa(&msg, self)
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -347,6 +360,14 @@ impl PublicKey {
             debug_assert_eq!(res, 1);
             PublicKey(pk)
         }
+    }
+
+    /// Creates a new public key from a [`SecretKey`] and the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
+    pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
+        PublicKey::from_secret_key(&SECP256K1, sk)
     }
 
     /// Creates a public key directly from a slice.
@@ -738,6 +759,18 @@ impl KeyPair {
         }
     }
 
+    /// Creates a Schnorr [`KeyPair`] directly from a secret key string and the global [`SECP256K1`] context.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    #[inline]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
+    pub fn from_seckey_str_global(s: &str) -> Result<KeyPair, Error> {
+        KeyPair::from_seckey_str(SECP256K1, s)
+    }
+
     /// Generates a new random secret key.
     /// # Examples
     ///
@@ -766,6 +799,14 @@ impl KeyPair {
             }
             KeyPair(keypair)
         }
+    }
+
+    /// Generates a new random secret key using the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(all(feature = "global-context", feature = "rand"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
+    pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> KeyPair {
+        KeyPair::new(SECP256K1, rng)
     }
 
     /// Serializes the key pair as a secret key byte value.
@@ -829,6 +870,14 @@ impl KeyPair {
     #[inline]
     pub fn public_key(&self) -> XOnlyPublicKey {
         XOnlyPublicKey::from_keypair(self)
+    }
+
+    /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(all(feature = "global-context", feature = "rand-std"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
+    pub fn sign_schnorr(&self, msg: Message) -> schnorr::Signature {
+        SECP256K1.sign_schnorr(&msg, self)
     }
 }
 
