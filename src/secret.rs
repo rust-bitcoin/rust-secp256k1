@@ -91,7 +91,7 @@ pub struct DisplaySecret {
 impl fmt::Debug for DisplaySecret {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut slice = [0u8; 64];
+        let mut slice = [0u8; SECRET_KEY_SIZE * 2];
         let hex = to_hex(&self.secret, &mut slice).expect("fixed-size hex serializer failed");
         f.debug_tuple("DisplaySecret")
             .field(&hex)
