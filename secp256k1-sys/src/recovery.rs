@@ -16,13 +16,13 @@
 //! # FFI of the recovery module
 
 use ::types::*;
-use {Context, Signature, NonceFn, PublicKey};
+use ::core::fmt;
+use {Context, Signature, NonceFn, PublicKey, CPtr};
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
-impl_raw_debug!(RecoverableSignature);
 
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
@@ -32,6 +32,30 @@ impl RecoverableSignature {
 impl Default for RecoverableSignature {
     fn default() -> Self {
         RecoverableSignature::new()
+    }
+}
+
+impl fmt::Debug for RecoverableSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut ret = [0u8; 64];
+        let mut recid = 0i32;
+
+        unsafe {
+            let err = secp256k1_ecdsa_recoverable_signature_serialize_compact(
+                super::secp256k1_context_no_precomp,
+                ret.as_mut_c_ptr(),
+                &mut recid,
+                self,
+            );
+            assert!(err == 1);
+        }
+
+        for byte in ret.iter() {
+            write!(f, "{:02x}", byte)?;
+        }
+        write!(f, "{:02x}", recid as u8)?;
+
+        Ok(())
     }
 }
 
