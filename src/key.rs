@@ -1292,13 +1292,16 @@ impl<'de> ::serde::Deserialize<'de> for Parity {
             type Value = Parity;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("Expecting a 4 byte int i32")
+                formatter.write_str("32-bit integer with value 0 or 1")
             }
 
             fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
                 where E: ::serde::de::Error
             {
-                Parity::from_i32(v).map_err(E::custom)
+                use serde::de::Unexpected;
+
+                Parity::from_i32(v)
+                    .map_err(|_| E::invalid_value(Unexpected::Signed(v.into()), &"0 or 1"))
             }
         }
 
