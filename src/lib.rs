@@ -324,6 +324,21 @@ impl<T: ThirtyTwoByteHash> From<T> for Message {
     }
 }
 
+impl fmt::LowerHex for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for byte in self.0.iter() {
+            write!(f, "{:02x}", byte)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::LowerHex::fmt(self, f)
+    }
+}
+
 /// An ECDSA error
 #[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub enum Error {
