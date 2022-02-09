@@ -338,9 +338,7 @@ impl PublicKey {
     /// # }
     /// ```
     #[inline]
-    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,
-                           sk: &SecretKey)
-                           -> PublicKey {
+    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>,sk: &SecretKey) -> PublicKey {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             // We can assume the return value because it's not possible to construct
