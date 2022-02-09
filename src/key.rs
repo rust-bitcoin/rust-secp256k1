@@ -1201,22 +1201,32 @@ pub enum Parity {
 }
 
 impl Parity {
-    /// Converts parity into a integer (byte) value.
+    /// Converts parity into an integer (byte) value.
+    ///
+    /// This returns `0` for even parity and `1` for odd parity.
     pub fn to_u8(self) -> u8 {
         self as u8
     }
 
-    /// Converts parity into a integer value.
+    /// Converts parity into an integer value.
+    ///
+    /// This returns `0` for even parity and `1` for odd parity.
     pub fn to_i32(self) -> i32 {
         self as i32
     }
 
     /// Constructs a [`Parity`] from a byte.
+    ///
+    /// The only allowed values are `0` meaning even parity and `1` meaning odd.
+    /// Other values result in error being returned.
     pub fn from_u8(parity: u8) -> Result<Parity, Error> {
-        Parity::from_i32(parity as i32)
+        Parity::from_i32(parity.into())
     }
 
     /// Constructs a [`Parity`] from a signed integer.
+    ///
+    /// The only allowed values are `0` meaning even parity and `1` meaning odd.
+    /// Other values result in error being returned.
     pub fn from_i32(parity: i32) -> Result<Parity, Error> {
         match parity {
             0 => Ok(Parity::Even),
@@ -1228,7 +1238,9 @@ impl Parity {
 
 impl From<i32> for Parity {
     /// Please note, this method is deprecated and will be removed in an upcoming release, it
-    /// is not equivalent to `from_u32()`, it is better to use `Parity::from_u32`.
+    /// is **not** equivalent to `from_u32()`, it is better to use `Parity::from_u32`.
+    ///
+    /// This method returns same parity as the parity of input integer.
     fn from(parity: i32) -> Parity {
         if parity % 2 == 0 {
             Parity::Even
@@ -1238,12 +1250,14 @@ impl From<i32> for Parity {
     }
 }
 
+/// The conversion returns `0` for even parity and `1` for odd.
 impl From<Parity> for i32 {
     fn from(parity: Parity) -> i32 {
         parity.to_i32()
     }
 }
 
+/// Returns even parity if the operands are equal, odd otherwise.
 impl BitXor for Parity {
     type Output = Parity;
 
@@ -1257,6 +1271,7 @@ impl BitXor for Parity {
     }
 }
 
+/// The parity is serialized as `i32` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for Parity {
@@ -1265,6 +1280,7 @@ impl ::serde::Serialize for Parity {
     }
 }
 
+/// The parity is deserialized as `i32` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for Parity {
