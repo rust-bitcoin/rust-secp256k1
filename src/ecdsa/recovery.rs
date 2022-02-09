@@ -121,6 +121,15 @@ impl RecoverableSignature {
             Signature(ret)
         }
     }
+
+    /// Determines the public key for which this [`Signature`] is valid for `msg`. Requires a
+    /// verify-capable context.
+    #[inline]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
+    pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
+        SECP256K1.recover_ecdsa(msg, self)
+    }
 }
 
 

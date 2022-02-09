@@ -57,6 +57,22 @@
 //! # }
 //! ```
 //!
+//! If the "global-context" feature is enabled you have access to an alternate API.
+//!
+//! ```rust
+//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin_hashes"))] {
+//! use secp256k1::rand::thread_rng;
+//! use secp256k1::{generate_keypair, Message};
+//! use secp256k1::hashes::sha256;
+//!
+//! let (secret_key, public_key) = generate_keypair(&mut thread_rng());
+//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
+//!
+//! let sig = secret_key.sign_ecdsa(&message, &secret_key);
+//! assert!(sig.verify(&message, &public_key).is_ok());
+//! # }
+//! ```
+//!
 //! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `bitcoin_hashes`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
@@ -198,7 +214,7 @@ use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
@@ -456,6 +472,14 @@ impl<C: Signing> Secp256k1<C> {
         let pk = key::PublicKey::from_secret_key(self, &sk);
         (sk, pk)
     }
+}
+
+/// Generates a random keypair using the global [`SECP256K1`] context.
+#[inline]
+#[cfg(all(feature = "global-context", feature = "rand"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
+pub fn generate_keypair<R: Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
+    SECP256K1.generate_keypair(rng)
 }
 
 /// Utility function used to parse hex into a target u8 buffer. Returns
@@ -960,8 +984,6 @@ mod tests {
     #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
-        use super::SECP256K1;
-
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_slice(&sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");

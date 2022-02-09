@@ -12,6 +12,9 @@ mod recovery;
 #[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub use self::recovery::{RecoveryId, RecoverableSignature};
 
+#[cfg(feature = "global-context")]
+use SECP256K1;
+
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Signature(pub(crate) ffi::Signature);
@@ -268,6 +271,14 @@ impl Signature {
             debug_assert!(err == 1);
         }
         ret
+    }
+
+    /// Verifies an ECDSA signature for `msg` using `pk` and the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
+    pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), Error> {
+        SECP256K1.verify_ecdsa(msg, self, pk)
     }
 }
 
