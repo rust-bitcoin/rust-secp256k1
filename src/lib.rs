@@ -198,7 +198,7 @@ use core::{mem, fmt, str};
 use ffi::{CPtr, types::AlignedType};
 
 #[cfg(feature = "global-context")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "global-context", feature = "global-context"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
 pub use context::global::SECP256K1;
 
 #[cfg(feature = "bitcoin_hashes")]
@@ -456,6 +456,14 @@ impl<C: Signing> Secp256k1<C> {
         let pk = key::PublicKey::from_secret_key(self, &sk);
         (sk, pk)
     }
+}
+
+/// Generates a random keypair using the global [`SECP256K1`] context.
+#[inline]
+#[cfg(all(feature = "global-context", feature = "rand"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
+pub fn generate_keypair<R: Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
+    SECP256K1.generate_keypair(rng)
 }
 
 /// Utility function used to parse hex into a target u8 buffer. Returns
