@@ -42,7 +42,7 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature="rand", feature="bitcoin_hashes", any(feature = "alloc", feature = "std")))] {
+//! # #[cfg(all(feature = "std", feature="rand-std", feature="bitcoin_hashes"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::sha256;
