@@ -101,8 +101,8 @@ impl fmt::Debug for DisplaySecret {
 
 impl fmt::Display for DisplaySecret {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for i in &self.secret {
-            write!(f, "{:02x}", i)?;
+        for byte in &self.secret {
+            write!(f, "{:02x}", byte)?;
         }
         Ok(())
     }
