@@ -57,6 +57,22 @@
 //! # }
 //! ```
 //!
+//! If the "global-context" feature is enabled you have access to an alternate API.
+//!
+//! ```rust
+//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin_hashes"))] {
+//! use secp256k1::rand::thread_rng;
+//! use secp256k1::{generate_keypair, Message};
+//! use secp256k1::hashes::sha256;
+//!
+//! let (secret_key, public_key) = generate_keypair(&mut thread_rng());
+//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
+//!
+//! let sig = secret_key.sign_ecdsa(&message, &secret_key);
+//! assert!(sig.verify(&message, &public_key).is_ok());
+//! # }
+//! ```
+//!
 //! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `bitcoin_hashes`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
@@ -968,8 +984,6 @@ mod tests {
     #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
-        use super::SECP256K1;
-
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_slice(&sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
