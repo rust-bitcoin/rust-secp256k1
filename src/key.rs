@@ -1271,41 +1271,41 @@ impl BitXor for Parity {
     }
 }
 
-/// The parity is serialized as `i32` - `0` for even, `1` for odd.
+/// The parity is serialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl ::serde::Serialize for Parity {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_i32(self.to_i32())
+        s.serialize_u8(self.to_u8())
     }
 }
 
-/// The parity is deserialized as `i32` - `0` for even, `1` for odd.
+/// The parity is deserialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> ::serde::Deserialize<'de> for Parity {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        struct I32Visitor;
+        struct Visitor;
 
-        impl<'de> ::serde::de::Visitor<'de> for I32Visitor
+        impl<'de> ::serde::de::Visitor<'de> for Visitor
         {
             type Value = Parity;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("32-bit integer with value 0 or 1")
+                formatter.write_str("8-bit integer (byte) with value 0 or 1")
             }
 
-            fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
+            fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
                 where E: ::serde::de::Error
             {
                 use serde::de::Unexpected;
 
-                Parity::from_i32(v)
-                    .map_err(|_| E::invalid_value(Unexpected::Signed(v.into()), &"0 or 1"))
+                Parity::from_u8(v)
+                    .map_err(|_| E::invalid_value(Unexpected::Unsigned(v.into()), &"0 or 1"))
             }
         }
 
-        d.deserialize_i32(I32Visitor)
+        d.deserialize_u8(Visitor)
     }
 }
 
