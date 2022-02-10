@@ -413,7 +413,7 @@ impl<C: Context> Secp256k1<C> {
         (bytes + word_size - 1) / word_size
     }
 
-    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance.
+    /// (Re)randomizes the Secp256k1 context for extra sidechannel resistance.
     ///
     /// Requires compilation with "rand" feature. See comment by Gregory Maxwell in
     /// [libsecp256k1](https://github.com/bitcoin-core/secp256k1/commit/d2275795ff22a6f4738869f5528fbbb61738aa48).
@@ -425,7 +425,7 @@ impl<C: Context> Secp256k1<C> {
         self.seeded_randomize(&seed);
     }
 
-    /// (Re)randomizes the Secp256k1 context for cheap sidechannel resistance given 32 bytes of
+    /// (Re)randomizes the Secp256k1 context for extra sidechannel resistance given 32 bytes of
     /// cryptographically-secure random data;
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell.
     pub fn seeded_randomize(&mut self, seed: &[u8; 32]) {
