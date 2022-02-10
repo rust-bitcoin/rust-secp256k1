@@ -97,9 +97,6 @@ pub struct AllPreallocated<'buf> {
 
 mod private {
     use super::*;
-    // A trick to prevent users from implementing a trait.
-    // On one hand this trait is public, on the other it's in a private module
-    // so it's not visible to anyone besides it's parent (the context module).
     pub trait Sealed {}
 
     impl<'buf> Sealed for AllPreallocated<'buf> {}
