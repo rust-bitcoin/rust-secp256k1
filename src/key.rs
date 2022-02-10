@@ -1134,7 +1134,7 @@ impl XOnlyPublicKey {
                 return Err(Error::InvalidPublicKey);
             }
 
-            Parity::from_i32(parity)
+            Parity::from_i32(parity).map_err(Into::into)
         }
     }
 
@@ -1219,7 +1219,7 @@ impl Parity {
     ///
     /// The only allowed values are `0` meaning even parity and `1` meaning odd.
     /// Other values result in error being returned.
-    pub fn from_u8(parity: u8) -> Result<Parity, Error> {
+    pub fn from_u8(parity: u8) -> Result<Parity, InvalidParityValue> {
         Parity::from_i32(parity.into())
     }
 
@@ -1227,25 +1227,11 @@ impl Parity {
     ///
     /// The only allowed values are `0` meaning even parity and `1` meaning odd.
     /// Other values result in error being returned.
-    pub fn from_i32(parity: i32) -> Result<Parity, Error> {
+    pub fn from_i32(parity: i32) -> Result<Parity, InvalidParityValue> {
         match parity {
             0 => Ok(Parity::Even),
             1 => Ok(Parity::Odd),
-            _ => Err(Error::InvalidParityValue),
-        }
-    }
-}
-
-impl From<i32> for Parity {
-    /// Please note, this method is deprecated and will be removed in an upcoming release, it
-    /// is **not** equivalent to `from_u32()`, it is better to use `Parity::from_u32`.
-    ///
-    /// This method returns same parity as the parity of input integer.
-    fn from(parity: i32) -> Parity {
-        if parity % 2 == 0 {
-            Parity::Even
-        } else {
-            Parity::Odd
+            _ => Err(InvalidParityValue(parity)),
         }
     }
 }
@@ -1254,6 +1240,13 @@ impl From<i32> for Parity {
 impl From<Parity> for i32 {
     fn from(parity: Parity) -> i32 {
         parity.to_i32()
+    }
+}
+
+/// The conversion returns `0` for even parity and `1` for odd.
+impl From<Parity> for u8 {
+    fn from(parity: Parity) -> u8 {
+        parity.to_u8()
     }
 }
 
@@ -1268,6 +1261,30 @@ impl BitXor for Parity {
         } else {
             Parity::Odd         // 1^0==1 and 0^1==1
         }
+    }
+}
+
+/// Error returned when conversion from an integer to `Parity` fails.
+//
+// Note that we don't allow inspecting the value because we may change the type.
+// Yes, this comment is intentionally NOT doc comment.
+// Too many derives for compatibility with current Error type.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub struct InvalidParityValue(i32);
+
+impl fmt::Display for InvalidParityValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "invalid value {} for Parity - must be 0 or 1", self.0)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl ::std::error::Error for InvalidParityValue {}
+
+impl From<InvalidParityValue> for Error {
+    fn from(error: InvalidParityValue) -> Self {
+        Error::InvalidParityValue(error)
     }
 }
 
