@@ -12,8 +12,7 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-//! # ECDH
-//! Support for shared secret computations
+//! Support for shared secret computations.
 //!
 
 use core::ptr;
@@ -54,7 +53,7 @@ impl_from_array_len!(SharedSecret, 256, (16 20 28 32 48 64 96 128 256));
 
 impl SharedSecret {
 
-    /// Create an empty SharedSecret
+    /// Creates an empty `SharedSecret`.
     pub(crate) fn empty() ->  SharedSecret {
         SharedSecret {
             data: [0u8; 256],
@@ -62,27 +61,27 @@ impl SharedSecret {
         }
     }
 
-    /// Get a pointer to the underlying data with the specified capacity.
+    /// Gets a pointer to the underlying data with the specified capacity.
     pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
         self.data.as_mut_ptr()
     }
 
-    /// Get the capacity of the underlying data buffer.
+    /// Gets the capacity of the underlying data buffer.
     pub fn capacity(&self) -> usize {
         self.data.len()
     }
 
-    /// Get the len of the used data.
+    /// Gets the len of the used data.
     pub fn len(&self) -> usize {
         self.len
     }
 
-    /// True if the underlying data buffer is empty.
+    /// Returns true if the underlying data buffer is empty.
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
-    /// Set the length of the object.
+    /// Sets the length of the object.
     pub(crate) fn set_len(&mut self, len: usize) {
         debug_assert!(len <= self.data.len());
         self.len = len;
@@ -116,7 +115,7 @@ unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *con
 }
 
 impl SharedSecret {
-    /// Creates a new shared secret from a pubkey and secret key
+    /// Creates a new shared secret from a pubkey and secret key.
     #[inline]
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         let mut ss = SharedSecret::empty();
@@ -138,7 +137,7 @@ impl SharedSecret {
     }
 
 
-    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function
+    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function.
     /// The custom hash function must be in the form of `fn(x: [u8;32], y: [u8;32]) -> SharedSecret`
     /// `SharedSecret` can be easily created via the `From` impl from arrays.
     /// # Examples

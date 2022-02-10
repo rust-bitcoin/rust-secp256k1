@@ -62,7 +62,7 @@ impl str::FromStr for SecretKey {
     }
 }
 
-/// The number 1 encoded as a secret key
+/// The number 1 encoded as a secret key.
 pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
                                           0, 0, 0, 0, 0, 0, 0, 0,
@@ -355,7 +355,7 @@ impl PublicKey {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             // We can assume the return value because it's not possible to construct
-            // an invalid `SecretKey` without transmute trickery or something
+            // an invalid `SecretKey` without transmute trickery or something.
             let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_c_ptr());
             debug_assert_eq!(res, 1);
             PublicKey(pk)
