@@ -307,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn test_schnorrsig_sign_with_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
             let mut aux_rand = [0u8; 32];
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn test_schnorrsig_sign_with_rng_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, mut rng| {
             secp.sign_schnorr_with_rng(msg, seckey, &mut rng)
@@ -325,7 +325,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn test_schnorrsig_sign_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr(msg, seckey)
@@ -333,14 +333,14 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn test_schnorrsig_sign_no_aux_rand_verify() {
         test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr_no_aux_rand(msg, seckey)
         })
     }
 
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn test_schnorrsig_sign_helper(
         sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
     ) {

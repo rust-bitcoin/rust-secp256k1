@@ -40,7 +40,7 @@ use schnorr;
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
 /// use secp256k1::{rand, Secp256k1, SecretKey};
 ///
 /// let secp = Secp256k1::new();
@@ -134,7 +134,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, SecretKey};
     /// let secret_key = SecretKey::new(&mut rand::thread_rng());
     /// # }
@@ -190,7 +190,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -342,7 +342,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -396,7 +396,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, Secp256k1, PublicKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -553,7 +553,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, Secp256k1, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -669,7 +669,7 @@ impl Ord for PublicKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
 /// use secp256k1::{rand, KeyPair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
@@ -775,7 +775,7 @@ impl KeyPair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -829,7 +829,7 @@ impl KeyPair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{Secp256k1, KeyPair};
     /// use secp256k1::rand::{RngCore, thread_rng};
     ///
@@ -961,7 +961,7 @@ impl<'de> ::serde::Deserialize<'de> for KeyPair {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
 /// use secp256k1::{rand, Secp256k1, KeyPair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -1089,7 +1089,7 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{Secp256k1, KeyPair};
     /// use secp256k1::rand::{RngCore, thread_rng};
     ///
@@ -1154,7 +1154,7 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
     /// use secp256k1::{Secp256k1, KeyPair};
     /// use secp256k1::rand::{thread_rng, RngCore};
     ///

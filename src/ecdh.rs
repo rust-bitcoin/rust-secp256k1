@@ -27,7 +27,7 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 /// # Examples
 ///
 /// ```
-/// # #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))] {
+/// # #[cfg(all(feature = "std", feature = "rand-std"))] {
 /// # use secp256k1::Secp256k1;
 /// # use secp256k1::ecdh::SharedSecret;
 /// # use secp256k1::rand::thread_rng;
@@ -208,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature="std", feature = "rand-std"))]
     fn ecdh_with_hash() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
@@ -222,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature="std", feature = "rand-std"))]
     fn ecdh_with_hash_callback() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
