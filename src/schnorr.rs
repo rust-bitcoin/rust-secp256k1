@@ -128,7 +128,6 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Create a schnorr signature internally using the ThreadRng random number
     /// generator to generate the auxiliary random data.
-    /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     #[deprecated(since = "0.21.0", note = "Use sign_schnorr instead.")]
@@ -138,7 +137,6 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Create a schnorr signature internally using the ThreadRng random number
     /// generator to generate the auxiliary random data.
-    /// Requires compilation with "rand-std" feature.
     #[cfg(any(test, feature = "rand-std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
@@ -191,8 +189,7 @@ impl<C: Signing> Secp256k1<C> {
     }
 
     /// Create a schnorr signature using the given random number generator to
-    /// generate the auxiliary random data. Requires compilation with "rand"
-    /// feature.
+    /// generate the auxiliary random data.
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_rng instead.")]
@@ -206,8 +203,7 @@ impl<C: Signing> Secp256k1<C> {
     }
 
     /// Create a schnorr signature using the given random number generator to
-    /// generate the auxiliary random data. Requires compilation with "rand"
-    /// feature.
+    /// generate the auxiliary random data.
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
@@ -262,7 +258,7 @@ impl <C: Signing> Secp256k1<C> {
     /// Generates a random Schnorr `KeyPair` and its associated Schnorr `XOnlyPublicKey`.
     ///
     /// Convenience function for [KeyPair::new] and [KeyPair::public_key].
-    /// Requires a signing-capable context and requires compilation with the "rand" feature.
+    /// Requires a signing-capable context.
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
