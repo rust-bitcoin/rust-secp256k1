@@ -179,7 +179,7 @@ mod alloc_only {
         /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
         /// If `rand-std` feature is not enabled please consider randomizing the context as follows:
         /// ```
-        /// # #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))] {
+        /// # #[cfg(all(feature = "std", feature = "rand-std"))] {
         /// # use secp256k1::Secp256k1;
         /// # use secp256k1::rand::{thread_rng, RngCore};
         /// let mut ctx = Secp256k1::new();
