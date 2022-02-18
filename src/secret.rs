@@ -113,27 +113,26 @@ impl SecretKey {
     /// little-endian hexadecimal string using the provided formatter.
     ///
     /// This is the only method that outputs the actual secret key value, and, thus,
-    /// should be used with extreme precaution.
+    /// should be used with extreme caution.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
-    /// use secp256k1::ONE_KEY;
-    /// let key = ONE_KEY;
-    /// // Normal display hides value
-    /// assert_eq!(
-    ///     "SecretKey(#2518682f7819fb2d)",
-    ///     format!("{:?}", key)
-    /// );
+    /// # #[cfg(feature = "std")] {
+    /// let key = secp256k1::ONE_KEY;
+    ///
+    /// // Normal debug hides value (`Display` is not implemented for `SecretKey`).
+    /// // E.g., `format!("{:?}", key)` prints "SecretKey(#2518682f7819fb2d)".
+    ///
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",
     ///     format!("{}", key.display_secret())
     /// );
+    /// // Also, we can explicitly display with `Debug`:
     /// assert_eq!(
-    ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
-    ///     format!("{:?}", key.display_secret())
+    ///     format!("{:?}", key.display_secret()),
+    ///     format!("DisplaySecret(\"{}\")", key.display_secret())
     /// );
     /// # }
     /// ```
@@ -153,7 +152,7 @@ impl KeyPair {
     /// # Example
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
+    /// # #[cfg(feature = "std")] {
     /// use secp256k1::ONE_KEY;
     /// use secp256k1::KeyPair;
     /// use secp256k1::Secp256k1;
@@ -161,20 +160,15 @@ impl KeyPair {
     /// let secp = Secp256k1::new();
     /// let key = ONE_KEY;
     /// let key = KeyPair::from_secret_key(&secp, key);
-    ///
-    /// // Normal display hides value
-    /// assert_eq!(
-    ///     "KeyPair(#2518682f7819fb2d)",
-    ///     format!("{:?}", key)
-    /// );
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",
     ///     format!("{}", key.display_secret())
     /// );
+    /// // Also, we can explicitly display with `Debug`:
     /// assert_eq!(
-    ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
-    ///     format!("{:?}", key.display_secret())
+    ///     format!("{:?}", key.display_secret()),
+    ///     format!("DisplaySecret(\"{}\")", key.display_secret())
     /// );
     /// # }
     /// ```
