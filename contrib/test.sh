@@ -1,7 +1,7 @@
 #!/bin/sh -ex
 
 # TODO: Add "alloc" once we bump MSRV to past 1.29
-FEATURES="bitcoin_hashes global-context lowmemory rand rand-std recovery serde std"
+FEATURES="bitcoin_hashes bitcoin-hashes-alloc bitcoin-hashes-std bitcoin-hashes-alloc-serde bitcoin-hashes-std-serde bitcoin-hashes-std-schemars global-context lowmemory rand rand-std recovery serde std"
 
 # Use toolchain if explicitly specified
 if [ -n "$TOOLCHAIN" ]

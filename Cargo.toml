@@ -28,9 +28,18 @@ recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
 
+# Give users full control of bitcoin_hashes features while stil using the secp256k1 re-exported
+# bitcoin_hashes dependency.
+bitcoin-hashes-std = ["bitcoin_hashes/std"]
+bitcoin-hashes-alloc = ["bitcoin_hashes/alloc"]
+bitcoin-hashes-std-serde = ["bitcoin_hashes/std", "bitcoin_hashes/serde-std"]
+bitcoin-hashes-alloc-serde = ["bitcoin_hashes/alloc", "bitcoin_hashes/serde"]
+bitcoin-hashes-std-schemars = ["bitcoin_hashes/std", "bitcoin_hashes/schemars"]
+
 [dependencies]
 secp256k1-sys = { version = "0.4.2", default-features = false, path = "./secp256k1-sys" }
-bitcoin_hashes = { version = "0.10", optional = true }
+# You probably do not want to use this dependency directly, see feautures above.
+bitcoin_hashes = { version = "0.10", default-features = false, optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 
@@ -48,11 +57,11 @@ rand = { version = "0.6", features = ["wasm-bindgen"] }
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["std", "recovery"]
+required-features = ["std", "recovery", "bitcoin-hashes-std"]
 
 [[example]]
 name = "sign_verify"
-required-features = ["std"]
+required-features = ["std", "bitcoin-hashes-std"]
 
 [[example]]
 name = "generate_keys"

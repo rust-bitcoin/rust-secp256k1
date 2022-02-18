@@ -41,7 +41,7 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "std", feature="rand-std", feature="bitcoin_hashes"))] {
+//! # #[cfg(all(feature = "std", feature="rand-std", feature="bitcoin-hashes-std"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::sha256;
@@ -59,7 +59,7 @@
 //! If the "global-context" feature is enabled you have access to an alternate API.
 //!
 //! ```rust
-//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin_hashes"))] {
+//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin-hashes-std"))] {
 //! use secp256k1::rand::thread_rng;
 //! use secp256k1::{generate_keypair, Message};
 //! use secp256k1::hashes::sha256;
