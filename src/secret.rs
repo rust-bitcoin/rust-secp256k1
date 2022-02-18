@@ -35,7 +35,7 @@ macro_rules! impl_display_secret {
 
                 hasher.write(DEBUG_HASH_TAG);
                 hasher.write(DEBUG_HASH_TAG);
-                hasher.write(&self.serialize_secret());
+                hasher.write(&self.secret_bytes());
                 let hash = hasher.finish();
 
                 f.debug_tuple(stringify!($thing))
@@ -55,7 +55,7 @@ macro_rules! impl_display_secret {
                 let tag_hash = sha256::Hash::hash(tag.as_bytes());
                 engine.input(&tag_hash[..]);
                 engine.input(&tag_hash[..]);
-                engine.input(&self.serialize_secret());
+                engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 
                 f.debug_tuple(stringify!($thing))
@@ -139,7 +139,7 @@ impl SecretKey {
     /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.serialize_secret() }
+        DisplaySecret { secret: self.secret_bytes() }
     }
 }
 
@@ -180,6 +180,6 @@ impl KeyPair {
     /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.serialize_secret() }
+        DisplaySecret { secret: self.secret_bytes() }
     }
 }

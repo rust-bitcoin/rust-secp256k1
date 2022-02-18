@@ -212,9 +212,9 @@ impl SecretKey {
         SecretKey(sk)
     }
 
-    /// Serializes the secret key as byte value.
+    /// Returns the secret key as a byte value.
     #[inline]
-    pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+    pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         self.0
     }
 
@@ -809,9 +809,9 @@ impl KeyPair {
         KeyPair::new(SECP256K1, rng)
     }
 
-    /// Serializes the key pair as a secret key byte value.
+    /// Returns the secret bytes for this key pair.
     #[inline]
-    pub fn serialize_secret(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+    pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         *SecretKey::from_keypair(self).as_ref()
     }
 
@@ -926,7 +926,7 @@ impl ::serde::Serialize for KeyPair {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
-            s.serialize_str(::to_hex(&self.serialize_secret(), &mut buf)
+            s.serialize_str(::to_hex(&self.secret_bytes(), &mut buf)
                 .expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(&self.0[..])
