@@ -34,8 +34,8 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 /// let s = Secp256k1::new();
 /// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
 /// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
-/// let sec1 = SharedSecret::new(&pk1, &sk2);
-/// let sec2 = SharedSecret::new(&pk2, &sk1);
+/// let sec1 = SharedSecret::new(&pk2, &sk1);
+/// let sec2 = SharedSecret::new(&pk1, &sk2);
 /// assert_eq!(sec1, sec2);
 /// # }
 // ```
@@ -200,8 +200,8 @@ mod tests {
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
 
-        let sec1 = SharedSecret::new(&pk1, &sk2);
-        let sec2 = SharedSecret::new(&pk2, &sk1);
+        let sec1 = SharedSecret::new(&pk2, &sk1);
+        let sec2 = SharedSecret::new(&pk1, &sk2);
         let sec_odd = SharedSecret::new(&pk1, &sk1);
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
