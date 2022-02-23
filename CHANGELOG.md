@@ -1,3 +1,14 @@
+# 0.21.3 - 2022-01-31
+
+* Several documentation improvements ([#366](https://github.com/rust-bitcoin/rust-secp256k1/pull/366), [#365](https://github.com/rust-bitcoin/rust-secp256k1/pull/365), [#373](https://github.com/rust-bitcoin/rust-secp256k1/pull/373), [#381](https://github.com/rust-bitcoin/rust-secp256k1/pull/381), [#369](https://github.com/rust-bitcoin/rust-secp256k1/pull/369), [#389](https://github.com/rust-bitcoin/rust-secp256k1/pull/389), [#391](https://github.com/rust-bitcoin/rust-secp256k1/pull/391), [#397](https://github.com/rust-bitcoin/rust-secp256k1/pull/397), [#399](https://github.com/rust-bitcoin/rust-secp256k1/pull/399), [#340](https://github.com/rust-bitcoin/rust-secp256k1/pull/365))
+* Deprecate the [`generate_schnorrsig_keypair` method](https://github.com/rust-bitcoin/rust-secp256k1/pull/372) (unclear value)
+* Add [serde traits to `KeyPair`](https://github.com/rust-bitcoin/rust-secp256k1/pull/379)
+* Redo the [API of the new `Parity` type](https://github.com/rust-bitcoin/rust-secp256k1/pull/382) to more clearly match our desired semantics; **the `From<i32>` impl on this type is now deprecated**. Also [#400](https://github.com/rust-bitcoin/rust-secp256k1/pull/400).
+* Randomize [the global context on creation](https://github.com/rust-bitcoin/rust-secp256k1/pull/385) when possible; weaken [`global-context-less-secure` feature accordingly](https://github.com/rust-bitcoin/rust-secp256k1/pull/407).
+* Improve [the global context API](https://github.com/rust-bitcoin/rust-secp256k1/pull/392)
+* Fix [the `Debug` impl](https://github.com/rust-bitcoin/rust-secp256k1/pull/393) for `RecoverableSignature`
+* Implement [`LowerHex` and `Display`](https://github.com/rust-bitcoin/rust-secp256k1/pull/398)
+
 # 0.21.0 - 2022-01-02
 
 * Fix `KeyPair::from_seckey_slice` [error return value](https://github.com/rust-bitcoin/rust-secp256k1/pull/316)
