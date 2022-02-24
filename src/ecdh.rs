@@ -16,7 +16,7 @@
 //!
 
 use core::ptr;
-use core::ops::{FnMut, Deref};
+use core::borrow::Borrow;
 
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
@@ -34,153 +34,99 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 /// let s = Secp256k1::new();
 /// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
 /// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
-/// let sec1 = SharedSecret::new(&pk1, &sk2);
-/// let sec2 = SharedSecret::new(&pk2, &sk1);
+/// let sec1 = SharedSecret::new(&pk2, &sk1);
+/// let sec2 = SharedSecret::new(&pk1, &sk2);
 /// assert_eq!(sec1, sec2);
 /// # }
 // ```
-#[derive(Copy, Clone)]
-pub struct SharedSecret {
-    data: [u8; 256],
-    len: usize,
-}
-impl_raw_debug!(SharedSecret);
-
-
-// This implementes `From<N>` for all `[u8; N]` arrays from 128bits(16 byte) to 2048bits allowing known hash lengths.
-// Lower than 128 bits isn't resistant to collisions any more.
-impl_from_array_len!(SharedSecret, 256, (16 20 28 32 48 64 96 128 256));
-
-impl SharedSecret {
-
-    /// Creates an empty `SharedSecret`.
-    pub(crate) fn empty() ->  SharedSecret {
-        SharedSecret {
-            data: [0u8; 256],
-            len: 0,
-        }
-    }
-
-    /// Gets a pointer to the underlying data with the specified capacity.
-    pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
-        self.data.as_mut_ptr()
-    }
-
-    /// Gets the capacity of the underlying data buffer.
-    pub fn capacity(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Gets the len of the used data.
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    /// Returns true if the underlying data buffer is empty.
-    pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-
-    /// Sets the length of the object.
-    pub(crate) fn set_len(&mut self, len: usize) {
-        debug_assert!(len <= self.data.len());
-        self.len = len;
-    }
-}
-
-impl PartialEq for SharedSecret {
-    fn eq(&self, other: &SharedSecret) -> bool {
-        self.as_ref() == other.as_ref()
-    }
-}
-
-impl AsRef<[u8]> for SharedSecret {
-    fn as_ref(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
-}
-
-impl Deref for SharedSecret {
-    type Target = [u8];
-    fn deref(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
-}
-
-
-unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, _data: *mut c_void) -> c_int {
-    ptr::copy_nonoverlapping(x, output, 32);
-    ptr::copy_nonoverlapping(y, output.offset(32), 32);
-    1
-}
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SharedSecret([u8; 32]);
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key.
     #[inline]
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
-        let mut ss = SharedSecret::empty();
+        let mut buf = [0u8; 32];
         let res = unsafe {
              ffi::secp256k1_ecdh(
                 ffi::secp256k1_context_no_precomp,
-                ss.get_data_mut_ptr(),
+                buf.as_mut_ptr(),
                 point.as_c_ptr(),
                 scalar.as_c_ptr(),
                 ffi::secp256k1_ecdh_hash_function_default,
                 ptr::null_mut(),
             )
         };
-        // The default `secp256k1_ecdh_hash_function_default` should always return 1.
-        // and the scalar was verified to be valid(0 > scalar > group_order) via the type system
         debug_assert_eq!(res, 1);
-        ss.set_len(32); // The default hash function is SHA256, which is 32 bytes long.
-        ss
+        SharedSecret(buf)
     }
+}
 
-
-    /// Creates a new shared secret from a pubkey and secret key with applied custom hash function.
-    /// The custom hash function must be in the form of `fn(x: [u8;32], y: [u8;32]) -> SharedSecret`
-    /// `SharedSecret` can be easily created via the `From` impl from arrays.
-    /// # Examples
-    /// ```
-    /// # #[cfg(any(feature = "alloc", features = "std"))] {
-    /// # use secp256k1::ecdh::SharedSecret;
-    /// # use secp256k1::{Secp256k1, PublicKey, SecretKey};
-    /// # fn sha2(_a: &[u8], _b: &[u8]) -> [u8; 32] {[0u8; 32]}
-    /// # let secp = Secp256k1::signing_only();
-    /// # let secret_key = SecretKey::from_slice(&[3u8; 32]).unwrap();
-    /// # let secret_key2 = SecretKey::from_slice(&[7u8; 32]).unwrap();
-    /// # let public_key = PublicKey::from_secret_key(&secp, &secret_key2);
-    ///
-    /// let secret = SharedSecret::new_with_hash(&public_key, &secret_key, |x,y| {
-    ///     let hash: [u8; 32] = sha2(&x,&y);
-    ///     hash.into()
-    /// });
-    /// # }
-    /// ```
-    pub fn new_with_hash<F>(point: &PublicKey, scalar: &SecretKey, mut hash_function: F) -> SharedSecret
-        where F: FnMut([u8; 32], [u8; 32]) -> SharedSecret {
-        let mut xy = [0u8; 64];
-
-        let res = unsafe {
-            ffi::secp256k1_ecdh(
-                ffi::secp256k1_context_no_precomp,
-                xy.as_mut_ptr(),
-                point.as_ptr(),
-                scalar.as_ptr(),
-                Some(c_callback),
-                ptr::null_mut(),
-            )
-        };
-        // Our callback *always* returns 1.
-        // and the scalar was verified to be valid(0 > scalar > group_order) via the type system
-        debug_assert_eq!(res, 1);
-
-        let mut x = [0u8; 32];
-        let mut y = [0u8; 32];
-        x.copy_from_slice(&xy[..32]);
-        y.copy_from_slice(&xy[32..]);
-        hash_function(x, y)
+impl Borrow<[u8]> for SharedSecret {
+    fn borrow(&self) -> &[u8] {
+        &self.0
     }
+}
+
+impl AsRef<[u8]> for SharedSecret {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+/// Creates a shared point from public key and secret key.
+///
+/// **Important: use of a strong cryptographic hash function may be critical to security! Do NOT use
+/// unless you understand cryptographical implications.** If not, use SharedSecret instead.
+///
+/// Can be used like `SharedSecret` but caller is responsible for then hashing the returned buffer.
+/// This allows for the use of a custom hash function since `SharedSecret` uses SHA256.
+///
+/// # Returns
+///
+/// 64 bytes representing the (x,y) co-ordinates of a point on the curve (32 bytes each).
+///
+/// # Examples
+/// ```
+/// # #[cfg(all(feature = "bitcoin_hashes", feature = "rand-std", feature = "std"))] {
+/// # use secp256k1::{ecdh, Secp256k1, PublicKey, SecretKey};
+/// # use secp256k1::hashes::{Hash, sha512};
+/// # use secp256k1::rand::thread_rng;
+///
+/// let s = Secp256k1::new();
+/// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+///
+/// let point1 = ecdh::shared_secret_point(&pk2, &sk1);
+/// let secret1 = sha512::Hash::hash(&point1);
+/// let point2 = ecdh::shared_secret_point(&pk1, &sk2);
+/// let secret2 = sha512::Hash::hash(&point2);
+/// assert_eq!(secret1, secret2)
+/// # }
+/// ```
+pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
+    let mut xy = [0u8; 64];
+
+    let res = unsafe {
+        ffi::secp256k1_ecdh(
+            ffi::secp256k1_context_no_precomp,
+            xy.as_mut_ptr(),
+            point.as_ptr(),
+            scalar.as_ptr(),
+            Some(c_callback),
+            ptr::null_mut(),
+        )
+    };
+    // Our callback *always* returns 1.
+    // The scalar was verified to be valid (0 > scalar > group_order) via the type system.
+    debug_assert_eq!(res, 1);
+    xy
+}
+
+unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, _data: *mut c_void) -> c_int {
+    ptr::copy_nonoverlapping(x, output, 32);
+    ptr::copy_nonoverlapping(y, output.offset(32), 32);
+    1
 }
 
 #[cfg(test)]
@@ -200,43 +146,11 @@ mod tests {
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
         let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
 
-        let sec1 = SharedSecret::new(&pk1, &sk2);
-        let sec2 = SharedSecret::new(&pk2, &sk1);
+        let sec1 = SharedSecret::new(&pk2, &sk1);
+        let sec2 = SharedSecret::new(&pk1, &sk2);
         let sec_odd = SharedSecret::new(&pk1, &sk1);
         assert_eq!(sec1, sec2);
         assert!(sec_odd != sec2);
-    }
-
-    #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
-    fn ecdh_with_hash() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
-
-        let sec1 = SharedSecret::new_with_hash(&pk1, &sk2, |x,_| x.into());
-        let sec2 = SharedSecret::new_with_hash(&pk2, &sk1, |x,_| x.into());
-        let sec_odd = SharedSecret::new_with_hash(&pk1, &sk1, |x,_| x.into());
-        assert_eq!(sec1, sec2);
-        assert_ne!(sec_odd, sec2);
-    }
-
-    #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
-    fn ecdh_with_hash_callback() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        let expect_result: [u8; 64] = [123; 64];
-        let mut x_out = [0u8; 32];
-        let mut y_out = [0u8; 32];
-        let result = SharedSecret::new_with_hash(&pk1, &sk1, |x, y| {
-            x_out = x;
-            y_out = y;
-            expect_result.into()
-        });
-        assert_eq!(&expect_result[..], &result[..]);
-        assert_ne!(x_out, [0u8; 32]);
-        assert_ne!(y_out, [0u8; 32]);
     }
 
     #[test]
@@ -252,6 +166,30 @@ mod tests {
         new_y.copy_from_slice(&output[32..]);
         assert_eq!(x, new_x);
         assert_eq!(y, new_y);
+    }
+
+    #[test]
+    #[cfg(not(fuzzing))]
+    #[cfg(all(feature="rand-std", feature = "std", feature = "bitcoin_hashes"))]
+    fn bitcoin_hashes_and_sys_generate_same_secret() {
+        use hashes::{sha256, Hash, HashEngine};
+
+        let s = Secp256k1::signing_only();
+        let (sk1, _) = s.generate_keypair(&mut thread_rng());
+        let (_, pk2) = s.generate_keypair(&mut thread_rng());
+
+        let secret_sys = SharedSecret::new(&pk2, &sk1);
+
+        let xy = shared_secret_point(&pk2, &sk1);
+
+        // Mimics logic in `bitcoin-core/secp256k1/src/module/main_impl.h`
+        let version = (xy[63] & 0x01) | 0x02;
+        let mut engine = sha256::HashEngine::default();
+        engine.input(&[version]);
+        engine.input(&xy.as_ref()[..32]);
+        let secret_bh = sha256::Hash::from_engine(engine);
+
+        assert_eq!(secret_bh.as_inner(), secret_sys.as_ref());
     }
 }
 

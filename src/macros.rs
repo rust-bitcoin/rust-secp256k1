@@ -26,20 +26,3 @@ macro_rules! impl_pretty_debug {
         }
      }
 }
-
-macro_rules! impl_from_array_len {
-    ($thing:ident, $capacity:tt, ($($N:tt)+)) => {
-        $(
-            impl From<[u8; $N]> for $thing {
-                fn from(arr: [u8; $N]) -> Self {
-                    let mut data = [0u8; $capacity];
-                    data[..$N].copy_from_slice(&arr);
-                    $thing {
-                        data,
-                        len: $N,
-                    }
-                }
-            }
-        )+
-    }
-}

@@ -65,7 +65,7 @@ use core::fmt::{self, write, Write};
 use core::intrinsics;
 use core::panic::PanicInfo;
 
-use secp256k1::ecdh::SharedSecret;
+use secp256k1::ecdh::{self, SharedSecret};
 use secp256k1::ffi::types::AlignedType;
 use secp256k1::rand::{self, RngCore};
 use secp256k1::serde::Serialize;
@@ -125,13 +125,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     assert_eq!(sig, new_sig);
 
     let _ = SharedSecret::new(&public_key, &secret_key);
-    let mut x_arr = [0u8; 32];
-    let y_arr = SharedSecret::new_with_hash(&public_key, &secret_key, |x,y| {
-        x_arr = x;
-        y.into()
-    });
-    assert_ne!(x_arr, [0u8; 32]);
-    assert_ne!(&y_arr[..], &[0u8; 32][..]);
+    let _ = ecdh::shared_secret_point(&public_key, &secret_key);
 
     #[cfg(feature = "alloc")]
     {
