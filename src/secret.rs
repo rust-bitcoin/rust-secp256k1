@@ -16,6 +16,7 @@
 
 use ::core::fmt;
 use ::{SecretKey, KeyPair, to_hex};
+use ecdh::SharedSecret;
 use constants::SECRET_KEY_SIZE;
 
 macro_rules! impl_display_secret {
@@ -35,7 +36,7 @@ macro_rules! impl_display_secret {
 
                 hasher.write(DEBUG_HASH_TAG);
                 hasher.write(DEBUG_HASH_TAG);
-                hasher.write(&self.serialize_secret());
+                hasher.write(&self.secret_bytes());
                 let hash = hasher.finish();
 
                 f.debug_tuple(stringify!($thing))
@@ -55,7 +56,7 @@ macro_rules! impl_display_secret {
                 let tag_hash = sha256::Hash::hash(tag.as_bytes());
                 engine.input(&tag_hash[..]);
                 engine.input(&tag_hash[..]);
-                engine.input(&self.serialize_secret());
+                engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 
                 f.debug_tuple(stringify!($thing))
@@ -67,7 +68,7 @@ macro_rules! impl_display_secret {
         #[cfg(all(not(feature = "std"), not(feature = "bitcoin_hashes")))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(f, "<secret requires std feature to display>")
+                write!(f, "<secret requires std or bitcoin_hashes feature to display>")
             }
         }
      }
@@ -91,7 +92,7 @@ pub struct DisplaySecret {
 impl fmt::Debug for DisplaySecret {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut slice = [0u8; 64];
+        let mut slice = [0u8; SECRET_KEY_SIZE * 2];
         let hex = to_hex(&self.secret, &mut slice).expect("fixed-size hex serializer failed");
         f.debug_tuple("DisplaySecret")
             .field(&hex)
@@ -101,8 +102,8 @@ impl fmt::Debug for DisplaySecret {
 
 impl fmt::Display for DisplaySecret {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for i in &self.secret {
-            write!(f, "{:02x}", i)?;
+        for byte in &self.secret {
+            write!(f, "{:02x}", byte)?;
         }
         Ok(())
     }
@@ -113,33 +114,32 @@ impl SecretKey {
     /// little-endian hexadecimal string using the provided formatter.
     ///
     /// This is the only method that outputs the actual secret key value, and, thus,
-    /// should be used with extreme precaution.
+    /// should be used with extreme caution.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
-    /// use secp256k1::ONE_KEY;
-    /// let key = ONE_KEY;
-    /// // Normal display hides value
-    /// assert_eq!(
-    ///     "SecretKey(#2518682f7819fb2d)",
-    ///     format!("{:?}", key)
-    /// );
+    /// # #[cfg(feature = "std")] {
+    /// let key = secp256k1::ONE_KEY;
+    ///
+    /// // Normal debug hides value (`Display` is not implemented for `SecretKey`).
+    /// // E.g., `format!("{:?}", key)` prints "SecretKey(#2518682f7819fb2d)".
+    ///
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",
     ///     format!("{}", key.display_secret())
     /// );
+    /// // Also, we can explicitly display with `Debug`:
     /// assert_eq!(
-    ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
-    ///     format!("{:?}", key.display_secret())
+    ///     format!("{:?}", key.display_secret()),
+    ///     format!("DisplaySecret(\"{}\")", key.display_secret())
     /// );
     /// # }
     /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.serialize_secret() }
+        DisplaySecret { secret: self.secret_bytes() }
     }
 }
 
@@ -153,7 +153,7 @@ impl KeyPair {
     /// # Example
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", not(feature = "bitcoin_hashes")))] {
+    /// # #[cfg(feature = "std")] {
     /// use secp256k1::ONE_KEY;
     /// use secp256k1::KeyPair;
     /// use secp256k1::Secp256k1;
@@ -161,25 +161,58 @@ impl KeyPair {
     /// let secp = Secp256k1::new();
     /// let key = ONE_KEY;
     /// let key = KeyPair::from_secret_key(&secp, key);
-    ///
-    /// // Normal display hides value
-    /// assert_eq!(
-    ///     "KeyPair(#2518682f7819fb2d)",
-    ///     format!("{:?}", key)
-    /// );
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",
     ///     format!("{}", key.display_secret())
     /// );
+    /// // Also, we can explicitly display with `Debug`:
     /// assert_eq!(
-    ///     "DisplaySecret(\"0000000000000000000000000000000000000000000000000000000000000001\")",
-    ///     format!("{:?}", key.display_secret())
+    ///     format!("{:?}", key.display_secret()),
+    ///     format!("DisplaySecret(\"{}\")", key.display_secret())
     /// );
     /// # }
     /// ```
     #[inline]
     pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.serialize_secret() }
+        DisplaySecret { secret: self.secret_bytes() }
+    }
+}
+
+impl SharedSecret {
+    /// Formats the explicit byte value of the shared secret kept inside the type as a
+    /// little-endian hexadecimal string using the provided formatter.
+    ///
+    /// This is the only method that outputs the actual shared secret value, and, thus,
+    /// should be used with extreme caution.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(not(fuzzing))]
+    /// # #[cfg(feature = "std")] {
+    /// # use std::str::FromStr;
+    /// # use secp256k1::{SecretKey, PublicKey};
+    /// use secp256k1::ecdh::SharedSecret;
+    ///
+    /// # let pk = PublicKey::from_slice(&[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]).expect("hard coded slice should parse correctly");
+    /// # let sk = SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead").unwrap();
+    ///
+    /// let secret = SharedSecret::new(&pk, &sk);
+    /// // Here we explicitly display the secret value:
+    /// assert_eq!(
+    ///     format!("{}", secret.display_secret()),
+    ///     "cf05ae7da039ddce6d56dd57d3000c6dd91c6f1695eae47e05389f11e2467043"
+    /// );
+    /// // Also, we can explicitly display with `Debug`:
+    /// assert_eq!(
+    ///     format!("{:?}", secret.display_secret()),
+    ///     format!("DisplaySecret(\"{}\")", secret.display_secret())
+    /// );
+    /// # }
+    /// ```
+    #[inline]
+    pub fn display_secret(&self) -> DisplaySecret {
+        DisplaySecret { secret: self.secret_bytes() }
     }
 }

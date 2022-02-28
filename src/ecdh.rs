@@ -21,6 +21,10 @@ use core::borrow::Borrow;
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
+use constants;
+
+// The logic for displaying shared secrets relies on this (see `secret.rs`).
+const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 
 /// Enables two parties to create a shared secret without revealing their own secrets.
 ///
@@ -39,14 +43,15 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 /// assert_eq!(sec1, sec2);
 /// # }
 // ```
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SharedSecret([u8; 32]);
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SharedSecret([u8; SHARED_SECRET_SIZE]);
+impl_display_secret!(SharedSecret);
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key.
     #[inline]
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
-        let mut buf = [0u8; 32];
+        let mut buf = [0u8; SHARED_SECRET_SIZE];
         let res = unsafe {
              ffi::secp256k1_ecdh(
                 ffi::secp256k1_context_no_precomp,
@@ -59,6 +64,12 @@ impl SharedSecret {
         };
         debug_assert_eq!(res, 1);
         SharedSecret(buf)
+    }
+
+    /// Returns the shared secret as a byte value.
+    #[inline]
+    pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] {
+        self.0
     }
 }
 
