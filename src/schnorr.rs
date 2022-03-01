@@ -304,8 +304,8 @@ mod tests {
 
     #[test]
     #[cfg(all(feature = "std", feature = "rand-std"))]
-    fn test_schnorrsig_sign_with_aux_rand_verify() {
-        test_schnorrsig_sign_helper(|secp, msg, seckey, rng| {
+    fn schnorr_sign_with_aux_rand_verify() {
+        sign_helper(|secp, msg, seckey, rng| {
             let mut aux_rand = [0u8; 32];
             rng.fill_bytes(&mut aux_rand);
             secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
@@ -314,30 +314,30 @@ mod tests {
 
     #[test]
     #[cfg(all(feature = "std", feature = "rand-std"))]
-    fn test_schnorrsig_sign_with_rng_verify() {
-        test_schnorrsig_sign_helper(|secp, msg, seckey, mut rng| {
+    fn schnor_sign_with_rng_verify() {
+        sign_helper(|secp, msg, seckey, mut rng| {
             secp.sign_schnorr_with_rng(msg, seckey, &mut rng)
         })
     }
 
     #[test]
     #[cfg(all(feature = "std", feature = "rand-std"))]
-    fn test_schnorrsig_sign_verify() {
-        test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
+    fn schnorr_sign_verify() {
+        sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr(msg, seckey)
         })
     }
 
     #[test]
     #[cfg(all(feature = "std", feature = "rand-std"))]
-    fn test_schnorrsig_sign_no_aux_rand_verify() {
-        test_schnorrsig_sign_helper(|secp, msg, seckey, _| {
+    fn schnorr_sign_no_aux_rand_verify() {
+        sign_helper(|secp, msg, seckey, _| {
             secp.sign_schnorr_no_aux_rand(msg, seckey)
         })
     }
 
     #[cfg(all(feature = "std", feature = "rand-std"))]
-    fn test_schnorrsig_sign_helper(
+    fn sign_helper(
         sign: fn(&Secp256k1<All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
     ) {
         let secp = Secp256k1::new();
@@ -361,7 +361,7 @@ mod tests {
     #[test]
     #[cfg(any(feature = "alloc", feature = "std"))]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
-    fn test_schnorrsig_sign() {
+    fn schnorr_sign() {
         let secp = Secp256k1::new();
 
         let hex_msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(any(feature = "alloc", feature = "std"))]
-    fn test_schnorrsig_verify() {
+    fn schnorr_verify() {
         let secp = Secp256k1::new();
 
         let hex_msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
