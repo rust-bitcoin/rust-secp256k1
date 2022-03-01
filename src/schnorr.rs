@@ -102,7 +102,7 @@ impl Signature {
 }
 
 impl<C: Signing> Secp256k1<C> {
-    fn schnorrsig_sign_helper(
+    fn sign_schnorr_helper(
         &self,
         msg: &Message,
         keypair: &KeyPair,
@@ -160,7 +160,7 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
     ) -> Signature {
-        self.schnorrsig_sign_helper(msg, keypair, ptr::null())
+        self.sign_schnorr_helper(msg, keypair, ptr::null())
     }
 
     /// Create a Schnorr signature using the given auxiliary random data.
@@ -181,7 +181,7 @@ impl<C: Signing> Secp256k1<C> {
         keypair: &KeyPair,
         aux_rand: &[u8; 32],
     ) -> Signature {
-        self.schnorrsig_sign_helper(
+        self.sign_schnorr_helper(
             msg,
             keypair,
             aux_rand.as_c_ptr() as *const ffi::types::c_void,
@@ -214,7 +214,7 @@ impl<C: Signing> Secp256k1<C> {
     ) -> Signature {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
-        self.schnorrsig_sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
+        self.sign_schnorr_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
     }
 }
 
