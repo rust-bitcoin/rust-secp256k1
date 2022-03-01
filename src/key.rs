@@ -25,6 +25,9 @@ use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey
 use crate::ffi::{self, CPtr, impl_array_newtype};
 use crate::ffi::types::c_uint;
 
+#[cfg(feature = "serde")]
+use serde::ser::SerializeTuple;
+
 #[cfg(feature = "global-context")]
 use crate::{Message, ecdsa, SECP256K1};
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
@@ -322,7 +325,11 @@ impl serde::Serialize for SecretKey {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
             s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
-            s.serialize_bytes(&self[..])
+            let mut tuple = s.serialize_tuple(constants::SECRET_KEY_SIZE)?;
+            for byte in self.0.iter() {
+                tuple.serialize_element(byte)?;
+            }
+            tuple.end()
         }
     }
 }
@@ -336,10 +343,11 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
                 "a hex string representing 32 byte SecretKey"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+            let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes SecretKey",
                 SecretKey::from_slice
-            ))
+            );
+            d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
     }
 }
@@ -664,7 +672,11 @@ impl serde::Serialize for PublicKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self.serialize())
+            let mut tuple = s.serialize_tuple(constants::PUBLIC_KEY_SIZE)?;
+            for byte in self.serialize().iter() { // Serialize in compressed form.
+                tuple.serialize_element(&byte)?;
+            }
+            tuple.end()
         }
     }
 }
@@ -678,10 +690,11 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
                 "an ASCII hex string representing a public key"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
-                "a bytestring representing a public key",
+            let visitor = super::serde_util::Tuple33Visitor::new(
+                "33 bytes compressed public key",
                 PublicKey::from_slice
-            ))
+            );
+            d.deserialize_tuple(constants::PUBLIC_KEY_SIZE, visitor)
         }
     }
 }
@@ -987,7 +1000,11 @@ impl serde::Serialize for KeyPair {
             s.serialize_str(crate::to_hex(&self.secret_bytes(), &mut buf)
                 .expect("fixed-size hex serialization"))
         } else {
-            s.serialize_bytes(&self.0[..])
+            let mut tuple = s.serialize_tuple(constants::SECRET_KEY_SIZE)?;
+            for byte in self.secret_bytes().iter() {
+                tuple.serialize_element(&byte)?;
+            }
+            tuple.end()
         }
     }
 }
@@ -1001,13 +1018,14 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
                 "a hex string representing 32 byte KeyPair"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+            let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes KeyPair",
                 |data| unsafe {
                     let ctx = Secp256k1::from_raw_all(ffi::secp256k1_context_no_precomp as *mut ffi::Context);
                     KeyPair::from_seckey_slice(&ctx, data)
                 }
-            ))
+            );
+            d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
     }
 }
@@ -1438,7 +1456,11 @@ impl serde::Serialize for XOnlyPublicKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self.serialize())
+            let mut tuple = s.serialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE)?;
+            for byte in self.serialize().iter() {
+                tuple.serialize_element(&byte)?;
+            }
+            tuple.end()
         }
     }
 }
@@ -1452,10 +1474,11 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
                 "a hex string representing 32 byte schnorr public key"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+            let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes schnorr public key",
                 XOnlyPublicKey::from_slice
-            ))
+            );
+            d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
         }
     }
 }
@@ -1501,6 +1524,8 @@ pub mod serde_keypair {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod test {
+    use super::*;
+
     use core::str::FromStr;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
@@ -1953,6 +1978,7 @@ mod test {
         static SK_STR: &'static str = "\
             01010101010101010001020304050607ffff0000ffff00006363636363636363\
         ";
+        #[cfg(fuzzing)]
         static PK_BYTES: [u8; 33] = [
             0x02,
             0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
@@ -1975,22 +2001,32 @@ mod test {
         #[cfg(fuzzing)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
-        assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
-        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
-        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+        assert_tokens(&sk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
+            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
+            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
+            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
+            Token::TupleEnd
+        ]);
 
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
 
-        assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
-        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES)]);
-        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES)]);
+        assert_tokens(&pk.compact(), &[
+            Token::Tuple{ len: 33 },
+            Token::U8(0x02),
+            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
+            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
+            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
+            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
+            Token::TupleEnd
+        ]);
 
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
-
     }
 
     #[test]
@@ -2071,10 +2107,14 @@ mod test {
         ";
 
         let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
-
-        assert_tokens(&sk.compact(), &[Token::BorrowedBytes(&SK_BYTES[..])]);
-        assert_tokens(&sk.compact(), &[Token::Bytes(&SK_BYTES)]);
-        assert_tokens(&sk.compact(), &[Token::ByteBuf(&SK_BYTES)]);
+        assert_tokens(&sk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
+            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
+            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
+            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
+            Token::TupleEnd
+        ]);
 
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
@@ -2225,5 +2265,39 @@ mod test {
         let got = format!("{}", pk);
 
         assert_eq!(got, want)
+    }
+
+    #[test]
+    #[cfg(not(fuzzing))]
+    #[cfg(all(feature = "global-context", feature = "serde"))]
+    fn test_serde_x_only_pubkey() {
+        use serde_test::{Configure, Token, assert_tokens};
+
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+
+        static PK_STR: &'static str = "\
+            18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+        ";
+
+        let kp = KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap();
+        let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
+
+        assert_tokens(&pk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
+            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
+            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
+            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
+            Token::TupleEnd
+        ]);
+
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
     }
 }

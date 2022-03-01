@@ -569,9 +569,14 @@ mod tests {
         assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
         assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
 
-        assert_tokens(&pk.compact(), &[Token::BorrowedBytes(&PK_BYTES[..])]);
-        assert_tokens(&pk.compact(), &[Token::Bytes(&PK_BYTES[..])]);
-        assert_tokens(&pk.compact(), &[Token::ByteBuf(&PK_BYTES[..])]);
+        assert_tokens(&pk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(24), Token::U8(132), Token::U8(87), Token::U8(129), Token::U8(246), Token::U8(49), Token::U8(196), Token::U8(143),
+            Token::U8(28), Token::U8(151), Token::U8(9), Token::U8(226), Token::U8(48), Token::U8(146), Token::U8(6), Token::U8(125),
+            Token::U8(6), Token::U8(131), Token::U8(127), Token::U8(48), Token::U8(170), Token::U8(12), Token::U8(208), Token::U8(84),
+            Token::U8(74), Token::U8(200), Token::U8(135), Token::U8(254), Token::U8(145), Token::U8(221), Token::U8(209), Token::U8(102),
+            Token::TupleEnd
+        ]);
 
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
