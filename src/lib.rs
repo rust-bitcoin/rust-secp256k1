@@ -361,7 +361,7 @@ pub enum Error {
     /// Bad set of public keys.
     InvalidPublicKeySum,
     /// The only valid parity values are 0 or 1.
-    InvalidParityValue,
+    InvalidParityValue(key::InvalidParityValue),
 }
 
 impl Error {
@@ -376,7 +376,7 @@ impl Error {
             Error::InvalidTweak => "secp: bad tweak",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
             Error::InvalidPublicKeySum => "secp: the sum of public keys was invalid or the input vector lengths was less than 1",
-            Error::InvalidParityValue => "The only valid parity values are 0 or 1",
+            Error::InvalidParityValue(_) => "couldn't create parity",
         }
     }
 }
@@ -390,7 +390,23 @@ impl fmt::Display for Error {
 
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    #[allow(deprecated)]
+    fn cause(&self) -> Option<&dyn std::error::Error> {
+        match self {
+            Error::IncorrectSignature => None,
+            Error::InvalidMessage => None,
+            Error::InvalidPublicKey => None,
+            Error::InvalidSignature => None,
+            Error::InvalidSecretKey => None,
+            Error::InvalidRecoveryId => None,
+            Error::InvalidTweak => None,
+            Error::NotEnoughMemory => None,
+            Error::InvalidPublicKeySum => None,
+            Error::InvalidParityValue(error) => Some(error),
+        }
+    }
+}
 
 
 /// The secp256k1 engine, used to execute all signature operations.
