@@ -38,7 +38,7 @@ global-context-less-secure = []
 [dependencies]
 secp256k1-sys = { version = "0.4.2", default-features = false, path = "./secp256k1-sys" }
 
-bitcoin_hashes = { version = "0.10", optional = true }
+bitcoin_hashes = { version = "0.10", default-features = false, optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 
