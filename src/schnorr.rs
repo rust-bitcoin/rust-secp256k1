@@ -17,8 +17,8 @@ use {Message, Signing, Verification, KeyPair, XOnlyPublicKey};
 use SECP256K1;
 
 /// Represents a Schnorr signature.
-pub struct Signature([u8; constants::SCHNORRSIG_SIGNATURE_SIZE]);
-impl_array_newtype!(Signature, u8, constants::SCHNORRSIG_SIGNATURE_SIZE);
+pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
+impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);
 
 #[cfg(feature = "serde")]
@@ -68,10 +68,10 @@ impl fmt::Display for Signature {
 impl str::FromStr for Signature {
     type Err = Error;
     fn from_str(s: &str) -> Result<Signature, Error> {
-        let mut res = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
+        let mut res = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORRSIG_SIGNATURE_SIZE) => {
-                Signature::from_slice(&res[0..constants::SCHNORRSIG_SIGNATURE_SIZE])
+            Ok(constants::SCHNORR_SIGNATURE_SIZE) => {
+                Signature::from_slice(&res[0..constants::SCHNORR_SIGNATURE_SIZE])
             }
             _ => Err(Error::InvalidSignature),
         }
@@ -83,8 +83,8 @@ impl Signature {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
         match data.len() {
-            constants::SCHNORRSIG_SIGNATURE_SIZE => {
-                let mut ret = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
+            constants::SCHNORR_SIGNATURE_SIZE => {
+                let mut ret = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
                 ret[..].copy_from_slice(data);
                 Ok(Signature(ret))
             }
@@ -109,7 +109,7 @@ impl<C: Signing> Secp256k1<C> {
         nonce_data: *const ffi::types::c_void,
     ) -> Signature {
         unsafe {
-            let mut sig = [0u8; constants::SCHNORRSIG_SIGNATURE_SIZE];
+            let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
             assert_eq!(
                 1,
                 ffi::secp256k1_schnorrsig_sign(
@@ -567,7 +567,7 @@ mod tests {
         let aux = [3u8; 32];
         let sig = s
             .sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
-        static SIG_BYTES: [u8; constants::SCHNORRSIG_SIGNATURE_SIZE] = [
+        static SIG_BYTES: [u8; constants::SCHNORR_SIGNATURE_SIZE] = [
             0x14, 0xd0, 0xbf, 0x1a, 0x89, 0x53, 0x50, 0x6f, 0xb4, 0x60, 0xf5, 0x8b, 0xe1, 0x41,
             0xaf, 0x76, 0x7f, 0xd1, 0x12, 0x53, 0x5f, 0xb3, 0x92, 0x2e, 0xf2, 0x17, 0x30, 0x8e,
             0x2c, 0x26, 0x70, 0x6f, 0x1e, 0xeb, 0x43, 0x2b, 0x3d, 0xba, 0x9a, 0x01, 0x08, 0x2f,
