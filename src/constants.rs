@@ -38,7 +38,11 @@ pub const COMPACT_SIGNATURE_SIZE: usize = 64;
 pub const SCHNORRSIG_SIGNATURE_SIZE: usize = 64;
 
 /// The size of a Schnorr public key.
-pub const SCHNORRSIG_PUBLIC_KEY_SIZE: usize = 32;
+pub const SCHNORR_PUBLIC_KEY_SIZE: usize = 32;
+
+/// The size of a Schnorr public key.
+#[deprecated(since = "0.22.0", note = "Use SCHNORR_PUBLIC_KEY_SIZE instead.")]
+pub const SCHNORRSIG_PUBLIC_KEY_SIZE: usize = SCHNORR_PUBLIC_KEY_SIZE;
 
 /// The size of a key pair.
 pub const KEY_PAIR_SIZE: usize = 96;
