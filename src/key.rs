@@ -991,10 +991,10 @@ impl fmt::Display for XOnlyPublicKey {
 impl str::FromStr for XOnlyPublicKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<XOnlyPublicKey, Error> {
-        let mut res = [0u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
+        let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORRSIG_PUBLIC_KEY_SIZE) => {
-                XOnlyPublicKey::from_slice(&res[0..constants::SCHNORRSIG_PUBLIC_KEY_SIZE])
+            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => {
+                XOnlyPublicKey::from_slice(&res[0..constants::SCHNORR_PUBLIC_KEY_SIZE])
             }
             _ => Err(Error::InvalidPublicKey),
         }
@@ -1039,7 +1039,7 @@ impl XOnlyPublicKey {
     /// slice does not represent a valid Secp256k1 point x coordinate.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
-        if data.is_empty() || data.len() != constants::SCHNORRSIG_PUBLIC_KEY_SIZE {
+        if data.is_empty() || data.len() != constants::SCHNORR_PUBLIC_KEY_SIZE {
             return Err(Error::InvalidPublicKey);
         }
 
@@ -1060,8 +1060,8 @@ impl XOnlyPublicKey {
 
     #[inline]
     /// Serializes the key as a byte-encoded x coordinate value (32 bytes).
-    pub fn serialize(&self) -> [u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE] {
-        let mut ret = [0u8; constants::SCHNORRSIG_PUBLIC_KEY_SIZE];
+    pub fn serialize(&self) -> [u8; constants::SCHNORR_PUBLIC_KEY_SIZE] {
+        let mut ret = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
 
         unsafe {
             let err = ffi::secp256k1_xonly_pubkey_serialize(
