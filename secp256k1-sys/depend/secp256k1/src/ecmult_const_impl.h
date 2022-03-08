@@ -12,6 +12,22 @@
 #include "ecmult_const.h"
 #include "ecmult_impl.h"
 
+/** Fill a table 'pre' with precomputed odd multiples of a.
+ *
+ *  The resulting point set is brought to a single constant Z denominator, stores the X and Y
+ *  coordinates as ge_storage points in pre, and stores the global Z in globalz.
+ *  It only operates on tables sized for WINDOW_A wnaf multiples.
+ */
+static void rustsecp256k1_v0_5_0_ecmult_odd_multiples_table_globalz_windowa(rustsecp256k1_v0_5_0_ge *pre, rustsecp256k1_v0_5_0_fe *globalz, const rustsecp256k1_v0_5_0_gej *a) {
+    rustsecp256k1_v0_5_0_gej prej[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_5_0_fe zr[ECMULT_TABLE_SIZE(WINDOW_A)];
+
+    /* Compute the odd multiples in Jacobian form. */
+    rustsecp256k1_v0_5_0_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), prej, zr, a);
+    /* Bring them to the same Z denominator. */
+    rustsecp256k1_v0_5_0_ge_globalz_set_table_gej(ECMULT_TABLE_SIZE(WINDOW_A), pre, globalz, prej, zr);
+}
+
 /* This is like `ECMULT_TABLE_GET_GE` but is constant time */
 #define ECMULT_CONST_TABLE_GET_GE(r,pre,n,w) do { \
     int m = 0; \
@@ -19,12 +35,12 @@
     int mask = (n) >> (sizeof(n) * CHAR_BIT - 1); \
     int abs_n = ((n) + mask) ^ mask; \
     int idx_n = abs_n >> 1; \
-    rustsecp256k1_v0_4_1_fe neg_y; \
+    rustsecp256k1_v0_5_0_fe neg_y; \
     VERIFY_CHECK(((n) & 1) == 1); \
     VERIFY_CHECK((n) >= -((1 << ((w)-1)) - 1)); \
     VERIFY_CHECK((n) <=  ((1 << ((w)-1)) - 1)); \
-    VERIFY_SETUP(rustsecp256k1_v0_4_1_fe_clear(&(r)->x)); \
-    VERIFY_SETUP(rustsecp256k1_v0_4_1_fe_clear(&(r)->y)); \
+    VERIFY_SETUP(rustsecp256k1_v0_5_0_fe_clear(&(r)->x)); \
+    VERIFY_SETUP(rustsecp256k1_v0_5_0_fe_clear(&(r)->y)); \
     /* Unconditionally set r->x = (pre)[m].x. r->y = (pre)[m].y. because it's either the correct one \
      * or will get replaced in the later iterations, this is needed to make sure `r` is initialized. */ \
     (r)->x = (pre)[m].x; \
@@ -32,14 +48,13 @@
     for (m = 1; m < ECMULT_TABLE_SIZE(w); m++) { \
         /* This loop is used to avoid secret data in array indices. See
          * the comment in ecmult_gen_impl.h for rationale. */ \
-        rustsecp256k1_v0_4_1_fe_cmov(&(r)->x, &(pre)[m].x, m == idx_n); \
-        rustsecp256k1_v0_4_1_fe_cmov(&(r)->y, &(pre)[m].y, m == idx_n); \
+        rustsecp256k1_v0_5_0_fe_cmov(&(r)->x, &(pre)[m].x, m == idx_n); \
+        rustsecp256k1_v0_5_0_fe_cmov(&(r)->y, &(pre)[m].y, m == idx_n); \
     } \
     (r)->infinity = 0; \
-    rustsecp256k1_v0_4_1_fe_negate(&neg_y, &(r)->y, 1); \
-    rustsecp256k1_v0_4_1_fe_cmov(&(r)->y, &neg_y, (n) != abs_n); \
+    rustsecp256k1_v0_5_0_fe_negate(&neg_y, &(r)->y, 1); \
+    rustsecp256k1_v0_5_0_fe_cmov(&(r)->y, &neg_y, (n) != abs_n); \
 } while(0)
-
 
 /** Convert a number to WNAF notation.
  *  The number becomes represented by sum(2^{wi} * wnaf[i], i=0..WNAF_SIZE(w)+1) - return_val.
@@ -54,9 +69,9 @@
  *
  *  Numbers reference steps of `Algorithm SPA-resistant Width-w NAF with Odd Scalar` on pp. 335
  */
-static int rustsecp256k1_v0_4_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_4_1_scalar *scalar, int w, int size) {
+static int rustsecp256k1_v0_5_0_wnaf_const(int *wnaf, const rustsecp256k1_v0_5_0_scalar *scalar, int w, int size) {
     int global_sign;
-    int skew = 0;
+    int skew;
     int word = 0;
 
     /* 1 2 3 */
@@ -64,9 +79,7 @@ static int rustsecp256k1_v0_4_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_4_1
     int u;
 
     int flip;
-    int bit;
-    rustsecp256k1_v0_4_1_scalar s;
-    int not_neg_one;
+    rustsecp256k1_v0_5_0_scalar s = *scalar;
 
     VERIFY_CHECK(w > 0);
     VERIFY_CHECK(size > 0);
@@ -74,41 +87,27 @@ static int rustsecp256k1_v0_4_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_4_1
     /* Note that we cannot handle even numbers by negating them to be odd, as is
      * done in other implementations, since if our scalars were specified to have
      * width < 256 for performance reasons, their negations would have width 256
-     * and we'd lose any performance benefit. Instead, we use a technique from
-     * Section 4.2 of the Okeya/Tagaki paper, which is to add either 1 (for even)
-     * or 2 (for odd) to the number we are encoding, returning a skew value indicating
+     * and we'd lose any performance benefit. Instead, we use a variation of a
+     * technique from Section 4.2 of the Okeya/Tagaki paper, which is to add 1 to the
+     * number we are encoding when it is even, returning a skew value indicating
      * this, and having the caller compensate after doing the multiplication.
      *
      * In fact, we _do_ want to negate numbers to minimize their bit-lengths (and in
      * particular, to ensure that the outputs from the endomorphism-split fit into
-     * 128 bits). If we negate, the parity of our number flips, inverting which of
-     * {1, 2} we want to add to the scalar when ensuring that it's odd. Further
-     * complicating things, -1 interacts badly with `rustsecp256k1_v0_4_1_scalar_cadd_bit` and
-     * we need to special-case it in this logic. */
-    flip = rustsecp256k1_v0_4_1_scalar_is_high(scalar);
-    /* We add 1 to even numbers, 2 to odd ones, noting that negation flips parity */
-    bit = flip ^ !rustsecp256k1_v0_4_1_scalar_is_even(scalar);
-    /* We check for negative one, since adding 2 to it will cause an overflow */
-    rustsecp256k1_v0_4_1_scalar_negate(&s, scalar);
-    not_neg_one = !rustsecp256k1_v0_4_1_scalar_is_one(&s);
-    s = *scalar;
-    rustsecp256k1_v0_4_1_scalar_cadd_bit(&s, bit, not_neg_one);
-    /* If we had negative one, flip == 1, s.d[0] == 0, bit == 1, so caller expects
-     * that we added two to it and flipped it. In fact for -1 these operations are
-     * identical. We only flipped, but since skewing is required (in the sense that
-     * the skew must be 1 or 2, never zero) and flipping is not, we need to change
-     * our flags to claim that we only skewed. */
-    global_sign = rustsecp256k1_v0_4_1_scalar_cond_negate(&s, flip);
-    global_sign *= not_neg_one * 2 - 1;
-    skew = 1 << bit;
+     * 128 bits). If we negate, the parity of our number flips, affecting whether
+     * we want to add to the scalar to ensure that it's odd. */
+    flip = rustsecp256k1_v0_5_0_scalar_is_high(&s);
+    skew = flip ^ rustsecp256k1_v0_5_0_scalar_is_even(&s);
+    rustsecp256k1_v0_5_0_scalar_cadd_bit(&s, 0, skew);
+    global_sign = rustsecp256k1_v0_5_0_scalar_cond_negate(&s, flip);
 
     /* 4 */
-    u_last = rustsecp256k1_v0_4_1_scalar_shr_int(&s, w);
+    u_last = rustsecp256k1_v0_5_0_scalar_shr_int(&s, w);
     do {
         int even;
 
         /* 4.1 4.4 */
-        u = rustsecp256k1_v0_4_1_scalar_shr_int(&s, w);
+        u = rustsecp256k1_v0_5_0_scalar_shr_int(&s, w);
         /* 4.2 */
         even = ((u & 1) == 0);
         /* In contrast to the original algorithm, u_last is always > 0 and
@@ -129,21 +128,21 @@ static int rustsecp256k1_v0_4_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_4_1
     } while (word * w < size);
     wnaf[word] = u * global_sign;
 
-    VERIFY_CHECK(rustsecp256k1_v0_4_1_scalar_is_zero(&s));
+    VERIFY_CHECK(rustsecp256k1_v0_5_0_scalar_is_zero(&s));
     VERIFY_CHECK(word == WNAF_SIZE_BITS(size, w));
     return skew;
 }
 
-static void rustsecp256k1_v0_4_1_ecmult_const(rustsecp256k1_v0_4_1_gej *r, const rustsecp256k1_v0_4_1_ge *a, const rustsecp256k1_v0_4_1_scalar *scalar, int size) {
-    rustsecp256k1_v0_4_1_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
-    rustsecp256k1_v0_4_1_ge tmpa;
-    rustsecp256k1_v0_4_1_fe Z;
+static void rustsecp256k1_v0_5_0_ecmult_const(rustsecp256k1_v0_5_0_gej *r, const rustsecp256k1_v0_5_0_ge *a, const rustsecp256k1_v0_5_0_scalar *scalar, int size) {
+    rustsecp256k1_v0_5_0_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_5_0_ge tmpa;
+    rustsecp256k1_v0_5_0_fe Z;
 
     int skew_1;
-    rustsecp256k1_v0_4_1_ge pre_a_lam[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_5_0_ge pre_a_lam[ECMULT_TABLE_SIZE(WINDOW_A)];
     int wnaf_lam[1 + WNAF_SIZE(WINDOW_A - 1)];
     int skew_lam;
-    rustsecp256k1_v0_4_1_scalar q_1, q_lam;
+    rustsecp256k1_v0_5_0_scalar q_1, q_lam;
     int wnaf_1[1 + WNAF_SIZE(WINDOW_A - 1)];
 
     int i;
@@ -153,12 +152,12 @@ static void rustsecp256k1_v0_4_1_ecmult_const(rustsecp256k1_v0_4_1_gej *r, const
     if (size > 128) {
         rsize = 128;
         /* split q into q_1 and q_lam (where q = q_1 + q_lam*lambda, and q_1 and q_lam are ~128 bit) */
-        rustsecp256k1_v0_4_1_scalar_split_lambda(&q_1, &q_lam, scalar);
-        skew_1   = rustsecp256k1_v0_4_1_wnaf_const(wnaf_1,   &q_1,   WINDOW_A - 1, 128);
-        skew_lam = rustsecp256k1_v0_4_1_wnaf_const(wnaf_lam, &q_lam, WINDOW_A - 1, 128);
+        rustsecp256k1_v0_5_0_scalar_split_lambda(&q_1, &q_lam, scalar);
+        skew_1   = rustsecp256k1_v0_5_0_wnaf_const(wnaf_1,   &q_1,   WINDOW_A - 1, 128);
+        skew_lam = rustsecp256k1_v0_5_0_wnaf_const(wnaf_lam, &q_lam, WINDOW_A - 1, 128);
     } else
     {
-        skew_1   = rustsecp256k1_v0_4_1_wnaf_const(wnaf_1, scalar, WINDOW_A - 1, size);
+        skew_1   = rustsecp256k1_v0_5_0_wnaf_const(wnaf_1, scalar, WINDOW_A - 1, size);
         skew_lam = 0;
     }
 
@@ -168,14 +167,15 @@ static void rustsecp256k1_v0_4_1_ecmult_const(rustsecp256k1_v0_4_1_gej *r, const
      * that the Z coordinate was 1, use affine addition formulae, and correct
      * the Z coordinate of the result once at the end.
      */
-    rustsecp256k1_v0_4_1_gej_set_ge(r, a);
-    rustsecp256k1_v0_4_1_ecmult_odd_multiples_table_globalz_windowa(pre_a, &Z, r);
+    VERIFY_CHECK(!a->infinity);
+    rustsecp256k1_v0_5_0_gej_set_ge(r, a);
+    rustsecp256k1_v0_5_0_ecmult_odd_multiples_table_globalz_windowa(pre_a, &Z, r);
     for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
-        rustsecp256k1_v0_4_1_fe_normalize_weak(&pre_a[i].y);
+        rustsecp256k1_v0_5_0_fe_normalize_weak(&pre_a[i].y);
     }
     if (size > 128) {
         for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
-            rustsecp256k1_v0_4_1_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
+            rustsecp256k1_v0_5_0_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
         }
 
     }
@@ -186,69 +186,49 @@ static void rustsecp256k1_v0_4_1_ecmult_const(rustsecp256k1_v0_4_1_gej *r, const
     i = wnaf_1[WNAF_SIZE_BITS(rsize, WINDOW_A - 1)];
     VERIFY_CHECK(i != 0);
     ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a, i, WINDOW_A);
-    rustsecp256k1_v0_4_1_gej_set_ge(r, &tmpa);
+    rustsecp256k1_v0_5_0_gej_set_ge(r, &tmpa);
     if (size > 128) {
         i = wnaf_lam[WNAF_SIZE_BITS(rsize, WINDOW_A - 1)];
         VERIFY_CHECK(i != 0);
         ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a_lam, i, WINDOW_A);
-        rustsecp256k1_v0_4_1_gej_add_ge(r, r, &tmpa);
+        rustsecp256k1_v0_5_0_gej_add_ge(r, r, &tmpa);
     }
     /* remaining loop iterations */
     for (i = WNAF_SIZE_BITS(rsize, WINDOW_A - 1) - 1; i >= 0; i--) {
         int n;
         int j;
         for (j = 0; j < WINDOW_A - 1; ++j) {
-            rustsecp256k1_v0_4_1_gej_double(r, r);
+            rustsecp256k1_v0_5_0_gej_double(r, r);
         }
 
         n = wnaf_1[i];
         ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a, n, WINDOW_A);
         VERIFY_CHECK(n != 0);
-        rustsecp256k1_v0_4_1_gej_add_ge(r, r, &tmpa);
+        rustsecp256k1_v0_5_0_gej_add_ge(r, r, &tmpa);
         if (size > 128) {
             n = wnaf_lam[i];
             ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a_lam, n, WINDOW_A);
             VERIFY_CHECK(n != 0);
-            rustsecp256k1_v0_4_1_gej_add_ge(r, r, &tmpa);
+            rustsecp256k1_v0_5_0_gej_add_ge(r, r, &tmpa);
         }
     }
-
-    rustsecp256k1_v0_4_1_fe_mul(&r->z, &r->z, &Z);
 
     {
         /* Correct for wNAF skew */
-        rustsecp256k1_v0_4_1_ge correction = *a;
-        rustsecp256k1_v0_4_1_ge_storage correction_1_stor;
-        rustsecp256k1_v0_4_1_ge_storage correction_lam_stor;
-        rustsecp256k1_v0_4_1_ge_storage a2_stor;
-        rustsecp256k1_v0_4_1_gej tmpj;
-        rustsecp256k1_v0_4_1_gej_set_ge(&tmpj, &correction);
-        rustsecp256k1_v0_4_1_gej_double_var(&tmpj, &tmpj, NULL);
-        rustsecp256k1_v0_4_1_ge_set_gej(&correction, &tmpj);
-        rustsecp256k1_v0_4_1_ge_to_storage(&correction_1_stor, a);
-        if (size > 128) {
-            rustsecp256k1_v0_4_1_ge_to_storage(&correction_lam_stor, a);
-        }
-        rustsecp256k1_v0_4_1_ge_to_storage(&a2_stor, &correction);
+        rustsecp256k1_v0_5_0_gej tmpj;
 
-        /* For odd numbers this is 2a (so replace it), for even ones a (so no-op) */
-        rustsecp256k1_v0_4_1_ge_storage_cmov(&correction_1_stor, &a2_stor, skew_1 == 2);
-        if (size > 128) {
-            rustsecp256k1_v0_4_1_ge_storage_cmov(&correction_lam_stor, &a2_stor, skew_lam == 2);
-        }
-
-        /* Apply the correction */
-        rustsecp256k1_v0_4_1_ge_from_storage(&correction, &correction_1_stor);
-        rustsecp256k1_v0_4_1_ge_neg(&correction, &correction);
-        rustsecp256k1_v0_4_1_gej_add_ge(r, r, &correction);
+        rustsecp256k1_v0_5_0_ge_neg(&tmpa, &pre_a[0]);
+        rustsecp256k1_v0_5_0_gej_add_ge(&tmpj, r, &tmpa);
+        rustsecp256k1_v0_5_0_gej_cmov(r, &tmpj, skew_1);
 
         if (size > 128) {
-            rustsecp256k1_v0_4_1_ge_from_storage(&correction, &correction_lam_stor);
-            rustsecp256k1_v0_4_1_ge_neg(&correction, &correction);
-            rustsecp256k1_v0_4_1_ge_mul_lambda(&correction, &correction);
-            rustsecp256k1_v0_4_1_gej_add_ge(r, r, &correction);
+            rustsecp256k1_v0_5_0_ge_neg(&tmpa, &pre_a_lam[0]);
+            rustsecp256k1_v0_5_0_gej_add_ge(&tmpj, r, &tmpa);
+            rustsecp256k1_v0_5_0_gej_cmov(r, &tmpj, skew_lam);
         }
     }
+
+    rustsecp256k1_v0_5_0_fe_mul(&r->z, &r->z, &Z);
 }
 
 #endif /* SECP256K1_ECMULT_CONST_IMPL_H */

@@ -19,11 +19,38 @@
 typedef struct {
     void (*fn)(const char *text, void* data);
     const void* data;
-} rustsecp256k1_v0_4_1_callback;
+} rustsecp256k1_v0_5_0_callback;
 
-static SECP256K1_INLINE void rustsecp256k1_v0_4_1_callback_call(const rustsecp256k1_v0_4_1_callback * const cb, const char * const text) {
+static SECP256K1_INLINE void rustsecp256k1_v0_5_0_callback_call(const rustsecp256k1_v0_5_0_callback * const cb, const char * const text) {
     cb->fn(text, (void*)cb->data);
 }
+
+#ifndef USE_EXTERNAL_DEFAULT_CALLBACKS
+static void rustsecp256k1_v0_5_0_default_illegal_callback_fn(const char* str, void* data) {
+    (void)data;
+    fprintf(stderr, "[libsecp256k1] illegal argument: %s\n", str);
+    abort();
+}
+static void rustsecp256k1_v0_5_0_default_error_callback_fn(const char* str, void* data) {
+    (void)data;
+    fprintf(stderr, "[libsecp256k1] internal consistency check failed: %s\n", str);
+    abort();
+}
+#else
+void rustsecp256k1_v0_5_0_default_illegal_callback_fn(const char* str, void* data);
+void rustsecp256k1_v0_5_0_default_error_callback_fn(const char* str, void* data);
+#endif
+
+static const rustsecp256k1_v0_5_0_callback default_illegal_callback = {
+    rustsecp256k1_v0_5_0_default_illegal_callback_fn,
+    NULL
+};
+
+static const rustsecp256k1_v0_5_0_callback default_error_callback = {
+    rustsecp256k1_v0_5_0_default_error_callback_fn,
+    NULL
+};
+
 
 #ifdef DETERMINISTIC
 #define TEST_FAILURE(msg) do { \
@@ -99,36 +126,6 @@ static SECP256K1_INLINE void rustsecp256k1_v0_4_1_callback_call(const rustsecp25
 
 #define ROUND_TO_ALIGN(size) ((((size) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT)
 
-/* Assume there is a contiguous memory object with bounds [base, base + max_size)
- * of which the memory range [base, *prealloc_ptr) is already allocated for usage,
- * where *prealloc_ptr is an aligned pointer. In that setting, this functions
- * reserves the subobject [*prealloc_ptr, *prealloc_ptr + alloc_size) of
- * alloc_size bytes by increasing *prealloc_ptr accordingly, taking into account
- * alignment requirements.
- *
- * The function returns an aligned pointer to the newly allocated subobject.
- *
- * This is useful for manual memory management: if we're simply given a block
- * [base, base + max_size), the caller can use this function to allocate memory
- * in this block and keep track of the current allocation state with *prealloc_ptr.
- *
- * It is VERIFY_CHECKed that there is enough space left in the memory object and
- * *prealloc_ptr is aligned relative to base.
- */
-static SECP256K1_INLINE void *manual_alloc(void** prealloc_ptr, size_t alloc_size, void* base, size_t max_size) {
-    size_t aligned_alloc_size = ROUND_TO_ALIGN(alloc_size);
-    void* ret;
-    VERIFY_CHECK(prealloc_ptr != NULL);
-    VERIFY_CHECK(*prealloc_ptr != NULL);
-    VERIFY_CHECK(base != NULL);
-    VERIFY_CHECK((unsigned char*)*prealloc_ptr >= (unsigned char*)base);
-    VERIFY_CHECK(((unsigned char*)*prealloc_ptr - (unsigned char*)base) % ALIGNMENT == 0);
-    VERIFY_CHECK((unsigned char*)*prealloc_ptr - (unsigned char*)base + aligned_alloc_size <= max_size);
-    ret = *prealloc_ptr;
-    *prealloc_ptr = (unsigned char*)*prealloc_ptr + aligned_alloc_size;
-    return ret;
-}
-
 /* Macro for restrict, when available and not in a VERIFY build. */
 #if defined(SECP256K1_BUILD) && defined(VERIFY)
 # define SECP256K1_RESTRICT
@@ -186,7 +183,7 @@ static SECP256K1_INLINE void *manual_alloc(void** prealloc_ptr, size_t alloc_siz
 #endif
 
 /* Zero memory if flag == 1. Flag must be 0 or 1. Constant time. */
-static SECP256K1_INLINE void rustsecp256k1_v0_4_1_memczero(void *s, size_t len, int flag) {
+static SECP256K1_INLINE void rustsecp256k1_v0_5_0_memczero(void *s, size_t len, int flag) {
     unsigned char *p = (unsigned char *)s;
     /* Access flag with a volatile-qualified lvalue.
        This prevents clang from figuring out (after inlining) that flag can
@@ -205,7 +202,7 @@ static SECP256K1_INLINE void rustsecp256k1_v0_4_1_memczero(void *s, size_t len, 
  * We use this to avoid possible compiler bugs with memcmp, e.g.
  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95189
  */
-static SECP256K1_INLINE int rustsecp256k1_v0_4_1_memcmp_var(const void *s1, const void *s2, size_t n) {
+static SECP256K1_INLINE int rustsecp256k1_v0_5_0_memcmp_var(const void *s1, const void *s2, size_t n) {
     const unsigned char *p1 = s1, *p2 = s2;
     size_t i;
 
@@ -219,7 +216,7 @@ static SECP256K1_INLINE int rustsecp256k1_v0_4_1_memcmp_var(const void *s1, cons
 }
 
 /** If flag is true, set *r equal to *a; otherwise leave it. Constant-time.  Both *r and *a must be initialized and non-negative.*/
-static SECP256K1_INLINE void rustsecp256k1_v0_4_1_int_cmov(int *r, const int *a, int flag) {
+static SECP256K1_INLINE void rustsecp256k1_v0_5_0_int_cmov(int *r, const int *a, int flag) {
     unsigned int mask0, mask1, r_masked, a_masked;
     /* Access flag with a volatile-qualified lvalue.
        This prevents clang from figuring out (after inlining) that flag can
@@ -266,8 +263,8 @@ SECP256K1_GNUC_EXT typedef __int128 int128_t;
 
 /* Determine the number of trailing zero bits in a (non-zero) 32-bit x.
  * This function is only intended to be used as fallback for
- * rustsecp256k1_v0_4_1_ctz32_var, but permits it to be tested separately. */
-static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz32_var_debruijn(uint32_t x) {
+ * rustsecp256k1_v0_5_0_ctz32_var, but permits it to be tested separately. */
+static SECP256K1_INLINE int rustsecp256k1_v0_5_0_ctz32_var_debruijn(uint32_t x) {
     static const uint8_t debruijn[32] = {
         0x00, 0x01, 0x02, 0x18, 0x03, 0x13, 0x06, 0x19, 0x16, 0x04, 0x14, 0x0A,
         0x10, 0x07, 0x0C, 0x1A, 0x1F, 0x17, 0x12, 0x05, 0x15, 0x09, 0x0F, 0x0B,
@@ -278,8 +275,8 @@ static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz32_var_debruijn(uint32_t x) 
 
 /* Determine the number of trailing zero bits in a (non-zero) 64-bit x.
  * This function is only intended to be used as fallback for
- * rustsecp256k1_v0_4_1_ctz64_var, but permits it to be tested separately. */
-static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz64_var_debruijn(uint64_t x) {
+ * rustsecp256k1_v0_5_0_ctz64_var, but permits it to be tested separately. */
+static SECP256K1_INLINE int rustsecp256k1_v0_5_0_ctz64_var_debruijn(uint64_t x) {
     static const uint8_t debruijn[64] = {
         0, 1, 2, 53, 3, 7, 54, 27, 4, 38, 41, 8, 34, 55, 48, 28,
         62, 5, 39, 46, 44, 42, 22, 9, 24, 35, 59, 56, 49, 18, 29, 11,
@@ -290,7 +287,7 @@ static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz64_var_debruijn(uint64_t x) 
 }
 
 /* Determine the number of trailing zero bits in a (non-zero) 32-bit x. */
-static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz32_var(uint32_t x) {
+static SECP256K1_INLINE int rustsecp256k1_v0_5_0_ctz32_var(uint32_t x) {
     VERIFY_CHECK(x != 0);
 #if (__has_builtin(__builtin_ctz) || SECP256K1_GNUC_PREREQ(3,4))
     /* If the unsigned type is sufficient to represent the largest uint32_t, consider __builtin_ctz. */
@@ -303,12 +300,12 @@ static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz32_var(uint32_t x) {
     return __builtin_ctzl(x);
 #else
     /* If no suitable CTZ builtin is available, use a (variable time) software emulation. */
-    return rustsecp256k1_v0_4_1_ctz32_var_debruijn(x);
+    return rustsecp256k1_v0_5_0_ctz32_var_debruijn(x);
 #endif
 }
 
 /* Determine the number of trailing zero bits in a (non-zero) 64-bit x. */
-static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz64_var(uint64_t x) {
+static SECP256K1_INLINE int rustsecp256k1_v0_5_0_ctz64_var(uint64_t x) {
     VERIFY_CHECK(x != 0);
 #if (__has_builtin(__builtin_ctzl) || SECP256K1_GNUC_PREREQ(3,4))
     /* If the unsigned long type is sufficient to represent the largest uint64_t, consider __builtin_ctzl. */
@@ -321,7 +318,7 @@ static SECP256K1_INLINE int rustsecp256k1_v0_4_1_ctz64_var(uint64_t x) {
     return __builtin_ctzll(x);
 #else
     /* If no suitable CTZ builtin is available, use a (variable time) software emulation. */
-    return rustsecp256k1_v0_4_1_ctz64_var_debruijn(x);
+    return rustsecp256k1_v0_5_0_ctz64_var_debruijn(x);
 #endif
 }
 
