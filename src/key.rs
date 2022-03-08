@@ -35,6 +35,12 @@ use crate::schnorr;
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
+/// # Serde support
+///
+/// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
+/// of 32 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
+///
 /// # Examples
 ///
 /// Basic usage:
@@ -47,6 +53,8 @@ use crate::schnorr;
 /// let secret_key = SecretKey::new(&mut rand::thread_rng());
 /// # }
 /// ```
+/// [`bincode`]: https://docs.rs/bincode
+/// [`cbor`]: https://docs.rs/cbor
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_display_secret!(SecretKey);
@@ -70,6 +78,12 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 
 /// A Secp256k1 public key, used for verification of signatures.
 ///
+/// # Serde support
+///
+/// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
+/// of 33 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
+///
 /// # Examples
 ///
 /// Basic usage:
@@ -83,6 +97,8 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
+/// [`bincode`]: https://docs.rs/bincode
+/// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
@@ -1029,6 +1045,12 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
 
 /// An x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
 ///
+/// # Serde support
+///
+/// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
+/// of 32 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
+///
 /// # Examples
 ///
 /// Basic usage:
@@ -1042,6 +1064,8 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
 /// let xonly = XOnlyPublicKey::from_keypair(&key_pair);
 /// # }
 /// ```
+/// [`bincode`]: https://docs.rs/bincode
+/// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
 
