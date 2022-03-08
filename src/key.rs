@@ -715,13 +715,10 @@ impl Ord for PublicKey {
 ///
 /// # Serde support
 ///
-/// [`Serialize`] and [`Deserialize`] are not implemented for this type, even with the `serde`
-/// feature active. This is due to security considerations, see the [`serde_keypair`] documentation
-/// for details.
-///
-/// If the `serde` and `global-context` features are active `KeyPair`s can be serialized and
-/// deserialized by annotating them with `#[serde(with = "secp256k1::serde_keypair")]`
-/// inside structs or enums for which [`Serialize`] and [`Deserialize`] are being derived.
+/// Implements de/serialization with the `serde` and_`global-context` features enabled. Serializes
+/// the secret bytes only. We treat the byte value as a tuple of 32 `u8`s for non-human-readable
+/// formats. This representation is optimal for for some formats (e.g. [`bincode`]) however other
+/// formats may be less optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
 ///
 /// # Examples
 ///
@@ -736,8 +733,8 @@ impl Ord for PublicKey {
 /// let key_pair = KeyPair::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
-/// [`Deserialize`]: serde::Deserialize
-/// [`Serialize`]: serde::Serialize
+/// [`bincode`]: https://docs.rs/bincode
+/// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
