@@ -670,7 +670,6 @@ impl<T> CPtr for [T] {
 #[cfg(fuzzing)]
 mod fuzz_dummy {
     use super::*;
-    use core::sync::atomic::{AtomicUsize, Ordering};
 
     #[cfg(rust_secp_no_symbol_renaming)] compile_error!("We do not support fuzzing with rust_secp_no_symbol_renaming");
 
@@ -680,20 +679,92 @@ mod fuzz_dummy {
         fn rustsecp256k1_v0_4_1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
     }
 
+    mod once {
+        use core::sync::atomic::{AtomicUsize, Ordering};
+
+        const NONE: usize = 0;
+        const WORKING: usize = 1;
+        const DONE: usize = 2;
+
+        pub(crate) struct Once(AtomicUsize);
+
+        impl Once {
+            pub(crate) const INIT: Once = Once(AtomicUsize::new(NONE));
+
+            pub(crate) fn run(&self, f: impl FnOnce()) {
+                // Acquire ordering because if it's DONE the following reads must go after this load.
+                let mut have_ctx = self.0.load(Ordering::Acquire);
+                if have_ctx == NONE {
+                    // Ordering: on success we're only signalling to other thread that work is in progress
+                    // without transferring other data, so it should be Relaxed, on failure the value may be DONE,
+                    // so we want to Acquire to safely proceed in that case.
+                    // However compare_exchange doesn't allow failure ordering to be stronger than success
+                    // so both are Acquire.
+                    match self.0.compare_exchange(NONE, WORKING, Ordering::Acquire, Ordering::Acquire) {
+                        Ok(_) => {
+                            f();
+                            // We wrote data in memory that other threads may read so we need Release
+                            self.0.store(DONE, Ordering::Release);
+                            return;
+                        },
+                        Err(value) => have_ctx = value,
+                    }
+                }
+                while have_ctx != DONE {
+                    // Another thread is building, just busy-loop until they're done.
+                    assert_eq!(have_ctx, WORKING);
+                    // This thread will read whatever the other thread wrote so this needs to be Acquire.
+                    have_ctx = self.0.load(Ordering::Acquire);
+                    #[cfg(feature = "std")]
+                    ::std::thread::yield_now();
+                }
+            }
+        }
+
+        #[cfg(all(test, feature = "std"))]
+        mod tests {
+            use super::Once;
+
+            #[test]
+            fn test_once() {
+                use std::cell::UnsafeCell;
+                static ONCE: Once = Once::INIT;
+                struct PretendSync(UnsafeCell<u32>);
+
+                static VALUE: PretendSync = PretendSync(UnsafeCell::new(42));
+                unsafe impl Sync for PretendSync {}
+
+                let threads = (0..5).map(|_| ::std::thread::spawn(|| {
+                    ONCE.run(|| unsafe {
+                        assert_eq!(*VALUE.0.get(), 42);
+                        *VALUE.0.get() = 47;
+                    });
+                    unsafe {
+                        assert_eq!(*VALUE.0.get(), 47);
+                    }
+                }))
+                .collect::<Vec<_>>();
+                for thread in threads {
+                    thread.join().unwrap();
+                }
+                unsafe {
+                    assert_eq!(*VALUE.0.get(), 47);
+                }
+            }
+        }
+    }
+
     #[cfg(feature = "lowmemory")]
     const CTX_SIZE: usize = 1024 * 65;
     #[cfg(not(feature = "lowmemory"))]
     const CTX_SIZE: usize = 1024 * (1024 + 128);
     // Contexts
     pub unsafe fn secp256k1_context_preallocated_size(flags: c_uint) -> size_t {
-        assert!(rustsecp256k1_v0_4_1_context_preallocated_size(flags) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
+        assert!(rustsecp256k1_v0_4_1_context_preallocated_size(flags) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
         CTX_SIZE
     }
 
-    static HAVE_PREALLOCATED_CONTEXT: AtomicUsize = AtomicUsize::new(0);
-    const HAVE_CONTEXT_NONE: usize = 0;
-    const HAVE_CONTEXT_WORKING: usize = 1;
-    const HAVE_CONTEXT_DONE: usize = 2;
+    static HAVE_PREALLOCATED_CONTEXT: once::Once = once::Once::INIT;
     static mut PREALLOCATED_CONTEXT: [u8; CTX_SIZE] = [0; CTX_SIZE];
     pub unsafe fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context {
         // While applications should generally avoid creating too many contexts, sometimes fuzzers
@@ -701,39 +772,24 @@ mod fuzz_dummy {
         // avoid being overly slow here. We do so by having a static context and copying it into
         // new buffers instead of recalculating it. Because we shouldn't rely on std, we use a
         // simple hand-written OnceFlag built out of an atomic to gate the global static.
-        let mut have_ctx = HAVE_PREALLOCATED_CONTEXT.load(Ordering::Relaxed);
-        while have_ctx != HAVE_CONTEXT_DONE {
-            if have_ctx == HAVE_CONTEXT_NONE {
-                have_ctx = HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_WORKING, Ordering::AcqRel);
-                if have_ctx == HAVE_CONTEXT_NONE {
-                    assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
-                    assert_eq!(rustsecp256k1_v0_4_1_context_preallocated_create(
-                            PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
-                            SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
-                        PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
-                    assert_eq!(HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_DONE, Ordering::AcqRel),
-                        HAVE_CONTEXT_WORKING);
-                } else if have_ctx == HAVE_CONTEXT_DONE {
-                    // Another thread finished while we were swapping.
-                    HAVE_PREALLOCATED_CONTEXT.store(HAVE_CONTEXT_DONE, Ordering::Release);
-                }
-            } else {
-                // Another thread is building, just busy-loop until they're done.
-                assert_eq!(have_ctx, HAVE_CONTEXT_WORKING);
-                have_ctx = HAVE_PREALLOCATED_CONTEXT.load(Ordering::Acquire);
-                #[cfg(feature = "std")]
-                std::thread::yield_now();
-            }
-        }
+
+        HAVE_PREALLOCATED_CONTEXT.run(|| {
+            assert!(rustsecp256k1_v0_4_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + core::mem::size_of::<c_uint>() <= CTX_SIZE);
+            assert_eq!(rustsecp256k1_v0_4_1_context_preallocated_create(
+                    PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
+                    SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
+                PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
+        });
+
         ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
-        let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
         (ptr as *mut c_uint).write(flags);
         prealloc as *mut Context
     }
     pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *const Context) -> size_t { CTX_SIZE }
     pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
-        let orig_ptr = (cx as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
-        let new_ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        let orig_ptr = (cx as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
+        let new_ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
         let flags = (orig_ptr as *mut c_uint).read();
         (new_ptr as *mut c_uint).write(flags);
         rustsecp256k1_v0_4_1_context_preallocated_clone(cx, prealloc)
@@ -752,7 +808,7 @@ mod fuzz_dummy {
         let cx_flags = if cx == secp256k1_context_no_precomp {
             1
         } else {
-            let ptr = (cx as *const u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+            let ptr = (cx as *const u8).add(CTX_SIZE).sub(core::mem::size_of::<c_uint>());
             (ptr as *const c_uint).read()
         };
         assert_eq!(cx_flags & 1, 1); // SECP256K1_FLAGS_TYPE_CONTEXT
