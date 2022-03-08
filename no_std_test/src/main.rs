@@ -133,8 +133,8 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
         let public_key = PublicKey::from_secret_key(&secp_alloc, &secret_key);
         let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 
-        let sig = secp_alloc.sign(&message, &secret_key);
-        assert!(secp_alloc.verify(&message, &sig, &public_key).is_ok());
+        let sig = secp_alloc.sign_ecdsa(&message, &secret_key);
+        assert!(secp_alloc.verify_ecdsa(&message, &sig, &public_key).is_ok());
         unsafe { libc::printf("Verified alloc Successfully!\n\0".as_ptr() as _) };
     }
 
