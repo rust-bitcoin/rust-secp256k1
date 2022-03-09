@@ -57,9 +57,9 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     cargo run --example generate_keys --features=std,rand-std
 fi
 
-# Docs
+# Build the docs if told to (this only works with the nightly toolchain)
 if [ "$DO_DOCS" = true ]; then
-    cargo doc --all --features="$FEATURES"
+    RUSTDOCFLAGS="--cfg docsrs" cargo doc --all --features="$FEATURES"
 fi
 
 # Webassembly stuff
