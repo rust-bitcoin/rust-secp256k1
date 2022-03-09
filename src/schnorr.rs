@@ -106,7 +106,7 @@ impl<C: Signing> Secp256k1<C> {
         &self,
         msg: &Message,
         keypair: &KeyPair,
-        nonce_data: *const ffi::types::c_void,
+        nonce_data: *const ffi::types::c_uchar,
     ) -> Signature {
         unsafe {
             let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
@@ -117,8 +117,7 @@ impl<C: Signing> Secp256k1<C> {
                     sig.as_mut_c_ptr(),
                     msg.as_c_ptr(),
                     keypair.as_ptr(),
-                    ffi::secp256k1_nonce_function_bip340,
-                    nonce_data
+                    nonce_data,
                 )
             );
 
@@ -184,7 +183,7 @@ impl<C: Signing> Secp256k1<C> {
         self.sign_schnorr_helper(
             msg,
             keypair,
-            aux_rand.as_c_ptr() as *const ffi::types::c_void,
+            aux_rand.as_c_ptr() as *const ffi::types::c_uchar,
         )
     }
 
@@ -214,7 +213,7 @@ impl<C: Signing> Secp256k1<C> {
     ) -> Signature {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
-        self.sign_schnorr_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_void)
+        self.sign_schnorr_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_uchar)
     }
 }
 
@@ -242,6 +241,7 @@ impl<C: Verification> Secp256k1<C> {
                 self.ctx,
                 sig.as_c_ptr(),
                 msg.as_c_ptr(),
+                32,
                 pubkey.as_c_ptr(),
             );
 

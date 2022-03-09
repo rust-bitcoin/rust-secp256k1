@@ -4,16 +4,14 @@
  * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
  ***********************************************************************/
 
-#include <string.h>
+#ifndef SECP256K1_MODULE_ECDH_BENCH_H
+#define SECP256K1_MODULE_ECDH_BENCH_H
 
-#include "../include/secp256k1.h"
 #include "../include/secp256k1_ecdh.h"
-#include "util.h"
-#include "bench.h"
 
 typedef struct {
-    rustsecp256k1_v0_4_1_context *ctx;
-    rustsecp256k1_v0_4_1_pubkey point;
+    rustsecp256k1_v0_5_0_context *ctx;
+    rustsecp256k1_v0_5_0_pubkey point;
     unsigned char scalar[32];
 } bench_ecdh_data;
 
@@ -31,7 +29,7 @@ static void bench_ecdh_setup(void* arg) {
     for (i = 0; i < 32; i++) {
         data->scalar[i] = i + 1;
     }
-    CHECK(rustsecp256k1_v0_4_1_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
+    CHECK(rustsecp256k1_v0_5_0_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
 }
 
 static void bench_ecdh(void* arg, int iters) {
@@ -40,20 +38,20 @@ static void bench_ecdh(void* arg, int iters) {
     bench_ecdh_data *data = (bench_ecdh_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        CHECK(rustsecp256k1_v0_4_1_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_5_0_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
     }
 }
 
-int main(void) {
+void run_ecdh_bench(int iters, int argc, char** argv) {
     bench_ecdh_data data;
-
-    int iters = get_iters(20000);
+    int d = argc == 1;
 
     /* create a context with no capabilities */
-    data.ctx = rustsecp256k1_v0_4_1_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
+    data.ctx = rustsecp256k1_v0_5_0_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
 
-    run_benchmark("ecdh", bench_ecdh, bench_ecdh_setup, NULL, &data, 10, iters);
+    if (d || have_flag(argc, argv, "ecdh")) run_benchmark("ecdh", bench_ecdh, bench_ecdh_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_4_1_context_destroy(data.ctx);
-    return 0;
+    rustsecp256k1_v0_5_0_context_destroy(data.ctx);
 }
+
+#endif /* SECP256K1_MODULE_ECDH_BENCH_H */

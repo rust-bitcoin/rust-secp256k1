@@ -8,7 +8,7 @@
 
 #include "lax_der_parsing.h"
 
-int rustsecp256k1_v0_4_1_ecdsa_signature_parse_der_lax(const rustsecp256k1_v0_4_1_context* ctx, rustsecp256k1_v0_4_1_ecdsa_signature* sig, const unsigned char *input, size_t inputlen) {
+int rustsecp256k1_v0_5_0_ecdsa_signature_parse_der_lax(const rustsecp256k1_v0_5_0_context* ctx, rustsecp256k1_v0_5_0_ecdsa_signature* sig, const unsigned char *input, size_t inputlen) {
     size_t rpos, rlen, spos, slen;
     size_t pos = 0;
     size_t lenbyte;
@@ -16,7 +16,7 @@ int rustsecp256k1_v0_4_1_ecdsa_signature_parse_der_lax(const rustsecp256k1_v0_4_
     int overflow = 0;
 
     /* Hack to initialize sig with a correctly-parsed but invalid signature. */
-    rustsecp256k1_v0_4_1_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
+    rustsecp256k1_v0_5_0_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
 
     /* Sequence tag byte */
     if (pos == inputlen || input[pos] != 0x30) {
@@ -120,7 +120,7 @@ int rustsecp256k1_v0_4_1_ecdsa_signature_parse_der_lax(const rustsecp256k1_v0_4_
     /* Copy R value */
     if (rlen > 32) {
         overflow = 1;
-    } else {
+    } else if (rlen) {
         memcpy(tmpsig + 32 - rlen, input + rpos, rlen);
     }
 
@@ -132,16 +132,16 @@ int rustsecp256k1_v0_4_1_ecdsa_signature_parse_der_lax(const rustsecp256k1_v0_4_
     /* Copy S value */
     if (slen > 32) {
         overflow = 1;
-    } else {
+    } else if (slen) {
         memcpy(tmpsig + 64 - slen, input + spos, slen);
     }
 
     if (!overflow) {
-        overflow = !rustsecp256k1_v0_4_1_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
+        overflow = !rustsecp256k1_v0_5_0_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
     }
     if (overflow) {
         memset(tmpsig, 0, 64);
-        rustsecp256k1_v0_4_1_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
+        rustsecp256k1_v0_5_0_ecdsa_signature_parse_compact(ctx, sig, tmpsig);
     }
     return 1;
 }

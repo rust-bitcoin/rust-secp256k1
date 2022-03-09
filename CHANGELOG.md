@@ -1,3 +1,11 @@
+# 0.22.0 - 2022-03-08
+
+* Disable `bitcoin_hashes/std` by default; [add `bitcoin-hashes-std` feature to re-enable it](https://github.com/rust-bitcoin/rust-secp256k1/pull/410)
+* Rename [more `schnorrsig` methods to `schnorr`](https://github.com/rust-bitcoin/rust-secp256k1/pull/411)
+* [Obfuscate `SharedSecret` string serialization](https://github.com/rust-bitcoin/rust-secp256k1/pull/396)
+* [Simplify `SharedSecret` API](https://github.com/rust-bitcoin/rust-secp256k1/pull/402) to use a 32-byte buffer; users of custom hashes should now use bare arrays rather than this type.
+* Change [serde serialization of `Parity`](https://github.com/rust-bitcoin/rust-secp256k1/pull/401) from `i32` to `u8`; clean up [error handling](https://github.com/rust-bitcoin/rust-secp256k1/pull/403)
+
 # 0.21.3 - 2022-01-31
 
 * Several documentation improvements ([#366](https://github.com/rust-bitcoin/rust-secp256k1/pull/366), [#365](https://github.com/rust-bitcoin/rust-secp256k1/pull/365), [#373](https://github.com/rust-bitcoin/rust-secp256k1/pull/373), [#381](https://github.com/rust-bitcoin/rust-secp256k1/pull/381), [#369](https://github.com/rust-bitcoin/rust-secp256k1/pull/369), [#389](https://github.com/rust-bitcoin/rust-secp256k1/pull/389), [#391](https://github.com/rust-bitcoin/rust-secp256k1/pull/391), [#397](https://github.com/rust-bitcoin/rust-secp256k1/pull/397), [#399](https://github.com/rust-bitcoin/rust-secp256k1/pull/399), [#340](https://github.com/rust-bitcoin/rust-secp256k1/pull/365))

@@ -35,14 +35,14 @@ void help(char **argv) {
 
 typedef struct {
     /* Setup once in advance */
-    rustsecp256k1_v0_4_1_context* ctx;
-    rustsecp256k1_v0_4_1_scratch_space* scratch;
-    rustsecp256k1_v0_4_1_scalar* scalars;
-    rustsecp256k1_v0_4_1_ge* pubkeys;
-    rustsecp256k1_v0_4_1_gej* pubkeys_gej;
-    rustsecp256k1_v0_4_1_scalar* seckeys;
-    rustsecp256k1_v0_4_1_gej* expected_output;
-    rustsecp256k1_v0_4_1_ecmult_multi_func ecmult_multi;
+    rustsecp256k1_v0_5_0_context* ctx;
+    rustsecp256k1_v0_5_0_scratch_space* scratch;
+    rustsecp256k1_v0_5_0_scalar* scalars;
+    rustsecp256k1_v0_5_0_ge* pubkeys;
+    rustsecp256k1_v0_5_0_gej* pubkeys_gej;
+    rustsecp256k1_v0_5_0_scalar* seckeys;
+    rustsecp256k1_v0_5_0_gej* expected_output;
+    rustsecp256k1_v0_5_0_ecmult_multi_func ecmult_multi;
 
     /* Changes per benchmark */
     size_t count;
@@ -54,7 +54,7 @@ typedef struct {
     size_t offset2;
 
     /* Benchmark output. */
-    rustsecp256k1_v0_4_1_gej* output;
+    rustsecp256k1_v0_5_0_gej* output;
 } bench_data;
 
 /* Hashes x into [0, POINTS) twice and store the result in offset1 and offset2. */
@@ -67,26 +67,26 @@ static void hash_into_offset(bench_data* data, size_t x) {
  * sum(outputs) ?= (sum(scalars_gen) + sum(seckeys)*sum(scalars))*G */
 static void bench_ecmult_teardown_helper(bench_data* data, size_t* seckey_offset, size_t* scalar_offset, size_t* scalar_gen_offset, int iters) {
     int i;
-    rustsecp256k1_v0_4_1_gej sum_output, tmp;
-    rustsecp256k1_v0_4_1_scalar sum_scalars;
+    rustsecp256k1_v0_5_0_gej sum_output, tmp;
+    rustsecp256k1_v0_5_0_scalar sum_scalars;
 
-    rustsecp256k1_v0_4_1_gej_set_infinity(&sum_output);
-    rustsecp256k1_v0_4_1_scalar_clear(&sum_scalars);
+    rustsecp256k1_v0_5_0_gej_set_infinity(&sum_output);
+    rustsecp256k1_v0_5_0_scalar_clear(&sum_scalars);
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_4_1_gej_add_var(&sum_output, &sum_output, &data->output[i], NULL);
+        rustsecp256k1_v0_5_0_gej_add_var(&sum_output, &sum_output, &data->output[i], NULL);
         if (scalar_gen_offset != NULL) {
-            rustsecp256k1_v0_4_1_scalar_add(&sum_scalars, &sum_scalars, &data->scalars[(*scalar_gen_offset+i) % POINTS]);
+            rustsecp256k1_v0_5_0_scalar_add(&sum_scalars, &sum_scalars, &data->scalars[(*scalar_gen_offset+i) % POINTS]);
         }
         if (seckey_offset != NULL) {
-            rustsecp256k1_v0_4_1_scalar s = data->seckeys[(*seckey_offset+i) % POINTS];
-            rustsecp256k1_v0_4_1_scalar_mul(&s, &s, &data->scalars[(*scalar_offset+i) % POINTS]);
-            rustsecp256k1_v0_4_1_scalar_add(&sum_scalars, &sum_scalars, &s);
+            rustsecp256k1_v0_5_0_scalar s = data->seckeys[(*seckey_offset+i) % POINTS];
+            rustsecp256k1_v0_5_0_scalar_mul(&s, &s, &data->scalars[(*scalar_offset+i) % POINTS]);
+            rustsecp256k1_v0_5_0_scalar_add(&sum_scalars, &sum_scalars, &s);
         }
     }
-    rustsecp256k1_v0_4_1_ecmult_gen(&data->ctx->ecmult_gen_ctx, &tmp, &sum_scalars);
-    rustsecp256k1_v0_4_1_gej_neg(&tmp, &tmp);
-    rustsecp256k1_v0_4_1_gej_add_var(&tmp, &tmp, &sum_output, NULL);
-    CHECK(rustsecp256k1_v0_4_1_gej_is_infinity(&tmp));
+    rustsecp256k1_v0_5_0_ecmult_gen(&data->ctx->ecmult_gen_ctx, &tmp, &sum_scalars);
+    rustsecp256k1_v0_5_0_gej_neg(&tmp, &tmp);
+    rustsecp256k1_v0_5_0_gej_add_var(&tmp, &tmp, &sum_output, NULL);
+    CHECK(rustsecp256k1_v0_5_0_gej_is_infinity(&tmp));
 }
 
 static void bench_ecmult_setup(void* arg) {
@@ -101,7 +101,7 @@ static void bench_ecmult_gen(void* arg, int iters) {
     int i;
 
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_4_1_ecmult_gen(&data->ctx->ecmult_gen_ctx, &data->output[i], &data->scalars[(data->offset1+i) % POINTS]);
+        rustsecp256k1_v0_5_0_ecmult_gen(&data->ctx->ecmult_gen_ctx, &data->output[i], &data->scalars[(data->offset1+i) % POINTS]);
     }
 }
 
@@ -115,7 +115,7 @@ static void bench_ecmult_const(void* arg, int iters) {
     int i;
 
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_4_1_ecmult_const(&data->output[i], &data->pubkeys[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], 256);
+        rustsecp256k1_v0_5_0_ecmult_const(&data->output[i], &data->pubkeys[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], 256);
     }
 }
 
@@ -124,46 +124,46 @@ static void bench_ecmult_const_teardown(void* arg, int iters) {
     bench_ecmult_teardown_helper(data, &data->offset1, &data->offset2, NULL, iters);
 }
 
-static void bench_ecmult_1(void* arg, int iters) {
+static void bench_ecmult_1p(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
     int i;
 
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_4_1_ecmult(&data->ctx->ecmult_ctx, &data->output[i], &data->pubkeys_gej[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], NULL);
+        rustsecp256k1_v0_5_0_ecmult(&data->output[i], &data->pubkeys_gej[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], NULL);
     }
 }
 
-static void bench_ecmult_1_teardown(void* arg, int iters) {
+static void bench_ecmult_1p_teardown(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
     bench_ecmult_teardown_helper(data, &data->offset1, &data->offset2, NULL, iters);
 }
 
-static void bench_ecmult_1g(void* arg, int iters) {
+static void bench_ecmult_0p_g(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
-    rustsecp256k1_v0_4_1_scalar zero;
+    rustsecp256k1_v0_5_0_scalar zero;
     int i;
 
-    rustsecp256k1_v0_4_1_scalar_set_int(&zero, 0);
+    rustsecp256k1_v0_5_0_scalar_set_int(&zero, 0);
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_4_1_ecmult(&data->ctx->ecmult_ctx, &data->output[i], NULL, &zero, &data->scalars[(data->offset1+i) % POINTS]);
+        rustsecp256k1_v0_5_0_ecmult(&data->output[i], NULL, &zero, &data->scalars[(data->offset1+i) % POINTS]);
     }
 }
 
-static void bench_ecmult_1g_teardown(void* arg, int iters) {
+static void bench_ecmult_0p_g_teardown(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
     bench_ecmult_teardown_helper(data, NULL, NULL, &data->offset1, iters);
 }
 
-static void bench_ecmult_2g(void* arg, int iters) {
+static void bench_ecmult_1p_g(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
     int i;
 
     for (i = 0; i < iters/2; ++i) {
-        rustsecp256k1_v0_4_1_ecmult(&data->ctx->ecmult_ctx, &data->output[i], &data->pubkeys_gej[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], &data->scalars[(data->offset1+i) % POINTS]);
+        rustsecp256k1_v0_5_0_ecmult(&data->output[i], &data->pubkeys_gej[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], &data->scalars[(data->offset1+i) % POINTS]);
     }
 }
 
-static void bench_ecmult_2g_teardown(void* arg, int iters) {
+static void bench_ecmult_1p_g_teardown(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
     bench_ecmult_teardown_helper(data, &data->offset1, &data->offset2, &data->offset1, iters/2);
 }
@@ -175,22 +175,22 @@ static void run_ecmult_bench(bench_data* data, int iters) {
     sprintf(str, "ecmult_const");
     run_benchmark(str, bench_ecmult_const, bench_ecmult_setup, bench_ecmult_const_teardown, data, 10, iters);
     /* ecmult with non generator point */
-    sprintf(str, "ecmult 1");
-    run_benchmark(str, bench_ecmult_1, bench_ecmult_setup, bench_ecmult_1_teardown, data, 10, iters);
+    sprintf(str, "ecmult_1p");
+    run_benchmark(str, bench_ecmult_1p, bench_ecmult_setup, bench_ecmult_1p_teardown, data, 10, iters);
     /* ecmult with generator point */
-    sprintf(str, "ecmult 1g");
-    run_benchmark(str, bench_ecmult_1g, bench_ecmult_setup, bench_ecmult_1g_teardown, data, 10, iters);
+    sprintf(str, "ecmult_0p_g");
+    run_benchmark(str, bench_ecmult_0p_g, bench_ecmult_setup, bench_ecmult_0p_g_teardown, data, 10, iters);
     /* ecmult with generator and non-generator point. The reported time is per point. */
-    sprintf(str, "ecmult 2g");
-    run_benchmark(str, bench_ecmult_2g, bench_ecmult_setup, bench_ecmult_2g_teardown, data, 10, 2*iters);
+    sprintf(str, "ecmult_1p_g");
+    run_benchmark(str, bench_ecmult_1p_g, bench_ecmult_setup, bench_ecmult_1p_g_teardown, data, 10, 2*iters);
 }
 
-static int bench_ecmult_multi_callback(rustsecp256k1_v0_4_1_scalar* sc, rustsecp256k1_v0_4_1_ge* ge, size_t idx, void* arg) {
+static int bench_ecmult_multi_callback(rustsecp256k1_v0_5_0_scalar* sc, rustsecp256k1_v0_5_0_ge* ge, size_t idx, void* arg) {
     bench_data* data = (bench_data*)arg;
     if (data->includes_g) ++idx;
     if (idx == 0) {
         *sc = data->scalars[data->offset1];
-        *ge = rustsecp256k1_v0_4_1_ge_const_g;
+        *ge = rustsecp256k1_v0_5_0_ge_const_g;
     } else {
         *sc = data->scalars[(data->offset1 + idx) % POINTS];
         *ge = data->pubkeys[(data->offset2 + idx - 1) % POINTS];
@@ -207,7 +207,7 @@ static void bench_ecmult_multi(void* arg, int iters) {
     iters = iters / data->count;
 
     for (iter = 0; iter < iters; ++iter) {
-        data->ecmult_multi(&data->ctx->error_callback, &data->ctx->ecmult_ctx, data->scratch, &data->output[iter], data->includes_g ? &data->scalars[data->offset1] : NULL, bench_ecmult_multi_callback, arg, count - includes_g);
+        data->ecmult_multi(&data->ctx->error_callback, data->scratch, &data->output[iter], data->includes_g ? &data->scalars[data->offset1] : NULL, bench_ecmult_multi_callback, arg, count - includes_g);
         data->offset1 = (data->offset1 + count) % POINTS;
         data->offset2 = (data->offset2 + count - 1) % POINTS;
     }
@@ -224,14 +224,14 @@ static void bench_ecmult_multi_teardown(void* arg, int iters) {
     iters = iters / data->count;
     /* Verify the results in teardown, to avoid doing comparisons while benchmarking. */
     for (iter = 0; iter < iters; ++iter) {
-        rustsecp256k1_v0_4_1_gej tmp;
-        rustsecp256k1_v0_4_1_gej_add_var(&tmp, &data->output[iter], &data->expected_output[iter], NULL);
-        CHECK(rustsecp256k1_v0_4_1_gej_is_infinity(&tmp));
+        rustsecp256k1_v0_5_0_gej tmp;
+        rustsecp256k1_v0_5_0_gej_add_var(&tmp, &data->output[iter], &data->expected_output[iter], NULL);
+        CHECK(rustsecp256k1_v0_5_0_gej_is_infinity(&tmp));
     }
 }
 
-static void generate_scalar(uint32_t num, rustsecp256k1_v0_4_1_scalar* scalar) {
-    rustsecp256k1_v0_4_1_sha256 sha256;
+static void generate_scalar(uint32_t num, rustsecp256k1_v0_5_0_scalar* scalar) {
+    rustsecp256k1_v0_5_0_sha256 sha256;
     unsigned char c[10] = {'e', 'c', 'm', 'u', 'l', 't', 0, 0, 0, 0};
     unsigned char buf[32];
     int overflow = 0;
@@ -239,16 +239,16 @@ static void generate_scalar(uint32_t num, rustsecp256k1_v0_4_1_scalar* scalar) {
     c[7] = num >> 8;
     c[8] = num >> 16;
     c[9] = num >> 24;
-    rustsecp256k1_v0_4_1_sha256_initialize(&sha256);
-    rustsecp256k1_v0_4_1_sha256_write(&sha256, c, sizeof(c));
-    rustsecp256k1_v0_4_1_sha256_finalize(&sha256, buf);
-    rustsecp256k1_v0_4_1_scalar_set_b32(scalar, buf, &overflow);
+    rustsecp256k1_v0_5_0_sha256_initialize(&sha256);
+    rustsecp256k1_v0_5_0_sha256_write(&sha256, c, sizeof(c));
+    rustsecp256k1_v0_5_0_sha256_finalize(&sha256, buf);
+    rustsecp256k1_v0_5_0_scalar_set_b32(scalar, buf, &overflow);
     CHECK(!overflow);
 }
 
 static void run_ecmult_multi_bench(bench_data* data, size_t count, int includes_g, int num_iters) {
     char str[32];
-    static const rustsecp256k1_v0_4_1_scalar zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
+    static const rustsecp256k1_v0_5_0_scalar zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
     size_t iters = 1 + num_iters / count;
     size_t iter;
 
@@ -258,19 +258,23 @@ static void run_ecmult_multi_bench(bench_data* data, size_t count, int includes_
     /* Compute (the negation of) the expected results directly. */
     hash_into_offset(data, data->count);
     for (iter = 0; iter < iters; ++iter) {
-        rustsecp256k1_v0_4_1_scalar tmp;
-        rustsecp256k1_v0_4_1_scalar total = data->scalars[(data->offset1++) % POINTS];
+        rustsecp256k1_v0_5_0_scalar tmp;
+        rustsecp256k1_v0_5_0_scalar total = data->scalars[(data->offset1++) % POINTS];
         size_t i = 0;
         for (i = 0; i + 1 < count; ++i) {
-            rustsecp256k1_v0_4_1_scalar_mul(&tmp, &data->seckeys[(data->offset2++) % POINTS], &data->scalars[(data->offset1++) % POINTS]);
-            rustsecp256k1_v0_4_1_scalar_add(&total, &total, &tmp);
+            rustsecp256k1_v0_5_0_scalar_mul(&tmp, &data->seckeys[(data->offset2++) % POINTS], &data->scalars[(data->offset1++) % POINTS]);
+            rustsecp256k1_v0_5_0_scalar_add(&total, &total, &tmp);
         }
-        rustsecp256k1_v0_4_1_scalar_negate(&total, &total);
-        rustsecp256k1_v0_4_1_ecmult(&data->ctx->ecmult_ctx, &data->expected_output[iter], NULL, &zero, &total);
+        rustsecp256k1_v0_5_0_scalar_negate(&total, &total);
+        rustsecp256k1_v0_5_0_ecmult(&data->expected_output[iter], NULL, &zero, &total);
     }
 
     /* Run the benchmark. */
-    sprintf(str, includes_g ? "ecmult_multi %ig" : "ecmult_multi %i", (int)count);
+    if (includes_g) {
+        sprintf(str, "ecmult_multi_%ip_g", (int)count - 1);
+    } else {
+        sprintf(str, "ecmult_multi_%ip", (int)count);
+    }
     run_benchmark(str, bench_ecmult_multi, bench_ecmult_multi_setup, bench_ecmult_multi_teardown, data, 10, count * iters);
 }
 
@@ -281,20 +285,20 @@ int main(int argc, char **argv) {
 
     int iters = get_iters(10000);
 
-    data.ecmult_multi = rustsecp256k1_v0_4_1_ecmult_multi_var;
+    data.ecmult_multi = rustsecp256k1_v0_5_0_ecmult_multi_var;
 
     if (argc > 1) {
         if(have_flag(argc, argv, "-h")
            || have_flag(argc, argv, "--help")
            || have_flag(argc, argv, "help")) {
             help(argv);
-            return 1;
+            return 0;
         } else if(have_flag(argc, argv, "pippenger_wnaf")) {
             printf("Using pippenger_wnaf:\n");
-            data.ecmult_multi = rustsecp256k1_v0_4_1_ecmult_pippenger_batch_single;
+            data.ecmult_multi = rustsecp256k1_v0_5_0_ecmult_pippenger_batch_single;
         } else if(have_flag(argc, argv, "strauss_wnaf")) {
             printf("Using strauss_wnaf:\n");
-            data.ecmult_multi = rustsecp256k1_v0_4_1_ecmult_strauss_batch_single;
+            data.ecmult_multi = rustsecp256k1_v0_5_0_ecmult_strauss_batch_single;
         } else if(have_flag(argc, argv, "simple")) {
             printf("Using simple algorithm:\n");
         } else {
@@ -304,35 +308,36 @@ int main(int argc, char **argv) {
         }
     }
 
-    data.ctx = rustsecp256k1_v0_4_1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    scratch_size = rustsecp256k1_v0_4_1_strauss_scratch_size(POINTS) + STRAUSS_SCRATCH_OBJECTS*16;
+    data.ctx = rustsecp256k1_v0_5_0_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    scratch_size = rustsecp256k1_v0_5_0_strauss_scratch_size(POINTS) + STRAUSS_SCRATCH_OBJECTS*16;
     if (!have_flag(argc, argv, "simple")) {
-        data.scratch = rustsecp256k1_v0_4_1_scratch_space_create(data.ctx, scratch_size);
+        data.scratch = rustsecp256k1_v0_5_0_scratch_space_create(data.ctx, scratch_size);
     } else {
         data.scratch = NULL;
     }
 
     /* Allocate stuff */
-    data.scalars = malloc(sizeof(rustsecp256k1_v0_4_1_scalar) * POINTS);
-    data.seckeys = malloc(sizeof(rustsecp256k1_v0_4_1_scalar) * POINTS);
-    data.pubkeys = malloc(sizeof(rustsecp256k1_v0_4_1_ge) * POINTS);
-    data.pubkeys_gej = malloc(sizeof(rustsecp256k1_v0_4_1_gej) * POINTS);
-    data.expected_output = malloc(sizeof(rustsecp256k1_v0_4_1_gej) * (iters + 1));
-    data.output = malloc(sizeof(rustsecp256k1_v0_4_1_gej) * (iters + 1));
+    data.scalars = malloc(sizeof(rustsecp256k1_v0_5_0_scalar) * POINTS);
+    data.seckeys = malloc(sizeof(rustsecp256k1_v0_5_0_scalar) * POINTS);
+    data.pubkeys = malloc(sizeof(rustsecp256k1_v0_5_0_ge) * POINTS);
+    data.pubkeys_gej = malloc(sizeof(rustsecp256k1_v0_5_0_gej) * POINTS);
+    data.expected_output = malloc(sizeof(rustsecp256k1_v0_5_0_gej) * (iters + 1));
+    data.output = malloc(sizeof(rustsecp256k1_v0_5_0_gej) * (iters + 1));
 
     /* Generate a set of scalars, and private/public keypairs. */
-    rustsecp256k1_v0_4_1_gej_set_ge(&data.pubkeys_gej[0], &rustsecp256k1_v0_4_1_ge_const_g);
-    rustsecp256k1_v0_4_1_scalar_set_int(&data.seckeys[0], 1);
+    rustsecp256k1_v0_5_0_gej_set_ge(&data.pubkeys_gej[0], &rustsecp256k1_v0_5_0_ge_const_g);
+    rustsecp256k1_v0_5_0_scalar_set_int(&data.seckeys[0], 1);
     for (i = 0; i < POINTS; ++i) {
         generate_scalar(i, &data.scalars[i]);
         if (i) {
-            rustsecp256k1_v0_4_1_gej_double_var(&data.pubkeys_gej[i], &data.pubkeys_gej[i - 1], NULL);
-            rustsecp256k1_v0_4_1_scalar_add(&data.seckeys[i], &data.seckeys[i - 1], &data.seckeys[i - 1]);
+            rustsecp256k1_v0_5_0_gej_double_var(&data.pubkeys_gej[i], &data.pubkeys_gej[i - 1], NULL);
+            rustsecp256k1_v0_5_0_scalar_add(&data.seckeys[i], &data.seckeys[i - 1], &data.seckeys[i - 1]);
         }
     }
-    rustsecp256k1_v0_4_1_ge_set_all_gej_var(data.pubkeys, data.pubkeys_gej, POINTS);
+    rustsecp256k1_v0_5_0_ge_set_all_gej_var(data.pubkeys, data.pubkeys_gej, POINTS);
 
 
+    print_output_table_header_row();
     /* Initialize offset1 and offset2 */
     hash_into_offset(&data, 0);
     run_ecmult_bench(&data, iters);
@@ -353,9 +358,9 @@ int main(int argc, char **argv) {
     }
 
     if (data.scratch != NULL) {
-        rustsecp256k1_v0_4_1_scratch_space_destroy(data.ctx, data.scratch);
+        rustsecp256k1_v0_5_0_scratch_space_destroy(data.ctx, data.scratch);
     }
-    rustsecp256k1_v0_4_1_context_destroy(data.ctx);
+    rustsecp256k1_v0_5_0_context_destroy(data.ctx);
     free(data.scalars);
     free(data.pubkeys);
     free(data.pubkeys_gej);

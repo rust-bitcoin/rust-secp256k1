@@ -59,6 +59,8 @@ fn main() {
 
     // secp256k1
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
+               .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
+               .file("depend/secp256k1/src/precomputed_ecmult.c")
                .file("depend/secp256k1/src/secp256k1.c")
                .compile("libsecp256k1.a");
 }
