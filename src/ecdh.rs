@@ -71,6 +71,11 @@ impl SharedSecret {
     pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] {
         self.0
     }
+
+    /// Creates a shared secret from a byte serialization.
+    pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret {
+        SharedSecret(bytes)
+    }
 }
 
 impl Borrow<[u8]> for SharedSecret {
