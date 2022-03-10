@@ -15,9 +15,10 @@
 //! Support for shared secret computations.
 //!
 
-use core::ptr;
+use core::{ptr, str};
 use core::borrow::Borrow;
 
+use {Error, from_hex};
 use key::{SecretKey, PublicKey};
 use ffi::{self, CPtr};
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
@@ -72,9 +73,34 @@ impl SharedSecret {
         self.0
     }
 
-    /// Creates a shared secret from a byte serialization.
+    /// Creates a shared secret from `bytes` array.
+    #[inline]
     pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret {
         SharedSecret(bytes)
+    }
+
+    /// Creates a shared secret from `bytes` slice.
+    #[inline]
+    pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
+        match bytes.len() {
+            SHARED_SECRET_SIZE => {
+                let mut ret = [0u8; SHARED_SECRET_SIZE];
+                ret[..].copy_from_slice(bytes);
+                Ok(SharedSecret(ret))
+            }
+            _ => Err(Error::InvalidSharedSecret)
+        }
+    }
+}
+
+impl str::FromStr for SharedSecret {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<SharedSecret, Error> {
+        let mut res = [0u8; SHARED_SECRET_SIZE];
+        match from_hex(s, &mut res) {
+            Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),
+            _ => Err(Error::InvalidSharedSecret)
+        }
     }
 }
 
@@ -145,6 +171,36 @@ unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *con
     1
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl ::serde::Serialize for SharedSecret {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
+            s.serialize_str(::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+        } else {
+            s.serialize_bytes(&self.as_ref()[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> ::serde::Deserialize<'de> for SharedSecret {
+    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing 32 byte SharedSecret"
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "raw 32 bytes SharedSecret",
+                SharedSecret::from_slice
+            ))
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
@@ -206,6 +262,31 @@ mod tests {
         let secret_bh = sha256::Hash::from_engine(engine);
 
         assert_eq!(secret_bh.as_inner(), secret_sys.as_ref());
+    }
+
+    #[test]
+    #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
+    fn serde() {
+        use serde_test::{Configure, Token, assert_tokens};
+        static BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static STR: &'static str = "\
+            01010101010101010001020304050607ffff0000ffff00006363636363636363\
+        ";
+
+        let secret = SharedSecret::from_slice(&BYTES).unwrap();
+
+        assert_tokens(&secret.compact(), &[Token::BorrowedBytes(&BYTES[..])]);
+        assert_tokens(&secret.compact(), &[Token::Bytes(&BYTES)]);
+        assert_tokens(&secret.compact(), &[Token::ByteBuf(&BYTES)]);
+
+        assert_tokens(&secret.readable(), &[Token::BorrowedStr(STR)]);
+        assert_tokens(&secret.readable(), &[Token::Str(STR)]);
+        assert_tokens(&secret.readable(), &[Token::String(STR)]);
     }
 }
 

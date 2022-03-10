@@ -352,6 +352,8 @@ pub enum Error {
     InvalidSignature,
     /// Bad secret key.
     InvalidSecretKey,
+    /// Bad shared secret.
+    InvalidSharedSecret,
     /// Bad recovery id.
     InvalidRecoveryId,
     /// Invalid tweak for `add_*_assign` or `mul_*_assign`.
@@ -372,6 +374,7 @@ impl Error {
             Error::InvalidPublicKey => "secp: malformed public key",
             Error::InvalidSignature => "secp: malformed signature",
             Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
+            Error::InvalidSharedSecret => "secp: malformed or out-of-range shared secret",
             Error::InvalidRecoveryId => "secp: bad recovery id",
             Error::InvalidTweak => "secp: bad tweak",
             Error::NotEnoughMemory => "secp: not enough memory allocated",
@@ -399,6 +402,7 @@ impl std::error::Error for Error {
             Error::InvalidPublicKey => None,
             Error::InvalidSignature => None,
             Error::InvalidSecretKey => None,
+            Error::InvalidSharedSecret => None,
             Error::InvalidRecoveryId => None,
             Error::InvalidTweak => None,
             Error::NotEnoughMemory => None,
