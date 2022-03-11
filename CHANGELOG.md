@@ -1,3 +1,7 @@
+# 0.22.1 - 2022-03-10
+
+* [Reintroduce](https://github.com/rust-bitcoin/rust-secp256k1/pull/417) accidentally removed possibility to create `SharedSecret` from byte serialization
+
 # 0.22.0 - 2022-03-08
 
 * Disable `bitcoin_hashes/std` by default; [add `bitcoin-hashes-std` feature to re-enable it](https://github.com/rust-bitcoin/rust-secp256k1/pull/410)
