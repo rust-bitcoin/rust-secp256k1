@@ -94,3 +94,4 @@ if [ "$DO_BENCH" = true ]; then
     cargo bench --all --features="unstable"
 fi
 
+exit 0
