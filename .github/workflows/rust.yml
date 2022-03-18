@@ -36,20 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - rust: stable
-            env:
-              DO_FEATURE_MATRIX: true
-              DO_WASM: true
-          - rust: beta
-            env:
-              DO_FEATURE_MATRIX: true
-          - rust: nightly
-            env:
-              DO_FEATURE_MATRIX: true
-          - rust: 1.29.0
-            env:
-              DO_FEATURE_MATRIX: true
+        rust: [stable, beta, nightly, 1.29.0]
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
@@ -63,6 +50,29 @@ jobs:
         if: matrix.rust == '1.29.0'
         run: cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose
       - name: Running cargo
-        env: ${{ matrix.env }}
+        env:
+          DO_FEATURE_MATRIX: true
         run: ./contrib/test.sh
 
+  WASM:
+    name: WASM
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly] # No 1.29 because WASM requires Rust 1.30
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v2
+      - name: Install clang
+        run: sudo apt-get install -y clang-9
+      - name: Checkout Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rust-src
+      - name: Running WASM tests
+        env:
+          DO_WASM: true
+        run: ./contrib/test.sh
