@@ -3,7 +3,7 @@ on: [push, pull_request]
 name: Continuous integration
 
 jobs:
-  bench_nightly:
+  Nightly:
     name: Nightly - ASan + Bench
     runs-on: ubuntu-latest
     strategy:
