@@ -192,9 +192,6 @@ mod alloc_only {
         /// ```
         #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
         pub fn gen_new() -> Secp256k1<C> {
-            #[cfg(target_arch = "wasm32")]
-            ffi::types::sanity_checks_for_wasm();
-
             let size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
             let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
             let ptr = unsafe {alloc::alloc(layout)};
@@ -302,9 +299,6 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
     /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
     pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
-        #[cfg(target_arch = "wasm32")]
-        ffi::types::sanity_checks_for_wasm();
-
         if buf.len() < Self::preallocate_size_gen() {
             return Err(Error::NotEnoughMemory);
         }
