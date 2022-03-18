@@ -6,10 +6,6 @@ jobs:
   Nightly:
     name: Nightly - ASan + Bench
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - nightly
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
@@ -17,7 +13,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.rust }}
+          toolchain: nightly
           override: true
           components: rust-src
       - name: Running address sanitizer
