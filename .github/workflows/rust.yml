@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
+      - name: Install clang     # Needed for ASan.
+        run: sudo apt-get install -y clang-9
       - name: Checkout Toolchain
         uses: actions-rs/toolchain@v1
         with:
