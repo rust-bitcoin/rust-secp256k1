@@ -51,9 +51,8 @@ fn main() {
     base_config.define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
-    if cfg!(feature = "noprecompute") {
-        base_config.define("FEATURE_NOPRECOMPUTE", Some("1"));
-    }
+    #[cfg(feature = "noprecompute")]
+    base_config.define("FEATURE_NOPRECOMPUTE", Some("1"));
 
     // Header files. WASM only.
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "wasm32" {
@@ -62,10 +61,11 @@ fn main() {
 
     // secp256k1
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c");
-    if !cfg!(feature = "noprecompute") {
-        base_config.file("depend/secp256k1/src/precomputed_ecmult_gen.c")
-                   .file("depend/secp256k1/src/precomputed_ecmult.c");
-    }
+
+    #[cfg(not(feature = "noprecompute"))]
+    base_config.file("depend/secp256k1/src/precomputed_ecmult_gen.c")
+               .file("depend/secp256k1/src/precomputed_ecmult.c");
+
     base_config.file("depend/secp256k1/src/secp256k1.c")
                .compile("libsecp256k1.a");
 }

@@ -1,4 +1,4 @@
-#ifndef FEATURE_NOPRECOMPUTE
+#ifdef FEATURE_NOPRECOMPUTE
 #include <stddef.h>
 #define alignof(type) offsetof (struct { char c; type member; }, member)
 
