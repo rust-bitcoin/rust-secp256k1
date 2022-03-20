@@ -29,5 +29,6 @@ libc = "0.2"
 default = ["std"]
 recovery = []
 lowmemory = []
+noprecompute = []
 std = []
 
