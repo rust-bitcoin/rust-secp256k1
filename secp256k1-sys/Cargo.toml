@@ -26,9 +26,9 @@ cc = "1.0.28"
 libc = "0.2"
 
 [features]
-default = ["std"]
+default = ["std", "precompute"]
 recovery = []
 lowmemory = []
-noprecompute = []
+precompute = []
 std = []
 

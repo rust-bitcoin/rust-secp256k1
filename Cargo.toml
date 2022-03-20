@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 unstable = ["recovery", "rand-std"]
-default = ["std"]
+default = ["std", "precompute"]
 std = ["secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = []
@@ -27,7 +27,7 @@ bitcoin-hashes-std = ["bitcoin_hashes/std"]
 rand-std = ["rand/std"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
-noprecompute = ["secp256k1-sys/noprecompute"]
+precompute = ["secp256k1-sys/precompute"]
 global-context = ["std"]
 # disable re-randomization of the global context, which provides some
 # defense-in-depth against sidechannel attacks. You should only use
