@@ -73,7 +73,7 @@ if [ "$DO_WASM" = true ]; then
     CARGO_TARGET_DIR=wasm cargo install --force wasm-pack
     printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml
     CC=clang-9 wasm-pack build
-    CC=clang-9 wasm-pack test --node
+    CC=clang-9 wasm-pack test --node --features="noprecompute"
 fi
 
 # Address Sanitizer
