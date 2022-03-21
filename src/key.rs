@@ -696,13 +696,7 @@ impl KeyPair {
         &mut self.0
     }
 
-    /// Creates a Schnorr [`KeyPair`] directly from generic Secp256k1 secret key.
-    ///
-    /// # Panics
-    ///
-    /// Panics if internal representation of the provided [`SecretKey`] does not hold correct secret
-    /// key value obtained from Secp256k1 library previously, specifically when secret key value is
-    /// out-of-range (0 or in excess of the group order).
+    /// Creates a [`KeyPair`] directly from a Secp256k1 secret key.
     #[inline]
     pub fn from_secret_key<C: Signing>(
         secp: &Secp256k1<C>,
