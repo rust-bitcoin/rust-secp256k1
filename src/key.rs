@@ -718,7 +718,7 @@ impl KeyPair {
         }
     }
 
-    /// Creates a Schnorr [`KeyPair`] directly from a secret key slice.
+    /// Creates a [`KeyPair`] directly from a secret key slice.
     ///
     /// # Errors
     ///
@@ -743,7 +743,7 @@ impl KeyPair {
         }
     }
 
-    /// Creates a Schnorr [`KeyPair`] directly from a secret key string.
+    /// Creates a [`KeyPair`] directly from a secret key string.
     ///
     /// # Errors
     ///
@@ -759,7 +759,7 @@ impl KeyPair {
         }
     }
 
-    /// Creates a Schnorr [`KeyPair`] directly from a secret key string and the global [`SECP256K1`] context.
+    /// Creates a [`KeyPair`] directly from a secret key string and the global [`SECP256K1`] context.
     ///
     /// # Errors
     ///
