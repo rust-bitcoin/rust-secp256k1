@@ -66,7 +66,7 @@ fi
 
 # Webassembly stuff
 if [ "$DO_WASM" = true ]; then
-    clang --version
+    clang-9 --version
     CARGO_TARGET_DIR=wasm cargo install --force wasm-pack
     printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml
     CC=clang-9 wasm-pack build
@@ -75,6 +75,7 @@ fi
 
 # Address Sanitizer
 if [ "$DO_ASAN" = true ]; then
+    clang --version
     cargo clean
     CC='clang -fsanitize=address -fno-omit-frame-pointer'                                        \
     RUSTFLAGS='-Zsanitizer=address -Clinker=clang -Cforce-frame-pointers=yes'                    \
