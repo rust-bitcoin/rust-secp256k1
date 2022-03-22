@@ -159,9 +159,12 @@ impl<C: Signing> Secp256k1<C> {
         self.sign_ecdsa_recoverable(msg, sk)
     }
 
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
-    /// Requires a signing-capable context.
-    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
+    fn sign_ecdsa_recoverable_with_noncedata_pointer(
+        &self,
+        msg: &Message,
+        sk: &key::SecretKey,
+        noncedata_ptr: *const super_ffi::types::c_void,
+    ) -> RecoverableSignature {
         let mut ret = ffi::RecoverableSignature::new();
         unsafe {
             // We can assume the return value because it's not possible to construct
@@ -173,13 +176,34 @@ impl<C: Signing> Secp256k1<C> {
                     msg.as_c_ptr(),
                     sk.as_c_ptr(),
                     super_ffi::secp256k1_nonce_function_rfc6979,
-                    ptr::null()
+                    noncedata_ptr
                 ),
                 1
             );
         }
 
         RecoverableSignature::from(ret)
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// Requires a signing-capable context.
+    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
+        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// and includes 32 bytes of noncedata in the nonce generation via inclusion in
+    /// one of the hash operations during nonce generation. This is useful when multiple
+    /// signatures are needed for the same Message and SecretKey while still using RFC6979.
+    /// Requires a signing-capable context.
+    pub fn sign_ecdsa_recoverable_with_noncedata(
+        &self,
+        msg: &Message,
+        sk: &key::SecretKey,
+        noncedata: &[u8; 32],
+    ) -> RecoverableSignature {
+        let noncedata_ptr = noncedata.as_ptr() as *const super_ffi::types::c_void;
+        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, noncedata_ptr)
     }
 }
 
@@ -277,6 +301,32 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(all(feature="std", feature = "rand-std"))]
+    fn sign_with_noncedata() {
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
+        let one: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+
+        let sk = SecretKey::from_slice(&one).unwrap();
+        let msg = Message::from_slice(&one).unwrap();
+        let noncedata = [42u8; 32];
+
+        let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
+        assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
+            0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
+            0x4d, 0x37, 0xc3, 0xa9, 0x7e, 0xbd, 0x06, 0xa2,
+            0x2e, 0xa3, 0x37, 0x71, 0x04, 0x0f, 0x5c, 0x05,
+            0xd6, 0xe2, 0xbb, 0x2d, 0x38, 0xc6, 0x22, 0x7c,
+            0x34, 0x3b, 0x66, 0x59, 0xdb, 0x96, 0x99, 0x59,
+            0xd9, 0xfd, 0xdb, 0x44, 0xbd, 0x0d, 0xd9, 0xb9,
+            0xdd, 0x47, 0x66, 0x6a, 0xb5, 0x28, 0x71, 0x90,
+            0x1d, 0x17, 0x61, 0xeb, 0x82, 0xec, 0x87, 0x22],
+            RecoveryId(0)))
+    }
+
+    #[test]
     #[cfg(all(feature="std", feature = "rand-std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
@@ -313,6 +363,25 @@ mod tests {
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
+
+        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
+    }
+
+    #[test]
+    #[cfg(all(feature="std", feature = "rand-std"))]
+    fn sign_with_recovery_and_noncedata() {
+        let mut s = Secp256k1::new();
+        s.randomize(&mut thread_rng());
+
+        let mut msg = [0u8; 32];
+        thread_rng().fill_bytes(&mut msg);
+        let msg = Message::from_slice(&msg).unwrap();
+
+        let noncedata = [42u8; 32];
+
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+
+        let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
 
         assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
     }

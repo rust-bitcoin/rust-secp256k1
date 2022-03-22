@@ -807,6 +807,7 @@ mod tests {
         s.randomize(&mut thread_rng());
 
         let mut msg = [0u8; 32];
+        let noncedata = [42u8; 32];
         for _ in 0..100 {
             thread_rng().fill_bytes(&mut msg);
             let msg = Message::from_slice(&msg).unwrap();
@@ -814,6 +815,8 @@ mod tests {
             let (sk, pk) = s.generate_keypair(&mut thread_rng());
             let sig = s.sign_ecdsa(&msg, &sk);
             assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Ok(()));
+            let noncedata_sig = s.sign_ecdsa_with_noncedata(&msg, &sk, &noncedata);
+            assert_eq!(s.verify_ecdsa(&msg, &noncedata_sig, &pk), Ok(()));
             let low_r_sig = s.sign_ecdsa_low_r(&msg, &sk);
             assert_eq!(s.verify_ecdsa(&msg, &low_r_sig, &pk), Ok(()));
             let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &sk, 1);
@@ -925,6 +928,23 @@ mod tests {
         assert!(from_hex("deadbeaf", &mut [0u8; 4]).is_ok());
         assert!(from_hex("a", &mut [0u8; 4]).is_err());
         assert!(from_hex("ag", &mut [0u8; 4]).is_err());
+    }
+
+    #[test]
+    #[cfg(not(fuzzing))]  // fuzz-sigs have fixed size/format
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    fn test_noncedata() {
+        let secp = Secp256k1::new();
+        let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
+        let msg = Message::from_slice(&msg).unwrap();
+        let noncedata = [42u8; 32];
+        let sk = SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead").unwrap();
+        let expected_sig = hex!("24861b3edd4e7da43319c635091405feced6efa4ec99c3c3c35f6c3ba0ed8816116772e84994084db85a6c20589f6a85af569d42275c2a5dd900da5776b99d5d");
+        let expected_sig = ecdsa::Signature::from_compact(&expected_sig).unwrap();
+
+        let sig = secp.sign_ecdsa_with_noncedata(&msg, &sk, &noncedata);
+
+        assert_eq!(expected_sig, sig);
     }
 
     #[test]
