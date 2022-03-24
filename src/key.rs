@@ -1111,6 +1111,7 @@ impl XOnlyPublicKey {
             return Err(Error::InvalidTweak);
         }
 
+        let mut pk_parity = 0;
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
             let mut err = ffi::secp256k1_xonly_pubkey_tweak_add(
@@ -1123,18 +1124,17 @@ impl XOnlyPublicKey {
                 return Err(Error::InvalidTweak);
             }
 
-            let mut parity: ::secp256k1_sys::types::c_int = 0;
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
                 secp.ctx,
                 &mut self.0,
-                &mut parity,
+                &mut pk_parity,
                 &pubkey,
             );
             if err == 0 {
                 return Err(Error::InvalidPublicKey);
             }
 
-            Parity::from_i32(parity).map_err(Into::into)
+            Parity::from_i32(pk_parity).map_err(Into::into)
         }
     }
 
