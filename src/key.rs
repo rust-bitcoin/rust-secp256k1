@@ -674,7 +674,7 @@ impl Ord for PublicKey {
 ///
 /// let secp = Secp256k1::new();
 /// let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
-/// let key_pair = KeyPair::from_secret_key(&secp, secret_key);
+/// let key_pair = KeyPair::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
 /// [`Deserialize`]: serde::Deserialize
@@ -706,7 +706,7 @@ impl KeyPair {
     #[inline]
     pub fn from_secret_key<C: Signing>(
         secp: &Secp256k1<C>,
-        sk: SecretKey,
+        sk: &SecretKey,
     ) -> KeyPair {
         unsafe {
             let mut kp = ffi::KeyPair::new();
@@ -1426,7 +1426,7 @@ pub mod serde_keypair {
 
         Ok(KeyPair::from_secret_key(
             &::SECP256K1,
-            secret_key,
+            &secret_key,
         ))
     }
 }

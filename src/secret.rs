@@ -160,7 +160,7 @@ impl KeyPair {
     ///
     /// let secp = Secp256k1::new();
     /// let key = ONE_KEY;
-    /// let key = KeyPair::from_secret_key(&secp, key);
+    /// let key = KeyPair::from_secret_key(&secp, &key);
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",
