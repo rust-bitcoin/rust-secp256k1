@@ -52,9 +52,10 @@ fn main() {
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
 
-    // Header files. WASM only.
+    // WASM headers and size/align defines.
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "wasm32" {
-        base_config.include("wasm-sysroot");
+        base_config.include("wasm/wasm-sysroot")
+                   .file("wasm/wasm.c");
     }
 
     // secp256k1
