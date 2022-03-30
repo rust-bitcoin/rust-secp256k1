@@ -15,6 +15,9 @@ fi
 cargo --version
 rustc --version
 
+# Test if panic in C code aborts the process (either with a real panic or with SIGILL)
+cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
+
 # Make all cargo invocations verbose
 export CARGO_TERM_VERBOSE=true
 
@@ -85,9 +88,6 @@ if [ "$DO_ASAN" = true ]; then
     cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
     cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
 fi
-
-# Test if panic in C code aborts the process (either with a real panic or with SIGILL)
-cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
 
 # Bench
 if [ "$DO_BENCH" = true ]; then
