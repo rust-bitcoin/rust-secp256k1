@@ -20,7 +20,7 @@ use SECP256K1;
 pub struct Signature(pub(crate) ffi::Signature);
 
 /// A DER serialized Signature
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash)]
 pub struct SerializedSignature {
     data: [u8; 72],
     len: usize,
