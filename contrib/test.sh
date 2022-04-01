@@ -1,5 +1,7 @@
 #!/bin/sh -ex
 
+set -e
+
 # TODO: Add "alloc" once we bump MSRV to past 1.29
 FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std"
 # These features are typically enabled along with the 'std' feature, so we test
@@ -67,24 +69,25 @@ fi
 
 # Webassembly stuff
 if [ "$DO_WASM" = true ]; then
-    clang --version &&
-    CARGO_TARGET_DIR=wasm cargo install --force wasm-pack &&
-    printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml &&
-    CC=clang-9 wasm-pack build &&
-    CC=clang-9 wasm-pack test --node;
+    clang-9 --version
+    CARGO_TARGET_DIR=wasm cargo install --force wasm-pack
+    printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml
+    CC=clang-9 wasm-pack build
+    CC=clang-9 wasm-pack test --node
 fi
 
 # Address Sanitizer
 if [ "$DO_ASAN" = true ]; then
+    clang --version
     cargo clean
     CC='clang -fsanitize=address -fno-omit-frame-pointer'                                        \
     RUSTFLAGS='-Zsanitizer=address -Clinker=clang -Cforce-frame-pointers=yes'                    \
     ASAN_OPTIONS='detect_leaks=1 detect_invalid_pointer_pairs=1 detect_stack_use_after_return=1' \
-    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
-    cargo clean &&
+    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
+    cargo clean
     CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                         \
     RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes'   \
-    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu &&
+    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
     cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
     cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
 fi
@@ -94,3 +97,4 @@ if [ "$DO_BENCH" = true ]; then
     cargo bench --all --features="unstable"
 fi
 
+exit 0
