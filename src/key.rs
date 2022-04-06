@@ -214,11 +214,16 @@ impl SecretKey {
         self.0
     }
 
+    /// Negates the secret key.
     #[inline]
-    /// Negates one secret key.
-    pub fn negate_assign(
-        &mut self
-    ) {
+    #[deprecated(since = "0.23.0", note = "Use negate instead")]
+    pub fn negate_assign(&mut self) {
+        *self = self.negate()
+    }
+
+    /// Negates the secret key.
+    #[inline]
+    pub fn negate(mut self) -> SecretKey {
         unsafe {
             let res = ffi::secp256k1_ec_seckey_negate(
                 ffi::secp256k1_context_no_precomp,
@@ -226,6 +231,7 @@ impl SecretKey {
             );
             debug_assert_eq!(res, 1);
         }
+        self
     }
 
     /// Adds one secret key to another, modulo the curve order.
@@ -498,16 +504,21 @@ impl PublicKey {
         debug_assert_eq!(ret_len, ret.len());
     }
 
-    #[inline]
     /// Negates the public key in place.
-    pub fn negate_assign<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>
-    ) {
+    #[inline]
+    #[deprecated(since = "0.23.0", note = "Use negate instead")]
+    pub fn negate_assign<C: Verification>(&mut self, secp: &Secp256k1<C>) {
+        *self = self.negate(secp)
+    }
+
+    /// Negates the public key.
+    #[inline]
+    pub fn negate<C: Verification>(mut self, secp: &Secp256k1<C>) -> PublicKey {
         unsafe {
             let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0);
             debug_assert_eq!(res, 1);
         }
+        self
     }
 
     /// Adds `other * G` to `self` in place.
@@ -1884,21 +1895,21 @@ mod test {
     fn test_negation() {
         let s = Secp256k1::new();
 
-        let (mut sk, mut pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        let original_sk = sk;
-        let original_pk = pk;
+        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
-        sk.negate_assign();
-        pk.negate_assign(&s);
-        assert_ne!(original_sk, sk);
-        assert_ne!(original_pk, pk);
-        sk.negate_assign();
-        pk.negate_assign(&s);
-        assert_eq!(original_sk, sk);
-        assert_eq!(original_pk, pk);
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk);
+        let neg = sk.negate();
+        assert_ne!(sk, neg);
+        let back_sk = neg.negate();
+        assert_eq!(sk, back_sk);
+
+        let neg = pk.negate(&s);
+        assert_ne!(pk, neg);
+        let back_pk = neg.negate(&s);
+        assert_eq!(pk, back_pk);
+
+        assert_eq!(PublicKey::from_secret_key(&s, &back_sk), pk);
     }
 
     #[test]
