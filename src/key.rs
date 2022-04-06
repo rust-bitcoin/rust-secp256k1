@@ -894,6 +894,18 @@ impl KeyPair {
 
     /// Tweaks a keypair by adding the given tweak to the secret key and updating the public key
     /// accordingly.
+    #[inline]
+    #[deprecated(since = "0.23.0", note = "Use add_xonly_tweak instead")]
+    pub fn tweak_add_assign<C: Verification>(
+        &mut self,
+        secp: &Secp256k1<C>,
+        tweak: &Scalar,
+    ) -> Result<(), Error> {
+        *self = self.add_xonly_tweak(secp, tweak)?;
+        Ok(())
+    }
+
+    /// Tweaks a keypair by first converting the public key to an xonly key and tweaking it.
     ///
     /// # Errors
     ///
@@ -913,16 +925,16 @@ impl KeyPair {
     /// let tweak = Scalar::random();
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
-    /// key_pair.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// let tweaked = key_pair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
     // TODO: Add checked implementation
     #[inline]
-    pub fn tweak_add_assign<C: Verification>(
-        &mut self,
+    pub fn add_xonly_tweak<C: Verification>(
+        mut self,
         secp: &Secp256k1<C>,
         tweak: &Scalar,
-    ) -> Result<(), Error> {
+    ) -> Result<KeyPair, Error> {
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx,
@@ -933,7 +945,7 @@ impl KeyPair {
                 return Err(Error::InvalidTweak);
             }
 
-            Ok(())
+            Ok(self)
         }
     }
 
@@ -1166,12 +1178,24 @@ impl XOnlyPublicKey {
     }
 
     /// Tweaks an x-only PublicKey by adding the generator multiplied with the given tweak to it.
+    #[deprecated(since = "0.23.0", note = "Use add_tweak instead")]
+    pub fn tweak_add_assign<V: Verification>(
+        &mut self,
+        secp: &Secp256k1<V>,
+        tweak: &Scalar,
+    ) -> Result<Parity, Error> {
+        let (tweaked, parity) = self.add_tweak(secp, tweak)?;
+        *self = tweaked;
+        Ok(parity)
+    }
+
+    /// Tweaks an [`XOnlyPublicKey`] by adding the generator multiplied with the given tweak to it.
     ///
     /// # Returns
     ///
-    /// An opaque type representing the parity of the tweaked key, this should be provided to
-    /// `tweak_add_check` which can be used to verify a tweak more efficiently than regenerating
-    /// it and checking equality.
+    /// The newly tweaked key plus an opaque type representing the parity of the tweaked key, this
+    /// should be provided to `tweak_add_check` which can be used to verify a tweak more efficiently
+    /// than regenerating it and checking equality.
     ///
     /// # Errors
     ///
@@ -1181,22 +1205,22 @@ impl XOnlyPublicKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
-    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
+    /// use secp256k1::{Secp256k1, KeyPair, Scalar, XOnlyPublicKey};
     /// use secp256k1::rand::{RngCore, thread_rng};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
-    /// let (mut public_key, _parity) = key_pair.x_only_public_key();
-    /// public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// let (xonly, _parity) = key_pair.x_only_public_key();
+    /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
-    pub fn tweak_add_assign<V: Verification>(
-        &mut self,
+    pub fn add_tweak<V: Verification>(
+        mut self,
         secp: &Secp256k1<V>,
         tweak: &Scalar,
-    ) -> Result<Parity, Error> {
+    ) -> Result<(XOnlyPublicKey, Parity), Error> {
         let mut pk_parity = 0;
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
@@ -1220,7 +1244,8 @@ impl XOnlyPublicKey {
                 return Err(Error::InvalidPublicKey);
             }
 
-            Parity::from_i32(pk_parity).map_err(Into::into)
+            let parity = Parity::from_i32(pk_parity)?;
+            Ok((self, parity))
         }
     }
 
@@ -2048,23 +2073,27 @@ mod test {
 
     #[test]
     #[cfg(any(feature = "alloc", feature = "std"))]
-    fn test_tweak_add_assign_then_tweak_add_check() {
+    fn test_tweak_add_then_tweak_add_check() {
         let s = Secp256k1::new();
 
+        // TODO: 10 times is arbitrary, we should test this a _lot_ of times.
         for _ in 0..10 {
             let tweak = Scalar::random();
 
-            let mut kp = KeyPair::new(&s, &mut thread_rng());
-            let (mut pk, _parity) = kp.x_only_public_key();
+            let kp = KeyPair::new(&s, &mut thread_rng());
+            let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
-            let orig_pk = pk;
-            kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
-            let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
+            let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
+            let (tweaked_xonly, parity) = xonly.add_tweak(&s, &tweak).expect("xonly pubkey tweak failed");
 
-            let (back, _) = XOnlyPublicKey::from_keypair(&kp);
+            let (want_tweaked_xonly, tweaked_kp_parity) = XOnlyPublicKey::from_keypair(&tweaked_kp);
 
-            assert_eq!(back, pk);
-            assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
+            assert_eq!(tweaked_xonly, want_tweaked_xonly);
+
+            #[cfg(not(fuzzing))]
+            assert_eq!(parity, tweaked_kp_parity);
+
+            assert!(xonly.tweak_add_check(&s, &tweaked_xonly, parity, tweak));
         }
     }
 
