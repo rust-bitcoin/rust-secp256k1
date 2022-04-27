@@ -109,6 +109,8 @@ impl_raw_debug!(PublicKey);
 impl PublicKey {
     /// Creates an "uninitialized" FFI public key which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -117,6 +119,8 @@ impl PublicKey {
     }
 
     /// Create a new public key usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -145,6 +149,8 @@ impl_raw_debug!(Signature);
 impl Signature {
     /// Creates an "uninitialized" FFI signature which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -153,6 +159,8 @@ impl Signature {
     }
 
     /// Create a new signature usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -180,6 +188,8 @@ impl_raw_debug!(XOnlyPublicKey);
 impl XOnlyPublicKey {
     /// Creates an "uninitialized" FFI x-only public key which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -188,6 +198,8 @@ impl XOnlyPublicKey {
     }
 
     /// Create a new x-only public key usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -215,6 +227,8 @@ impl_raw_debug!(KeyPair);
 impl KeyPair {
     /// Creates an "uninitialized" FFI keypair which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -223,6 +237,8 @@ impl KeyPair {
     }
 
     /// Create a new keypair usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
