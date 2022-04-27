@@ -535,12 +535,14 @@ extern "C" {
 
 /// A reimplementation of the C function `secp256k1_context_create` in rust.
 ///
-/// This function allocates memory, the pointer should be deallocated using `secp256k1_context_destroy`
-/// A failure to do so will result in a memory leak.
+/// This function allocates memory, the pointer should be deallocated using
+/// `secp256k1_context_destroy`. Failure to do so will result in a memory leak.
 ///
-/// This will create a secp256k1 raw context.
-// Returns: a newly created context object.
-//  In:      flags: which parts of the context to initialize.
+/// Input `flags` control which parts of the context to initialize.
+///
+/// # Returns
+///
+/// The newly created secp256k1 raw context.
 #[no_mangle]
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
