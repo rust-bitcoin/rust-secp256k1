@@ -53,6 +53,7 @@ bitcoin_hashes = "0.10"
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
 
 
 [[example]]
