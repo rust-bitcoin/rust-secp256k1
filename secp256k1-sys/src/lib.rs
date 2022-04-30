@@ -109,6 +109,8 @@ impl_raw_debug!(PublicKey);
 impl PublicKey {
     /// Creates an "uninitialized" FFI public key which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -117,6 +119,8 @@ impl PublicKey {
     }
 
     /// Create a new public key usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -145,6 +149,8 @@ impl_raw_debug!(Signature);
 impl Signature {
     /// Creates an "uninitialized" FFI signature which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -153,6 +159,8 @@ impl Signature {
     }
 
     /// Create a new signature usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -180,6 +188,8 @@ impl_raw_debug!(XOnlyPublicKey);
 impl XOnlyPublicKey {
     /// Creates an "uninitialized" FFI x-only public key which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -188,6 +198,8 @@ impl XOnlyPublicKey {
     }
 
     /// Create a new x-only public key usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -215,6 +227,8 @@ impl_raw_debug!(KeyPair);
 impl KeyPair {
     /// Creates an "uninitialized" FFI keypair which is zeroed out
     ///
+    /// # Safety
+    ///
     /// If you pass this to any FFI functions, except as an out-pointer,
     /// the result is likely to be an assertation failure and process
     /// termination.
@@ -223,6 +237,8 @@ impl KeyPair {
     }
 
     /// Create a new keypair usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
     /// invalid the result may be assertation failures (and process aborts) from
@@ -519,12 +535,14 @@ extern "C" {
 
 /// A reimplementation of the C function `secp256k1_context_create` in rust.
 ///
-/// This function allocates memory, the pointer should be deallocated using `secp256k1_context_destroy`
-/// A failure to do so will result in a memory leak.
+/// This function allocates memory, the pointer should be deallocated using
+/// `secp256k1_context_destroy`. Failure to do so will result in a memory leak.
 ///
-/// This will create a secp256k1 raw context.
-// Returns: a newly created context object.
-//  In:      flags: which parts of the context to initialize.
+/// Input `flags` control which parts of the context to initialize.
+///
+/// # Returns
+///
+/// The newly created secp256k1 raw context.
 #[no_mangle]
 #[cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "std", not(rust_secp_no_symbol_renaming)))))]
