@@ -268,7 +268,7 @@ impl <C: Signing> Secp256k1<C> {
         rng: &mut R,
     ) -> (KeyPair, XOnlyPublicKey) {
         let sk = KeyPair::new(self, rng);
-        let pubkey = XOnlyPublicKey::from_keypair(&sk);
+        let (pubkey, _parity) = XOnlyPublicKey::from_keypair(&sk);
         (sk, pubkey)
     }
 }
@@ -344,7 +344,7 @@ mod tests {
 
         let mut rng = thread_rng();
         let kp = KeyPair::new(&secp, &mut rng);
-        let pk = kp.public_key();
+        let (pk, _parity) = kp.x_only_public_key();
 
         let mut msg = [0u8; 32];
 
@@ -414,7 +414,7 @@ mod tests {
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
         let kp = KeyPair::new(&secp, &mut thread_rng());
-        let pk = kp.public_key();
+        let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
         let pubkey2 = XOnlyPublicKey::from_slice(&ser).unwrap();
@@ -431,7 +431,7 @@ mod tests {
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = ::key::PublicKey::from_keypair(&keypair);
         assert_eq!(::key::PublicKey::from_secret_key(&secp, &sk), pk);
-        let xpk = keypair.public_key();
+        let (xpk, _parity) = keypair.x_only_public_key();
         assert_eq!(XOnlyPublicKey::from(pk), xpk);
     }
 
@@ -478,7 +478,8 @@ mod tests {
 
             // In fuzzing mode secret->public key derivation is different, so
             // hard-code the expected result.
-            kp.public_key()
+            let (pk, _parity) = kp.x_only_public_key();
+            pk
         };
         #[cfg(fuzzing)]
         let pk = XOnlyPublicKey::from_slice(&[0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66]).expect("pk");
@@ -544,7 +545,7 @@ mod tests {
 
         let secp = Secp256k1::new();
         let kp = KeyPair::new(&secp, &mut DumbRng(0));
-        let pk = kp.public_key();
+        let (pk, _parity) = kp.x_only_public_key();
         assert_eq!(
             &pk.serialize()[..],
             &[

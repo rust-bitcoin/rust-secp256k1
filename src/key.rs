@@ -292,6 +292,31 @@ impl SecretKey {
     pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature {
         SECP256K1.sign_ecdsa(&msg, self)
     }
+
+    /// Returns the [`KeyPair`] for this [`SecretKey`].
+    ///
+    /// This is equivalent to using [`KeyPair::from_secret_key`].
+    #[inline]
+    pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> KeyPair {
+        KeyPair::from_secret_key(secp, self)
+    }
+
+    /// Returns the [`PublicKey`] for this [`SecretKey`].
+    ///
+    /// This is equivalent to using [`PublicKey::from_secret_key`].
+    #[inline]
+    pub fn public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> PublicKey {
+        PublicKey::from_secret_key(secp, self)
+    }
+
+    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`SecretKey`].
+    ///
+    /// This is equivalent to `XOnlyPublicKey::from_keypair(self.keypair(secp))`.
+    #[inline]
+    pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
+        let kp = self.keypair(secp);
+        XOnlyPublicKey::from_keypair(&kp)
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -416,6 +441,20 @@ impl PublicKey {
             debug_assert_eq!(ret, 1);
             PublicKey(pk)
         }
+    }
+
+    /// Creates a [`PublicKey`] using the key material from `pk` combined with the `parity`.
+    pub fn from_x_only_public_key(pk: XOnlyPublicKey, parity: Parity) -> PublicKey {
+        let mut buf = [0u8; 33];
+
+        // First byte of a compressed key should be `0x02 AND parity`.
+        buf[0] = match parity {
+            Parity::Even => 0x02,
+            Parity::Odd => 0x03,
+        };
+        buf[1..].clone_from_slice(&pk.serialize());
+
+        PublicKey::from_slice(&buf).expect("we know the buffer is valid")
     }
 
     #[inline]
@@ -589,6 +628,25 @@ impl PublicKey {
             }
         }
     }
+
+    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`PublicKey`].
+    #[inline]
+    pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
+        let mut pk_parity = 0;
+        unsafe {
+            let mut xonly_pk = ffi::XOnlyPublicKey::new();
+            let ret = ffi::secp256k1_xonly_pubkey_from_pubkey(
+                ffi::secp256k1_context_no_precomp,
+                &mut xonly_pk,
+                &mut pk_parity,
+                self.as_ptr(),
+            );
+            debug_assert_eq!(ret, 1);
+            let parity = Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
+
+            (XOnlyPublicKey(xonly_pk), parity)
+        }
+    }
 }
 
 impl CPtr for PublicKey {
@@ -674,7 +732,7 @@ impl Ord for PublicKey {
 ///
 /// let secp = Secp256k1::new();
 /// let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
-/// let key_pair = KeyPair::from_secret_key(&secp, secret_key);
+/// let key_pair = KeyPair::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
 /// [`Deserialize`]: serde::Deserialize
@@ -700,7 +758,7 @@ impl KeyPair {
     #[inline]
     pub fn from_secret_key<C: Signing>(
         secp: &Secp256k1<C>,
-        sk: SecretKey,
+        sk: &SecretKey,
     ) -> KeyPair {
         unsafe {
             let mut kp = ffi::KeyPair::new();
@@ -860,9 +918,27 @@ impl KeyPair {
         }
     }
 
-    /// Gets the [XOnlyPublicKey] for this [KeyPair].
+    /// Returns the [`SecretKey`] for this [`KeyPair`].
+    ///
+    /// This is equivalent to using [`SecretKey::from_keypair`].
     #[inline]
-    pub fn public_key(&self) -> XOnlyPublicKey {
+    pub fn secret_key(&self) -> SecretKey {
+        SecretKey::from_keypair(self)
+    }
+
+    /// Returns the [`PublicKey`] for this [`KeyPair`].
+    ///
+    /// This is equivalent to using [`PublicKey::from_keypair`].
+    #[inline]
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey::from_keypair(self)
+    }
+
+    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`KeyPair`].
+    ///
+    /// This is equivalent to using [`XOnlyPublicKey::from_keypair`].
+    #[inline]
+    pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
         XOnlyPublicKey::from_keypair(self)
     }
 
@@ -1008,9 +1084,9 @@ impl XOnlyPublicKey {
         &mut self.0
     }
 
-    /// Creates a new Schnorr public key from a Schnorr key pair.
+    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for `keypair`.
     #[inline]
-    pub fn from_keypair(keypair: &KeyPair) -> XOnlyPublicKey {
+    pub fn from_keypair(keypair: &KeyPair) -> (XOnlyPublicKey, Parity) {
         let mut pk_parity = 0;
         unsafe {
             let mut xonly_pk = ffi::XOnlyPublicKey::new();
@@ -1021,7 +1097,9 @@ impl XOnlyPublicKey {
                 keypair.as_ptr(),
             );
             debug_assert_eq!(ret, 1);
-            XOnlyPublicKey(xonly_pk)
+            let parity = Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
+
+            (XOnlyPublicKey(xonly_pk), parity)
         }
     }
 
@@ -1092,7 +1170,7 @@ impl XOnlyPublicKey {
     /// thread_rng().fill_bytes(&mut tweak);
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
-    /// let mut public_key = key_pair.public_key();
+    /// let (mut public_key, _parity) = key_pair.x_only_public_key();
     /// public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
@@ -1105,6 +1183,7 @@ impl XOnlyPublicKey {
             return Err(Error::InvalidTweak);
         }
 
+        let mut pk_parity = 0;
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
             let mut err = ffi::secp256k1_xonly_pubkey_tweak_add(
@@ -1117,18 +1196,17 @@ impl XOnlyPublicKey {
                 return Err(Error::InvalidTweak);
             }
 
-            let mut parity: ::secp256k1_sys::types::c_int = 0;
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
                 secp.ctx,
                 &mut self.0,
-                &mut parity,
+                &mut pk_parity,
                 &pubkey,
             );
             if err == 0 {
                 return Err(Error::InvalidPublicKey);
             }
 
-            Parity::from_i32(parity).map_err(Into::into)
+            Parity::from_i32(pk_parity).map_err(Into::into)
         }
     }
 
@@ -1157,7 +1235,7 @@ impl XOnlyPublicKey {
     /// thread_rng().fill_bytes(&mut tweak);
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
-    /// let mut public_key = key_pair.public_key();
+    /// let (mut public_key, _) = key_pair.x_only_public_key();
     /// let original = public_key;
     /// let parity = public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// assert!(original.tweak_add_check(&secp, &public_key, parity, tweak));
@@ -1182,6 +1260,14 @@ impl XOnlyPublicKey {
 
             err == 1
         }
+    }
+
+    /// Returns the [`PublicKey`] for this [`XOnlyPublicKey`].
+    ///
+    /// This is equivalent to using [`PublicKey::from_xonly_and_parity(self, parity)`].
+    #[inline]
+    pub fn public_key(&self, parity: Parity) -> PublicKey {
+        PublicKey::from_x_only_public_key(*self, parity)
     }
 }
 
@@ -1420,7 +1506,7 @@ pub mod serde_keypair {
 
         Ok(KeyPair::from_secret_key(
             &::SECP256K1,
-            secret_key,
+            &secret_key,
         ))
     }
 }
@@ -1972,12 +2058,15 @@ mod test {
             thread_rng().fill_bytes(&mut tweak);
 
             let mut kp = KeyPair::new(&s, &mut thread_rng());
-            let mut pk = kp.public_key();
+            let (mut pk, _parity) = kp.x_only_public_key();
 
             let orig_pk = pk;
             kp.tweak_add_assign(&s, &tweak).expect("Tweak error");
             let parity = pk.tweak_add_assign(&s, &tweak).expect("Tweak error");
-            assert_eq!(XOnlyPublicKey::from_keypair(&kp), pk);
+
+            let (back, _) = XOnlyPublicKey::from_keypair(&kp);
+
+            assert_eq!(back, pk);
             assert!(orig_pk.tweak_add_check(&s, &pk, parity, tweak));
         }
     }
@@ -2045,5 +2134,151 @@ mod test {
         assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+    }
+
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
+        let secp = Secp256k1::new();
+
+        static SK_BYTES: [u8; 32] = [
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
+            0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
+        ];
+
+        static PK_BYTES: [u8; 32] = [
+            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
+            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
+            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
+            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66
+        ];
+
+        let mut pk_bytes = [0u8; 33];
+        pk_bytes[0] = 0x02;     // Use positive Y co-ordinate.
+        pk_bytes[1..].clone_from_slice(&PK_BYTES);
+
+        let sk = SecretKey::from_slice(&SK_BYTES).expect("failed to parse sk bytes");
+        let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
+        let kp = KeyPair::from_secret_key(&secp, &sk);
+        let xonly = XOnlyPublicKey::from_slice(&PK_BYTES).expect("failed to get xonly from slice");
+
+        (sk, pk, kp, xonly)
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn convert_public_key_to_xonly_public_key() {
+        let (_sk, pk, _kp, want) = keys();
+        let (got, parity) = pk.x_only_public_key();
+
+        assert_eq!(parity, Parity::Even);
+        assert_eq!(got, want)
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn convert_secret_key_to_public_key() {
+        let secp = Secp256k1::new();
+
+        let (sk, want, _kp, _xonly) = keys();
+        let got = sk.public_key(&secp);
+
+        assert_eq!(got, want)
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn convert_secret_key_to_x_only_public_key() {
+        let secp = Secp256k1::new();
+
+        let (sk, _pk, _kp, want) = keys();
+        let (got, parity) = sk.x_only_public_key(&secp);
+
+        assert_eq!(parity, Parity::Even);
+        assert_eq!(got, want)
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn convert_keypair_to_public_key() {
+        let (_sk, want, kp, _xonly) = keys();
+        let got = kp.public_key();
+
+        assert_eq!(got, want)
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn convert_keypair_to_x_only_public_key() {
+        let (_sk, _pk, kp, want) = keys();
+        let (got, parity) = kp.x_only_public_key();
+
+        assert_eq!(parity, Parity::Even);
+        assert_eq!(got, want)
+    }
+
+    // SecretKey -> KeyPair -> SecretKey
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn roundtrip_secret_key_via_keypair() {
+        let secp = Secp256k1::new();
+        let (sk, _pk, _kp, _xonly) = keys();
+
+        let kp = sk.keypair(&secp);
+        let back = kp.secret_key();
+
+        assert_eq!(back, sk)
+    }
+
+    // KeyPair -> SecretKey -> KeyPair
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn roundtrip_keypair_via_secret_key() {
+        let secp = Secp256k1::new();
+        let (_sk, _pk, kp, _xonly) = keys();
+
+        let sk = kp.secret_key();
+        let back = sk.keypair(&secp);
+
+        assert_eq!(back, kp)
+    }
+
+    // XOnlyPublicKey -> PublicKey -> XOnlyPublicKey
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn roundtrip_x_only_public_key_via_public_key() {
+        let (_sk, _pk, _kp, xonly) = keys();
+
+        let pk = xonly.public_key(Parity::Even);
+        let (back, parity) = pk.x_only_public_key();
+
+        assert_eq!(parity, Parity::Even);
+        assert_eq!(back, xonly)
+    }
+
+    // PublicKey -> XOnlyPublicKey -> PublicKey
+    #[test]
+    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    fn roundtrip_public_key_via_x_only_public_key() {
+        let (_sk, pk, _kp, _xonly) = keys();
+
+        let (xonly, parity) = pk.x_only_public_key();
+        let back = xonly.public_key(parity);
+
+        assert_eq!(back, pk)
+    }
+
+    #[test]
+    fn public_key_from_x_only_public_key_and_odd_parity() {
+        let s = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
+        let mut want = String::from("03");
+        want.push_str(s);
+
+        let xonly = XOnlyPublicKey::from_str(s).expect("failed to parse xonly pubkey string");
+        let pk = xonly.public_key(Parity::Odd);
+        let got = format!("{}", pk);
+
+        assert_eq!(got, want)
     }
 }
