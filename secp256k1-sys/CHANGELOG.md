@@ -1,4 +1,8 @@
 
+# 0.5.1 - 2022-04-30
+
+* [Fix WASM build](https://github.com/rust-bitcoin/rust-secp256k1/pull/421)
+
 # 0.3.0 - 2020-08-27
 
 * **Update MSRV to 1.29.0**
