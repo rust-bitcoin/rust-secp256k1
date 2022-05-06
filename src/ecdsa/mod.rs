@@ -442,7 +442,7 @@ impl<C: Signing> Secp256k1<C> {
     /// signature implementation of bitcoin core. In average, this function
     /// will perform two signing operations.
     /// Requires a signing capable context.
-    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_grind_r instead.")]
+    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_low_r instead.")]
     pub fn sign_low_r(&self, msg: &Message, sk: &SecretKey) -> Signature {
         self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
     }

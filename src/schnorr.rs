@@ -262,7 +262,7 @@ impl <C: Signing> Secp256k1<C> {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    #[deprecated(since = "0.21.0", note = "Use kp = KeyPair::new() and kp.public_key()")]
+    #[deprecated(since = "0.21.0", note = "Use kp = KeyPair::new() and kp.x_only_public_key().0")]
     pub fn generate_schnorrsig_keypair<R: Rng + ?Sized>(
         &self,
         rng: &mut R,
