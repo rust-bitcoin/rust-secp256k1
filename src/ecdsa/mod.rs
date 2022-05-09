@@ -16,7 +16,7 @@ pub use self::recovery::{RecoveryId, RecoverableSignature};
 use SECP256K1;
 
 /// An ECDSA signature
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Signature(pub(crate) ffi::Signature);
 
 /// A DER serialized Signature
