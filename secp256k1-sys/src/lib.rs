@@ -87,11 +87,41 @@ pub type EcdhHashFn = Option<unsafe extern "C" fn(
 pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
     nonce32: *mut c_uchar,
     msg32: *const c_uchar,
+    msg_len: size_t,
     key32: *const c_uchar,
     xonly_pk32: *const c_uchar,
     algo16: *const c_uchar,
+    algo_len: size_t,
     data: *mut c_void,
 ) -> c_int>;
+
+/// Data structure that contains additional arguments for schnorrsig_sign_custom.
+#[repr(C)]
+pub struct SchnorrSigExtraParams {
+    magic: [c_uchar; 4],
+    nonce_fp: SchnorrNonceFn,
+    ndata: *const c_void,
+}
+
+impl SchnorrSigExtraParams {
+    /// Create a new SchnorrSigExtraParams properly initialized.
+    ///
+    /// `nonce_fp`: pointer to a nonce generation function. If NULL
+    /// rustsecp256k1_v0_5_0_nonce_function_bip340 is used
+    ///
+    /// `ndata`: pointer to arbitrary data used by the nonce generation function
+    /// (can be NULL). If it is non-NULL and
+    /// rustsecp256k1_v0_5_0_nonce_function_bip340 is used,
+    /// then ndata must be a pointer to 32-byte auxiliary randomness as per
+    /// BIP-340.
+    pub fn new(nonce_fp: SchnorrNonceFn, ndata: *const c_void) -> Self {
+        SchnorrSigExtraParams {
+            magic: [0xda, 0x6f, 0xb3, 0x8c],
+            nonce_fp,
+            ndata,
+        }
+    }
+}
 
 /// A Secp256k1 context, containing various precomputed values and such
 /// needed to do elliptic curve computations. If you create one of these
@@ -459,6 +489,17 @@ extern "C" {
         msg32: *const c_uchar,
         keypair: *const KeyPair,
         aux_rand32: *const c_uchar
+    ) -> c_int;
+
+    // Schnorr Signatures with extra parameters (see [`SchnorrSigExtraParams`])
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_5_0_schnorrsig_sign_custom")]
+    pub fn secp256k1_schnorrsig_sign_custom(
+        cx: *const Context,
+        sig: *mut c_uchar,
+        msg: *const c_uchar,
+        msg_len: size_t,
+        keypair: *const KeyPair,
+        extra_params: *const SchnorrSigExtraParams,
     ) -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_5_0_schnorrsig_verify")]
