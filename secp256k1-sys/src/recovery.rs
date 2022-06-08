@@ -15,9 +15,9 @@
 
 //! # FFI of the recovery module
 
-use ::types::*;
-use ::core::fmt;
-use {Context, Signature, NonceFn, PublicKey, CPtr};
+use crate::{Context, Signature, NonceFn, PublicKey, CPtr, impl_array_newtype};
+use crate::types::*;
+use core::fmt;
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
@@ -98,13 +98,10 @@ extern "C" {
 
 #[cfg(fuzzing)]
 mod fuzz_dummy {
-    use super::*;
-    use std::slice;
+    use core::slice;
 
-    use secp256k1_ec_pubkey_create;
-    use secp256k1_ec_pubkey_parse;
-    use secp256k1_ec_pubkey_serialize;
-    use SECP256K1_SER_COMPRESSED;
+    use crate::{secp256k1_ec_pubkey_create, secp256k1_ec_pubkey_parse, secp256k1_ec_pubkey_serialize, SECP256K1_SER_COMPRESSED};
+    use super::*;
 
     /// Sets sig to msg32||full pk
     pub unsafe fn secp256k1_ecdsa_sign_recoverable(
@@ -170,6 +167,6 @@ mod fuzz_dummy {
         1
     }
 }
+
 #[cfg(fuzzing)]
 pub use self::fuzz_dummy::*;
-

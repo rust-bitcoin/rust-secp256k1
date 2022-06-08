@@ -47,8 +47,7 @@
 //! use secp256k1::hashes::sha256;
 //!
 //! let secp = Secp256k1::new();
-//! let mut rng = OsRng::new().expect("OsRng");
-//! let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+//! let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
 //! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
@@ -150,47 +149,19 @@
 //! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
 
 // Coding conventions
-#![deny(non_upper_case_globals)]
-#![deny(non_camel_case_types)]
-#![deny(non_snake_case)]
-#![deny(unused_mut)]
-#![warn(missing_docs)]
-#![warn(missing_copy_implementations)]
-#![warn(missing_debug_implementations)]
-
+#![deny(non_upper_case_globals, non_camel_case_types, non_snake_case)]
+#![warn(missing_docs, missing_copy_implementations, missing_debug_implementations)]
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[macro_use]
-pub extern crate secp256k1_sys;
-pub use secp256k1_sys as ffi;
-
-#[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
-pub extern crate bitcoin_hashes as hashes;
-#[cfg(all(test, feature = "unstable"))]
-extern crate test;
-#[cfg(any(test, feature = "rand"))]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-pub extern crate rand;
-#[cfg(any(test))]
-extern crate rand_core;
-#[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-pub extern crate serde;
-#[cfg(all(test, feature = "serde"))]
-extern crate serde_test;
-#[cfg(any(test, feature = "rand"))]
-use rand::Rng;
-#[cfg(any(test, feature = "std"))]
-extern crate core;
-#[cfg(all(test, target_arch = "wasm32"))]
-extern crate wasm_bindgen_test;
 #[cfg(feature = "alloc")]
 extern crate alloc;
-
+#[cfg(any(test, feature = "std"))]
+extern crate core;
+#[cfg(all(test, feature = "unstable"))]
+extern crate test;
 
 #[macro_use]
 mod macros;
@@ -206,18 +177,28 @@ pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
 
-pub use key::*;
-pub use context::*;
-use core::marker::PhantomData;
-use core::{mem, fmt, str};
-use ffi::{CPtr, types::AlignedType};
+#[cfg(any(test, feature = "rand"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+pub use rand;
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+pub use serde;
+#[cfg(feature = "bitcoin_hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+pub use bitcoin_hashes as hashes;
+pub use secp256k1_sys as ffi;
+pub use crate::key::{PublicKey, SecretKey};
+pub use crate::context::*;
+pub use crate::key::*;
 
 #[cfg(feature = "global-context")]
 #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
 pub use context::global::SECP256K1;
 
+use core::{fmt, str, mem, marker::PhantomData};
+use crate::ffi::{CPtr, impl_array_newtype, types::AlignedType};
 #[cfg(feature = "bitcoin_hashes")]
-use hashes::Hash;
+use crate::hashes::Hash;
 
 // Backwards compatible changes
 /// Schnorr Signature related methods.
@@ -225,13 +206,13 @@ use hashes::Hash;
 pub mod schnorrsig {
     #[deprecated(since = "0.21.0", note = "Use crate::XOnlyPublicKey instead.")]
     /// backwards compatible re-export of xonly key
-    pub type PublicKey = super::XOnlyPublicKey;
+    pub type PublicKey = crate::key::XOnlyPublicKey;
     /// backwards compatible re-export of keypair
     #[deprecated(since = "0.21.0", note = "Use crate::KeyPair instead.")]
-    pub type KeyPair = super::KeyPair;
+    pub type KeyPair = crate::key::KeyPair;
     /// backwards compatible re-export of schnorr signatures
     #[deprecated(since = "0.21.0", note = "Use schnorr::Signature instead.")]
-    pub type Signature = super::schnorr::Signature;
+    pub type Signature = crate::schnorr::Signature;
 }
 
 #[deprecated(since = "0.21.0", note = "Use ecdsa::Signature instead.")]
@@ -470,7 +451,7 @@ impl<C: Context> Secp256k1<C> {
     /// [libsecp256k1](https://github.com/bitcoin-core/secp256k1/commit/d2275795ff22a6f4738869f5528fbbb61738aa48).
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn randomize<R: Rng + ?Sized>(&mut self, rng: &mut R) {
+    pub fn randomize<R: rand::Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
         self.seeded_randomize(&seed);
@@ -501,7 +482,7 @@ impl<C: Signing> Secp256k1<C> {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn generate_keypair<R: Rng + ?Sized>(&self, rng: &mut R)
+    pub fn generate_keypair<R: rand::Rng + ?Sized>(&self, rng: &mut R)
                                     -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(rng);
         let pk = key::PublicKey::from_secret_key(self, &sk);
@@ -513,7 +494,7 @@ impl<C: Signing> Secp256k1<C> {
 #[inline]
 #[cfg(all(feature = "global-context", feature = "rand"))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
-pub fn generate_keypair<R: Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
+pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
     SECP256K1.generate_keypair(rng)
 }
 
@@ -569,13 +550,17 @@ fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::marker::PhantomData;
+    use std::str::FromStr;
+
     use rand::{RngCore, thread_rng};
-    use core::str::FromStr;
-    use ffi::types::AlignedType;
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    use crate::{constants, ecdsa, from_hex, to_hex, Message, PublicKey, Secp256k1, SecretKey, Error};
+    use crate::context::*;
+    use crate::ffi::{self, types::AlignedType};
 
     macro_rules! hex {
         ($hex:expr) => ({
@@ -1038,6 +1023,7 @@ mod tests {
     #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
+        use crate::SECP256K1;
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_slice(&sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
@@ -1054,8 +1040,7 @@ mod tests {
     #[cfg(feature = "bitcoin_hashes")]
     #[test]
     fn test_from_hash() {
-        use hashes;
-        use hashes::Hash;
+        use crate::hashes::{self, Hash};
 
         let test_bytes = "Hello world!".as_bytes();
 
@@ -1079,40 +1064,19 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
-    use rand::{thread_rng, RngCore};
     use test::{Bencher, black_box};
 
-    use super::{Secp256k1, Message};
+    use rand::{RngCore, thread_rng};
+    use rand::rngs::mock::StepRng;
+
+    use super::{Message, Secp256k1};
 
     #[bench]
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn generate(bh: &mut Bencher) {
-        struct CounterRng(u64);
-        impl RngCore for CounterRng {
-            fn next_u32(&mut self) -> u32 {
-                self.next_u64() as u32
-            }
-
-            fn next_u64(&mut self) -> u64 {
-                self.0 += 1;
-                self.0
-            }
-
-            fn fill_bytes(&mut self, dest: &mut [u8]) {
-                for chunk in dest.chunks_mut(64/8) {
-                    let rand: [u8; 64/8] = unsafe {std::mem::transmute(self.next_u64())};
-                    chunk.copy_from_slice(&rand[..chunk.len()]);
-                }
-            }
-
-            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-                Ok(self.fill_bytes(dest))
-            }
-        }
-
 
         let s = Secp256k1::new();
-        let mut r = CounterRng(0);
+        let mut r = StepRng::new(1, 1);
         bh.iter( || {
             let (sk, pk) = s.generate_keypair(&mut r);
             black_box(sk);

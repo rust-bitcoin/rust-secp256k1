@@ -10,7 +10,7 @@ documentation = "https://docs.rs/secp256k1/"
 description = "Rust wrapper library for Pieter Wuille's `libsecp256k1`. Implements ECDSA and BIP 340 signatures for the SECG elliptic curve group secp256k1 and related utilities."
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
-autoexamples = false # Remove when edition 2018 https://github.com/rust-lang/cargo/issues/5330
+edition = "2018"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
@@ -20,10 +20,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 unstable = ["recovery", "rand-std"]
 default = ["std"]
-std = ["secp256k1-sys/std"]
+std = ["alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
-alloc = []
-bitcoin-hashes-std = ["bitcoin_hashes/std"]
+ alloc = ["secp256k1-sys/alloc"]
+ bitcoin-hashes-std = ["bitcoin_hashes/std"]
 rand-std = ["rand/std"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
@@ -43,17 +43,17 @@ serde = { version = "1.0", default-features = false, optional = true }
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
 # the respective -std feature e.g., bitcoin-hashes-std
 bitcoin_hashes = { version = "0.10", default-features = false, optional = true }
-rand = { version = "0.6", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
-rand = "0.6"
-rand_core = "0.4"
+rand = "0.8"
+rand_core = "0.6"
 serde_test = "1.0"
 bitcoin_hashes = "0.10"
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
-rand = { version = "0.6", features = ["wasm-bindgen"] }
+getrandom = { version = "0.2", features = ["js"] }
 
 
 [[example]]

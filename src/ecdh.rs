@@ -15,14 +15,11 @@
 //! Support for shared secret computations.
 //!
 
-use core::{ptr, str};
-use core::borrow::Borrow;
+use core::{borrow::Borrow, ptr, str};
 
-use {Error, from_hex};
-use key::{SecretKey, PublicKey};
-use ffi::{self, CPtr};
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
-use constants;
+
+use crate::{constants, Error, ffi::{self, CPtr}, key::{PublicKey, SecretKey}};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -97,7 +94,7 @@ impl str::FromStr for SharedSecret {
     type Err = Error;
     fn from_str(s: &str) -> Result<SharedSecret, Error> {
         let mut res = [0u8; SHARED_SECRET_SIZE];
-        match from_hex(s, &mut res) {
+        match crate::from_hex(s, &mut res) {
             Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),
             _ => Err(Error::InvalidSharedSecret)
         }
@@ -177,7 +174,7 @@ impl ::serde::Serialize for SharedSecret {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
-            s.serialize_str(::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+            s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(&self.as_ref()[..])
         }
@@ -204,12 +201,12 @@ impl<'de> ::serde::Deserialize<'de> for SharedSecret {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use super::*;
     use rand::thread_rng;
-    use super::super::Secp256k1;
-
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    use crate::Secp256k1;
+    use super::SharedSecret;
 
     #[test]
     #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
@@ -230,7 +227,7 @@ mod tests {
         let x = [5u8; 32];
         let y = [7u8; 32];
         let mut output = [0u8; 64];
-        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), ptr::null_mut()) };
+        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), core::ptr::null_mut()) };
         assert_eq!(res, 1);
         let mut new_x = [0u8; 32];
         let mut new_y = [0u8; 32];
@@ -244,7 +241,8 @@ mod tests {
     #[cfg(not(fuzzing))]
     #[cfg(all(feature="rand-std", feature = "std", feature = "bitcoin_hashes"))]
     fn bitcoin_hashes_and_sys_generate_same_secret() {
-        use hashes::{sha256, Hash, HashEngine};
+        use bitcoin_hashes::{sha256, Hash, HashEngine};
+        use crate::ecdh::shared_secret_point;
 
         let s = Secp256k1::signing_only();
         let (sk1, _) = s.generate_keypair(&mut thread_rng());
@@ -292,11 +290,13 @@ mod tests {
 
 #[cfg(all(test, feature = "unstable"))]
 mod benches {
-    use rand::thread_rng;
     use test::{Bencher, black_box};
 
+    use rand::thread_rng;
+
+    use crate::Secp256k1;
+
     use super::SharedSecret;
-    use super::super::Secp256k1;
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {

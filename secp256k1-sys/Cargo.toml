@@ -13,6 +13,7 @@ keywords = [ "secp256k1", "libsecp256k1", "ffi" ]
 readme = "README.md"
 build = "build.rs"
 links = "rustsecp256k1_v0_5_0"
+edition = "2018"
 
 # Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
@@ -29,5 +30,6 @@ libc = "0.2"
 default = ["std"]
 recovery = []
 lowmemory = []
-std = []
+std = ["alloc"]
+alloc = []
 

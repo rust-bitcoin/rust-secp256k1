@@ -2,8 +2,8 @@
 
 use core::{fmt, str, ops, ptr, mem};
 
-use {Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
-use ffi::CPtr;
+use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
+use crate::ffi::CPtr;
 
 #[cfg(feature = "recovery")]
 mod recovery;
@@ -13,7 +13,7 @@ mod recovery;
 pub use self::recovery::{RecoveryId, RecoverableSignature};
 
 #[cfg(feature = "global-context")]
-use SECP256K1;
+use crate::SECP256K1;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -120,7 +120,7 @@ impl SerializedSignature {
     /// Convert the serialized signature into the Signature struct.
     /// (This DER deserializes it)
     pub fn to_signature(&self) -> Result<Signature, Error> {
-        Signature::from_der(&self)
+        Signature::from_der(self)
     }
 
     /// Create a SerializedSignature from a Signature.
@@ -304,8 +304,8 @@ impl From<ffi::Signature> for Signature {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for Signature {
-    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+impl serde::Serialize for Signature {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
@@ -316,14 +316,14 @@ impl ::serde::Serialize for Signature {
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for Signature {
-    fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+impl<'de> serde::Deserialize<'de> for Signature {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
-            d.deserialize_str(::serde_util::FromStrVisitor::new(
+            d.deserialize_str(crate::serde_util::FromStrVisitor::new(
                 "a hex string representing a DER encoded Signature"
             ))
         } else {
-            d.deserialize_bytes(::serde_util::BytesVisitor::new(
+            d.deserialize_bytes(crate::serde_util::BytesVisitor::new(
                 "raw byte stream, that represents a DER encoded Signature",
                 Signature::from_der
             ))
@@ -467,12 +467,11 @@ impl<C: Verification> Secp256k1<C> {
     ///
     /// ```rust
     /// # #[cfg(all(feature = "std", feature = "rand-std"))] {
-    /// # use secp256k1::rand::rngs::OsRng;
+    /// # use secp256k1::rand::thread_rng;
     /// # use secp256k1::{Secp256k1, Message, Error};
     /// #
     /// # let secp = Secp256k1::new();
-    /// # let mut rng = OsRng::new().expect("OsRng");
-    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+    /// # let (secret_key, public_key) = secp.generate_keypair(&mut thread_rng());
     /// #
     /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign(&message, &secret_key);
@@ -496,12 +495,11 @@ impl<C: Verification> Secp256k1<C> {
     ///
     /// ```rust
     /// # #[cfg(all(feature = "std", feature = "rand-std"))] {
-    /// # use secp256k1::rand::rngs::OsRng;
+    /// # use secp256k1::rand::thread_rng;
     /// # use secp256k1::{Secp256k1, Message, Error};
     /// #
     /// # let secp = Secp256k1::new();
-    /// # let mut rng = OsRng::new().expect("OsRng");
-    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+    /// # let (secret_key, public_key) = secp.generate_keypair(&mut thread_rng());
     /// #
     /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign_ecdsa(&message, &secret_key);

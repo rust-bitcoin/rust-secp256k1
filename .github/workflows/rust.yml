@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly, 1.29.0]
+        rust: [stable, beta, nightly, 1.41.1]
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
@@ -46,9 +46,6 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - name: Pin cc if rust 1.29
-        if: matrix.rust == '1.29.0'
-        run: cargo generate-lockfile --verbose && cargo update -p cc --precise "1.0.41" --verbose
       - name: Running cargo
         env:
           DO_FEATURE_MATRIX: true
@@ -59,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly] # No 1.29 because WASM requires Rust 1.30
+        rust: [stable, beta, nightly] # wasm-pack doesn't support rust 1.41.1
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
