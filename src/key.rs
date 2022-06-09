@@ -29,6 +29,7 @@ use crate::ffi::types::c_uint;
 use crate::{Message, ecdsa, SECP256K1};
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
 use crate::schnorr;
+use crate::Scalar;
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
@@ -232,15 +233,11 @@ impl SecretKey {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     pub fn add_assign(
         &mut self,
-        other: &[u8],
+        other: &Scalar,
     ) -> Result<(), Error> {
-        if other.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_add(
                 ffi::secp256k1_context_no_precomp,
@@ -257,15 +254,11 @@ impl SecretKey {
 
     #[inline]
     /// Multiplies one secret key by another, modulo the curve order. Will
-    /// return an error if the resulting key would be invalid or if
-    /// the tweak was not a 32-byte length slice.
+    /// return an error if the resulting key would be invalid.
     pub fn mul_assign(
         &mut self,
-        other: &[u8],
+        other: &Scalar,
     ) -> Result<(), Error> {
-        if other.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_mul(
                 ffi::secp256k1_context_no_precomp,
@@ -498,20 +491,16 @@ impl PublicKey {
     }
 
     #[inline]
-    /// Adds the `other` public key to `self` in place.
+    /// Adds `other * G` to `self` in place.
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     pub fn add_exp_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
-        other: &[u8]
+        other: &Scalar
     ) -> Result<(), Error> {
-        if other.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0, other.as_c_ptr()) == 1 {
                 Ok(())
@@ -526,16 +515,12 @@ impl PublicKey {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     pub fn mul_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
-        other: &[u8],
+        other: &Scalar,
     ) -> Result<(), Error> {
-        if other.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0, other.as_c_ptr()) == 1 {
                 Ok(())
@@ -860,8 +845,7 @@ impl KeyPair {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     ///
     /// NB: Will not error if the tweaked public key has an odd value and can't be used for
     ///     BIP 340-342 purposes.
@@ -870,12 +854,11 @@ impl KeyPair {
     ///
     /// ```
     /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
-    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
     /// use secp256k1::rand::{RngCore, thread_rng};
     ///
     /// let secp = Secp256k1::new();
-    /// let mut tweak = [0u8; 32];
-    /// thread_rng().fill_bytes(&mut tweak);
+    /// let tweak = Scalar::random();
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
     /// key_pair.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
@@ -886,12 +869,8 @@ impl KeyPair {
     pub fn tweak_add_assign<C: Verification>(
         &mut self,
         secp: &Secp256k1<C>,
-        tweak: &[u8],
+        tweak: &Scalar,
     ) -> Result<(), Error> {
-        if tweak.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
-
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx,
@@ -1150,12 +1129,11 @@ impl XOnlyPublicKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
-    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
     /// use secp256k1::rand::{RngCore, thread_rng};
     ///
     /// let secp = Secp256k1::new();
-    /// let mut tweak = [0u8; 32];
-    /// thread_rng().fill_bytes(&mut tweak);
+    /// let tweak = Scalar::random();
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
     /// let (mut public_key, _parity) = key_pair.x_only_public_key();
@@ -1165,12 +1143,8 @@ impl XOnlyPublicKey {
     pub fn tweak_add_assign<V: Verification>(
         &mut self,
         secp: &Secp256k1<V>,
-        tweak: &[u8],
+        tweak: &Scalar,
     ) -> Result<Parity, Error> {
-        if tweak.len() != 32 {
-            return Err(Error::InvalidTweak);
-        }
-
         let mut pk_parity = 0;
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
@@ -1215,12 +1189,11 @@ impl XOnlyPublicKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
-    /// use secp256k1::{Secp256k1, KeyPair};
+    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
     /// use secp256k1::rand::{thread_rng, RngCore};
     ///
     /// let secp = Secp256k1::new();
-    /// let mut tweak = [0u8; 32];
-    /// thread_rng().fill_bytes(&mut tweak);
+    /// let tweak = Scalar::random();
     ///
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
     /// let (mut public_key, _) = key_pair.x_only_public_key();
@@ -1234,7 +1207,7 @@ impl XOnlyPublicKey {
         secp: &Secp256k1<V>,
         tweaked_key: &Self,
         tweaked_parity: Parity,
-        tweak: [u8; 32],
+        tweak: Scalar,
     ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
         unsafe {
@@ -1512,6 +1485,7 @@ mod test {
     use super::{XOnlyPublicKey, PublicKey, Secp256k1, SecretKey, KeyPair, Parity};
     use crate::{constants, from_hex, to_hex};
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
+    use crate::Scalar;
 
     macro_rules! hex {
         ($hex:expr) => ({
@@ -1770,15 +1744,17 @@ mod test {
 
         let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
         let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
+        let scalar1 = Scalar::from(sk1);
+        let scalar2 = Scalar::from(sk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
-        assert!(sk1.add_assign(&sk2[..]).is_ok());
-        assert!(pk1.add_exp_assign(&s, &sk2[..]).is_ok());
+        assert!(sk1.add_assign(&scalar2).is_ok());
+        assert!(pk1.add_exp_assign(&s, &scalar2).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
-        assert!(sk2.add_assign(&sk1[..]).is_ok());
-        assert!(pk2.add_exp_assign(&s, &sk1[..]).is_ok());
+        assert!(sk2.add_assign(&scalar1).is_ok());
+        assert!(pk2.add_exp_assign(&s, &scalar1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
@@ -1789,15 +1765,17 @@ mod test {
 
         let (mut sk1, mut pk1) = s.generate_keypair(&mut thread_rng());
         let (mut sk2, mut pk2) = s.generate_keypair(&mut thread_rng());
+        let scalar1 = Scalar::from(sk1);
+        let scalar2 = Scalar::from(sk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
-        assert!(sk1.mul_assign(&sk2[..]).is_ok());
-        assert!(pk1.mul_assign(&s, &sk2[..]).is_ok());
+        assert!(sk1.mul_assign(&scalar2).is_ok());
+        assert!(pk1.mul_assign(&s, &scalar2).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk1), pk1);
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
-        assert!(sk2.mul_assign(&sk1[..]).is_ok());
-        assert!(pk2.mul_assign(&s, &sk1[..]).is_ok());
+        assert!(sk2.mul_assign(&scalar1).is_ok());
+        assert!(pk2.mul_assign(&s, &scalar1).is_ok());
         assert_eq!(PublicKey::from_secret_key(&s, &sk2), pk2);
     }
 
@@ -1913,7 +1891,7 @@ mod test {
         assert!(sum2.is_ok());
         assert_eq!(sum1, sum2);
 
-        assert!(sk1.add_assign(&sk2.as_ref()[..]).is_ok());
+        assert!(sk1.add_assign(&Scalar::from(sk2)).is_ok());
         let sksum = PublicKey::from_secret_key(&s, &sk1);
         assert_eq!(Ok(sksum), sum1);
     }
@@ -1999,8 +1977,7 @@ mod test {
         let s = Secp256k1::new();
 
         for _ in 0..10 {
-            let mut tweak = [0u8; 32];
-            thread_rng().fill_bytes(&mut tweak);
+            let tweak = Scalar::random();
 
             let mut kp = KeyPair::new(&s, &mut thread_rng());
             let (mut pk, _parity) = kp.x_only_public_key();

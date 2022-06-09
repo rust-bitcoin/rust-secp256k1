@@ -173,6 +173,7 @@ mod key;
 pub mod constants;
 pub mod ecdh;
 pub mod ecdsa;
+pub mod scalar;
 pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
@@ -190,6 +191,7 @@ pub use secp256k1_sys as ffi;
 pub use crate::key::{PublicKey, SecretKey};
 pub use crate::context::*;
 pub use crate::key::*;
+pub use crate::scalar::Scalar;
 
 #[cfg(feature = "global-context")]
 #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
