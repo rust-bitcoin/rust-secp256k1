@@ -1,3 +1,35 @@
+# 0.23.0 - 2022-06-21
+
+The major change in this version is the increase of the Minimum Supported Rust Version (MSRV) from 1.29 to 1.41.1, this is a big change because it introduces Rust Edition 2018 to the codebase along with all the benefits that brings.
+
+## Breaking changes
+
+* [MSRV bumped to 1.41.1 and edition changed to 2018](https://github.com/rust-bitcoin/rust-secp256k1/pull/331)
+* serde implements serialize [fixed-width arrays](https://github.com/rust-bitcoin/rust-secp256k1/pull/406) as tuples in binary formats to avoid encoding the length
+* Key tweaking methods renamed and refactored to use a more [functional-style](https://github.com/rust-bitcoin/rust-secp256k1/pull/406), they now accept a [new Scalar](https://github.com/rust-bitcoin/rust-secp256k1/pull/445) type instead of raw slices
+* Update [`rand` dependency to 0.8](https://github.com/rust-bitcoin/rust-secp256k1/pull/331)
+* `KeyPair::from_secret_key` [borrows SecretKey](https://github.com/rust-bitcoin/rust-secp256k1/pull/430) instead of taking ownership
+
+## New features/APIs
+
+* Several convenience/conversion methods between [keys](https://github.com/rust-bitcoin/rust-secp256k1/pull/430)
+* [`sign_ecdsa_with_noncedata` and `sign_ecdsa_recoverable_with_noncedata`](https://github.com/rust-bitcoin/rust-secp256k1/pull/425) can be used to add additional entropy to ECDSA signatures
+* Errors now display their sources if std is unavailable, with std they rely on the consumer to use the source() method
+* [Implemented `TryFrom` for `Parity`](https://github.com/rust-bitcoin/rust-secp256k1/pull/409)
+* The [alloc feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/331) can be used on targets with allocators without a standard library
+* `SharedSecret` can be created from a slice, parsed from a hex string, or [(de)serialized using serde](https://github.com/rust-bitcoin/rust-secp256k1/pull/418)
+* We now [derive `std::hash::Hash` for `Signature`](https://github.com/rust-bitcoin/rust-secp256k1/pull/441)
+
+## Other improvements
+
+* `global-context` feature now activates `global-context-less-secure`.
+* `githooks/` directory added for contributors
+* [Clippy is now used in CI](https://github.com/rust-bitcoin/rust-secp256k1/pull/448) and the code is clippy-compliant
+* Various documentation improvements
+* Various CI/development improvements
+* Various code quality improvements/refactors
+
+
 # 0.22.1 - 2022-03-10
 
 * [Reintroduce](https://github.com/rust-bitcoin/rust-secp256k1/pull/417) accidentally removed possibility to create `SharedSecret` from byte serialization
