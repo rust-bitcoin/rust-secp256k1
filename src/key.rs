@@ -2077,6 +2077,7 @@ mod test {
 
     #[cfg(not(fuzzing))]
     #[test]
+    #[allow(clippy::nonminimal_bool)]
     fn pubkey_equal() {
         let pk1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
