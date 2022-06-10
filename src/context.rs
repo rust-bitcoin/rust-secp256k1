@@ -188,7 +188,7 @@ mod alloc_only {
         /// ctx.seeded_randomize(&seed);
         /// # }
         /// ```
-        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
+        #[cfg_attr(not(feature = "rand-std"), allow(clippy::let_and_return, unused_mut))]
         pub fn gen_new() -> Secp256k1<C> {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
