@@ -272,9 +272,7 @@ mod tests {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         let secret = SharedSecret::from_slice(&BYTES).unwrap();
 

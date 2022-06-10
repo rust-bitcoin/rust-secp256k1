@@ -2108,9 +2108,8 @@ mod test {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static SK_STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
+
         #[cfg(fuzzing)]
         static PK_BYTES: [u8; 33] = [
             0x02,
@@ -2119,9 +2118,7 @@ mod test {
             0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
             0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
         ];
-        static PK_STR: &'static str = "\
-            0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
-        ";
+        static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
         #[cfg(not(fuzzing))]
         let s = Secp256k1::new();
@@ -2238,9 +2235,7 @@ mod test {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static SK_STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
         assert_tokens(&sk.compact(), &[

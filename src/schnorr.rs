@@ -548,7 +548,7 @@ mod tests {
             0x9e, 0x4d, 0x4e, 0xf5, 0x67, 0x8a, 0xd0, 0xd9, 0xd5, 0x32, 0xc0, 0xdf, 0xa9, 0x07,
             0xb5, 0x68, 0x72, 0x2d, 0x0b, 0x01, 0x19, 0xba,
         ];
-        static SIG_STR: &'static str = "\
+        static SIG_STR: &str = "\
             14d0bf1a8953506fb460f58be141af767fd112535fb3922ef217308e2c26706f1eeb432b3dba9a01082f9e4d4ef5678ad0d9d532c0dfa907b568722d0b0119ba\
         ";
 
@@ -556,9 +556,7 @@ mod tests {
             24, 132, 87, 129, 246, 49, 196, 143, 28, 151, 9, 226, 48, 146, 6, 125, 6, 131, 127,
             48, 170, 12, 208, 84, 74, 200, 135, 254, 145, 221, 209, 102
         ];
-        static PK_STR: &'static str = "\
-            18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
-        ";
+        static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
         let pk = XOnlyPublicKey::from_slice(&PK_BYTES).unwrap();
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
