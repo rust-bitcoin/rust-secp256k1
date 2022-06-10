@@ -152,6 +152,8 @@
 #![deny(non_upper_case_globals, non_camel_case_types, non_snake_case)]
 #![warn(missing_docs, missing_copy_implementations, missing_debug_implementations)]
 
+#![allow(clippy::missing_safety_doc)]
+
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
