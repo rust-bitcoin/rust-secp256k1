@@ -431,7 +431,7 @@ impl PublicKey {
     #[cfg(feature = "global-context")]
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
-        PublicKey::from_secret_key(&SECP256K1, sk)
+        PublicKey::from_secret_key(SECP256K1, sk)
     }
 
     /// Creates a public key directly from a slice.
@@ -1621,7 +1621,7 @@ pub mod serde_keypair {
         let secret_key = SecretKey::deserialize(deserializer)?;
 
         Ok(KeyPair::from_secret_key(
-            &crate::SECP256K1,
+            crate::SECP256K1,
             &secret_key,
         ))
     }

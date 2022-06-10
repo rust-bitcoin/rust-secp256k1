@@ -176,7 +176,7 @@ impl ::serde::Serialize for SharedSecret {
             let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
             s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
-            s.serialize_bytes(&self.as_ref()[..])
+            s.serialize_bytes(self.as_ref())
         }
     }
 }
