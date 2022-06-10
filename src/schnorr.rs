@@ -505,7 +505,7 @@ mod tests {
         )
         .is_err());
 
-        let long_str: String = core::iter::repeat('a').take(1024 * 1024).collect();
+        let long_str: String = "a".repeat(1024 * 1024);
         assert!(XOnlyPublicKey::from_str(&long_str).is_err());
     }
 

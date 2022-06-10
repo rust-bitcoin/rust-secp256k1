@@ -1875,7 +1875,7 @@ mod test {
         assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
         assert!(PublicKey::from_str("xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
 
-        let long_str: String = core::iter::repeat('a').take(1024 * 1024).collect();
+        let long_str = "a".repeat(1024 * 1024);
         assert!(SecretKey::from_str(&long_str).is_err());
         assert!(PublicKey::from_str(&long_str).is_err());
     }
