@@ -114,9 +114,6 @@ mod alloc_only {
     use crate::ffi::{self, types::{c_uint, c_void}};
     use crate::{Secp256k1, Signing, Verification, Context, AlignedType};
 
-    #[cfg(feature = "rand-std")]
-    use rand;
-
     impl private::Sealed for SignOnly {}
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
