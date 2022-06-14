@@ -2180,8 +2180,6 @@ mod test {
             let (want_tweaked_xonly, tweaked_kp_parity) = XOnlyPublicKey::from_keypair(&tweaked_kp);
 
             assert_eq!(tweaked_xonly, want_tweaked_xonly);
-
-            #[cfg(not(fuzzing))]
             assert_eq!(parity, tweaked_kp_parity);
 
             assert!(xonly.tweak_add_check(&s, &tweaked_xonly, parity, tweak));

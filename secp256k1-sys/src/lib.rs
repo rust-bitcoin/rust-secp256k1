@@ -1169,7 +1169,7 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, 0);
         if !pk_parity.is_null() {
-            *pk_parity = ((*keypair).0[32] == 0).into();
+            *pk_parity = ((*keypair).0[64] == 0).into();
         }
         (*pubkey).0.copy_from_slice(&(*keypair).0[32..]);
         1
