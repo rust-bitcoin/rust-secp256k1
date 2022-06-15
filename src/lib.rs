@@ -339,7 +339,7 @@ pub enum Error {
     InvalidSharedSecret,
     /// Bad recovery id.
     InvalidRecoveryId,
-    /// Invalid tweak for `add_*_assign` or `mul_*_assign`.
+    /// Tried to add/multiply by an invalid tweak.
     InvalidTweak,
     /// Didn't pass enough memory to context creation with preallocated memory.
     NotEnoughMemory,
