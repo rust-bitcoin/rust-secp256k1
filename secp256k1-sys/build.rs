@@ -31,6 +31,24 @@ fn main() {
                // just #define it away.
                .define("printf(...)", Some(""));
 
+    if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "riscv32" {
+        base_config.compiler("/usr/local/opt/llvm/bin/clang")
+        .flag("--sysroot=/opt/riscv/riscv32-unknown-elf") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
+        .flag("--gcc-toolchain=/opt/riscv") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
+        .no_default_flags(true)
+        .flag("-O3")
+        .flag("--target=riscv32-unknown-none-elf")
+        .flag("-mabi=ilp32")
+        .flag("-mcmodel=medany")
+        .flag("-Os")
+        .flag("-fdata-sections")
+        .flag("-ffunction-sections")
+        .flag("-dead_strip")
+        .flag("-flto")
+        .flag("-march=rv32im")
+        .target("riscv32-unknown-none-elf");
+    }
+
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume negligible memory
         base_config.define("ECMULT_GEN_PREC_BITS", Some("2"));
@@ -62,4 +80,3 @@ fn main() {
         base_config.compile("libsecp256k1.a");
     }
 }
-
