@@ -372,8 +372,7 @@ impl fmt::Display for Error {
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for Error {
-    #[allow(deprecated)]
-    fn cause(&self) -> Option<&dyn std::error::Error> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Error::IncorrectSignature => None,
             Error::InvalidMessage => None,

@@ -1277,6 +1277,24 @@ impl Parity {
     }
 }
 
+/// `Even` for `0`, `Odd` for `1`, error for anything else
+impl TryFrom<i32> for Parity {
+    type Error = InvalidParityValue;
+
+    fn try_from(parity: i32) -> Result<Self, Self::Error> {
+        Self::from_i32(parity)
+    }
+}
+
+/// `Even` for `0`, `Odd` for `1`, error for anything else
+impl TryFrom<u8> for Parity {
+    type Error = InvalidParityValue;
+
+    fn try_from(parity: u8) -> Result<Self, Self::Error> {
+        Self::from_u8(parity)
+    }
+}
+
 /// The conversion returns `0` for even parity and `1` for odd.
 impl From<Parity> for i32 {
     fn from(parity: Parity) -> i32 {
