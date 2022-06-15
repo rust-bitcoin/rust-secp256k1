@@ -349,28 +349,23 @@ pub enum Error {
     InvalidParityValue(key::InvalidParityValue),
 }
 
-impl Error {
-    fn as_str(&self) -> &str {
-        match *self {
-            Error::IncorrectSignature => "secp: signature failed verification",
-            Error::InvalidMessage => "secp: message was not 32 bytes (do you need to hash?)",
-            Error::InvalidPublicKey => "secp: malformed public key",
-            Error::InvalidSignature => "secp: malformed signature",
-            Error::InvalidSecretKey => "secp: malformed or out-of-range secret key",
-            Error::InvalidSharedSecret => "secp: malformed or out-of-range shared secret",
-            Error::InvalidRecoveryId => "secp: bad recovery id",
-            Error::InvalidTweak => "secp: bad tweak",
-            Error::NotEnoughMemory => "secp: not enough memory allocated",
-            Error::InvalidPublicKeySum => "secp: the sum of public keys was invalid or the input vector lengths was less than 1",
-            Error::InvalidParityValue(_) => "couldn't create parity",
-        }
-    }
-}
-
-// Passthrough Debug to Display, since errors should be user-visible.
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(self.as_str())
+        use Error::*;
+
+        match *self {
+            IncorrectSignature => f.write_str("signature failed verification"),
+            InvalidMessage => f.write_str("message was not 32 bytes (do you need to hash?)"),
+            InvalidPublicKey => f.write_str("malformed public key"),
+            InvalidSignature => f.write_str("malformed signature"),
+            InvalidSecretKey => f.write_str("malformed or out-of-range secret key"),
+            InvalidSharedSecret => f.write_str("malformed or out-of-range shared secret"),
+            InvalidRecoveryId => f.write_str("bad recovery id"),
+            InvalidTweak => f.write_str("bad tweak"),
+            NotEnoughMemory => f.write_str("not enough memory allocated"),
+            InvalidPublicKeySum => f.write_str("the sum of public keys was invalid or the input vector lengths was less than 1"),
+            InvalidParityValue(e) => write_err!(f, "couldn't create parity"; e),
+        }
     }
 }
 
