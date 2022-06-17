@@ -114,9 +114,6 @@ mod alloc_only {
     use crate::ffi::{self, types::{c_uint, c_void}};
     use crate::{Secp256k1, Signing, Verification, Context, AlignedType};
 
-    #[cfg(feature = "rand-std")]
-    use rand;
-
     impl private::Sealed for SignOnly {}
     impl private::Sealed for All {}
     impl private::Sealed for VerifyOnly {}
@@ -191,7 +188,7 @@ mod alloc_only {
         /// ctx.seeded_randomize(&seed);
         /// # }
         /// ```
-        #[allow(unused_mut)]    // Unused when `rand-std` is not enabled.
+        #[cfg_attr(not(feature = "rand-std"), allow(clippy::let_and_return, unused_mut))]
         pub fn gen_new() -> Secp256k1<C> {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();

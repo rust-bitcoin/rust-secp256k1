@@ -152,6 +152,8 @@
 #![deny(non_upper_case_globals, non_camel_case_types, non_snake_case)]
 #![warn(missing_docs, missing_copy_implementations, missing_debug_implementations)]
 
+#![allow(clippy::missing_safety_doc)]
+
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(all(test, feature = "unstable"), feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -729,10 +731,10 @@ mod tests {
 
         assert_eq!(
             ecdsa::Signature::from_der(&byte_str).expect("byte str decode"),
-            ecdsa::Signature::from_str(&hex_str).expect("byte str decode")
+            ecdsa::Signature::from_str(hex_str).expect("byte str decode")
         );
 
-        let sig = ecdsa::Signature::from_str(&hex_str).expect("byte str decode");
+        let sig = ecdsa::Signature::from_str(hex_str).expect("byte str decode");
         assert_eq!(&sig.to_string(), hex_str);
         assert_eq!(&format!("{:?}", sig), hex_str);
 
@@ -759,7 +761,7 @@ mod tests {
 
         // 71 byte signature
         let hex_str = "30450221009d0bad576719d32ae76bedb34c774866673cbde3f4e12951555c9408e6ce774b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776";
-        let sig = ecdsa::Signature::from_str(&hex_str).expect("byte str decode");
+        let sig = ecdsa::Signature::from_str(hex_str).expect("byte str decode");
         assert_eq!(&format!("{}", sig), hex_str);
     }
 
@@ -1001,7 +1003,7 @@ mod tests {
             226, 108, 150, 124, 57, 38, 206, 112, 44, 249, 125, 75, 1, 0, 98, 225,
             147, 247, 99, 25, 15, 103, 118
         ];
-        static SIG_STR: &'static str = "\
+        static SIG_STR: &str = "\
             30450221009d0bad576719d32ae76bedb34c774866673cbde3f4e12951555c9408e6ce77\
             4b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776\
         ";
@@ -1026,7 +1028,7 @@ mod tests {
         let msg = Message::from_slice(&msg_data).unwrap();
 
         // Check usage as explicit parameter
-        let pk = PublicKey::from_secret_key(&SECP256K1, &sk);
+        let pk = PublicKey::from_secret_key(SECP256K1, &sk);
 
         // Check usage as self
         let sig = SECP256K1.sign_ecdsa(&msg, &sk);

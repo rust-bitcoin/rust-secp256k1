@@ -22,6 +22,17 @@ Contributions to this library are welcome. A few guidelines:
 * No crypto should be implemented in Rust, with the possible exception of hash functions. Cryptographic contributions should be directed upstream to libsecp256k1.
 * This library should always compile with any combination of features on **Rust 1.41.1**.
 
+### Githooks
+
+To assist devs in catching errors _before_ running CI we provide some githooks. If you do not
+already have locally configured githooks you can use the ones in this repository by running, in the
+root directory of the repository:
+```
+git config --local core.hooksPath githooks/
+```
+
+Alternatively add symlinks in your `.git/hooks` directory to any of the githooks we provide.
+
 ## Fuzzing
 
 If you want to fuzz this library, or any library which depends on it, you will

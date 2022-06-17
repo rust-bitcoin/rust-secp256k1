@@ -176,7 +176,7 @@ impl ::serde::Serialize for SharedSecret {
             let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
             s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
-            s.serialize_bytes(&self.as_ref()[..])
+            s.serialize_bytes(self.as_ref())
         }
     }
 }
@@ -272,9 +272,7 @@ mod tests {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         let secret = SharedSecret::from_slice(&BYTES).unwrap();
 

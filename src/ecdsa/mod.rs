@@ -1,6 +1,6 @@
 //! Structs and functionality related to the ECDSA signature algorithm.
 
-use core::{fmt, str, ops, ptr, mem};
+use core::{fmt, str, ops, ptr};
 
 use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
 use crate::ffi::CPtr;
@@ -398,14 +398,8 @@ impl<C: Signing> Secp256k1<C> {
                     }
 
                     counter += 1;
-                    // From 1.32 can use `to_le_bytes` instead
-                    let le_counter = counter.to_le();
-                    let le_counter_bytes : [u8; 4] = mem::transmute(le_counter);
-                    for (i, b) in le_counter_bytes.iter().enumerate() {
-                        extra_entropy[i] = *b;
-                    }
-
-                    entropy_p = extra_entropy.as_ptr() as *const ffi::types::c_void;
+                    extra_entropy[..4].copy_from_slice(&counter.to_le_bytes());
+                    entropy_p = extra_entropy.as_ptr().cast::<ffi::types::c_void>();
 
                     // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
                     #[cfg(fuzzing)]

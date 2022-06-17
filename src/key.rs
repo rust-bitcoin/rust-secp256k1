@@ -431,7 +431,7 @@ impl PublicKey {
     #[cfg(feature = "global-context")]
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
-        PublicKey::from_secret_key(&SECP256K1, sk)
+        PublicKey::from_secret_key(SECP256K1, sk)
     }
 
     /// Creates a public key directly from a slice.
@@ -1621,7 +1621,7 @@ pub mod serde_keypair {
         let secret_key = SecretKey::deserialize(deserializer)?;
 
         Ok(KeyPair::from_secret_key(
-            &crate::SECP256K1,
+            crate::SECP256K1,
             &secret_key,
         ))
     }
@@ -1875,7 +1875,7 @@ mod test {
         assert!(PublicKey::from_str("0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
         assert!(PublicKey::from_str("xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1").is_err());
 
-        let long_str: String = core::iter::repeat('a').take(1024 * 1024).collect();
+        let long_str = "a".repeat(1024 * 1024);
         assert!(SecretKey::from_str(&long_str).is_err());
         assert!(PublicKey::from_str(&long_str).is_err());
     }
@@ -2077,6 +2077,7 @@ mod test {
 
     #[cfg(not(fuzzing))]
     #[test]
+    #[allow(clippy::nonminimal_bool)]
     fn pubkey_equal() {
         let pk1 = PublicKey::from_slice(
             &hex!("0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"),
@@ -2108,9 +2109,8 @@ mod test {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static SK_STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
+
         #[cfg(fuzzing)]
         static PK_BYTES: [u8; 33] = [
             0x02,
@@ -2119,9 +2119,7 @@ mod test {
             0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
             0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
         ];
-        static PK_STR: &'static str = "\
-            0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
-        ";
+        static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
         #[cfg(not(fuzzing))]
         let s = Secp256k1::new();
@@ -2236,9 +2234,7 @@ mod test {
             0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
             99, 99, 99, 99, 99, 99, 99, 99
         ];
-        static SK_STR: &'static str = "\
-            01010101010101010001020304050607ffff0000ffff00006363636363636363\
-        ";
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
         assert_tokens(&sk.compact(), &[
