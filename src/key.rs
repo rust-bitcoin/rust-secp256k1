@@ -270,8 +270,7 @@ impl SecretKey {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     #[inline]
     pub fn add_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
@@ -301,8 +300,7 @@ impl SecretKey {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting key would be invalid or if the tweak was not a 32-byte
-    /// length slice.
+    /// Returns an error if the resulting key would be invalid.
     #[inline]
     pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
@@ -1255,7 +1253,7 @@ impl XOnlyPublicKey {
     ///
     /// # Errors
     ///
-    /// If the resulting key would be invalid or if the tweak was not a 32-byte length slice.
+    /// If the resulting key would be invalid.
     ///
     /// # Examples
     ///
