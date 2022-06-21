@@ -96,6 +96,15 @@ impl ops::Deref for SerializedSignature {
 
 impl Eq for SerializedSignature {}
 
+impl<'a> IntoIterator for &'a SerializedSignature {
+    type IntoIter = core::slice::Iter<'a, u8>;
+    type Item = &'a u8;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 impl SerializedSignature {
     /// Get a pointer to the underlying data with the specified capacity.
     pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
