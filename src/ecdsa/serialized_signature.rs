@@ -11,10 +11,12 @@ use core::{fmt, ops};
 use crate::Error;
 use super::Signature;
 
+pub(crate) const MAX_LEN: usize = 72;
+
 /// A DER serialized Signature
 #[derive(Copy, Clone)]
 pub struct SerializedSignature {
-    data: [u8; 72],
+    data: [u8; MAX_LEN],
     len: usize,
 }
 
@@ -37,7 +39,7 @@ impl Default for SerializedSignature {
     #[inline]
     fn default() -> SerializedSignature {
         SerializedSignature {
-            data: [0u8; 72],
+            data: [0u8; MAX_LEN],
             len: 0,
         }
     }
@@ -224,18 +226,18 @@ mod into_iter {
 
 #[cfg(test)]
 mod tests {
-    use super::SerializedSignature;
+    use super::{SerializedSignature, MAX_LEN};
 
     #[test]
     fn iterator_ops_are_homomorphic() {
-        let mut fake_signature_data = [0; 72];
+        let mut fake_signature_data = [0; MAX_LEN];
         // fill it with numbers 0 - 71
         for (i, byte) in fake_signature_data.iter_mut().enumerate() {
-            // up to 72
+            // up to MAX_LEN
             *byte = i as u8;
         }
 
-        let fake_signature = SerializedSignature { data: fake_signature_data, len: 72 };
+        let fake_signature = SerializedSignature { data: fake_signature_data, len: MAX_LEN };
 
         let mut iter1 = fake_signature.into_iter();
         let mut iter2 = fake_signature.iter();

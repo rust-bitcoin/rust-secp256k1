@@ -167,6 +167,7 @@ impl Signature {
                 self.as_c_ptr(),
             );
             debug_assert!(err == 1);
+            assert!(len <= serialized_signature::MAX_LEN, "libsecp256k1 set length to {} but the maximum is {}", len, serialized_signature::MAX_LEN);
             ret.set_len(len);
         }
         ret
