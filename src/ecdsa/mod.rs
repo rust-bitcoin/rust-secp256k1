@@ -157,20 +157,18 @@ impl Signature {
     #[inline]
     /// Serializes the signature in DER format
     pub fn serialize_der(&self) -> SerializedSignature {
-        let mut ret = SerializedSignature::default();
-        let mut len: usize = ret.capacity();
+        let mut data = [0u8; serialized_signature::MAX_LEN];
+        let mut len: usize = serialized_signature::MAX_LEN;
         unsafe {
             let err = ffi::secp256k1_ecdsa_signature_serialize_der(
                 ffi::secp256k1_context_no_precomp,
-                ret.get_data_mut_ptr(),
+                data.as_mut_ptr(),
                 &mut len,
                 self.as_c_ptr(),
             );
             debug_assert!(err == 1);
-            assert!(len <= serialized_signature::MAX_LEN, "libsecp256k1 set length to {} but the maximum is {}", len, serialized_signature::MAX_LEN);
-            ret.set_len(len);
+            SerializedSignature::from_raw_parts(data, len)
         }
-        ret
     }
 
     #[inline]

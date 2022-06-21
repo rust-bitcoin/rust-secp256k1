@@ -9,6 +9,7 @@ The major change in this version is the increase of the Minimum Supported Rust V
 * Key tweaking methods renamed and refactored to use a more [functional-style](https://github.com/rust-bitcoin/rust-secp256k1/pull/406), they now accept a [new Scalar](https://github.com/rust-bitcoin/rust-secp256k1/pull/445) type instead of raw slices
 * Update [`rand` dependency to 0.8](https://github.com/rust-bitcoin/rust-secp256k1/pull/331)
 * `KeyPair::from_secret_key` [borrows SecretKey](https://github.com/rust-bitcoin/rust-secp256k1/pull/430) instead of taking ownership
+* `SerializedSignature` no longer implements `Default`
 
 ## New features/APIs
 
@@ -18,6 +19,7 @@ The major change in this version is the increase of the Minimum Supported Rust V
 * [Implemented `TryFrom` for `Parity`](https://github.com/rust-bitcoin/rust-secp256k1/pull/409)
 * The [alloc feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/331) can be used on targets with allocators without a standard library
 * `SharedSecret` can be created from a slice, parsed from a hex string, or [(de)serialized using serde](https://github.com/rust-bitcoin/rust-secp256k1/pull/418)
+* `SerializedSignature` implements `IntoIterator` (both owned and shared reference)
 * We now [derive `std::hash::Hash` for `Signature`](https://github.com/rust-bitcoin/rust-secp256k1/pull/441)
 
 ## Other improvements
