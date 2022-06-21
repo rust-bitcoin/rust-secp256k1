@@ -76,13 +76,13 @@ impl Default for SerializedSignature {
 
 impl PartialEq for SerializedSignature {
     fn eq(&self, other: &SerializedSignature) -> bool {
-        self.data[..self.len] == other.data[..other.len]
+        **self == **other
     }
 }
 
 impl AsRef<[u8]> for SerializedSignature {
     fn as_ref(&self) -> &[u8] {
-        &self.data[..self.len]
+        &*self
     }
 }
 
