@@ -1,0 +1,263 @@
+//! Implements [`SerializedSignature`] and related types.
+//!
+//! DER-serialized signatures have the issue that they can have different lengths.
+//! We want to avoid using `Vec` since that would require allocations making the code slower and
+//! unable to run on platforms without allocator. We implement a special type to encapsulate
+//! serialized signatures and since it's a bit more complicated it has its own module.
+
+pub use into_iter::IntoIter;
+
+use core::{fmt, ops};
+use crate::Error;
+use super::Signature;
+
+pub(crate) const MAX_LEN: usize = 72;
+
+/// A DER serialized Signature
+#[derive(Copy, Clone)]
+pub struct SerializedSignature {
+    data: [u8; MAX_LEN],
+    len: usize,
+}
+
+impl fmt::Debug for SerializedSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl fmt::Display for SerializedSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for v in self {
+            write!(f, "{:02x}", v)?;
+        }
+        Ok(())
+    }
+}
+
+impl Default for SerializedSignature {
+    #[inline]
+    fn default() -> SerializedSignature {
+        SerializedSignature {
+            data: [0u8; MAX_LEN],
+            len: 0,
+        }
+    }
+}
+
+impl PartialEq for SerializedSignature {
+    #[inline]
+    fn eq(&self, other: &SerializedSignature) -> bool {
+        **self == **other
+    }
+}
+
+impl AsRef<[u8]> for SerializedSignature {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        &*self
+    }
+}
+
+impl ops::Deref for SerializedSignature {
+    type Target = [u8];
+
+    #[inline]
+    fn deref(&self) -> &[u8] {
+        &self.data[..self.len]
+    }
+}
+
+impl Eq for SerializedSignature {}
+
+impl IntoIterator for SerializedSignature {
+    type IntoIter = IntoIter;
+    type Item = u8;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter::new(self)
+    }
+}
+
+impl<'a> IntoIterator for &'a SerializedSignature {
+    type IntoIter = core::slice::Iter<'a, u8>;
+    type Item = &'a u8;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl SerializedSignature {
+    /// Get a pointer to the underlying data with the specified capacity.
+    #[inline]
+    pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
+        self.data.as_mut_ptr()
+    }
+
+    /// Get the capacity of the underlying data buffer.
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.data.len()
+    }
+
+    /// Get the len of the used data.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Set the length of the object.
+    #[inline]
+    pub(crate) fn set_len(&mut self, len: usize) {
+        self.len = len;
+    }
+
+    /// Convert the serialized signature into the Signature struct.
+    /// (This DER deserializes it)
+    #[inline]
+    pub fn to_signature(&self) -> Result<Signature, Error> {
+        Signature::from_der(self)
+    }
+
+    /// Create a SerializedSignature from a Signature.
+    /// (this DER serializes it)
+    #[inline]
+    pub fn from_signature(sig: &Signature) -> SerializedSignature {
+        sig.serialize_der()
+    }
+
+    /// Check if the space is zero.
+    #[inline]
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
+}
+
+/// Separate mod to prevent outside code accidentally breaking invariants.
+mod into_iter {
+    use super::*;
+
+    /// Owned iterator over the bytes of [`SerializedSignature`]
+    ///
+    /// Created by [`IntoIterator::into_iter`] method.
+    // allowed because of https://github.com/rust-lang/rust/issues/98348
+    #[allow(missing_copy_implementations)]
+    #[derive(Debug, Clone)]
+    pub struct IntoIter {
+        signature: SerializedSignature,
+        // invariant: pos <= signature.len()
+        pos: usize,
+    }
+
+    impl IntoIter {
+        #[inline]
+        pub(crate) fn new(signature: SerializedSignature) -> Self {
+            IntoIter {
+                signature,
+                // for all unsigned n: 0 <= n
+                pos: 0,
+            }
+        }
+
+        /// Returns the remaining bytes as a slice.
+        ///
+        /// This method is analogous to [`core::slice::Iter::as_slice`].
+        #[inline]
+        pub fn as_slice(&self) -> &[u8] {
+            &self.signature[self.pos..]
+        }
+    }
+
+    impl Iterator for IntoIter {
+        type Item = u8;
+
+        #[inline]
+        fn next(&mut self) -> Option<Self::Item> {
+            let byte = *self.signature.get(self.pos)?;
+            // can't overflow or break invariant because if pos is too large we return early
+            self.pos += 1;
+            Some(byte)
+        }
+
+        #[inline]
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            // can't underlflow thanks to the invariant
+            let len = self.signature.len() - self.pos;
+            (len, Some(len))
+        }
+
+        // override for speed
+        #[inline]
+        fn nth(&mut self, n: usize) -> Option<Self::Item> {
+            if n >= self.len() {
+                // upholds invariant becasue the values will be equal
+                self.pos = self.signature.len();
+                None
+            } else {
+                // if n < signtature.len() - self.pos then n + self.pos < signature.len() which neither
+                // overflows nor breaks the invariant
+                self.pos += n;
+                self.next()
+            }
+        }
+    }
+
+    impl ExactSizeIterator for IntoIter {}
+
+    impl core::iter::FusedIterator for IntoIter {}
+
+    impl DoubleEndedIterator for IntoIter {
+        #[inline]
+        fn next_back(&mut self) -> Option<Self::Item> {
+            if self.pos == self.signature.len() {
+                return None;
+            }
+
+            // if len is 0 then pos is also 0 thanks to the invariant so we would return before we
+            // reach this
+            let new_len = self.signature.len() - 1;
+            let byte = self.signature[new_len];
+            self.signature.set_len(new_len);
+            Some(byte)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{SerializedSignature, MAX_LEN};
+
+    #[test]
+    fn iterator_ops_are_homomorphic() {
+        let mut fake_signature_data = [0; MAX_LEN];
+        // fill it with numbers 0 - 71
+        for (i, byte) in fake_signature_data.iter_mut().enumerate() {
+            // up to MAX_LEN
+            *byte = i as u8;
+        }
+
+        let fake_signature = SerializedSignature { data: fake_signature_data, len: MAX_LEN };
+
+        let mut iter1 = fake_signature.into_iter();
+        let mut iter2 = fake_signature.iter();
+
+        // while let so we can compare size_hint and as_slice
+        while let (Some(a), Some(b)) = (iter1.next(), iter2.next()) {
+            assert_eq!(a, *b);
+            assert_eq!(iter1.size_hint(), iter2.size_hint());
+            assert_eq!(iter1.as_slice(), iter2.as_slice());
+        }
+
+        let mut iter1 = fake_signature.into_iter();
+        let mut iter2 = fake_signature.iter();
+
+        // manual next_back instead of rev() so that we can check as_slice()
+        // if next_back is implemented correctly then rev() is also correct - provided by `core`
+        while let (Some(a), Some(b)) = (iter1.next_back(), iter2.next_back()) {
+            assert_eq!(a, *b);
+            assert_eq!(iter1.size_hint(), iter2.size_hint());
+            assert_eq!(iter1.as_slice(), iter2.as_slice());
+        }
+    }
+}

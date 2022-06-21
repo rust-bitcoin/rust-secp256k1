@@ -1,9 +1,11 @@
 //! Structs and functionality related to the ECDSA signature algorithm.
 
-use core::{fmt, str, ops, ptr};
+use core::{fmt, str, ptr};
 
 use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
 use crate::ffi::CPtr;
+
+pub mod serialized_signature;
 
 #[cfg(feature = "recovery")]
 mod recovery;
@@ -12,19 +14,14 @@ mod recovery;
 #[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub use self::recovery::{RecoveryId, RecoverableSignature};
 
+pub use serialized_signature::SerializedSignature;
+
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Signature(pub(crate) ffi::Signature);
-
-/// A DER serialized Signature
-#[derive(Copy, Clone)]
-pub struct SerializedSignature {
-    data: [u8; 72],
-    len: usize,
-}
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -39,21 +36,6 @@ impl fmt::Display for Signature {
     }
 }
 
-impl fmt::Debug for SerializedSignature {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
-impl fmt::Display for SerializedSignature {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for v in self.data.iter().take(self.len) {
-            write!(f, "{:02x}", v)?;
-        }
-        Ok(())
-    }
-}
-
 impl str::FromStr for Signature {
     type Err = Error;
     fn from_str(s: &str) -> Result<Signature, Error> {
@@ -63,74 +45,6 @@ impl str::FromStr for Signature {
             _ => Err(Error::InvalidSignature),
         }
     }
-}
-
-impl Default for SerializedSignature {
-    fn default() -> SerializedSignature {
-        SerializedSignature {
-            data: [0u8; 72],
-            len: 0,
-        }
-    }
-}
-
-impl PartialEq for SerializedSignature {
-    fn eq(&self, other: &SerializedSignature) -> bool {
-        self.data[..self.len] == other.data[..other.len]
-    }
-}
-
-impl AsRef<[u8]> for SerializedSignature {
-    fn as_ref(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
-}
-
-impl ops::Deref for SerializedSignature {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
-}
-
-impl Eq for SerializedSignature {}
-
-impl SerializedSignature {
-    /// Get a pointer to the underlying data with the specified capacity.
-    pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
-        self.data.as_mut_ptr()
-    }
-
-    /// Get the capacity of the underlying data buffer.
-    pub fn capacity(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Get the len of the used data.
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    /// Set the length of the object.
-    pub(crate) fn set_len(&mut self, len: usize) {
-        self.len = len;
-    }
-
-    /// Convert the serialized signature into the Signature struct.
-    /// (This DER deserializes it)
-    pub fn to_signature(&self) -> Result<Signature, Error> {
-        Signature::from_der(self)
-    }
-
-    /// Create a SerializedSignature from a Signature.
-    /// (this DER serializes it)
-    pub fn from_signature(sig: &Signature) -> SerializedSignature {
-        sig.serialize_der()
-    }
-
-    /// Check if the space is zero.
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
 }
 
 impl Signature {
@@ -253,6 +167,7 @@ impl Signature {
                 self.as_c_ptr(),
             );
             debug_assert!(err == 1);
+            assert!(len <= serialized_signature::MAX_LEN, "libsecp256k1 set length to {} but the maximum is {}", len, serialized_signature::MAX_LEN);
             ret.set_len(len);
         }
         ret
