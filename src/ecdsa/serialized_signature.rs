@@ -28,7 +28,7 @@ impl fmt::Debug for SerializedSignature {
 
 impl fmt::Display for SerializedSignature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for v in self.data.iter().take(self.len) {
+        for v in self {
             write!(f, "{:02x}", v)?;
         }
         Ok(())
