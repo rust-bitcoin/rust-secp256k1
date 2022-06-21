@@ -34,6 +34,7 @@ impl fmt::Display for SerializedSignature {
 }
 
 impl Default for SerializedSignature {
+    #[inline]
     fn default() -> SerializedSignature {
         SerializedSignature {
             data: [0u8; 72],
@@ -43,12 +44,14 @@ impl Default for SerializedSignature {
 }
 
 impl PartialEq for SerializedSignature {
+    #[inline]
     fn eq(&self, other: &SerializedSignature) -> bool {
         **self == **other
     }
 }
 
 impl AsRef<[u8]> for SerializedSignature {
+    #[inline]
     fn as_ref(&self) -> &[u8] {
         &*self
     }
@@ -57,6 +60,7 @@ impl AsRef<[u8]> for SerializedSignature {
 impl ops::Deref for SerializedSignature {
     type Target = [u8];
 
+    #[inline]
     fn deref(&self) -> &[u8] {
         &self.data[..self.len]
     }
@@ -78,6 +82,7 @@ impl<'a> IntoIterator for &'a SerializedSignature {
     type IntoIter = core::slice::Iter<'a, u8>;
     type Item = &'a u8;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -85,38 +90,45 @@ impl<'a> IntoIterator for &'a SerializedSignature {
 
 impl SerializedSignature {
     /// Get a pointer to the underlying data with the specified capacity.
+    #[inline]
     pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
         self.data.as_mut_ptr()
     }
 
     /// Get the capacity of the underlying data buffer.
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.data.len()
     }
 
     /// Get the len of the used data.
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Set the length of the object.
+    #[inline]
     pub(crate) fn set_len(&mut self, len: usize) {
         self.len = len;
     }
 
     /// Convert the serialized signature into the Signature struct.
     /// (This DER deserializes it)
+    #[inline]
     pub fn to_signature(&self) -> Result<Signature, Error> {
         Signature::from_der(self)
     }
 
     /// Create a SerializedSignature from a Signature.
     /// (this DER serializes it)
+    #[inline]
     pub fn from_signature(sig: &Signature) -> SerializedSignature {
         sig.serialize_der()
     }
 
     /// Check if the space is zero.
+    #[inline]
     pub fn is_empty(&self) -> bool { self.len() == 0 }
 }
 
