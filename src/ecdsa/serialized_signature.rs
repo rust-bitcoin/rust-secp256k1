@@ -35,16 +35,6 @@ impl fmt::Display for SerializedSignature {
     }
 }
 
-impl Default for SerializedSignature {
-    #[inline]
-    fn default() -> SerializedSignature {
-        SerializedSignature {
-            data: [0u8; MAX_LEN],
-            len: 0,
-        }
-    }
-}
-
 impl PartialEq for SerializedSignature {
     #[inline]
     fn eq(&self, other: &SerializedSignature) -> bool {
@@ -91,10 +81,18 @@ impl<'a> IntoIterator for &'a SerializedSignature {
 }
 
 impl SerializedSignature {
-    /// Get a pointer to the underlying data with the specified capacity.
+    /// Creates `SerializedSignature` from data and length.
+    ///
+    /// ## Panics
+    ///
+    /// If `len` > `MAX_LEN`
     #[inline]
-    pub(crate) fn get_data_mut_ptr(&mut self) -> *mut u8 {
-        self.data.as_mut_ptr()
+    pub(crate) fn from_raw_parts(data: [u8; MAX_LEN], len: usize) -> Self {
+        assert!(len <= MAX_LEN, "attempt to set length to {} but the maximum is {}", len, MAX_LEN);
+        SerializedSignature {
+            data,
+            len,
+        }
     }
 
     /// Get the capacity of the underlying data buffer.
@@ -111,7 +109,7 @@ impl SerializedSignature {
 
     /// Set the length of the object.
     #[inline]
-    pub(crate) fn set_len(&mut self, len: usize) {
+    pub(crate) fn set_len_unchecked(&mut self, len: usize) {
         self.len = len;
     }
 
@@ -218,7 +216,7 @@ mod into_iter {
             // reach this
             let new_len = self.signature.len() - 1;
             let byte = self.signature[new_len];
-            self.signature.set_len(new_len);
+            self.signature.set_len_unchecked(new_len);
             Some(byte)
         }
     }
