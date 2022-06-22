@@ -1,4 +1,9 @@
 
+# 0.6.0 - 2022-06-21
+
+* [Bump MSRV to 1.41](https://github.com/rust-bitcoin/rust-secp256k1/pull/331)
+* [Re-implement `Ord` on `PublicKey` using upstream ordering function](https://github.com/rust-bitcoin/rust-secp256k1/pull/449)
+
 # 0.5.1 - 2022-04-30
 
 * [Fix WASM build](https://github.com/rust-bitcoin/rust-secp256k1/pull/421)
