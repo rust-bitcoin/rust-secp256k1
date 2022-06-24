@@ -1,3 +1,7 @@
+# 0.23.1 - 2022-06-24
+
+[Enable "rand/std_rng" feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/460) when the crate's "rnd-std" feature is enabled.
+
 # 0.23.0 - 2022-06-21
 
 The major change in this version is the increase of the Minimum Supported Rust Version (MSRV) from 1.29 to 1.41.1, this is a big change because it introduces Rust Edition 2018 to the codebase along with all the benefits that brings.
