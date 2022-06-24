@@ -54,7 +54,7 @@ bincode = "1.3.3"
 
 # cbor does not build on WASM, we use it in a single trivial test (an example of when
 # fixed-width-serde breaks down). Just run the test when on an x86_64 machine.
-[target.'cfg(target_arch = "x86_64")'.dependencies]
+[target.'cfg(target_arch = "x86_64")'.dev-dependencies]
 cbor = "0.4.1"
 
 [target.wasm32-unknown-unknown.dev-dependencies]
