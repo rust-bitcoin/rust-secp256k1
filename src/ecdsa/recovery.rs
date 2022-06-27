@@ -28,7 +28,7 @@ use crate::ffi::recovery as ffi;
 pub struct RecoveryId(i32);
 
 /// An ECDSA signature with a recovery ID for pubkey recovery.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
 impl RecoveryId {
