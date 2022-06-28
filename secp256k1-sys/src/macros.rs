@@ -20,26 +20,26 @@ macro_rules! impl_array_newtype {
         impl Copy for $thing {}
 
         impl $thing {
-            #[inline]
             /// Converts the object to a raw pointer for FFI interfacing
+            #[inline]
             pub fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
                 dat.as_ptr()
             }
 
-            #[inline]
             /// Converts the object to a mutable raw pointer for FFI interfacing
+            #[inline]
             pub fn as_mut_ptr(&mut self) -> *mut $ty {
                 let &mut $thing(ref mut dat) = self;
                 dat.as_mut_ptr()
             }
 
-            #[inline]
             /// Returns the length of the object as an array
+            #[inline]
             pub fn len(&self) -> usize { $len }
 
-            #[inline]
             /// Returns whether the object as an array is empty
+            #[inline]
             pub fn is_empty(&self) -> bool { false }
         }
 
