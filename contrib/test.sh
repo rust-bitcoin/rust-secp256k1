@@ -17,6 +17,12 @@ fi
 cargo --version
 rustc --version
 
+# Work out if we are using a nightly toolchain.
+NIGHTLY=false
+if cargo --version | grep nightly; then
+    NIGHTLY=true
+fi
+
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
 cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
 
@@ -51,7 +57,7 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
 
-    if [ "$DO_BENCH" = true ]; then  # proxy for us having a nightly compiler
+    if [ "$NIGHTLY" = true ]; then
         cargo test --all --all-features
         RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --all-features
     fi
