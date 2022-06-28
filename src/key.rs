@@ -101,7 +101,7 @@ pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-#[cfg_attr(feature = "fuzzing", derive(PartialOrd, Ord))]
+#[cfg_attr(fuzzing, derive(PartialOrd, Ord))]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
 
