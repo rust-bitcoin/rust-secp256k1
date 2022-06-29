@@ -1,3 +1,8 @@
+# 0.23.3 - 2022-06-29
+
+* [Add must_use for mut self key manipulation methods](https://github.com/rust-bitcoin/rust-secp256k1/pull/465)
+* [Fix fuzzing feature guard](https://github.com/rust-bitcoin/rust-secp256k1/pull/466)
+
 # 0.23.2 - 2022-06-27
 
 * [Move `cbor` to dev-dependencies](https://github.com/rust-bitcoin/rust-secp256k1/pull/461)
