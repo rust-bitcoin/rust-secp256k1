@@ -1651,6 +1651,7 @@ mod test {
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::Scalar;
 
+    #[cfg(not(fuzzing))]
     macro_rules! hex {
         ($hex:expr) => ({
             let mut result = vec![0; $hex.len() / 2];
