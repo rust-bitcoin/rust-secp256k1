@@ -1,3 +1,8 @@
+# 0.23.2 - 2022-06-27
+
+* [Move `cbor` to dev-dependencies](https://github.com/rust-bitcoin/rust-secp256k1/pull/461)
+* [Derive `Hash` for `RecoverableSignature`](https://github.com/rust-bitcoin/rust-secp256k1/pull/462)
+
 # 0.23.1 - 2022-06-24
 
 [Enable "rand/std_rng" feature](https://github.com/rust-bitcoin/rust-secp256k1/pull/460) when the crate's "rnd-std" feature is enabled.
