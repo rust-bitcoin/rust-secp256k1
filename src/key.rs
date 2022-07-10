@@ -273,7 +273,6 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    #[must_use = "you forgot to use the tweaked secret key"]
     pub fn add_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_add(
@@ -304,7 +303,6 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    #[must_use = "you forgot to use the tweaked secret key"]
     pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_mul(
@@ -570,7 +568,6 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    #[must_use = "you forgot to use the tweaked public key"]
     pub fn add_exp_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -607,7 +604,6 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    #[must_use = "you forgot to use the tweaked public key"]
     pub fn mul_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -977,7 +973,6 @@ impl KeyPair {
     /// ```
     // TODO: Add checked implementation
     #[inline]
-    #[must_use = "you forgot to use the tweaked key pair"]
     pub fn add_xonly_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -1277,7 +1272,6 @@ impl XOnlyPublicKey {
     /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
-    #[must_use = "you forgot to use the tweaked xonly pubkey"]
     pub fn add_tweak<V: Verification>(
         mut self,
         secp: &Secp256k1<V>,
