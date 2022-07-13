@@ -452,7 +452,7 @@ mod tests {
     }
 }
 
-#[cfg(all(test, feature = "unstable"))]
+#[cfg(bench)]
 mod benches {
     use rand::{thread_rng, RngCore};
     use test::{Bencher, black_box};

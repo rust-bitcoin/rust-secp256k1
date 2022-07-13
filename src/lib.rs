@@ -155,14 +155,16 @@
 #![allow(clippy::missing_safety_doc)]
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
-#![cfg_attr(all(test, feature = "unstable"), feature(test))]
+
+// Experimental features we need.
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(bench, feature(test))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate core;
-#[cfg(all(test, feature = "unstable"))]
+#[cfg(bench)]
 extern crate test;
 
 #[macro_use]
@@ -1060,7 +1062,7 @@ mod tests {
     }
 }
 
-#[cfg(all(test, feature = "unstable"))]
+#[cfg(bench)]
 mod benches {
     use test::{Bencher, black_box};
 

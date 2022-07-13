@@ -18,7 +18,6 @@ features = [ "rand", "rand-std", "serde", "bitcoin_hashes", "recovery", "global-
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-unstable = ["recovery"]
 default = ["std"]
 std = ["alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator

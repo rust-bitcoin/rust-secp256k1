@@ -98,9 +98,11 @@ if [ "$DO_ASAN" = true ]; then
     cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
 fi
 
-# Bench
-if [ "$DO_BENCH" = true ]; then
-    cargo bench --all --features="unstable"
+
+# Bench if told to, only works with non-stable toolchain (nightly, beta).
+if [ "$DO_BENCH" = true ]
+then
+    RUSTFLAGS='--cfg=bench' cargo bench --features=recovery
 fi
 
 exit 0
