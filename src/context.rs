@@ -202,7 +202,7 @@ mod alloc_only {
                 size,
             };
 
-            #[cfg(feature = "rand-std")]
+            #[cfg(all(feature = "rand-std", not(feature = "global-context-less-secure")))]
             {
                 ctx.randomize(&mut rand::thread_rng());
             }
