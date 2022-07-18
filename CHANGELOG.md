@@ -1,3 +1,8 @@
+
+# 0.24.0 - 2022-07-20
+
+* Upgrade to new release of [bitcoin_hashes](https://github.com/rust-bitcoin/bitcoin_hashes/releases/tag/0.11.0).
+
 # 0.23.4 - 2022-07-14
 
 * [Disable automatic rerandomization of contexts under WASM](https://github.com/rust-bitcoin/rust-secp256k1/pull/474)
