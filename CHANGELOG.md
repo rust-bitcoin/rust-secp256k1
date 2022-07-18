@@ -1,3 +1,7 @@
+# 0.24.0 - 2022-07-19
+
+* Upgrade to new release of [bitcoin_hashes](https://github.com/rust-bitcoin/bitcoin_hashes/releases/tag/0.11.0).
+
 # 0.23.3 - 2022-06-29
 
 * [Add must_use for mut self key manipulation methods](https://github.com/rust-bitcoin/rust-secp256k1/pull/465)
