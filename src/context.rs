@@ -47,7 +47,7 @@ pub mod global {
             static mut CONTEXT: Option<Secp256k1<All>> = None;
             ONCE.call_once(|| unsafe {
                 let mut ctx = Secp256k1::new();
-                #[cfg(all(feature = "rand-std", not(feature = "global-context-less-secure")))]
+                #[cfg(all(not(target_arch = "wasm32"), feature = "rand-std", not(feature = "global-context-less-secure")))]
                 {
                     ctx.randomize(&mut rand::thread_rng());
                 }
@@ -202,7 +202,7 @@ mod alloc_only {
                 size,
             };
 
-            #[cfg(feature = "rand-std")]
+            #[cfg(all(not(target_arch = "wasm32"), feature = "rand-std", not(feature = "global-context-less-secure")))]
             {
                 ctx.randomize(&mut rand::thread_rng());
             }

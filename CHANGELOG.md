@@ -1,3 +1,7 @@
+# 0.23.4 - 2022-07-14
+
+* [Disable automatic rerandomization of contexts under WASM](https://github.com/rust-bitcoin/rust-secp256k1/pull/474)
+
 # 0.23.3 - 2022-06-29
 
 * [Add must_use for mut self key manipulation methods](https://github.com/rust-bitcoin/rust-secp256k1/pull/465)
