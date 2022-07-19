@@ -2,7 +2,7 @@
 
 [Full documentation](https://docs.rs/secp256k1/)
 
-### rust-secp256k1
+## rust-secp256k1
 
 `rust-secp256k1` is a wrapper around [libsecp256k1](https://github.com/bitcoin-core/secp256k1),
 a C library by Pieter Wuille for producing ECDSA signatures using the SECG curve
@@ -32,6 +32,11 @@ git config --local core.hooksPath githooks/
 ```
 
 Alternatively add symlinks in your `.git/hooks` directory to any of the githooks we provide.
+
+### Benchmarks
+
+We use a custom Rust compiler configuration conditional to guard the bench mark code. To run the
+bench marks use: `RUSTFLAGS='--cfg=bench' cargo +nightly bench --features=recovery`.
 
 ## Fuzzing
 
