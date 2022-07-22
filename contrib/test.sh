@@ -2,8 +2,7 @@
 
 set -ex
 
-# TODO: Add "alloc" once we bump MSRV to past 1.29
-FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std"
+FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std alloc"
 # These features are typically enabled along with the 'std' feature, so we test
 # them together with 'std'.
 STD_FEATURES="rand-std bitcoin-hashes-std"
