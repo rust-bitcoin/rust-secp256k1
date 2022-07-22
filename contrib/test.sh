@@ -1,18 +1,11 @@
-#!/bin/sh -ex
+#!/bin/sh
 
-set -e
+set -ex
 
-# TODO: Add "alloc" once we bump MSRV to past 1.29
-FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std"
+FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std alloc"
 # These features are typically enabled along with the 'std' feature, so we test
 # them together with 'std'.
 STD_FEATURES="rand-std bitcoin-hashes-std"
-
-# Use toolchain if explicitly specified
-if [ -n "$TOOLCHAIN" ]
-then
-    alias cargo="cargo +$TOOLCHAIN"
-fi
 
 cargo --version
 rustc --version
@@ -53,9 +46,10 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
         cargo test --all --no-default-features --features="std,$feature"
     done
     # Other combos 
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
+    cargo test --features="$STD_FEATURES"
 
     if [ "$NIGHTLY" = true ]; then
         cargo test --all --all-features
