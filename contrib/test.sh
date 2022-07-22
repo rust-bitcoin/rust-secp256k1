@@ -1,6 +1,6 @@
-#!/bin/sh -ex
+#!/bin/sh
 
-set -e
+set -ex
 
 # TODO: Add "alloc" once we bump MSRV to past 1.29
 FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std"
