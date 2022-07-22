@@ -46,8 +46,8 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
         cargo test --all --no-default-features --features="std,$feature"
     done
     # Other combos 
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all
+    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
     cargo test --features="$STD_FEATURES"
 
