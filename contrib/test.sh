@@ -49,6 +49,7 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all
     RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS=$RUSTFLAGS cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
+    cargo test --features="$STD_FEATURES"
 
     if [ "$NIGHTLY" = true ]; then
         cargo test --all --all-features
