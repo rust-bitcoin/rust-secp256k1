@@ -7,12 +7,6 @@ FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std alloc"
 # them together with 'std'.
 STD_FEATURES="rand-std bitcoin-hashes-std"
 
-# Use toolchain if explicitly specified
-if [ -n "$TOOLCHAIN" ]
-then
-    alias cargo="cargo +$TOOLCHAIN"
-fi
-
 cargo --version
 rustc --version
 
