@@ -7,7 +7,7 @@ use secp256k1::{Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verifi
 
 fn recover<C: Verification>(secp: &Secp256k1<C>,msg: &[u8],sig: [u8; 64],recovery_id: u8) -> Result<PublicKey, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from_slice(msg.as_ref())?;
     let id = ecdsa::RecoveryId::from_i32(recovery_id as i32)?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
@@ -16,7 +16,7 @@ fn recover<C: Verification>(secp: &Secp256k1<C>,msg: &[u8],sig: [u8; 64],recover
 
 fn sign_recovery<C: Signing>(secp: &Secp256k1<C>, msg: &[u8], seckey: [u8; 32]) -> Result<ecdsa::RecoverableSignature, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from_slice(msg.as_ref())?;
     let seckey = SecretKey::from_slice(&seckey)?;
     Ok(secp.sign_ecdsa_recoverable(&msg, &seckey))
 }
