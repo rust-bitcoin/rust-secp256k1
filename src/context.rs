@@ -189,6 +189,8 @@ mod alloc_only {
         /// # }
         /// ```
         #[cfg_attr(not(feature = "rand-std"), allow(clippy::let_and_return, unused_mut))]
+        #[allow(unused_mut)] // ctx is not mutated under some feature combinations.
+        #[allow(clippy::let_and_return)] // ctx as for unused_mut
         pub fn gen_new() -> Secp256k1<C> {
             #[cfg(target_arch = "wasm32")]
             ffi::types::sanity_checks_for_wasm();
