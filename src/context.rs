@@ -196,6 +196,8 @@ mod alloc_only {
             let size = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
             let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
             let ptr = unsafe {alloc::alloc(layout)};
+
+            #[allow(unused_mut)] // ctx is not mutated under some feature combinations.
             let mut ctx = Secp256k1 {
                 ctx: unsafe { ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS) },
                 phantom: PhantomData,
@@ -207,6 +209,7 @@ mod alloc_only {
                 ctx.randomize(&mut rand::thread_rng());
             }
 
+            #[allow(clippy::let_and_return)] // as for unusted_mut
             ctx
         }
     }
