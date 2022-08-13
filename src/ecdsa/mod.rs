@@ -257,10 +257,14 @@ impl<C: Signing> Secp256k1<C> {
         &self,
         msg: &Message,
         sk: &SecretKey,
-        noncedata_ptr: *const ffi::types::c_void,
+        noncedata: Option<&[u8; 32]>,
     ) -> Signature {
         unsafe {
             let mut ret = ffi::Signature::new();
+            let noncedata_ptr = match noncedata {
+                Some(arr) => arr.as_c_ptr() as *const _,
+                None => ptr::null(),
+            };
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
             assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
@@ -273,7 +277,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign_ecdsa(&self, msg: &Message, sk: &SecretKey) -> Signature {
-        self.sign_ecdsa_with_noncedata_pointer(msg, sk, ptr::null())
+        self.sign_ecdsa_with_noncedata_pointer(msg, sk, None)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
@@ -287,8 +291,7 @@ impl<C: Signing> Secp256k1<C> {
         sk: &SecretKey,
         noncedata: &[u8; 32],
     ) -> Signature {
-        let noncedata_ptr = noncedata.as_ptr() as *const ffi::types::c_void;
-        self.sign_ecdsa_with_noncedata_pointer(msg, sk, noncedata_ptr)
+        self.sign_ecdsa_with_noncedata_pointer(msg, sk, Some(noncedata))
     }
 
     fn sign_grind_with_check(
