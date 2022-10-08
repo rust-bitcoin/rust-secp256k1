@@ -1,4 +1,4 @@
-include_HEADERS += include/rustsecp256k1_v0_5_0_ecdh.h
+include_HEADERS += include/rustsecp256k1_v0_6_1_ecdh.h
 noinst_HEADERS += src/modules/ecdh/main_impl.h
 noinst_HEADERS += src/modules/ecdh/tests_impl.h
 noinst_HEADERS += src/modules/ecdh/bench_impl.h
