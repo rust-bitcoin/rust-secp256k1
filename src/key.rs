@@ -1057,9 +1057,16 @@ impl str::FromStr for KeyPair {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let ctx = unsafe {
-            Secp256k1::from_raw_all(ffi::secp256k1_context_no_precomp as *mut ffi::Context)
-        };
+        #[cfg(feature = "global-context")]
+        let ctx = SECP256K1;
+
+        #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
+        let ctx = Secp256k1::signing_only();
+
+        #[cfg(not(any(feature = "global-context", feature = "alloc")))]
+        let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
+
+        #[allow(clippy::needless_borrow)]
         KeyPair::from_seckey_str(&ctx, s)
     }
 }
@@ -1093,8 +1100,17 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes KeyPair",
-                |data| unsafe {
-                    let ctx = Secp256k1::from_raw_all(ffi::secp256k1_context_no_precomp as *mut ffi::Context);
+                |data| {
+                    #[cfg(feature = "global-context")]
+                    let ctx = SECP256K1;
+
+                    #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
+                    let ctx = Secp256k1::signing_only();
+
+                    #[cfg(not(any(feature = "global-context", feature = "alloc")))]
+                    let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
+
+                    #[allow(clippy::needless_borrow)]
                     KeyPair::from_seckey_slice(&ctx, data)
                 }
             );
@@ -1630,12 +1646,14 @@ pub mod serde_keypair {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod test {
+    use bitcoin_hashes::hex::ToHex;
     use super::*;
 
     use core::str::FromStr;
 
     #[cfg(any(feature = "alloc", feature = "std"))]
     use rand::{Error, RngCore, thread_rng, rngs::mock::StepRng};
+    use serde_test::{Configure, Token};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -2430,6 +2448,41 @@ mod test {
         assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
         assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
+    }
+
+    #[test]
+    #[cfg(any(feature = "alloc", feature = "global-context"))]
+    fn test_keypair_from_str() {
+        let ctx = crate::Secp256k1::new();
+        let keypair = KeyPair::new(&ctx, &mut thread_rng());
+        let msg = keypair.secret_key().secret_bytes().to_hex();
+        let parsed_key: KeyPair = msg.parse().unwrap();
+        assert_eq!(parsed_key, keypair);
+    }
+
+    #[test]
+    #[cfg(all(any(feature= "alloc", feature = "global-context"), feature = "serde"))]
+    fn test_keypair_deserialize_serde() {
+        let ctx = crate::Secp256k1::new();
+        let sec_key_str = "4242424242424242424242424242424242424242424242424242424242424242";
+        let keypair = KeyPair::from_seckey_str(&ctx, sec_key_str).unwrap();
+
+        serde_test::assert_tokens(&keypair.readable(), &[Token::String(&sec_key_str)]);
+
+        let sec_key_bytes = keypair.secret_key().secret_bytes();
+        let tokens = std::iter::once(Token::Tuple { len: 32 })
+            .chain(sec_key_bytes.iter().copied().map(Token::U8))
+            .chain(std::iter::once(Token::TupleEnd))
+            .collect::<Vec<_>>();
+        serde_test::assert_tokens(&keypair.compact(), &tokens);
+    }
+
+    #[test]
+    #[should_panic(expected = "The previous implementation was panicking too")]
+    #[cfg(not(any(feature = "alloc", feature = "global-context")))]
+    fn test_parse_keypair_no_alloc_panic() {
+        let key_hex = "4242424242424242424242424242424242424242424242424242424242424242";
+        let _: KeyPair = key_hex.parse().expect("We shouldn't even get this far");
     }
 }
 
