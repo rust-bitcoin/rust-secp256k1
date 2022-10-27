@@ -281,20 +281,23 @@ impl Message {
         }
     }
 
-    /// Constructs a `Message` by hashing `data` with hash algorithm `H`. This requires the feature
-    /// `bitcoin_hashes` to be enabled.
-    /// ```rust
-    /// extern crate bitcoin_hashes;
-    /// # extern crate secp256k1;
+    /// Constructs a [`Message`] by hashing `data` with hash algorithm `H`.
+    ///
+    /// Requires the feature `bitcoin_hashes` to be enabled.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="bitcoin_hashes")] {
+    /// use secp256k1::hashes::{sha256, Hash};
     /// use secp256k1::Message;
-    /// use bitcoin_hashes::sha256;
-    /// use bitcoin_hashes::Hash;
     ///
     /// let m1 = Message::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
     /// // is equivalent to
     /// let m2 = Message::from(sha256::Hash::hash("Hello world!".as_bytes()));
     ///
     /// assert_eq!(m1, m2);
+    /// # }
     /// ```
     #[cfg(feature = "bitcoin_hashes")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
