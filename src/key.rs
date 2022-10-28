@@ -25,6 +25,9 @@ use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey
 use crate::ffi::{self, CPtr, impl_array_newtype};
 use crate::ffi::types::c_uint;
 
+#[cfg(feature = "bitcoin_hashes")]
+use crate::{hashes, ThirtyTwoByteHash};
+
 #[cfg(feature = "serde")]
 use serde::ser::SerializeTuple;
 
@@ -228,6 +231,31 @@ impl SecretKey {
         SecretKey(sk)
     }
 
+    /// Constructs a [`SecretKey`] by hashing `data` with hash algorithm `H`.
+    ///
+    /// Requires the feature `bitcoin_hashes` to be enabled.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature="bitcoin_hashes")] {
+    /// use secp256k1::hashes::{sha256, Hash};
+    /// use secp256k1::SecretKey;
+    ///
+    /// let sk1 = SecretKey::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
+    /// // is equivalent to
+    /// let sk2 = SecretKey::from(sha256::Hash::hash("Hello world!".as_bytes()));
+    ///
+    /// assert_eq!(sk1, sk2);
+    /// # }
+    /// ```
+    #[cfg(feature = "bitcoin_hashes")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+    #[inline]
+    pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
+        <H as hashes::Hash>::hash(data).into()
+    }
+
     /// Returns the secret key as a byte value.
     #[inline]
     pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
@@ -349,6 +377,14 @@ impl SecretKey {
     pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
         let kp = self.keypair(secp);
         XOnlyPublicKey::from_keypair(&kp)
+    }
+}
+
+#[cfg(feature = "bitcoin_hashes")]
+impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
+    /// Converts a 32-byte hash directly to a secret key without error paths.
+    fn from(t: T) -> SecretKey {
+        SecretKey::from_slice(&t.into_32()).expect("failed to create secret key")
     }
 }
 
