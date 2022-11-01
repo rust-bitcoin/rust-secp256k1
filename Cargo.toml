@@ -35,6 +35,9 @@ global-context = ["std"]
 # and is not necessary.)
 global-context-less-secure = ["global-context"]
 
+# Enables debug logging, do not enable in production systems.
+danger_leak_secret_material = ["std"]
+
 [dependencies]
 secp256k1-sys = { version = "0.6.0", default-features = false, path = "./secp256k1-sys" }
 serde = { version = "1.0", default-features = false, optional = true }
