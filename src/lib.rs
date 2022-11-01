@@ -172,6 +172,8 @@ mod macros;
 #[macro_use]
 mod secret;
 mod context;
+#[macro_use]
+mod logging;
 mod key;
 
 pub mod constants;
