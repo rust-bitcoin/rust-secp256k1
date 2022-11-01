@@ -98,13 +98,14 @@ impl Signature {
 }
 
 impl<C: Signing> Secp256k1<C> {
+    #[allow(clippy::let_and_return)] // When feature danger_leak_secret_material not enabled.
     fn sign_schnorr_helper(
         &self,
         msg: &Message,
         keypair: &KeyPair,
         nonce_data: *const ffi::types::c_uchar,
     ) -> Signature {
-        unsafe {
+        let sig = unsafe {
             let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
             assert_eq!(
                 1,
@@ -118,7 +119,15 @@ impl<C: Signing> Secp256k1<C> {
             );
 
             Signature(sig)
+        };
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let pk = keypair.public_key();
+            crate::log!("Schnorr signing message: pk={} msg={} sig={}", pk, msg, sig);
         }
+
+        sig
     }
 
     /// Create a schnorr signature internally using the ThreadRng random number

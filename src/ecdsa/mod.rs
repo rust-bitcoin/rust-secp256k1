@@ -253,13 +253,14 @@ impl<C: Signing> Secp256k1<C> {
         self.sign_ecdsa(msg, sk)
     }
 
+    #[allow(clippy::let_and_return)] // When feature danger_leak_secret_material not enabled.
     fn sign_ecdsa_with_noncedata_pointer(
         &self,
         msg: &Message,
         sk: &SecretKey,
         noncedata: Option<&[u8; 32]>,
     ) -> Signature {
-        unsafe {
+        let sig = unsafe {
             let mut ret = ffi::Signature::new();
             let noncedata_ptr = match noncedata {
                 Some(arr) => arr.as_c_ptr() as *const _,
@@ -271,7 +272,15 @@ impl<C: Signing> Secp256k1<C> {
                                                  sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
                                                  noncedata_ptr), 1);
             Signature::from(ret)
+        };
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let pk = PublicKey::from_secret_key_global(sk);
+            crate::log!("ECDSA signing message: pk={} msg={} sig={}", pk, msg, sig);
         }
+
+        sig
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
