@@ -610,7 +610,7 @@ mod tests {
         let ctx_vrfy = Secp256k1::verification_only();
 
         let mut full = unsafe {Secp256k1::from_raw_all(ctx_full.ctx)};
-        let mut sign = unsafe {Secp256k1::from_raw_signining_only(ctx_sign.ctx)};
+        let mut sign = unsafe {Secp256k1::from_raw_signing_only(ctx_sign.ctx)};
         let mut vrfy = unsafe {Secp256k1::from_raw_verification_only(ctx_vrfy.ctx)};
 
         let (sk, pk) = full.generate_keypair(&mut thread_rng());
