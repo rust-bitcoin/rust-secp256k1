@@ -171,6 +171,18 @@ impl SecretKey {
                 data = random_32_bytes(rng);
             }
         }
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let sk = SecretKey(data);
+            let pk = PublicKey::from_secret_key_global(&sk);
+
+            let mut target = [0_u8; 64];
+            let hex = crate::to_hex(&data, &mut target).expect("failed to encode hex data");
+
+            crate::log!("Created private key from random data: data={:?} {:?} {:?}", hex, sk, pk);
+        }
+
         SecretKey(data)
     }
 
@@ -195,6 +207,18 @@ impl SecretKey {
                         return Err(InvalidSecretKey);
                     }
                 }
+
+                #[cfg(feature = "danger_leak_secret_material")]
+                {
+                    let sk = SecretKey(data);
+                    let pk = PublicKey::from_secret_key_global(&sk);
+
+                    let mut target = [0_u8; constants::SECRET_KEY_SIZE * 2];
+                    let hex = crate::to_hex(&data, &mut target).expect("failed to encode hex data");
+
+                    crate::log!("Created private key from input data: data={} {:?} {:?}", hex, sk, pk);
+                }
+
                 Ok(SecretKey(data))
             }
             Err(_) => Err(InvalidSecretKey)
@@ -225,6 +249,14 @@ impl SecretKey {
             );
             debug_assert_eq!(ret, 1);
         }
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let sk = SecretKey(sk);
+            let pk = PublicKey::from_secret_key_global(&sk);
+            crate::log!("Created private key from keypair: keypair={:?} sk={:?} pk={}", keypair, sk, pk);
+        }
+
         SecretKey(sk)
     }
 
@@ -373,7 +405,7 @@ impl serde::Serialize for SecretKey {
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for SecretKey {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        if d.is_human_readable() {
+        let sk = if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte SecretKey"
             ))
@@ -383,7 +415,15 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
                 SecretKey::from_slice
             );
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
+        }?;
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let pk = PublicKey::from_secret_key_global(&sk);
+            crate::log!("Deserialized private key: {:?} {:?}", sk, pk);
         }
+
+        Ok(sk)
     }
 }
 
@@ -824,18 +864,29 @@ impl KeyPair {
 
     /// Creates a [`KeyPair`] directly from a Secp256k1 secret key.
     #[inline]
+    #[allow(clippy::let_and_return)] // When feature danger_leak_secret_material not enabled.
     pub fn from_secret_key<C: Signing>(
         secp: &Secp256k1<C>,
         sk: &SecretKey,
     ) -> KeyPair {
-        unsafe {
+        let kp = unsafe {
             let mut kp = ffi::KeyPair::new();
             if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, sk.as_c_ptr()) == 1 {
                 KeyPair(kp)
             } else {
                 panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
             }
+        };
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            assert_eq!(*sk, kp.secret_key());
+            let pk = kp.public_key();
+            crate::log!("Created keypair from secret key: keypair={:?} sk={:?} pk={}",
+                        kp, sk, pk);
         }
+
+        kp
     }
 
     /// Creates a [`KeyPair`] directly from a secret key slice.
@@ -853,14 +904,24 @@ impl KeyPair {
             return Err(Error::InvalidSecretKey);
         }
 
-        unsafe {
+        let keypair = unsafe {
             let mut kp = ffi::KeyPair::new();
             if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, data.as_c_ptr()) == 1 {
                 Ok(KeyPair(kp))
             } else {
                 Err(Error::InvalidSecretKey)
             }
+        }?;
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let sk = keypair.secret_key();
+            let pk = keypair.public_key();
+            crate::log!("Created keypair from secret key data: data={:?} keypair={:?} sk={:?} pk={}",
+                        data, keypair, sk, pk);
         }
+
+        Ok(keypair)
     }
 
     /// Creates a [`KeyPair`] directly from a secret key string.
@@ -873,7 +934,17 @@ impl KeyPair {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => {
-                KeyPair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE])
+                let kp = KeyPair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE])?;
+
+                #[cfg(feature = "danger_leak_secret_material")]
+                {
+                    let sk = kp.secret_key();
+                    let pk = kp.public_key();
+                    crate::log!("Created keypair from secret key string: string={} keypair={:?} sk={:?} pk={}",
+                                s, kp, sk, pk);
+                }
+
+                Ok(kp)
             }
             _ => Err(Error::InvalidPublicKey),
         }
@@ -905,6 +976,7 @@ impl KeyPair {
     #[inline]
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+    #[allow(clippy::let_and_return)] // When feature danger_leak_secret_material not enabled.
     pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
         let mut random_32_bytes = || {
             let mut ret = [0u8; 32];
@@ -912,13 +984,27 @@ impl KeyPair {
             ret
         };
         let mut data = random_32_bytes();
-        unsafe {
+        let kp = unsafe {
             let mut keypair = ffi::KeyPair::new();
             while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
                 data = random_32_bytes();
             }
             KeyPair(keypair)
+        };
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let sk = kp.secret_key();
+            let pk = kp.public_key();
+
+            let mut target = [0_u8; 64];
+            let hex = crate::to_hex(&data, &mut target).expect("failed to encode hex data");
+
+            crate::log!("Created keypair from random data: data={} {:?} {:?} {:?}",
+                        hex, kp, sk, pk);
         }
+
+        kp
     }
 
     /// Generates a new random secret key using the global [`SECP256K1`] context.
@@ -1093,7 +1179,7 @@ impl serde::Serialize for KeyPair {
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for KeyPair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        if d.is_human_readable() {
+        let kp = if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "a hex string representing 32 byte KeyPair"
             ))
@@ -1115,7 +1201,18 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
                 }
             );
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
+        }?;
+
+
+        #[cfg(feature = "danger_leak_secret_material")]
+        {
+            let sk = kp.secret_key();
+            let pk = kp.public_key();
+
+            crate::log!("Deserialized keypair: {:?} {:?}", sk, pk);
         }
+
+        Ok(kp)
     }
 }
 
