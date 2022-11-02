@@ -61,7 +61,7 @@ jobs:
       - name: Checkout Crate
         uses: actions/checkout@v2
       - name: Install clang
-        run: sudo apt-get install -y clang-9
+        run: sudo apt-get install -y clang
       - name: Checkout Toolchain
         uses: actions-rs/toolchain@v1
         with:
