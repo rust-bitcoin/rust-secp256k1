@@ -7,6 +7,8 @@
 
 use core::fmt;
 
+use crate::constants;
+
 /// Positive 256-bit integer guaranteed to be less than the secp256k1 curve order.
 ///
 /// The difference between `PrivateKey` and `Scalar` is that `Scalar` doesn't guarantee being
@@ -28,9 +30,9 @@ const MAX_RAW: [u8; 32] = [
 
 impl Scalar {
     /// Scalar representing `0`
-    pub const ZERO: Scalar = Scalar([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ZERO: Scalar = Scalar(constants::ZERO);
     /// Scalar representing `1`
-    pub const ONE: Scalar = Scalar([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    pub const ONE: Scalar = Scalar(constants::ONE);
     /// Maximum valid value: `curve_order - 1`
     pub const MAX: Scalar = Scalar(MAX_RAW);
 

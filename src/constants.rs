@@ -83,4 +83,10 @@ pub const GENERATOR_Y: [u8; 32] = [
     0x9c, 0x47, 0xd0, 0x8f, 0xfb, 0x10, 0xd4, 0xb8
 ];
 
+/// The value zero as an array of bytes.
+pub const ZERO: [u8; 32] = [0; 32];
 
+/// The value one as big-endian array of bytes.
+pub const ONE: [u8; 32] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+];
