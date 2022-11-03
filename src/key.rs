@@ -933,7 +933,7 @@ impl KeyPair {
     /// Returns the secret bytes for this key pair.
     #[inline]
     pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
-        *SecretKey::from_keypair(self).as_ref()
+        *SecretKey::from_keypair(self).as_bytes()
     }
 
     /// Tweaks a keypair by adding the given tweak to the secret key and updating the public key

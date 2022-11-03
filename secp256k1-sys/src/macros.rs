@@ -39,15 +39,15 @@ macro_rules! impl_array_newtype {
             /// Returns whether the object as an array is empty
             #[inline]
             pub fn is_empty(&self) -> bool { false }
-        }
 
-        impl AsRef<[$ty; $len]> for $thing {
+            /// Returns a reference the underlying bytes.
             #[inline]
-            /// Gets a reference to the underlying array
-            fn as_ref(&self) -> &[$ty; $len] {
-                let &$thing(ref dat) = self;
-                dat
-            }
+            pub fn as_bytes(&self) -> &[$ty; $len] { &self.0 }
+
+            /// Returns a clone of the underlying bytes.
+            #[inline]
+            pub fn to_bytes(self) -> [$ty; $len] { self.0.clone() }
+
         }
 
         impl<I> core::ops::Index<I> for $thing

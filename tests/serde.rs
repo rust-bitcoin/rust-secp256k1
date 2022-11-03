@@ -80,7 +80,7 @@ fn cbor() {
     let sk = secret_key();
 
     let mut e = cbor::Encoder::from_memory();
-    e.encode(sk.as_ref()).unwrap();
+    e.encode(sk.as_bytes()).unwrap();
 
     // 52 because there are 22 bytes in the key for which cbor adds metadata.
     assert_eq!(e.as_bytes().len(), 52);
