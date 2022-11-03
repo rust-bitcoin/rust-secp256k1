@@ -13,32 +13,32 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-// This is a macro that routinely comes in handy
+/// Implement methods and traits for types that contain an inner array.
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
         impl Copy for $thing {}
 
         impl $thing {
-            /// Converts the object to a raw pointer for FFI interfacing
+            /// Converts the object to a raw pointer for FFI interfacing.
             #[inline]
             pub fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
                 dat.as_ptr()
             }
 
-            /// Converts the object to a mutable raw pointer for FFI interfacing
+            /// Converts the object to a mutable raw pointer for FFI interfacing.
             #[inline]
             pub fn as_mut_ptr(&mut self) -> *mut $ty {
                 let &mut $thing(ref mut dat) = self;
                 dat.as_mut_ptr()
             }
 
-            /// Returns the length of the object as an array
+            /// Returns the length of the object as an array.
             #[inline]
             pub fn len(&self) -> usize { $len }
 
-            /// Returns whether the object as an array is empty
+            /// Returns whether the object as an array is empty.
             #[inline]
             pub fn is_empty(&self) -> bool { false }
         }
