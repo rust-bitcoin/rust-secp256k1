@@ -493,6 +493,7 @@ mod tests {
         assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);
         assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
 
+        #[rustfmt::skip]
         assert_tokens(&pk.compact(), &[
             Token::Tuple{ len: 32 },
             Token::U8(24), Token::U8(132), Token::U8(87), Token::U8(129), Token::U8(246), Token::U8(49), Token::U8(196), Token::U8(143),

@@ -266,6 +266,7 @@ mod tests {
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(all(feature="std", feature = "rand-std"))]
+    #[rustfmt::skip]
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -290,6 +291,7 @@ mod tests {
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(all(feature="std", feature = "rand-std"))]
+    #[rustfmt::skip]
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -390,6 +392,7 @@ mod tests {
 
     #[test]
     fn test_debug_output() {
+        #[rustfmt::skip]
         let sig = RecoverableSignature::from_compact(&[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
             0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
@@ -406,6 +409,7 @@ mod tests {
     #[test]
     fn test_recov_sig_serialize_compact() {
         let recid_in = RecoveryId(1);
+        #[rustfmt::skip]
         let bytes_in = &[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
             0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,

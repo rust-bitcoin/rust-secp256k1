@@ -713,7 +713,8 @@ impl serde::Serialize for PublicKey {
             s.collect_str(self)
         } else {
             let mut tuple = s.serialize_tuple(constants::PUBLIC_KEY_SIZE)?;
-            for byte in self.serialize().iter() { // Serialize in compressed form.
+            // Serialize in compressed form.
+            for byte in self.serialize().iter() {
                 tuple.serialize_element(&byte)?;
             }
             tuple.end()
@@ -1689,6 +1690,7 @@ mod test {
 
     #[test]
     #[cfg(any(feature = "alloc", feature = "std"))]
+    #[rustfmt::skip]
     fn invalid_secret_key() {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
@@ -1725,6 +1727,7 @@ mod test {
             // group order, then decrement with repeated calls
             // until it returns a valid key
             fn fill_bytes(&mut self, data: &mut [u8]) {
+                #[rustfmt::skip]
                 let group_order: [u8; 32] = [
                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
@@ -1824,6 +1827,7 @@ mod test {
     #[test]
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_display_output() {
+        #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
             0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -2105,6 +2109,7 @@ mod test {
     #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
     fn test_serde() {
         use serde_test::{Configure, Token, assert_tokens};
+        #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 1, 2, 3, 4, 5, 6, 7,
@@ -2114,6 +2119,7 @@ mod test {
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         #[cfg(fuzzing)]
+        #[rustfmt::skip]
         static PK_BYTES: [u8; 33] = [
             0x02,
             0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
@@ -2134,6 +2140,7 @@ mod test {
         #[cfg(fuzzing)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
+        #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
             Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
@@ -2147,6 +2154,7 @@ mod test {
         assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
         assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
 
+        #[rustfmt::skip]
         assert_tokens(&pk.compact(), &[
             Token::Tuple{ len: 33 },
             Token::U8(0x02),
@@ -2230,6 +2238,7 @@ mod test {
             }
         }
 
+        #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 1, 2, 3, 4, 5, 6, 7,
@@ -2239,6 +2248,7 @@ mod test {
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
         let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
+        #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
             Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
@@ -2257,6 +2267,7 @@ mod test {
     fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
         let secp = Secp256k1::new();
 
+        #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
             0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -2264,6 +2275,7 @@ mod test {
             0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
         ];
 
+        #[rustfmt::skip]
         static PK_BYTES: [u8; 32] = [
             0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
             0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
@@ -2405,6 +2417,7 @@ mod test {
     fn test_serde_x_only_pubkey() {
         use serde_test::{Configure, Token, assert_tokens};
 
+        #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 1, 2, 3, 4, 5, 6, 7,
@@ -2419,6 +2432,7 @@ mod test {
         let kp = KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap();
         let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
 
+        #[rustfmt::skip]
         assert_tokens(&pk.compact(), &[
             Token::Tuple{ len: 32 },
             Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),

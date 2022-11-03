@@ -1,23 +1,21 @@
 //! Structs and functionality related to the ECDSA signature algorithm.
 
-use core::{fmt, str, ptr};
-
-use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
-use crate::ffi::CPtr;
-
-pub mod serialized_signature;
-
 #[cfg(feature = "recovery")]
 mod recovery;
+pub mod serialized_signature;
+
+use core::{fmt, str, ptr};
 
 #[cfg(feature = "recovery")]
 #[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
-pub use self::recovery::{RecoveryId, RecoverableSignature};
-
-pub use serialized_signature::SerializedSignature;
-
+pub use self::recovery::{RecoverableSignature, RecoveryId};
+pub use self::serialized_signature::SerializedSignature;
+use crate::ffi::CPtr;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
+use crate::{
+    ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
+};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

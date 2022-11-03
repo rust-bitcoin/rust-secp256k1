@@ -266,6 +266,7 @@ mod tests {
     #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
     fn serde() {
         use serde_test::{Configure, Token, assert_tokens};
+        #[rustfmt::skip]
         static BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 1, 2, 3, 4, 5, 6, 7,
