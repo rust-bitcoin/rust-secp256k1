@@ -41,6 +41,30 @@ macro_rules! impl_array_newtype {
             /// Returns whether the object as an array is empty
             #[inline]
             pub fn is_empty(&self) -> bool { false }
+
+            /// Converts the inner array to a little-endian array.
+            #[inline]
+            pub fn to_le_bytes(&self) -> [u8; $len] {
+                if cfg!(target_endian = "big") {
+                    let mut out = self.0;
+                    out.reverse();
+                    out
+                } else {
+                    self.0
+                }
+            }
+
+            /// Converts the inner array to a big-endian array.
+            #[inline]
+            pub fn to_be_bytes(&self) -> [u8; $len] {
+                if cfg!(target_endian = "big") {
+                    self.0
+                } else {
+                    let mut out = self.0;
+                    out.reverse();
+                    out
+                }
+            }
         }
 
         impl AsRef<[$ty; $len]> for $thing {
@@ -61,23 +85,31 @@ macro_rules! impl_array_newtype {
 
         impl Eq for $thing {}
 
-        impl ::core::hash::Hash for $thing {
+        impl core::hash::Hash for $thing {
             fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-                (&self[..]).hash(state)
+                // We cannot guarantee the byte order of the inner array.
+                let bytes = self.to_le_bytes();
+                bytes.hash(state)
             }
         }
 
         impl PartialOrd for $thing {
             #[inline]
             fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
-                self[..].partial_cmp(&other[..])
+                // We cannot guarantee the byte order of the inner arrays.
+                let this = self.to_le_bytes();
+                let that = other.to_le_bytes();
+                this.partial_cmp(&that)
             }
         }
 
         impl Ord for $thing {
             #[inline]
             fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
-                self[..].cmp(&other[..])
+                // We cannot guarantee the byte order of the inner arrays.
+                let this = self.to_le_bytes();
+                let that = other.to_le_bytes();
+                this.cmp(&that)
             }
         }
 
