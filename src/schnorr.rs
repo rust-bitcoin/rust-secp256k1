@@ -15,6 +15,7 @@ use crate::ffi::{self, CPtr, impl_array_newtype};
 use crate::SECP256K1;
 
 /// Represents a Schnorr signature.
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);

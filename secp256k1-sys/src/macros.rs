@@ -17,8 +17,6 @@
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl Copy for $thing {}
-
         impl $thing {
             /// Converts the object to a raw pointer for FFI interfacing
             #[inline]
@@ -49,43 +47,6 @@ macro_rules! impl_array_newtype {
             fn as_ref(&self) -> &[$ty; $len] {
                 let &$thing(ref dat) = self;
                 dat
-            }
-        }
-
-        impl PartialEq for $thing {
-            #[inline]
-            fn eq(&self, other: &$thing) -> bool {
-                &self[..] == &other[..]
-            }
-        }
-
-        impl Eq for $thing {}
-
-        impl ::core::hash::Hash for $thing {
-            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-                (&self[..]).hash(state)
-            }
-        }
-
-        impl PartialOrd for $thing {
-            #[inline]
-            fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
-                self[..].partial_cmp(&other[..])
-            }
-        }
-
-        impl Ord for $thing {
-            #[inline]
-            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
-                self[..].cmp(&other[..])
-            }
-        }
-
-        impl Clone for $thing {
-            #[inline]
-            fn clone(&self) -> $thing {
-                let &$thing(ref dat) = self;
-                $thing(dat.clone())
             }
         }
 

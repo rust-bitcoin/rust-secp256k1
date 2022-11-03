@@ -20,6 +20,7 @@ use crate::types::*;
 use core::fmt;
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
