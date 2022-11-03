@@ -785,9 +785,9 @@ mod fuzz_dummy {
                 if have_ctx == HAVE_CONTEXT_NONE {
                     assert!(rustsecp256k1_v0_6_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
                     assert_eq!(rustsecp256k1_v0_6_1_context_preallocated_create(
-                            PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
+                            PREALLOCATED_CONTEXT.as_ptr() as *mut c_void,
                             SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
-                        PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
+                        PREALLOCATED_CONTEXT.as_ptr() as *mut Context);
                     assert_eq!(HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_DONE, Ordering::AcqRel),
                         HAVE_CONTEXT_WORKING);
                 } else if have_ctx == HAVE_CONTEXT_DONE {
@@ -802,7 +802,7 @@ mod fuzz_dummy {
                 std::thread::yield_now();
             }
         }
-        ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
+        ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT.as_ptr(), prealloc as *mut u8, CTX_SIZE);
         let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
         (ptr as *mut c_uint).write(flags);
         prealloc as *mut Context
@@ -1192,7 +1192,7 @@ mod fuzz_dummy {
         let mut sk = [0u8; 32];
         sk.copy_from_slice(&(*keypair).0[..32]);
         assert_eq!(secp256k1_ec_pubkey_tweak_add(cx, &mut pk, tweak32), 1);
-        assert_eq!(secp256k1_ec_seckey_tweak_add(cx, (&mut sk[..]).as_mut_ptr(), tweak32), 1);
+        assert_eq!(secp256k1_ec_seckey_tweak_add(cx, (&mut sk).as_mut_ptr(), tweak32), 1);
         (*keypair).0[..32].copy_from_slice(&sk);
         (*keypair).0[32..].copy_from_slice(&pk.0);
         1

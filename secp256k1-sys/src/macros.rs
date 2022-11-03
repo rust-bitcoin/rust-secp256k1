@@ -86,7 +86,7 @@ macro_rules! impl_raw_debug {
     ($thing:ident) => {
         impl core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                for i in self[..].iter().cloned() {
+                for i in self.to_bytes().iter() {
                     write!(f, "{:02x}", i)?;
                 }
                 Ok(())

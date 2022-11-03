@@ -82,7 +82,7 @@ impl SharedSecret {
         match bytes.len() {
             SHARED_SECRET_SIZE => {
                 let mut ret = [0u8; SHARED_SECRET_SIZE];
-                ret[..].copy_from_slice(bytes);
+                ret.copy_from_slice(bytes);
                 Ok(SharedSecret(ret))
             }
             _ => Err(Error::InvalidSharedSecret)
@@ -276,7 +276,7 @@ mod tests {
 
         let secret = SharedSecret::from_slice(&BYTES).unwrap();
 
-        assert_tokens(&secret.compact(), &[Token::BorrowedBytes(&BYTES[..])]);
+        assert_tokens(&secret.compact(), &[Token::BorrowedBytes(&BYTES)]);
         assert_tokens(&secret.compact(), &[Token::Bytes(&BYTES)]);
         assert_tokens(&secret.compact(), &[Token::ByteBuf(&BYTES)]);
 

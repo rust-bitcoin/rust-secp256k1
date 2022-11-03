@@ -18,7 +18,7 @@ macro_rules! impl_pretty_debug {
         impl core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(f, "{}(", stringify!($thing))?;
-                for i in &self[..] {
+                for i in self.to_bytes().iter() {
                     write!(f, "{:02x}", i)?;
                 }
                 f.write_str(")")

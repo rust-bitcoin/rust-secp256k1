@@ -275,7 +275,7 @@ impl Message {
         match data.len() {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0u8; constants::MESSAGE_SIZE];
-                ret[..].copy_from_slice(data);
+                ret.copy_from_slice(data);
                 Ok(Message(ret))
             }
             _ => Err(Error::InvalidMessage)
@@ -692,7 +692,7 @@ mod tests {
         assert!(full.verify_ecdsa(&msg, &sig, &pk).is_ok());
 
         // Check that we can produce keys from slices with no precomputation
-        let (pk_slice, sk_slice) = (&pk.serialize(), &sk[..]);
+        let (pk_slice, sk_slice) = (&pk.serialize(), sk.as_bytes());
         let new_pk = PublicKey::from_slice(pk_slice).unwrap();
         let new_sk = SecretKey::from_slice(sk_slice).unwrap();
         assert_eq!(sk, new_sk);
@@ -713,16 +713,16 @@ mod tests {
             let (sk, _) = s.generate_keypair(&mut thread_rng());
             let sig1 = s.sign_ecdsa(&msg, &sk);
             let der = sig1.serialize_der();
-            let sig2 = ecdsa::Signature::from_der(&der[..]).unwrap();
+            let sig2 = ecdsa::Signature::from_der(&der).unwrap();
             assert_eq!(sig1, sig2);
 
             let compact = sig1.serialize_compact();
-            let sig2 = ecdsa::Signature::from_compact(&compact[..]).unwrap();
+            let sig2 = ecdsa::Signature::from_compact(&compact).unwrap();
             assert_eq!(sig1, sig2);
 
-            assert!(ecdsa::Signature::from_compact(&der[..]).is_err());
+            assert!(ecdsa::Signature::from_compact(&der).is_err());
             assert!(ecdsa::Signature::from_compact(&compact[0..4]).is_err());
-            assert!(ecdsa::Signature::from_der(&compact[..]).is_err());
+            assert!(ecdsa::Signature::from_der(&compact).is_err());
             assert!(ecdsa::Signature::from_der(&der[0..4]).is_err());
          }
     }
@@ -773,7 +773,7 @@ mod tests {
         macro_rules! check_lax_sig(
             ($hex:expr) => ({
                 let sig = hex!($hex);
-                assert!(ecdsa::Signature::from_der_lax(&sig[..]).is_ok());
+                assert!(ecdsa::Signature::from_der_lax(&sig).is_ok());
             })
         );
 
@@ -836,14 +836,14 @@ mod tests {
         wild_msgs[0][0] = 1;
 
         use constants;
-        wild_keys[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
-        wild_msgs[1][..].copy_from_slice(&constants::CURVE_ORDER[..]);
+        wild_keys[1].copy_from_slice(&constants::CURVE_ORDER);
+        wild_msgs[1].copy_from_slice(&constants::CURVE_ORDER);
 
         wild_keys[1][0] -= 1;
         wild_msgs[1][0] -= 1;
 
-        for key in wild_keys.iter().map(|k| SecretKey::from_slice(&k[..]).unwrap()) {
-            for msg in wild_msgs.iter().map(|m| Message::from_slice(&m[..]).unwrap()) {
+        for key in wild_keys.iter().map(|k| SecretKey::from_slice(k).unwrap()) {
+            for msg in wild_msgs.iter().map(|m| Message::from_slice(m).unwrap()) {
                 let sig = s.sign_ecdsa(&msg, &key);
                 let low_r_sig = s.sign_ecdsa_low_r(&msg, &key);
                 let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &key, 1);
@@ -945,9 +945,9 @@ mod tests {
         let msg = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
 
         let secp = Secp256k1::new();
-        let mut sig = ecdsa::Signature::from_der(&sig[..]).unwrap();
-        let pk = PublicKey::from_slice(&pk[..]).unwrap();
-        let msg = Message::from_slice(&msg[..]).unwrap();
+        let mut sig = ecdsa::Signature::from_der(&sig).unwrap();
+        let pk = PublicKey::from_slice(&pk).unwrap();
+        let msg = Message::from_slice(&msg).unwrap();
 
         // without normalization we expect this will fail
         assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
@@ -1011,7 +1011,7 @@ mod tests {
             4b02202876e7102f204f6bfee26c967c3926ce702cf97d4b010062e193f763190f6776\
         ";
 
-        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES)]);
         assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES)]);
         assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES)]);
 

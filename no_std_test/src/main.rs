@@ -117,7 +117,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     assert_eq!(rec_sig, new_rec_sig);
 
     let mut cbor_ser = [0u8; 100];
-    let writer = SliceWrite::new(&mut cbor_ser[..]);
+    let writer = SliceWrite::new(&mut cbor_ser);
     let mut ser = Serializer::new(writer);
     sig.serialize(&mut ser).unwrap();
     let size = ser.into_inner().bytes_written();

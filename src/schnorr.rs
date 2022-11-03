@@ -26,7 +26,7 @@ impl serde::Serialize for Signature {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self[..])
+            s.serialize_bytes(self.as_bytes())
         }
     }
 }
@@ -49,7 +49,7 @@ impl<'de> serde::Deserialize<'de> for Signature {
 
 impl fmt::LowerHex for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.0[..] {
+        for ch in &self.0 {
             write!(f, "{:02x}", ch)?;
         }
         Ok(())
@@ -82,7 +82,7 @@ impl Signature {
         match data.len() {
             constants::SCHNORR_SIGNATURE_SIZE => {
                 let mut ret = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-                ret[..].copy_from_slice(data);
+                ret.copy_from_slice(data);
                 Ok(Signature(ret))
             }
             _ => Err(Error::InvalidSignature),
@@ -521,11 +521,11 @@ mod tests {
         let kp = KeyPair::new(&secp, &mut StepRng::new(1, 1));
         let (pk, _parity) = kp.x_only_public_key();
         assert_eq!(
-            &pk.serialize()[..],
+            &pk.serialize(),
             &[
                 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9,
                 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
-            ][..]
+            ]
         );
     }
 
@@ -560,9 +560,9 @@ mod tests {
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
         let pk = XOnlyPublicKey::from_slice(&PK_BYTES).unwrap();
 
-        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
-        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES[..])]);
-        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES[..])]);
+        assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES)]);
+        assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES)]);
+        assert_tokens(&sig.compact(), &[Token::ByteBuf(&SIG_BYTES)]);
 
         assert_tokens(&sig.readable(), &[Token::BorrowedStr(SIG_STR)]);
         assert_tokens(&sig.readable(), &[Token::Str(SIG_STR)]);

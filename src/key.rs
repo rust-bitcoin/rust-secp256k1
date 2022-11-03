@@ -109,7 +109,7 @@ pub struct PublicKey(ffi::PublicKey);
 impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ser = self.serialize();
-        for ch in &ser[..] {
+        for ch in &ser {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
@@ -1149,7 +1149,7 @@ pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
 impl fmt::LowerHex for XOnlyPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ser = self.serialize();
-        for ch in &ser[..] {
+        for ch in &ser {
             write!(f, "{:02x}", *ch)?;
         }
         Ok(())
@@ -1700,9 +1700,9 @@ mod test {
         let s = Secp256k1::new();
 
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
+        assert_eq!(SecretKey::from_slice(sk1.as_bytes()), Ok(sk1));
+        assert_eq!(PublicKey::from_slice(&pk1.serialize()), Ok(pk1));
+        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()), Ok(pk1));
     }
 
     #[test]
@@ -1749,7 +1749,7 @@ mod test {
                     0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
                     0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41];
                 assert_eq!(data.len(), 32);
-                data.copy_from_slice(&group_order[..]);
+                data.copy_from_slice(&group_order);
                 data[31] = self.0;
                 self.0 -= 1;
             }
@@ -1835,7 +1835,7 @@ mod test {
                    "SecretKey(#d3e0c51a23169bb5)");
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
-        assert_eq!(to_hex(&sk[..], &mut buf).unwrap(),
+        assert_eq!(to_hex(sk.as_bytes(), &mut buf).unwrap(),
                    "0100000000000000020000000000000003000000000000000400000000000000");
     }
 
@@ -1909,10 +1909,10 @@ mod test {
 
         let s = Secp256k1::new();
         let (_, pk1) = s.generate_keypair(&mut StepRng::new(1,1));
-        assert_eq!(&pk1.serialize_uncompressed()[..],
-                   &[4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165, 110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245, 3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163][..]);
-        assert_eq!(&pk1.serialize()[..],
-                   &[3, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229][..]);
+        assert_eq!(&pk1.serialize_uncompressed(),
+                   &[4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165, 110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245, 3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163]);
+        assert_eq!(&pk1.serialize(),
+                   &[3, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229]);
     }
 
     #[test]
@@ -2218,8 +2218,8 @@ mod test {
         let pk1 = XOnlyPublicKey::from(kpk1);
         let pk2 = XOnlyPublicKey::from(kpk2);
 
-        assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
-        assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
+        assert_eq!(pk1.serialize(), kpk1.serialize()[1..]);
+        assert_eq!(pk2.serialize(), kpk2.serialize()[1..]);
     }
 
     #[test]

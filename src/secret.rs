@@ -52,8 +52,8 @@ macro_rules! impl_display_secret {
 
                 let mut engine = sha256::Hash::engine();
                 let tag_hash = sha256::Hash::hash(tag.as_bytes());
-                engine.input(&tag_hash[..]);
-                engine.input(&tag_hash[..]);
+                engine.input(&tag_hash);
+                engine.input(&tag_hash);
                 engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 

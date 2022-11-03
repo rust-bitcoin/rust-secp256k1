@@ -434,7 +434,7 @@ mod tests {
         ).unwrap();
         let (recid_out, bytes_out) = sig.serialize_compact();
         assert_eq!(recid_in, recid_out);
-        assert_eq!(&bytes_in[..], &bytes_out[..]);
+        assert_eq!(bytes_in, &bytes_out);
     }
 
     #[test]
