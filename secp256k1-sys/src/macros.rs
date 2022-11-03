@@ -50,55 +50,16 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl core::ops::Index<usize> for $thing {
-            type Output = $ty;
+        impl<I> core::ops::Index<I> for $thing
+        where
+            [$ty]: core::ops::Index<I>,
+        {
+            type Output = <[$ty] as core::ops::Index<I>>::Output;
 
             #[inline]
-            fn index(&self, index: usize) -> &$ty {
-                let &$thing(ref dat) = self;
-                &dat[index]
-            }
+            fn index(&self, index: I) -> &Self::Output { &self.0[index] }
         }
 
-        impl core::ops::Index<core::ops::Range<usize>> for $thing {
-            type Output = [$ty];
-
-            #[inline]
-            fn index(&self, index: core::ops::Range<usize>) -> &[$ty] {
-                let &$thing(ref dat) = self;
-                &dat[index]
-            }
-        }
-
-        impl core::ops::Index<core::ops::RangeTo<usize>> for $thing {
-            type Output = [$ty];
-
-            #[inline]
-            fn index(&self, index: core::ops::RangeTo<usize>) -> &[$ty] {
-                let &$thing(ref dat) = self;
-                &dat[index]
-            }
-        }
-
-        impl core::ops::Index<core::ops::RangeFrom<usize>> for $thing {
-            type Output = [$ty];
-
-            #[inline]
-            fn index(&self, index: core::ops::RangeFrom<usize>) -> &[$ty] {
-                let &$thing(ref dat) = self;
-                &dat[index]
-            }
-        }
-
-        impl core::ops::Index<core::ops::RangeFull> for $thing {
-            type Output = [$ty];
-
-            #[inline]
-            fn index(&self, _: core::ops::RangeFull) -> &[$ty] {
-                let &$thing(ref dat) = self;
-                &dat[..]
-            }
-        }
         impl $crate::CPtr for $thing {
             type Target = $ty;
             fn as_c_ptr(&self) -> *const Self::Target {
