@@ -374,7 +374,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// * The user must handle the freeing of the context(using the correct functions) by himself.
     /// * This list *is not* exhaustive, and any violation may lead to Undefined Behavior.
     ///
-    pub unsafe fn from_raw_signining_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
+    pub unsafe fn from_raw_signing_only(raw_ctx: *mut ffi::Context) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
         ManuallyDrop::new(Secp256k1 {
             ctx: raw_ctx,
             phantom: PhantomData,
