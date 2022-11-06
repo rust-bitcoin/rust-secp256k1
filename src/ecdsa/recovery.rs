@@ -236,6 +236,7 @@ mod tests {
     use rand::{RngCore, thread_rng};
 
     use crate::{Error, SecretKey, Secp256k1, Message};
+    use crate::constants::ONE;
     use super::{RecoveryId, RecoverableSignature};
 
     #[cfg(target_arch = "wasm32")]
@@ -280,13 +281,12 @@ mod tests {
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
-        let one: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
-        let sk = SecretKey::from_slice(&one).unwrap();
-        let msg = Message::from_slice(&one).unwrap();
+        let sk = SecretKey::from_slice(&ONE).unwrap();
+        let msg = Message::from_slice(&ONE).unwrap();
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
+
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
             0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
@@ -305,14 +305,13 @@ mod tests {
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
-        let one: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
-        let sk = SecretKey::from_slice(&one).unwrap();
-        let msg = Message::from_slice(&one).unwrap();
+        let sk = SecretKey::from_slice(&ONE).unwrap();
+        let msg = Message::from_slice(&ONE).unwrap();
         let noncedata = [42u8; 32];
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
+
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
             0x4d, 0x37, 0xc3, 0xa9, 0x7e, 0xbd, 0x06, 0xa2,

@@ -75,10 +75,7 @@ impl str::FromStr for SecretKey {
 }
 
 /// The number 1 encoded as a secret key.
-pub const ONE_KEY: SecretKey = SecretKey([0, 0, 0, 0, 0, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 0,
-                                          0, 0, 0, 0, 0, 0, 0, 1]);
+pub const ONE_KEY: SecretKey = SecretKey(constants::ONE);
 
 /// A Secp256k1 public key, used for verification of signatures.
 ///
