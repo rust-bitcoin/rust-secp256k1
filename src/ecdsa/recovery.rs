@@ -76,14 +76,16 @@ impl RecoverableSignature {
 
     /// Obtains a raw pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
     pub fn as_ptr(&self) -> *const ffi::RecoverableSignature {
-        &self.0
+        self.as_c_ptr()
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
-        &mut self.0
+        self.as_mut_c_ptr()
     }
 
     #[inline]
@@ -133,11 +135,11 @@ impl RecoverableSignature {
 impl CPtr for RecoverableSignature {
     type Target = ffi::RecoverableSignature;
     fn as_c_ptr(&self) -> *const Self::Target {
-        self.as_ptr()
+        &self.0
     }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        self.as_mut_ptr()
+        &mut self.0
     }
 }
 

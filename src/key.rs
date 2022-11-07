@@ -221,7 +221,7 @@ impl SecretKey {
             let ret = ffi::secp256k1_keypair_sec(
                 ffi::secp256k1_context_no_precomp,
                 sk.as_mut_c_ptr(),
-                keypair.as_ptr()
+                keypair.as_c_ptr()
             );
             debug_assert_eq!(ret, 1);
         }
@@ -423,14 +423,16 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
 impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
     pub fn as_ptr(&self) -> *const ffi::PublicKey {
-        &self.0
+        self.as_c_ptr()
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey {
-        &mut self.0
+        self.as_mut_c_ptr()
     }
 
     /// Creates a new public key from a [`SecretKey`].
@@ -507,7 +509,7 @@ impl PublicKey {
             let ret = ffi::secp256k1_keypair_pub(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
-                keypair.as_ptr()
+                keypair.as_c_ptr()
             );
             debug_assert_eq!(ret, 1);
             PublicKey(pk)
@@ -733,7 +735,7 @@ impl PublicKey {
                 ffi::secp256k1_context_no_precomp,
                 &mut xonly_pk,
                 &mut pk_parity,
-                self.as_ptr(),
+                self.as_c_ptr(),
             );
             debug_assert_eq!(ret, 1);
             let parity = Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
@@ -743,19 +745,26 @@ impl PublicKey {
     }
 }
 
+/// This trait enables interaction with the FFI layer and even though it is part of the public API
+/// normal users should never need to directly interact with FFI types.
 impl CPtr for PublicKey {
     type Target = ffi::PublicKey;
+
+    /// Obtains a const pointer suitable for use with FFI functions.
     fn as_c_ptr(&self) -> *const Self::Target {
-        self.as_ptr()
+        &self.0
     }
 
+    /// Obtains a mutable pointer suitable for use with FFI functions.
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        self.as_mut_ptr()
+        &mut self.0
     }
 }
 
 
-/// Creates a new public key from a FFI public key
+/// Creates a new public key from a FFI public key.
+///
+/// Note, normal users should never need to interact directly with FFI types.
 impl From<ffi::PublicKey> for PublicKey {
     #[inline]
     fn from(pk: ffi::PublicKey) -> PublicKey {
@@ -845,14 +854,16 @@ impl_display_secret!(KeyPair);
 impl KeyPair {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
     pub fn as_ptr(&self) -> *const ffi::KeyPair {
-        &self.0
+        self.as_c_ptr()
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair {
-        &mut self.0
+        self.as_mut_c_ptr()
     }
 
     /// Creates a [`KeyPair`] directly from a Secp256k1 secret key.
@@ -1152,6 +1163,17 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
     }
 }
 
+impl CPtr for KeyPair {
+    type Target = ffi::KeyPair;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        &self.0
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        &mut self.0
+    }
+}
+
 /// An x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
 ///
 /// # Serde support
@@ -1210,14 +1232,16 @@ impl str::FromStr for XOnlyPublicKey {
 impl XOnlyPublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey {
-        &self.0
+        self.as_c_ptr()
     }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
+    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey {
-        &mut self.0
+        self.as_mut_c_ptr()
     }
 
     /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for `keypair`.
@@ -1230,7 +1254,7 @@ impl XOnlyPublicKey {
                 ffi::secp256k1_context_no_precomp,
                 &mut xonly_pk,
                 &mut pk_parity,
-                keypair.as_ptr(),
+                keypair.as_c_ptr(),
             );
             debug_assert_eq!(ret, 1);
             let parity = Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
@@ -1570,11 +1594,11 @@ impl<'de> serde::Deserialize<'de> for Parity {
 impl CPtr for XOnlyPublicKey {
     type Target = ffi::XOnlyPublicKey;
     fn as_c_ptr(&self) -> *const Self::Target {
-        self.as_ptr()
+        &self.0
     }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        self.as_mut_ptr()
+        &mut self.0
     }
 }
 
