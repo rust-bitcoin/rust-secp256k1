@@ -20,9 +20,9 @@ use core::{fmt, ptr, str};
 use core::ops::BitXor;
 use core::convert::TryFrom;
 
-use crate::{constants, from_hex, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, impl_array_newtype, Secp256k1, Signing, Verification};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use crate::ffi::{self, CPtr, impl_array_newtype};
+use crate::ffi::{self, CPtr};
 use crate::ffi::types::c_uint;
 
 #[cfg(feature = "bitcoin_hashes")]

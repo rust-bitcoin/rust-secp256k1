@@ -7,9 +7,9 @@ use core::{fmt, ptr, str};
 #[cfg(any(test, feature = "rand"))]
 use rand::{CryptoRng, Rng};
 
-use crate::{constants, Error, from_hex, Message, Secp256k1, Signing, Verification};
+use crate::{constants, impl_array_newtype, from_hex, Error, Message, Secp256k1, Signing, Verification};
 use crate::key::{KeyPair, XOnlyPublicKey};
-use crate::ffi::{self, CPtr, impl_array_newtype};
+use crate::ffi::{self, CPtr};
 
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
 use crate::SECP256K1;

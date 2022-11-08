@@ -202,7 +202,7 @@ pub use crate::scalar::Scalar;
 pub use context::global::SECP256K1;
 
 use core::{fmt, str, mem, marker::PhantomData};
-use crate::ffi::{CPtr, impl_array_newtype, types::AlignedType};
+use crate::ffi::{CPtr, types::AlignedType};
 #[cfg(feature = "bitcoin_hashes")]
 use crate::hashes::Hash;
 
