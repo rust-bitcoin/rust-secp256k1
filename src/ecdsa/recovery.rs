@@ -55,9 +55,9 @@ impl RecoverableSignature {
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
         if data.is_empty() {return Err(Error::InvalidSignature);}
 
-        let mut ret = ffi::RecoverableSignature::new();
-
         unsafe {
+            let mut ret = ffi::RecoverableSignature::new();
+
             if data.len() != 64 {
                 Err(Error::InvalidSignature)
             } else if ffi::secp256k1_ecdsa_recoverable_signature_parse_compact(
@@ -156,8 +156,9 @@ impl<C: Signing> Secp256k1<C> {
         sk: &key::SecretKey,
         noncedata_ptr: *const super_ffi::types::c_void,
     ) -> RecoverableSignature {
-        let mut ret = ffi::RecoverableSignature::new();
         unsafe {
+            let mut ret = ffi::RecoverableSignature::new();
+
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
             assert_eq!(
@@ -171,9 +172,8 @@ impl<C: Signing> Secp256k1<C> {
                 ),
                 1
             );
+            RecoverableSignature::from(ret)
         }
-
-        RecoverableSignature::from(ret)
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce

@@ -25,13 +25,36 @@ pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 
 impl RecoverableSignature {
-    /// Create a new (zeroed) signature usable for the FFI interface
-    pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
-}
+    /// Creates an "uninitialized" FFI signature which is zeroed out
+    ///
+    /// # Safety
+    ///
+    /// If you pass this to any FFI functions, except as an out-pointer,
+    /// the result is likely to be an assertation failure and process
+    /// termination.
+    pub unsafe fn new() -> Self {
+        Self::from_array_unchecked([0; 65])
+    }
 
-impl Default for RecoverableSignature {
-    fn default() -> Self {
-        RecoverableSignature::new()
+    /// Create a new signature usable for the FFI interface from raw bytes
+    ///
+    /// # Safety
+    ///
+    /// Does not check the validity of the underlying representation. If it is
+    /// invalid the result may be assertation failures (and process aborts) from
+    /// the underlying library. You should not use this method except with data
+    /// that you obtained from the FFI interface of the same version of this
+    /// library.
+    pub unsafe fn from_array_unchecked(data: [c_uchar; 65]) -> Self {
+        RecoverableSignature(data)
+    }
+
+    /// Returns the underlying FFI opaque representation of the signature
+    ///
+    /// You should not use this unless you really know what you are doing. It is
+    /// essentially only useful for extending the FFI interface itself.
+    pub fn underlying_bytes(self) -> [c_uchar; 65] {
+        self.0
     }
 }
 
