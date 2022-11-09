@@ -58,7 +58,7 @@
 //! If the "global-context" feature is enabled you have access to an alternate API.
 //!
 //! ```rust
-//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin-hashes-std"))] {
+//! # #[cfg(all(feature = "global-context", feature = "std", feature = "rand-std", feature = "bitcoin-hashes-std"))] {
 //! use secp256k1::rand::thread_rng;
 //! use secp256k1::{generate_keypair, Message};
 //! use secp256k1::hashes::sha256;
@@ -66,7 +66,7 @@
 //! let (secret_key, public_key) = generate_keypair(&mut thread_rng());
 //! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
 //!
-//! let sig = secret_key.sign_ecdsa(&message, &secret_key);
+//! let sig = secret_key.sign_ecdsa(message);
 //! assert!(sig.verify(&message, &public_key).is_ok());
 //! # }
 //! ```
