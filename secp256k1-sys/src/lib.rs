@@ -33,6 +33,7 @@ extern crate alloc;
 #[cfg(fuzzing)]
 const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DISABLED_FOR_FUZZING: usize = 0;
 
+pub mod key;
 mod macros;
 pub mod types;
 
@@ -43,6 +44,7 @@ pub mod recovery;
 use core::{slice, ptr};
 
 use crate::types::*;
+pub use crate::key::{PublicKey, XOnlyPublicKey, KeyPair};
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = 1;
@@ -132,27 +134,11 @@ impl SchnorrSigExtraParams {
 #[derive(Clone, Debug)]
 #[repr(C)] pub struct Context(c_int);
 
-/// Library-internal representation of a Secp256k1 public key
-#[repr(C)]
-pub struct PublicKey([c_uchar; 64]);
-impl_array_newtype!(PublicKey, c_uchar, 64);
-impl_raw_debug!(PublicKey);
-
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
-
-#[repr(C)]
-pub struct XOnlyPublicKey([c_uchar; 64]);
-impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
-impl_raw_debug!(XOnlyPublicKey);
-
-#[repr(C)]
-pub struct KeyPair([c_uchar; 96]);
-impl_array_newtype!(KeyPair, c_uchar, 96);
-impl_raw_debug!(KeyPair);
 
 extern "C" {
     /// Default ECDH hash function
