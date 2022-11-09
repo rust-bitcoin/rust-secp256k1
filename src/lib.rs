@@ -41,7 +41,7 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "std", feature="rand-std", feature="bitcoin_hashes"))] {
+//! # #[cfg(all(feature = "std", feature="rand-std", feature="bitcoin-hashes-std"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::sha256;
@@ -58,7 +58,7 @@
 //! If the "global-context" feature is enabled you have access to an alternate API.
 //!
 //! ```rust
-//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin_hashes"))] {
+//! # #[cfg(all(feature="global-context", feature = "std", feature="rand-std", features = "bitcoin-hashes-std"))] {
 //! use secp256k1::rand::thread_rng;
 //! use secp256k1::{generate_keypair, Message};
 //! use secp256k1::hashes::sha256;
@@ -71,7 +71,7 @@
 //! # }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `bitcoin_hashes`
+//! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `bitcoin-hashes-std`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
 //!
@@ -83,7 +83,7 @@
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 //! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
-//! // See the above example for how to use this library together with `bitcoin_hashes`.
+//! // See the above example for how to use this library together with `bitcoin-hashes-std`.
 //! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
@@ -141,12 +141,14 @@
 //! * `alloc` - use the `alloc` standard Rust library to provide heap allocations.
 //! * `rand` - use `rand` library to provide random generator (e.g. to generate keys).
 //! * `rand-std` - use `rand` library with its `std` feature enabled. (Implies `rand`.)
+//! * `bitcoin-hashes` - use the `bitcoin-hashes` library.
+//! * `bitcoin-hashes-std` - use the `bitcoin-hashes` library with its `std` feature enabled (implies `bitcoin-hashes`).
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
 //! * `global-context` - enable use of global secp256k1 context (implies `std`).
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
 //!           **Important**: `serde` encoding is **not** the same as consensus encoding!
-//! * `bitcoin_hashes` - enables interaction with the `bitcoin-hashes` crate (e.g. conversions).
+//!
 
 // Coding conventions
 #![deny(non_upper_case_globals, non_camel_case_types, non_snake_case)]
@@ -188,8 +190,8 @@ pub use rand;
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 pub use serde;
-#[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+#[cfg(feature = "bitcoin-hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 pub use bitcoin_hashes as hashes;
 pub use secp256k1_sys as ffi;
 pub use crate::key::{PublicKey, SecretKey};
@@ -203,7 +205,7 @@ pub use context::global::SECP256K1;
 
 use core::{fmt, str, mem, marker::PhantomData};
 use crate::ffi::{CPtr, impl_array_newtype, types::AlignedType};
-#[cfg(feature = "bitcoin_hashes")]
+#[cfg(feature = "bitcoin-hashes")]
 use crate::hashes::Hash;
 
 // Backwards compatible changes
@@ -233,24 +235,24 @@ pub trait ThirtyTwoByteHash {
     fn into_32(self) -> [u8; 32];
 }
 
-#[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+#[cfg(feature = "bitcoin-hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
     }
 }
 
-#[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+#[cfg(feature = "bitcoin-hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256d::Hash {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
     }
 }
 
-#[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+#[cfg(feature = "bitcoin-hashes")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     fn into_32(self) -> [u8; 32] {
         self.into_inner()
@@ -299,8 +301,8 @@ impl Message {
     /// assert_eq!(m1, m2);
     /// # }
     /// ```
-    #[cfg(feature = "bitcoin_hashes")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+    #[cfg(feature = "bitcoin-hashes")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
     }
@@ -1040,7 +1042,7 @@ mod tests {
         assert!(SECP256K1.verify_ecdsa(&msg, &sig, &pk).is_ok());
     }
 
-    #[cfg(feature = "bitcoin_hashes")]
+    #[cfg(feature = "bitcoin-hashes")]
     #[test]
     fn test_from_hash() {
         use crate::hashes::{self, Hash};

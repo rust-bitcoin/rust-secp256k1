@@ -25,7 +25,7 @@ use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey
 use crate::ffi::{self, CPtr, impl_array_newtype};
 use crate::ffi::types::c_uint;
 
-#[cfg(feature = "bitcoin_hashes")]
+#[cfg(feature = "bitcoin-hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
 #[cfg(feature = "serde")]
@@ -246,8 +246,8 @@ impl SecretKey {
     /// assert_eq!(sk1, sk2);
     /// # }
     /// ```
-    #[cfg(feature = "bitcoin_hashes")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin_hashes")))]
+    #[cfg(feature = "bitcoin-hashes")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     #[inline]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
@@ -377,7 +377,7 @@ impl SecretKey {
     }
 }
 
-#[cfg(feature = "bitcoin_hashes")]
+#[cfg(feature = "bitcoin-hashes")]
 impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
     /// Converts a 32-byte hash directly to a secret key without error paths.
     fn from(t: T) -> SecretKey {
