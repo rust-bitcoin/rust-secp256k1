@@ -20,6 +20,38 @@ macro_rules! impl_array_newtype {
         impl Copy for $thing {}
 
         impl $thing {
+            /// Creates a new "uninitialized" FFI type which is zeroed out.
+            ///
+            /// # Safety
+            ///
+            /// If you pass this to any FFI functions, except as an out-pointer,
+            /// the result is likely to be an assertation failure and process
+            /// termination.
+            pub unsafe fn new() -> Self {
+                Self::from_array_unchecked([0; $len])
+            }
+
+            /// Create a new type usable for the FFI interface from raw bytes.
+            ///
+            /// # Safety
+            ///
+            /// Does not check the validity of the underlying representation. If it is
+            /// invalid the result may be assertation failures (and process aborts) from
+            /// the underlying library. You should not use this method except with data
+            /// that you obtained from the FFI interface of the same version of this
+            /// library.
+            pub unsafe fn from_array_unchecked(data: [c_uchar; $len]) -> Self {
+                $thing(data)
+            }
+
+            /// Returns the underlying FFI opaque representation.
+            ///
+            /// You should not use this unless you really know what you are doing. It is
+            /// essentially only useful for extending the FFI interface itself.
+            pub fn underlying_bytes(self) -> [c_uchar; $len] {
+                self.0
+            }
+
             /// Converts the object to a raw pointer for FFI interfacing.
             #[inline]
             pub fn as_ptr(&self) -> *const $ty {

@@ -137,157 +137,21 @@ pub struct PublicKey([c_uchar; 64]);
 impl_array_newtype!(PublicKey, c_uchar, 64);
 impl_raw_debug!(PublicKey);
 
-impl PublicKey {
-    /// Creates an "uninitialized" FFI public key which is zeroed out
-    ///
-    /// # Safety
-    ///
-    /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
-    /// termination.
-    pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
-    }
-
-    /// Create a new public key usable for the FFI interface from raw bytes
-    ///
-    /// # Safety
-    ///
-    /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
-    /// the underlying library. You should not use this method except with data
-    /// that you obtained from the FFI interface of the same version of this
-    /// library.
-    pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        PublicKey(data)
-    }
-
-    /// Returns the underlying FFI opaque representation of the public key
-    ///
-    /// You should not use this unless you really know what you are doing. It is
-    /// essentially only useful for extending the FFI interface itself.
-    pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
-    }
-}
-
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
 
-impl Signature {
-    /// Creates an "uninitialized" FFI signature which is zeroed out
-    ///
-    /// # Safety
-    ///
-    /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
-    /// termination.
-    pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
-    }
-
-    /// Create a new signature usable for the FFI interface from raw bytes
-    ///
-    /// # Safety
-    ///
-    /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
-    /// the underlying library. You should not use this method except with data
-    /// that you obtained from the FFI interface of the same version of this
-    /// library.
-    pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        Signature(data)
-    }
-
-    /// Returns the underlying FFI opaque representation of the signature
-    ///
-    /// You should not use this unless you really know what you are doing. It is
-    /// essentially only useful for extending the FFI interface itself.
-    pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
-    }
-}
-
 #[repr(C)]
 pub struct XOnlyPublicKey([c_uchar; 64]);
 impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
 impl_raw_debug!(XOnlyPublicKey);
 
-impl XOnlyPublicKey {
-    /// Creates an "uninitialized" FFI x-only public key which is zeroed out
-    ///
-    /// # Safety
-    ///
-    /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
-    /// termination.
-    pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 64])
-    }
-
-    /// Create a new x-only public key usable for the FFI interface from raw bytes
-    ///
-    /// # Safety
-    ///
-    /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
-    /// the underlying library. You should not use this method except with data
-    /// that you obtained from the FFI interface of the same version of this
-    /// library.
-    pub unsafe fn from_array_unchecked(data: [c_uchar; 64]) -> Self {
-        XOnlyPublicKey(data)
-    }
-
-    /// Returns the underlying FFI opaque representation of the x-only public key
-    ///
-    /// You should not use this unless you really know what you are doing. It is
-    /// essentially only useful for extending the FFI interface itself.
-    pub fn underlying_bytes(self) -> [c_uchar; 64] {
-        self.0
-    }
-}
-
 #[repr(C)]
 pub struct KeyPair([c_uchar; 96]);
 impl_array_newtype!(KeyPair, c_uchar, 96);
 impl_raw_debug!(KeyPair);
-
-impl KeyPair {
-    /// Creates an "uninitialized" FFI keypair which is zeroed out
-    ///
-    /// # Safety
-    ///
-    /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
-    /// termination.
-    pub unsafe fn new() -> Self {
-        Self::from_array_unchecked([0; 96])
-    }
-
-    /// Create a new keypair usable for the FFI interface from raw bytes
-    ///
-    /// # Safety
-    ///
-    /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
-    /// the underlying library. You should not use this method except with data
-    /// that you obtained from the FFI interface of the same version of this
-    /// library.
-    pub unsafe fn from_array_unchecked(data: [c_uchar; 96]) -> Self {
-        KeyPair(data)
-    }
-
-    /// Returns the underlying FFI opaque representation of the x-only public key
-    ///
-    /// You should not use this unless you really know what you are doing. It is
-    /// essentially only useful for extending the FFI interface itself.
-    pub fn underlying_bytes(self) -> [c_uchar; 96] {
-        self.0
-    }
-}
 
 extern "C" {
     /// Default ECDH hash function
