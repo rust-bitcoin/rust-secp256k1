@@ -44,7 +44,7 @@ pub mod recovery;
 use core::{slice, ptr};
 
 use crate::types::*;
-pub use crate::key::{PublicKey, XOnlyPublicKey, KeyPair};
+pub use crate::key::{SecretKey, PublicKey, XOnlyPublicKey, KeyPair};
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = 1;
