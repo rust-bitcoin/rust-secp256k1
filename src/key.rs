@@ -1380,8 +1380,8 @@ impl XOnlyPublicKey {
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
     /// let (mut public_key, _) = key_pair.x_only_public_key();
     /// let original = public_key;
-    /// let parity = public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
-    /// assert!(original.tweak_add_check(&secp, &public_key, parity, tweak));
+    /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// assert!(original.tweak_add_check(&secp, &tweaked, parity, tweak));
     /// # }
     /// ```
     pub fn tweak_add_check<V: Verification>(
