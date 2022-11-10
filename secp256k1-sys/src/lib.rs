@@ -346,35 +346,15 @@ extern "C" {
     pub fn secp256k1_ec_seckey_verify(cx: *const Context,
                                       sk: *const c_uchar) -> c_int;
 
-    #[deprecated(since = "0.2.0",note = "Please use the secp256k1_ec_seckey_tweak_add function instead")]
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_privkey_negate")]
-    pub fn secp256k1_ec_privkey_negate(cx: *const Context,
-                                       sk: *mut c_uchar) -> c_int;
-
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_seckey_negate")]
     pub fn secp256k1_ec_seckey_negate(cx: *const Context,
                                       sk: *mut c_uchar) -> c_int;
-
-    #[deprecated(since = "0.2.0",note = "Please use the secp256k1_ec_seckey_tweak_add function instead")]
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_privkey_tweak_add")]
-    pub fn secp256k1_ec_privkey_tweak_add(cx: *const Context,
-                                          sk: *mut c_uchar,
-                                          tweak: *const c_uchar)
-                                          -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_seckey_tweak_add")]
     pub fn secp256k1_ec_seckey_tweak_add(cx: *const Context,
                                         sk: *mut c_uchar,
                                         tweak: *const c_uchar)
                                         -> c_int;
-
-    #[deprecated(since = "0.2.0",note = "Please use the secp256k1_ec_seckey_tweak_mul function instead")]
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_privkey_tweak_mul")]
-    pub fn secp256k1_ec_privkey_tweak_mul(cx: *const Context,
-                                          sk: *mut c_uchar,
-                                          tweak: *const c_uchar)
-                                          -> c_int;
-
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ec_seckey_tweak_mul")]
     pub fn secp256k1_ec_seckey_tweak_mul(cx: *const Context,
                                         sk: *mut c_uchar,
