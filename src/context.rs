@@ -121,17 +121,14 @@ mod alloc_only {
     const ALIGN_TO: usize = core::mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum SignOnly {}
 
     /// Represents the set of capabilities needed for verification.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum VerifyOnly {}
 
     /// Represents the set of all capabilities.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum All {}
 
