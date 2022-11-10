@@ -206,25 +206,6 @@ use crate::ffi::{CPtr, impl_array_newtype, types::AlignedType};
 #[cfg(feature = "bitcoin_hashes")]
 use crate::hashes::Hash;
 
-// Backwards compatible changes
-/// Schnorr Signature related methods.
-#[deprecated(since = "0.21.0", note = "Use schnorr instead.")]
-pub mod schnorrsig {
-    #[deprecated(since = "0.21.0", note = "Use crate::XOnlyPublicKey instead.")]
-    /// backwards compatible re-export of xonly key
-    pub type PublicKey = crate::key::XOnlyPublicKey;
-    /// backwards compatible re-export of keypair
-    #[deprecated(since = "0.21.0", note = "Use crate::KeyPair instead.")]
-    pub type KeyPair = crate::key::KeyPair;
-    /// backwards compatible re-export of schnorr signatures
-    #[deprecated(since = "0.21.0", note = "Use schnorr::Signature instead.")]
-    pub type Signature = crate::schnorr::Signature;
-}
-
-#[deprecated(since = "0.21.0", note = "Use ecdsa::Signature instead.")]
-/// backwards compatible re-export of ecdsa signatures
-pub type Signature = ecdsa::Signature;
-
 /// Trait describing something that promises to be a 32-byte random number; in particular,
 /// it has negligible probability of being zero or overflowing the group order. Such objects
 /// may be converted to `Message`s without any error paths.

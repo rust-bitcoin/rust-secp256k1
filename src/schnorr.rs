@@ -125,27 +125,8 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     #[cfg(any(test, feature = "rand-std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
-    #[deprecated(since = "0.21.0", note = "Use sign_schnorr instead.")]
-    pub fn schnorrsig_sign(&self, msg: &Message, keypair: &KeyPair) -> Signature {
-        self.sign_schnorr(msg, keypair)
-    }
-
-    /// Create a schnorr signature internally using the ThreadRng random number
-    /// generator to generate the auxiliary random data.
-    #[cfg(any(test, feature = "rand-std"))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
-    }
-
-    /// Create a schnorr signature without using any auxiliary random data.
-    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_no_aux_rand instead.")]
-    pub fn schnorrsig_sign_no_aux_rand(
-        &self,
-        msg: &Message,
-        keypair: &KeyPair,
-    ) -> Signature {
-        self.sign_schnorr_no_aux_rand(msg, keypair)
     }
 
     /// Create a schnorr signature without using any auxiliary random data.
@@ -155,17 +136,6 @@ impl<C: Signing> Secp256k1<C> {
         keypair: &KeyPair,
     ) -> Signature {
         self.sign_schnorr_helper(msg, keypair, ptr::null())
-    }
-
-    /// Create a Schnorr signature using the given auxiliary random data.
-    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_aux_rand instead.")]
-    pub fn schnorrsig_sign_with_aux_rand(
-        &self,
-        msg: &Message,
-        keypair: &KeyPair,
-        aux_rand: &[u8; 32],
-    ) -> Signature {
-        self.sign_schnorr_with_aux_rand(msg, keypair, aux_rand)
     }
 
     /// Create a Schnorr signature using the given auxiliary random data.
@@ -186,20 +156,6 @@ impl<C: Signing> Secp256k1<C> {
     /// generate the auxiliary random data.
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    #[deprecated(since = "0.21.0", note = "Use sign_schnorr_with_rng instead.")]
-    pub fn schnorrsig_sign_with_rng<R: Rng + CryptoRng>(
-        &self,
-        msg: &Message,
-        keypair: &KeyPair,
-        rng: &mut R,
-    ) -> Signature {
-        self.sign_schnorr_with_rng(msg, keypair, rng)
-    }
-
-    /// Create a schnorr signature using the given random number generator to
-    /// generate the auxiliary random data.
-    #[cfg(any(test, feature = "rand"))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
         &self,
         msg: &Message,
@@ -213,17 +169,6 @@ impl<C: Signing> Secp256k1<C> {
 }
 
 impl<C: Verification> Secp256k1<C> {
-    /// Verify a Schnorr signature.
-    #[deprecated(since = "0.21.0", note = "Use verify_schnorr instead.")]
-    pub fn schnorrsig_verify(
-        &self,
-        sig: &Signature,
-        msg: &Message,
-        pubkey: &XOnlyPublicKey,
-    ) -> Result<(), Error> {
-        self.verify_schnorr(sig, msg, pubkey)
-    }
-
     /// Verify a Schnorr signature.
     pub fn verify_schnorr(
         &self,
@@ -246,25 +191,6 @@ impl<C: Verification> Secp256k1<C> {
                 Err(Error::InvalidSignature)
             }
         }
-    }
-}
-
-impl <C: Signing> Secp256k1<C> {
-    /// Generates a random Schnorr `KeyPair` and its associated Schnorr `XOnlyPublicKey`.
-    ///
-    /// Convenience function for [KeyPair::new] and [KeyPair::public_key].
-    /// Requires a signing-capable context.
-    #[inline]
-    #[cfg(any(test, feature = "rand"))]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    #[deprecated(since = "0.21.0", note = "Use kp = KeyPair::new() and kp.x_only_public_key().0")]
-    pub fn generate_schnorrsig_keypair<R: Rng + ?Sized>(
-        &self,
-        rng: &mut R,
-    ) -> (KeyPair, XOnlyPublicKey) {
-        let sk = KeyPair::new(self, rng);
-        let (pubkey, _parity) = XOnlyPublicKey::from_keypair(&sk);
-        (sk, pubkey)
     }
 }
 

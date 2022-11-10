@@ -150,13 +150,6 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 }
 
 impl<C: Signing> Secp256k1<C> {
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce.
-    /// Requires a signing-capable context.
-    #[deprecated(since = "0.21.0", note = "Use sign_ecdsa_recoverable instead.")]
-    pub fn sign_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
-        self.sign_ecdsa_recoverable(msg, sk)
-    }
-
     fn sign_ecdsa_recoverable_with_noncedata_pointer(
         &self,
         msg: &Message,
@@ -206,13 +199,6 @@ impl<C: Signing> Secp256k1<C> {
 }
 
 impl<C: Verification> Secp256k1<C> {
-    /// Determines the public key for which `sig` is a valid signature for
-    /// `msg`. Requires a verify-capable context.
-    #[deprecated(since = "0.21.0", note = "Use recover_ecdsa instead.")]
-    pub fn recover(&self, msg: &Message, sig: &RecoverableSignature) -> Result<key::PublicKey, Error> {
-        self.recover_ecdsa(msg, sig)
-    }
-
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
     pub fn recover_ecdsa(&self, msg: &Message, sig: &RecoverableSignature)
