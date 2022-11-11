@@ -87,28 +87,40 @@ impl Scalar {
         Self::from_be_bytes(value)
     }
 
-    /// Serializes to big endian bytes
-    pub fn to_be_bytes(self) -> [u8; 32] {
+    /// Returns the inner byte array (ignoring byte order).
+    pub fn to_bytes(self) -> [u8; 32] {
         self.0
     }
 
+    /// Returns a reference to the inner byte array (ignoring byte order).
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
+
+    /// Serializes to big endian bytes
+    pub fn to_be_bytes(mut self) -> [u8; 32] {
+        if cfg!(target_endian = "big") {
+            self.0
+        } else {
+            self.0.reverse();
+            self.0
+        }
+    }
+
     /// Serializes to little endian bytes
-    pub fn to_le_bytes(self) -> [u8; 32] {
-        let mut res = self.0;
-        res.reverse();
-        res
+    pub fn to_le_bytes(mut self) -> [u8; 32] {
+        if cfg!(target_endian = "little") {
+            self.0
+        } else {
+            self.0.reverse();
+            self.0
+        }
     }
 
     // returns a reference to internal bytes
     // non-public to not leak the internal representation
     pub(crate) fn as_be_bytes(&self) -> &[u8; 32] {
         &self.0
-    }
-
-    pub(crate) fn as_c_ptr(&self) -> *const u8 {
-        use secp256k1_sys::CPtr;
-
-        self.as_be_bytes().as_c_ptr()
     }
 }
 

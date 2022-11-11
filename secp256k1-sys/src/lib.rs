@@ -33,18 +33,21 @@ extern crate alloc;
 #[cfg(fuzzing)]
 const THIS_UNUSED_CONSTANT_IS_YOUR_WARNING_THAT_ALL_THE_CRYPTO_IN_THIS_LIB_IS_DISABLED_FOR_FUZZING: usize = 0;
 
+pub mod context;
+pub mod ecdh;
+pub mod ecdsa;
 pub mod key;
 mod macros;
+pub mod schnorr;
 pub mod types;
-
-#[cfg(feature = "recovery")]
-#[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
-pub mod recovery;
 
 use core::{slice, ptr};
 
-use crate::types::*;
+pub use crate::context::Secp256k1;
+use crate::context::Context;
+pub use crate::ecdh::SharedSecret;
 pub use crate::key::{SecretKey, PublicKey, XOnlyPublicKey, KeyPair};
+use crate::types::*;
 
 /// Flag for context to enable no precomputation
 pub const SECP256K1_START_NONE: c_uint = 1;
@@ -127,19 +130,6 @@ impl SchnorrSigExtraParams {
     }
 }
 
-/// A Secp256k1 context, containing various precomputed values and such
-/// needed to do elliptic curve computations. If you create one of these
-/// with `secp256k1_context_create` you MUST destroy it with
-/// `secp256k1_context_destroy`, or else you will have a memory leak.
-#[derive(Clone, Debug)]
-#[repr(C)] pub struct Context(c_int);
-
-/// Library-internal representation of a Secp256k1 signature
-#[repr(C)]
-pub struct Signature([c_uchar; 64]);
-impl_array_newtype!(Signature, c_uchar, 64);
-impl_raw_debug!(Signature);
-
 extern "C" {
     /// Default ECDH hash function
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdh_hash_function_default")]
@@ -163,33 +153,33 @@ extern "C" {
 
     // Signatures
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_parse_der")]
-    pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut Signature,
+    pub fn secp256k1_ecdsa_signature_parse_der(cx: *const Context, sig: *mut ecdsa::Signature,
                                                input: *const c_uchar, in_len: size_t)
                                                -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_parse_compact")]
-    pub fn secp256k1_ecdsa_signature_parse_compact(cx: *const Context, sig: *mut Signature,
+    pub fn secp256k1_ecdsa_signature_parse_compact(cx: *const Context, sig: *mut ecdsa::Signature,
                                                    input64: *const c_uchar)
                                                    -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_parse_der_lax")]
-    pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut Signature,
+    pub fn ecdsa_signature_parse_der_lax(cx: *const Context, sig: *mut ecdsa::Signature,
                                          input: *const c_uchar, in_len: size_t)
                                          -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_serialize_der")]
     pub fn secp256k1_ecdsa_signature_serialize_der(cx: *const Context, output: *mut c_uchar,
-                                                   out_len: *mut size_t, sig: *const Signature)
+                                                   out_len: *mut size_t, sig: *const ecdsa::Signature)
                                                    -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_serialize_compact")]
     pub fn secp256k1_ecdsa_signature_serialize_compact(cx: *const Context, output64: *mut c_uchar,
-                                                       sig: *const Signature)
+                                                       sig: *const ecdsa::Signature)
                                                        -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_normalize")]
-    pub fn secp256k1_ecdsa_signature_normalize(cx: *const Context, out_sig: *mut Signature,
-                                               in_sig: *const Signature)
+    pub fn secp256k1_ecdsa_signature_normalize(cx: *const Context, out_sig: *mut ecdsa::Signature,
+                                               in_sig: *const ecdsa::Signature)
                                                -> c_int;
 
     // Secret Keys
@@ -305,14 +295,14 @@ extern "C" {
     // ECDSA
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_verify")]
     pub fn secp256k1_ecdsa_verify(cx: *const Context,
-                                  sig: *const Signature,
+                                  sig: *const ecdsa::Signature,
                                   msg32: *const c_uchar,
                                   pk: *const PublicKey)
                                   -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_sign")]
     pub fn secp256k1_ecdsa_sign(cx: *const Context,
-                                sig: *mut Signature,
+                                sig: *mut ecdsa::Signature,
                                 msg32: *const c_uchar,
                                 sk: *const c_uchar,
                                 noncefn: NonceFn,

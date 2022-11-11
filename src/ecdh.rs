@@ -15,11 +15,10 @@
 //! Support for shared secret computations.
 //!
 
-use core::{borrow::Borrow, ptr, str};
+use core::str;
+use core::convert::TryInto;
 
-use secp256k1_sys::types::{c_int, c_uchar, c_void};
-
-use crate::{constants, Error, ffi::{self, CPtr}, key::{PublicKey, SecretKey}};
+use crate::{constants, ffi, Error, PublicKey, SecretKey};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -42,38 +41,29 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 /// # }
 // ```
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SharedSecret([u8; SHARED_SECRET_SIZE]);
+pub struct SharedSecret(ffi::SharedSecret);
 impl_display_secret!(SharedSecret);
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key.
     #[inline]
-    pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
-        let mut buf = [0u8; SHARED_SECRET_SIZE];
-        let res = unsafe {
-             ffi::secp256k1_ecdh(
-                ffi::secp256k1_context_no_precomp,
-                buf.as_mut_ptr(),
-                point.as_c_ptr(),
-                scalar.as_c_ptr(),
-                ffi::secp256k1_ecdh_hash_function_default,
-                ptr::null_mut(),
-            )
-        };
-        debug_assert_eq!(res, 1);
-        SharedSecret(buf)
+    pub fn new(point: &PublicKey, scalar: &SecretKey) -> Result<SharedSecret, Error> {
+        ffi::SharedSecret::from_point_and_scalar(&point.into(), &scalar.into())
+            .map(SharedSecret)
+            .ok_or(Error::InvalidSharedSecret)
     }
 
     /// Returns the shared secret as a byte value.
     #[inline]
     pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] {
-        self.0
+        self.0.secret_bytes()
     }
 
     /// Creates a shared secret from `bytes` array.
     #[inline]
     pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret {
-        SharedSecret(bytes)
+        let secret = ffi::SharedSecret::from_bytes(bytes);
+        SharedSecret(secret)
     }
 
     /// Creates a shared secret from `bytes` slice.
@@ -81,9 +71,7 @@ impl SharedSecret {
     pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
         match bytes.len() {
             SHARED_SECRET_SIZE => {
-                let mut ret = [0u8; SHARED_SECRET_SIZE];
-                ret[..].copy_from_slice(bytes);
-                Ok(SharedSecret(ret))
+                Ok(SharedSecret::from_bytes(bytes.try_into().expect("size checked")))
             }
             _ => Err(Error::InvalidSharedSecret)
         }
@@ -101,17 +89,19 @@ impl str::FromStr for SharedSecret {
     }
 }
 
-impl Borrow<[u8]> for SharedSecret {
-    fn borrow(&self) -> &[u8] {
-        &self.0
-    }
-}
+// TODO: Do we want these?
+//
+// impl Borrow<[u8]> for SharedSecret {
+//     fn borrow(&self) -> &[u8] {
+//         &self.0
+//     }
+// }
 
-impl AsRef<[u8]> for SharedSecret {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
-}
+// impl AsRef<[u8]> for SharedSecret {
+//     fn as_ref(&self) -> &[u8] {
+//         &self.0
+//     }
+// }
 
 /// Creates a shared point from public key and secret key.
 ///
@@ -144,46 +134,25 @@ impl AsRef<[u8]> for SharedSecret {
 /// # }
 /// ```
 pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
-    let mut xy = [0u8; 64];
-
-    let res = unsafe {
-        ffi::secp256k1_ecdh(
-            ffi::secp256k1_context_no_precomp,
-            xy.as_mut_ptr(),
-            point.as_ptr(),
-            scalar.as_ptr(),
-            Some(c_callback),
-            ptr::null_mut(),
-        )
-    };
-    // Our callback *always* returns 1.
-    // The scalar was verified to be valid (0 > scalar > group_order) via the type system.
-    debug_assert_eq!(res, 1);
-    xy
-}
-
-unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, _data: *mut c_void) -> c_int {
-    ptr::copy_nonoverlapping(x, output, 32);
-    ptr::copy_nonoverlapping(y, output.offset(32), 32);
-    1
+    ffi::ecdh::shared_secret_point(&point.into(), &scalar.into())
 }
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl ::serde::Serialize for SharedSecret {
+impl serde::Serialize for SharedSecret {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
-            s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+            s.serialize_str(crate::to_hex(&self.0.underlying_bytes(), &mut buf).expect("fixed-size hex serialization"))
         } else {
-            s.serialize_bytes(self.as_ref())
+            s.serialize_bytes(&self.0.underlying_bytes())
         }
     }
 }
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> ::serde::Deserialize<'de> for SharedSecret {
+impl<'de> serde::Deserialize<'de> for SharedSecret {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(

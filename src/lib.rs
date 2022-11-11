@@ -201,7 +201,7 @@ pub use crate::scalar::Scalar;
 #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
 pub use context::global::SECP256K1;
 
-use core::{fmt, str, mem, marker::PhantomData};
+use core::{fmt, str, marker::PhantomData};
 use crate::ffi::{CPtr, types::AlignedType};
 #[cfg(feature = "bitcoin_hashes")]
 use crate::hashes::Hash;
@@ -260,6 +260,12 @@ impl Message {
             }
             _ => Err(Error::InvalidMessage)
         }
+    }
+
+    /// FIXME: Is it ok to add this? Should it be in the macro?
+    #[inline]
+    pub fn to_bytes(self) -> [u8; constants::MESSAGE_SIZE] {
+        self.0
     }
 
     /// Constructs a [`Message`] by hashing `data` with hash algorithm `H`.
@@ -323,6 +329,8 @@ pub enum Error {
     InvalidSignature,
     /// Bad secret key.
     InvalidSecretKey,
+    /// Bad key pair.
+    InvalidKeyPair,
     /// Bad shared secret.
     InvalidSharedSecret,
     /// Bad recovery id.
@@ -335,6 +343,8 @@ pub enum Error {
     InvalidPublicKeySum,
     /// The only valid parity values are 0 or 1.
     InvalidParityValue(key::InvalidParityValue),
+    /// Serialization failed.
+    SerializationFailed,
 }
 
 impl fmt::Display for Error {
@@ -347,12 +357,14 @@ impl fmt::Display for Error {
             InvalidPublicKey => f.write_str("malformed public key"),
             InvalidSignature => f.write_str("malformed signature"),
             InvalidSecretKey => f.write_str("malformed or out-of-range secret key"),
+            InvalidKeyPair => f.write_str("malformed or out-of-range secret key in key pair"),
             InvalidSharedSecret => f.write_str("malformed or out-of-range shared secret"),
             InvalidRecoveryId => f.write_str("bad recovery id"),
             InvalidTweak => f.write_str("bad tweak"),
             NotEnoughMemory => f.write_str("not enough memory allocated"),
             InvalidPublicKeySum => f.write_str("the sum of public keys was invalid or the input vector lengths was less than 1"),
             InvalidParityValue(e) => write_err!(f, "couldn't create parity"; e),
+            SerializationFailed => f.write_str("serialization failed"),
         }
     }
 }
@@ -367,43 +379,30 @@ impl std::error::Error for Error {
             Error::InvalidPublicKey => None,
             Error::InvalidSignature => None,
             Error::InvalidSecretKey => None,
+            Error::InvalidKeyPair => None,
             Error::InvalidSharedSecret => None,
             Error::InvalidRecoveryId => None,
             Error::InvalidTweak => None,
             Error::NotEnoughMemory => None,
             Error::InvalidPublicKeySum => None,
+            Error::SerializationFailed => None,
             Error::InvalidParityValue(error) => Some(error),
         }
     }
 }
 
-
 /// The secp256k1 engine, used to execute all signature operations.
+#[derive(Clone)]
 pub struct Secp256k1<C: Context> {
-    ctx: *mut ffi::Context,
+    ctx: ffi::Secp256k1,
     phantom: PhantomData<C>,
-    size: usize,
 }
-
-// The underlying secp context does not contain any references to memory it does not own.
-unsafe impl<C: Context> Send for Secp256k1<C> {}
-// The API does not permit any mutation of `Secp256k1` objects except through `&mut` references.
-unsafe impl<C: Context> Sync for Secp256k1<C> {}
 
 impl<C: Context> PartialEq for Secp256k1<C> {
     fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
 
 impl<C: Context> Eq for Secp256k1<C> { }
-
-impl<C: Context> Drop for Secp256k1<C> {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::secp256k1_context_preallocated_destroy(self.ctx);
-            C::deallocate(self.ctx as _, self.size);
-        }
-    }
-}
 
 impl<C: Context> fmt::Debug for Secp256k1<C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -412,21 +411,9 @@ impl<C: Context> fmt::Debug for Secp256k1<C> {
 }
 
 impl<C: Context> Secp256k1<C> {
-
-    /// Getter for the raw pointer to the underlying secp256k1 context. This
-    /// shouldn't be needed with normal usage of the library. It enables
-    /// extending the Secp256k1 with more cryptographic algorithms outside of
-    /// this crate.
-    pub fn ctx(&self) -> &*mut ffi::Context {
-        &self.ctx
-    }
-
     /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all).
     pub fn preallocate_size_gen() -> usize {
-        let word_size = mem::size_of::<AlignedType>();
-        let bytes = unsafe { ffi::secp256k1_context_preallocated_size(C::FLAGS) };
-
-        (bytes + word_size - 1) / word_size
+        ffi::Secp256k1::preallocate_size_gen(C::FLAGS)
     }
 
     /// (Re)randomizes the Secp256k1 context for extra sidechannel resistance.
@@ -438,25 +425,7 @@ impl<C: Context> Secp256k1<C> {
     pub fn randomize<R: rand::Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
-        self.seeded_randomize(&seed);
-    }
-
-    /// (Re)randomizes the Secp256k1 context for extra sidechannel resistance given 32 bytes of
-    /// cryptographically-secure random data;
-    /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell.
-    pub fn seeded_randomize(&mut self, seed: &[u8; 32]) {
-        unsafe {
-            let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_c_ptr());
-            // This function cannot fail; it has an error return for future-proofing.
-            // We do not expose this error since it is impossible to hit, and we have
-            // precedent for not exposing impossible errors (for example in
-            // `PublicKey::from_secret_key` where it is impossible to create an invalid
-            // secret key through the API.)
-            // However, if this DOES fail, the result is potentially weaker side-channel
-            // resistance, which is deadly and undetectable, so we take out the entire
-            // thread to be on the safe side.
-            assert_eq!(err, 1);
-        }
+        self.ctx.seeded_randomize(&seed);
     }
 }
 

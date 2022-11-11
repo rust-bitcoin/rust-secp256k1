@@ -15,14 +15,105 @@
 
 //! # FFI of the recovery module
 
-use crate::{Context, Signature, NonceFn, PublicKey, CPtr, impl_array_newtype};
+use core::{fmt, ptr};
+
 use crate::types::*;
-use core::fmt;
+use crate::{impl_array_newtype, secp256k1_context_no_precomp, SecretKey, PublicKey, NonceFn, Secp256k1};
+use crate::ecdsa::Signature;
+use crate::context::Context;
+
+/// TODO: Document this.
+pub fn sign(ctx: &Secp256k1, msg: [u8; 32], sk: &SecretKey, noncedata: Option<&[u8; 32]>) -> Option<RecoverableSignature> {
+    unsafe {
+        let mut sig = RecoverableSignature::new();
+        let noncedata_ptr = match noncedata {
+            Some(arr) => arr.as_ptr() as *const _,
+            None => ptr::null(),
+        };
+
+        let res = secp256k1_ecdsa_sign_recoverable(
+            ctx.as_ptr(),
+            &mut sig,
+            msg.as_ptr(),
+            sk.as_ptr(),
+            crate::secp256k1_nonce_function_rfc6979,
+            noncedata_ptr,
+        );
+        if res == 1 { Some(sig) } else { None }
+    }
+}
+
+/// Determines the public key for which `sig` is a valid signature for
+/// `msg`. Requires a verify-capable context.
+pub fn recover(ctx: &Secp256k1, msg: [u8; 32], sig: &RecoverableSignature) -> Option<PublicKey> {
+    unsafe {
+        let mut pk = PublicKey::new();
+
+        let res = secp256k1_ecdsa_recover(
+            ctx.as_ptr(),
+            &mut pk,
+            sig,
+            msg.as_ptr()
+        );
+        if res == 1 { Some(pk) } else { None }
+    }
+}
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
+
+impl RecoverableSignature {
+    /// Converts a compact-encoded byte slice to a signature. This
+    /// representation is nonstandard and defined by the libsecp256k1 library.
+    pub fn from_compact(data: &[u8; 64], recid: i32) -> Option<RecoverableSignature> {
+        unsafe {
+            let mut sig = RecoverableSignature::new();
+
+            let res = secp256k1_ecdsa_recoverable_signature_parse_compact(
+                secp256k1_context_no_precomp,
+                &mut sig,
+                data.as_ptr(),
+                recid,
+            );
+            if res == 1 { Some(sig) } else { None }
+        }
+    }
+
+    #[inline]
+    /// Serializes the recoverable signature in compact format.
+    pub fn serialize_compact(&self) -> Option<(i32, [u8; 64])> {
+        let mut buf = [0u8; 64];
+        let mut recid = 0i32;
+
+        let res = unsafe {
+            secp256k1_ecdsa_recoverable_signature_serialize_compact(
+                secp256k1_context_no_precomp,
+                buf.as_mut_ptr(),
+                &mut recid,
+                self,
+            )
+        };
+        if res == 1 { Some((recid, buf)) } else { None }
+    }
+
+    /// Converts a recoverable signature to a non-recoverable one (this is needed
+    /// for verification).
+    #[inline]
+    pub fn to_standard(&self) -> Option<Signature> {
+        unsafe {
+            let mut sig = Signature::new();
+            let res = secp256k1_ecdsa_recoverable_signature_convert(
+                secp256k1_context_no_precomp,
+                &mut sig,
+                self,
+            );
+            if res == 1 { Some(sig) } else { None }
+        }
+    }
+}
 
 impl fmt::Debug for RecoverableSignature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -32,7 +123,7 @@ impl fmt::Debug for RecoverableSignature {
         unsafe {
             let err = secp256k1_ecdsa_recoverable_signature_serialize_compact(
                 super::secp256k1_context_no_precomp,
-                ret.as_mut_c_ptr(),
+                ret.as_mut_ptr(),
                 &mut recid,
                 self,
             );

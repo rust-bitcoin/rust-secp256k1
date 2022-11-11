@@ -2,22 +2,41 @@
 //! Support for Schnorr signatures.
 //!
 
-use core::{fmt, ptr, str};
+use core::{fmt, str};
+use core::convert::TryFrom;
 
 #[cfg(any(test, feature = "rand"))]
 use rand::{CryptoRng, Rng};
 
-use crate::{constants, impl_array_newtype, from_hex, Error, Message, Secp256k1, Signing, Verification};
-use crate::key::{KeyPair, XOnlyPublicKey};
-use crate::ffi::{self, CPtr};
+use crate::{constants, from_hex, Message, Secp256k1, Signing, Verification, KeyPair, XOnlyPublicKey};
+use crate::Error::{self, InvalidSignature};
+use crate::ffi::schnorr as ffi;
 
 #[cfg(all(feature  = "global-context", feature = "rand-std"))]
 use crate::SECP256K1;
 
 /// Represents a Schnorr signature.
-pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
-impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
-impl_pretty_debug!(Signature);
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Signature(ffi::Signature);
+
+impl Signature {
+    /// Creates a Signature directly from a slice
+    #[inline]
+    pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
+        match <[u8; constants::SCHNORR_SIGNATURE_SIZE]>::try_from(data) {
+            Ok(data) => Ok(Signature(ffi::Signature::from_bytes(data))),
+            _ => Err(InvalidSignature),
+        }
+    }
+
+    /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
+    #[inline]
+    #[cfg(all(feature = "global-context", feature = "rand-std"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
+    pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
+        SECP256K1.verify_schnorr(msg, self, pk)
+    }
+}
 
 #[cfg(feature = "serde")]
 impl serde::Serialize for Signature {
@@ -25,7 +44,7 @@ impl serde::Serialize for Signature {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self[..])
+            s.serialize_bytes(&self.0.underlying_bytes())
         }
     }
 }
@@ -46,18 +65,24 @@ impl<'de> serde::Deserialize<'de> for Signature {
     }
 }
 
-impl fmt::LowerHex for Signature {
+impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.0[..] {
-            write!(f, "{:02x}", ch)?;
-        }
-        Ok(())
+        fmt::Display::fmt(self, f)
     }
 }
 
 impl fmt::Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::LowerHex::fmt(self, f)
+    }
+}
+
+impl fmt::LowerHex for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for ch in &self.0[..] {
+            write!(f, "{:02x}", ch)?;
+        }
+        Ok(())
     }
 }
 
@@ -74,53 +99,7 @@ impl str::FromStr for Signature {
     }
 }
 
-impl Signature {
-    /// Creates a Signature directly from a slice
-    #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
-        match data.len() {
-            constants::SCHNORR_SIGNATURE_SIZE => {
-                let mut ret = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-                ret[..].copy_from_slice(data);
-                Ok(Signature(ret))
-            }
-            _ => Err(Error::InvalidSignature),
-        }
-    }
-
-    /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
-    #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand-std"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
-    pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
-        SECP256K1.verify_schnorr(self, msg, pk)
-    }
-}
-
 impl<C: Signing> Secp256k1<C> {
-    fn sign_schnorr_helper(
-        &self,
-        msg: &Message,
-        keypair: &KeyPair,
-        nonce_data: *const ffi::types::c_uchar,
-    ) -> Signature {
-        unsafe {
-            let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-            assert_eq!(
-                1,
-                ffi::secp256k1_schnorrsig_sign(
-                    self.ctx,
-                    sig.as_mut_c_ptr(),
-                    msg.as_c_ptr(),
-                    keypair.as_ptr(),
-                    nonce_data,
-                )
-            );
-
-            Signature(sig)
-        }
-    }
-
     /// Create a schnorr signature internally using the ThreadRng random number
     /// generator to generate the auxiliary random data.
     #[cfg(any(test, feature = "rand-std"))]
@@ -135,7 +114,11 @@ impl<C: Signing> Secp256k1<C> {
         msg: &Message,
         keypair: &KeyPair,
     ) -> Signature {
-        self.sign_schnorr_helper(msg, keypair, ptr::null())
+        ffi::sign(&self.ctx, msg.to_bytes(), &keypair.into(), None)
+            .map(Signature)
+        // FIXME: This is allegedly true but it means we are at the mercy of libsecp256k1,
+        // should we return an error instead?
+            .expect("infallible since msg an pk are valid")
     }
 
     /// Create a Schnorr signature using the given auxiliary random data.
@@ -145,26 +128,27 @@ impl<C: Signing> Secp256k1<C> {
         keypair: &KeyPair,
         aux_rand: &[u8; 32],
     ) -> Signature {
-        self.sign_schnorr_helper(
-            msg,
-            keypair,
-            aux_rand.as_c_ptr() as *const ffi::types::c_uchar,
-        )
+        ffi::sign(&self.ctx, msg.to_bytes(), &keypair.into(), Some(aux_rand))
+            .map(Signature)
+        // FIXME: Same as above.
+            .expect("infallible since msg an pk are valid")
     }
 
     /// Create a schnorr signature using the given random number generator to
     /// generate the auxiliary random data.
     #[cfg(any(test, feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
-    pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
-        &self,
-        msg: &Message,
-        keypair: &KeyPair,
-        rng: &mut R,
-    ) -> Signature {
+    pub fn sign_schnorr_with_rng<R>(&self, msg: &Message, kp: &KeyPair, rng: &mut R) -> Signature
+    where
+        R: Rng + CryptoRng,
+    {
         let mut aux = [0u8; 32];
         rng.fill_bytes(&mut aux);
-        self.sign_schnorr_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_uchar)
+
+        ffi::sign(&self.ctx, msg.to_bytes(), &kp.into(), Some(&aux))
+            .map(Signature)
+        // FIXME: Same as above.
+            .expect("infallible since msg an pk are valid")
     }
 }
 
@@ -172,24 +156,14 @@ impl<C: Verification> Secp256k1<C> {
     /// Verify a Schnorr signature.
     pub fn verify_schnorr(
         &self,
-        sig: &Signature,
         msg: &Message,
-        pubkey: &XOnlyPublicKey,
+        sig: &Signature,
+        pk: &XOnlyPublicKey,
     ) -> Result<(), Error> {
-        unsafe {
-            let ret = ffi::secp256k1_schnorrsig_verify(
-                self.ctx,
-                sig.as_c_ptr(),
-                msg.as_c_ptr(),
-                32,
-                pubkey.as_c_ptr(),
-            );
-
-            if ret == 1 {
-                Ok(())
-            } else {
-                Err(Error::InvalidSignature)
-            }
+        if sig.0.is_valid(&self.ctx, msg.to_bytes(), &pk.into()) {
+            Ok(())
+        } else {
+            Err(InvalidSignature)
         }
     }
 }

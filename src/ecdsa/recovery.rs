@@ -17,11 +17,12 @@
 //! signature.
 //!
 
-use core::ptr;
-use crate::{key, Secp256k1, Message, Error, Verification, Signing, ecdsa::Signature};
-use super::ffi as super_ffi;
-use self::super_ffi::CPtr;
-use crate::ffi::recovery as ffi;
+use core::convert::TryFrom;
+
+use crate::{Secp256k1, Message, Error, Verification, Signing,PublicKey, SecretKey};
+use crate::ecdsa::Signature;
+use crate::ffi::CPtr;
+use crate::ffi::ecdsa::recovery as ffi;
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -53,70 +54,41 @@ impl RecoverableSignature {
     /// Converts a compact-encoded byte slice to a signature. This
     /// representation is nonstandard and defined by the libsecp256k1 library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
-        if data.is_empty() {return Err(Error::InvalidSignature);}
-
-        unsafe {
-            let mut ret = ffi::RecoverableSignature::new();
-
-            if data.len() != 64 {
-                Err(Error::InvalidSignature)
-            } else if ffi::secp256k1_ecdsa_recoverable_signature_parse_compact(
-                super_ffi::secp256k1_context_no_precomp,
-                &mut ret,
-                data.as_c_ptr(),
-                recid.0,
-            ) == 1
-            {
-                Ok(RecoverableSignature(ret))
-            } else {
-                Err(Error::InvalidSignature)
-            }
+        if data.is_empty() {
+            return Err(Error::InvalidSignature);
         }
-    }
 
-    /// Obtains a raw pointer suitable for use with FFI functions.
-    #[inline]
-    pub fn as_ptr(&self) -> *const ffi::RecoverableSignature {
-        &self.0
-    }
+        if data.len() != 64 {
+            return Err(Error::InvalidSignature)
+        }
 
-    /// Obtains a raw mutable pointer suitable for use with FFI functions.
-    #[inline]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
-        &mut self.0
+        // TODO: Use constant.
+        match <[u8; 64]>::try_from(data) {
+            Ok(data) => {
+                ffi::RecoverableSignature::from_compact(&data, recid.to_i32())
+                    .map(RecoverableSignature)
+                    .ok_or(Error::InvalidSignature)
+            },
+            _ => Err(Error::InvalidSignature),
+        }
     }
 
     #[inline]
     /// Serializes the recoverable signature in compact format.
-    pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
-        let mut ret = [0u8; 64];
-        let mut recid = 0i32;
-        unsafe {
-            let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
-                super_ffi::secp256k1_context_no_precomp,
-                ret.as_mut_c_ptr(),
-                &mut recid,
-                self.as_c_ptr(),
-            );
-            assert!(err == 1);
-        }
-        (RecoveryId(recid), ret)
+    pub fn serialize_compact(&self) -> Result<(RecoveryId, [u8; 64]), Error> {
+        self.0.serialize_compact()
+            .map(|(recid, ser)| (RecoveryId(recid), ser))
+            .ok_or(Error::SerializationFailed)
     }
 
     /// Converts a recoverable signature to a non-recoverable one (this is needed
     /// for verification).
     #[inline]
-    pub fn to_standard(&self) -> Signature {
-        unsafe {
-            let mut ret = super_ffi::Signature::new();
-            let err = ffi::secp256k1_ecdsa_recoverable_signature_convert(
-                super_ffi::secp256k1_context_no_precomp,
-                &mut ret,
-                self.as_c_ptr(),
-            );
-            assert!(err == 1);
-            Signature(ret)
-        }
+    pub fn to_standard(&self) -> Result<Signature, Error> {
+        self.0.to_standard()
+            .map(Signature)
+            // FIXME: Use a different error.
+            .ok_or(Error::IncorrectSignature)
     }
 
     /// Determines the public key for which this [`Signature`] is valid for `msg`. Requires a
@@ -124,24 +96,12 @@ impl RecoverableSignature {
     #[inline]
     #[cfg(feature = "global-context")]
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
-    pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
+    pub fn recover(&self, msg: &Message) -> Result<PublicKey, Error> {
         crate::SECP256K1.recover_ecdsa(msg, self)
     }
 }
 
-
-impl CPtr for RecoverableSignature {
-    type Target = ffi::RecoverableSignature;
-    fn as_c_ptr(&self) -> *const Self::Target {
-        self.as_ptr()
-    }
-
-    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        self.as_mut_ptr()
-    }
-}
-
-/// Creates a new recoverable signature from a FFI one.
+/// Creates a new recoverable signature from a FFI recoverable signature
 impl From<ffi::RecoverableSignature> for RecoverableSignature {
     #[inline]
     fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
@@ -149,37 +109,50 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
     }
 }
 
-impl<C: Signing> Secp256k1<C> {
-    fn sign_ecdsa_recoverable_with_noncedata_pointer(
-        &self,
-        msg: &Message,
-        sk: &key::SecretKey,
-        noncedata_ptr: *const super_ffi::types::c_void,
-    ) -> RecoverableSignature {
-        unsafe {
-            let mut ret = ffi::RecoverableSignature::new();
+/// Creates a new recoverable signature from a FFI recoverable signature
+impl From<&ffi::RecoverableSignature> for RecoverableSignature {
+    #[inline]
+    fn from(sig: &ffi::RecoverableSignature) -> RecoverableSignature {
+        RecoverableSignature(*sig)
+    }
+}
 
-            // We can assume the return value because it's not possible to construct
-            // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(
-                ffi::secp256k1_ecdsa_sign_recoverable(
-                    self.ctx,
-                    &mut ret,
-                    msg.as_c_ptr(),
-                    sk.as_c_ptr(),
-                    super_ffi::secp256k1_nonce_function_rfc6979,
-                    noncedata_ptr
-                ),
-                1
-            );
-            RecoverableSignature::from(ret)
-        }
+/// Returns the inner FFI recoverable signature.
+impl From<RecoverableSignature> for ffi::RecoverableSignature {
+    #[inline]
+    fn from(sig: RecoverableSignature) -> ffi::RecoverableSignature {
+        sig.0
+    }
+}
+
+/// Returns the inner FFI recoverable signature.
+impl From<&RecoverableSignature> for ffi::RecoverableSignature {
+    #[inline]
+    fn from(sig: &RecoverableSignature) -> ffi::RecoverableSignature {
+        sig.0
+    }
+}
+
+impl CPtr for RecoverableSignature {
+    type Target = ffi::RecoverableSignature;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        &self.0
     }
 
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
-    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
-        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
+    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &SecretKey) -> RecoverableSignature {
+        ffi::sign(&self.ctx, msg.to_bytes(), &sk.into(), None)
+            .map(RecoverableSignature)
+            // FIXME: This is allegedly true but it means we are at the mercy of libsecp256k1,
+            // should we return an error instead?
+            .expect("infallible since msg an sk are valid")
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
@@ -190,28 +163,27 @@ impl<C: Signing> Secp256k1<C> {
     pub fn sign_ecdsa_recoverable_with_noncedata(
         &self,
         msg: &Message,
-        sk: &key::SecretKey,
+        sk: &SecretKey,
         noncedata: &[u8; 32],
     ) -> RecoverableSignature {
-        let noncedata_ptr = noncedata.as_ptr() as *const super_ffi::types::c_void;
-        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, noncedata_ptr)
+        ffi::sign(&self.ctx, msg.to_bytes(), &sk.into(), Some(noncedata))
+            .map(RecoverableSignature)
+        // FIXME: Same as above.
+            .expect("infallible since msg an sk are valid")
     }
 }
 
 impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
-    pub fn recover_ecdsa(&self, msg: &Message, sig: &RecoverableSignature)
-                   -> Result<key::PublicKey, Error> {
-
-        unsafe {
-            let mut pk = super_ffi::PublicKey::new();
-            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
-                                            sig.as_c_ptr(), msg.as_c_ptr()) != 1 {
-                return Err(Error::InvalidSignature);
-            }
-            Ok(key::PublicKey::from(pk))
-        }
+    pub fn recover_ecdsa(
+        &self,
+        msg: &Message,
+        sig: &RecoverableSignature
+    ) -> Result<PublicKey, Error> {
+        ffi::recover(&self.ctx, msg.to_bytes(), &sig.into())
+            .map(PublicKey::from)
+            .ok_or(Error::InvalidSignature)
     }
 }
 

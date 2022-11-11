@@ -17,8 +17,6 @@
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl Copy for $thing {}
-
         impl $thing {
             /// Creates a new "uninitialized" FFI type which is zeroed out.
             ///
@@ -52,6 +50,9 @@ macro_rules! impl_array_newtype {
                 self.0
             }
 
+            // FIXME: Should we be providing to/from_be/le_bytes
+            // FIXME: Should we be providing as/to_bytes
+
             /// Converts the object to a raw pointer for FFI interfacing.
             #[inline]
             pub fn as_ptr(&self) -> *const $ty {
@@ -84,43 +85,6 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl PartialEq for $thing {
-            #[inline]
-            fn eq(&self, other: &$thing) -> bool {
-                &self[..] == &other[..]
-            }
-        }
-
-        impl Eq for $thing {}
-
-        impl ::core::hash::Hash for $thing {
-            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-                (&self[..]).hash(state)
-            }
-        }
-
-        impl PartialOrd for $thing {
-            #[inline]
-            fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
-                self[..].partial_cmp(&other[..])
-            }
-        }
-
-        impl Ord for $thing {
-            #[inline]
-            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
-                self[..].cmp(&other[..])
-            }
-        }
-
-        impl Clone for $thing {
-            #[inline]
-            fn clone(&self) -> $thing {
-                let &$thing(ref dat) = self;
-                $thing(dat.clone())
-            }
-        }
-
         impl<I> core::ops::Index<I> for $thing
         where
             [$ty]: core::ops::Index<I>,
@@ -129,25 +93,6 @@ macro_rules! impl_array_newtype {
 
             #[inline]
             fn index(&self, index: I) -> &Self::Output { &self.0[index] }
-        }
-
-        impl $crate::CPtr for $thing {
-            type Target = $ty;
-            fn as_c_ptr(&self) -> *const Self::Target {
-                if self.is_empty() {
-                    core::ptr::null()
-                } else {
-                    self.as_ptr()
-                }
-            }
-
-            fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-                if self.is_empty() {
-                    core::ptr::null::<Self::Target>() as *mut _
-                } else {
-                    self.as_mut_ptr()
-                }
-            }
         }
     }
 }
