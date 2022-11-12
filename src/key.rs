@@ -100,8 +100,8 @@ pub const ONE_KEY: SecretKey = SecretKey(constants::ONE);
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
-#[cfg_attr(fuzzing, derive(PartialOrd, Ord))]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
 
@@ -811,6 +811,24 @@ impl Ord for PublicKey {
             ffi::secp256k1_ec_pubkey_cmp(ffi::secp256k1_context_no_precomp, self.as_c_ptr(), other.as_c_ptr())
         };
         ret.cmp(&0i32)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for PublicKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for PublicKey {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for PublicKey {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
     }
 }
 
