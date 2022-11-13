@@ -261,13 +261,6 @@ impl SecretKey {
 
     /// Negates the secret key.
     #[inline]
-    #[deprecated(since = "0.23.0", note = "Use negate instead")]
-    pub fn negate_assign(&mut self) {
-        *self = self.negate()
-    }
-
-    /// Negates the secret key.
-    #[inline]
     #[must_use = "you forgot to use the negated secret key"]
     pub fn negate(mut self) -> SecretKey {
         unsafe {
@@ -278,18 +271,6 @@ impl SecretKey {
             debug_assert_eq!(res, 1);
         }
         self
-    }
-
-    /// Adds one secret key to another, modulo the curve order.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the resulting key would be invalid.
-    #[inline]
-    #[deprecated(since = "0.23.0", note = "Use add_tweak instead")]
-    pub fn add_assign(&mut self, other: &Scalar) -> Result<(), Error> {
-        *self = self.add_tweak(other)?;
-        Ok(())
     }
 
     /// Tweaks a [`SecretKey`] by adding `tweak` modulo the curve order.
@@ -311,15 +292,6 @@ impl SecretKey {
                 Ok(self)
             }
         }
-    }
-
-    /// Multiplies one secret key by another, modulo the curve order. Will
-    /// return an error if the resulting key would be invalid.
-    #[inline]
-    #[deprecated(since = "0.23.0", note = "Use mul_tweak instead")]
-    pub fn mul_assign(&mut self, other: &Scalar) -> Result<(), Error> {
-        *self = self.mul_tweak(other)?;
-        Ok(())
     }
 
     /// Tweaks a [`SecretKey`] by multiplying by `tweak` modulo the curve order.
@@ -561,13 +533,6 @@ impl PublicKey {
         debug_assert_eq!(ret_len, ret.len());
     }
 
-    /// Negates the public key in place.
-    #[inline]
-    #[deprecated(since = "0.23.0", note = "Use negate instead")]
-    pub fn negate_assign<C: Verification>(&mut self, secp: &Secp256k1<C>) {
-        *self = self.negate(secp)
-    }
-
     /// Negates the public key.
     #[inline]
     #[must_use = "you forgot to use the negated public key"]
@@ -577,22 +542,6 @@ impl PublicKey {
             debug_assert_eq!(res, 1);
         }
         self
-    }
-
-    /// Adds `other * G` to `self` in place.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the resulting key would be invalid.
-    #[inline]
-    #[deprecated(since = "0.23.0", note = "Use add_exp_tweak instead")]
-    pub fn add_exp_assign<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>,
-        other: &Scalar
-    ) -> Result<(), Error> {
-        *self = self.add_exp_tweak(secp, other)?;
-        Ok(())
     }
 
     /// Tweaks a [`PublicKey`] by adding `tweak * G` modulo the curve order.
@@ -613,22 +562,6 @@ impl PublicKey {
                 Err(Error::InvalidTweak)
             }
         }
-    }
-
-    /// Muliplies the public key in place by the scalar `other`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the resulting key would be invalid.
-    #[deprecated(since = "0.23.0", note = "Use mul_tweak instead")]
-    #[inline]
-    pub fn mul_assign<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>,
-        other: &Scalar,
-    ) -> Result<(), Error> {
-        *self = self.mul_tweak(secp, other)?;
-        Ok(())
     }
 
     /// Tweaks a [`PublicKey`] by multiplying by `tweak` modulo the curve order.
@@ -986,19 +919,6 @@ impl KeyPair {
         *SecretKey::from_keypair(self).as_ref()
     }
 
-    /// Tweaks a keypair by adding the given tweak to the secret key and updating the public key
-    /// accordingly.
-    #[inline]
-    #[deprecated(since = "0.23.0", note = "Use add_xonly_tweak instead")]
-    pub fn tweak_add_assign<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>,
-        tweak: &Scalar,
-    ) -> Result<(), Error> {
-        *self = self.add_xonly_tweak(secp, tweak)?;
-        Ok(())
-    }
-
     /// Tweaks a keypair by first converting the public key to an xonly key and tweaking it.
     ///
     /// # Errors
@@ -1300,18 +1220,6 @@ impl XOnlyPublicKey {
         ret
     }
 
-    /// Tweaks an x-only PublicKey by adding the generator multiplied with the given tweak to it.
-    #[deprecated(since = "0.23.0", note = "Use add_tweak instead")]
-    pub fn tweak_add_assign<V: Verification>(
-        &mut self,
-        secp: &Secp256k1<V>,
-        tweak: &Scalar,
-    ) -> Result<Parity, Error> {
-        let (tweaked, parity) = self.add_tweak(secp, tweak)?;
-        *self = tweaked;
-        Ok(parity)
-    }
-
     /// Tweaks an [`XOnlyPublicKey`] by adding the generator multiplied with the given tweak to it.
     ///
     /// # Returns
@@ -1398,8 +1306,8 @@ impl XOnlyPublicKey {
     /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
     /// let (mut public_key, _) = key_pair.x_only_public_key();
     /// let original = public_key;
-    /// let parity = public_key.tweak_add_assign(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
-    /// assert!(original.tweak_add_check(&secp, &public_key, parity, tweak));
+    /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// assert!(original.tweak_add_check(&secp, &tweaked, parity, tweak));
     /// # }
     /// ```
     pub fn tweak_add_check<V: Verification>(
