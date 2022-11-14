@@ -2,7 +2,7 @@
 
 set -ex
 
-FEATURES="bitcoin_hashes global-context lowmemory rand recovery serde std alloc"
+FEATURES="bitcoin-hashes global-context lowmemory rand recovery serde std alloc"
 # These features are typically enabled along with the 'std' feature, so we test
 # them together with 'std'.
 STD_FEATURES="rand-std bitcoin-hashes-std"
