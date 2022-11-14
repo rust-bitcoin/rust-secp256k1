@@ -691,10 +691,12 @@ unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
 }
 
 
-/// A trait for producing pointers that will always be valid in C. (assuming NULL pointer is a valid no-op)
-/// Rust doesn't promise what pointers does it give to ZST (<https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts>)
-/// In case the type is empty this trait will give a NULL pointer, which should be handled in C.
+/// A trait for producing pointers that will always be valid in C (assuming NULL pointer is a valid
+/// no-op).
 ///
+/// Rust does not guarantee pointers to Zero Sized Types
+/// (<https://doc.rust-lang.org/nomicon/exotic-sizes.html#zero-sized-types-zsts>). In case the type
+/// is empty this trait will return a NULL pointer, which should be handled in C.
 pub trait CPtr {
     type Target;
     fn as_c_ptr(&self) -> *const Self::Target;

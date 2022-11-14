@@ -112,7 +112,7 @@ impl<C: Signing> Secp256k1<C> {
                     self.ctx,
                     sig.as_mut_c_ptr(),
                     msg.as_c_ptr(),
-                    keypair.as_ptr(),
+                    keypair.as_c_ptr(),
                     nonce_data,
                 )
             );
