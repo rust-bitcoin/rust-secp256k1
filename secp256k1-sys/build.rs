@@ -62,7 +62,14 @@ fn main() {
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
                .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
                .file("depend/secp256k1/src/precomputed_ecmult.c")
-               .file("depend/secp256k1/src/secp256k1.c")
-               .compile("libsecp256k1.a");
+               .file("depend/secp256k1/src/secp256k1.c");
+
+    if base_config.try_compile("libsecp256k1.a").is_err() {
+        // Some embedded platforms may not have, eg, string.h available, so if the build fails
+        // simply try again with the wasm sysroot (but without the wasm type sizes) in the hopes
+        // that it works.
+        base_config.include("wasm/wasm-sysroot");
+        base_config.compile("libsecp256k1.a");
+    }
 }
 
