@@ -24,7 +24,7 @@ macro_rules! impl_pretty_debug {
                 f.write_str(")")
             }
         }
-     }
+    };
 }
 
 /// Formats error. If `std` feature is OFF appends error source (delimited by `: `). We do this

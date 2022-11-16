@@ -1,6 +1,7 @@
 use core::fmt;
 use core::marker::PhantomData;
 use core::str::{self, FromStr};
+
 use serde::de;
 
 /// A serde visitor that works for `T`s implementing `FromStr`.
@@ -11,10 +12,7 @@ pub struct FromStrVisitor<T> {
 
 impl<T> FromStrVisitor<T> {
     pub fn new(expectation: &'static str) -> Self {
-        FromStrVisitor {
-            expectation,
-            _pd: PhantomData,
-        }
+        FromStrVisitor { expectation, _pd: PhantomData }
     }
 }
 
@@ -45,10 +43,7 @@ where
     Err: fmt::Display,
 {
     pub fn new(expectation: &'static str, parse_fn: F) -> Self {
-        BytesVisitor {
-            expectation,
-            parse_fn,
-        }
+        BytesVisitor { expectation, parse_fn }
     }
 }
 
@@ -81,10 +76,7 @@ macro_rules! impl_tuple_visitor {
             E: fmt::Display,
         {
             pub fn new(expectation: &'static str, parse_fn: F) -> Self {
-                $thing {
-                    expectation,
-                    parse_fn,
-                }
+                $thing { expectation, parse_fn }
             }
         }
 
@@ -115,7 +107,7 @@ macro_rules! impl_tuple_visitor {
                 (self.parse_fn)(&bytes).map_err(de::Error::custom)
             }
         }
-    }
+    };
 }
 
 impl_tuple_visitor!(Tuple32Visitor, 32);

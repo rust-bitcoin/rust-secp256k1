@@ -18,10 +18,12 @@
 //!
 
 use core::ptr;
-use crate::{key, Secp256k1, Message, Error, Verification, Signing, ecdsa::Signature};
-use super::ffi as super_ffi;
+
 use self::super_ffi::CPtr;
+use super::ffi as super_ffi;
+use crate::ecdsa::Signature;
 use crate::ffi::recovery as ffi;
+use crate::{key, Error, Message, Secp256k1, Signing, Verification};
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -32,20 +34,18 @@ pub struct RecoveryId(i32);
 pub struct RecoverableSignature(ffi::RecoverableSignature);
 
 impl RecoveryId {
-#[inline]
-/// Allows library users to create valid recovery IDs from i32.
-pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
-    match id {
-        0..=3 => Ok(RecoveryId(id)),
-        _ => Err(Error::InvalidRecoveryId)
+    #[inline]
+    /// Allows library users to create valid recovery IDs from i32.
+    pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
+        match id {
+            0..=3 => Ok(RecoveryId(id)),
+            _ => Err(Error::InvalidRecoveryId),
+        }
     }
-}
 
-#[inline]
-/// Allows library users to convert recovery IDs to i32.
-pub fn to_i32(self) -> i32 {
-    self.0
-}
+    #[inline]
+    /// Allows library users to convert recovery IDs to i32.
+    pub fn to_i32(self) -> i32 { self.0 }
 }
 
 impl RecoverableSignature {
@@ -53,7 +53,9 @@ impl RecoverableSignature {
     /// Converts a compact-encoded byte slice to a signature. This
     /// representation is nonstandard and defined by the libsecp256k1 library.
     pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
-        if data.is_empty() {return Err(Error::InvalidSignature);}
+        if data.is_empty() {
+            return Err(Error::InvalidSignature);
+        }
 
         let mut ret = ffi::RecoverableSignature::new();
 
@@ -77,16 +79,15 @@ impl RecoverableSignature {
     /// Obtains a raw pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::RecoverableSignature {
-        self.as_c_ptr()
-    }
+    pub fn as_ptr(&self) -> *const ffi::RecoverableSignature { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
-        self.as_mut_c_ptr()
-    }
+    #[deprecated(
+        since = "0.25.0",
+        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
+    )]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature { self.as_mut_c_ptr() }
 
     #[inline]
     /// Serializes the recoverable signature in compact format.
@@ -131,24 +132,17 @@ impl RecoverableSignature {
     }
 }
 
-
 impl CPtr for RecoverableSignature {
     type Target = ffi::RecoverableSignature;
-    fn as_c_ptr(&self) -> *const Self::Target {
-        &self.0
-    }
+    fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
 
-    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        &mut self.0
-    }
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
 
 /// Creates a new recoverable signature from a FFI one.
 impl From<ffi::RecoverableSignature> for RecoverableSignature {
     #[inline]
-    fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
-        RecoverableSignature(sig)
-    }
+    fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature { RecoverableSignature(sig) }
 }
 
 impl<C: Signing> Secp256k1<C> {
@@ -180,7 +174,11 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
-    pub fn sign_ecdsa_recoverable(&self, msg: &Message, sk: &key::SecretKey) -> RecoverableSignature {
+    pub fn sign_ecdsa_recoverable(
+        &self,
+        msg: &Message,
+        sk: &key::SecretKey,
+    ) -> RecoverableSignature {
         self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
     }
 
@@ -203,13 +201,15 @@ impl<C: Signing> Secp256k1<C> {
 impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
-    pub fn recover_ecdsa(&self, msg: &Message, sig: &RecoverableSignature)
-                   -> Result<key::PublicKey, Error> {
-
+    pub fn recover_ecdsa(
+        &self,
+        msg: &Message,
+        sig: &RecoverableSignature,
+    ) -> Result<key::PublicKey, Error> {
         unsafe {
             let mut pk = super_ffi::PublicKey::new();
-            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk,
-                                            sig.as_c_ptr(), msg.as_c_ptr()) != 1 {
+            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk, sig.as_c_ptr(), msg.as_c_ptr()) != 1
+            {
                 return Err(Error::InvalidSignature);
             }
             Ok(key::PublicKey::from(pk))
@@ -217,21 +217,19 @@ impl<C: Verification> Secp256k1<C> {
     }
 }
 
-
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use rand::{RngCore, thread_rng};
-
-    use crate::{Error, SecretKey, Secp256k1, Message};
-    use crate::constants::ONE;
-    use super::{RecoveryId, RecoverableSignature};
-
+    use rand::{thread_rng, RngCore};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
+    use super::{RecoverableSignature, RecoveryId};
+    use crate::constants::ONE;
+    use crate::{Error, Message, Secp256k1, SecretKey};
+
     #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -252,8 +250,7 @@ mod tests {
         assert!(vrfy.recover_ecdsa(&msg, &sigr).is_ok());
         assert!(full.recover_ecdsa(&msg, &sigr).is_ok());
 
-        assert_eq!(vrfy.recover_ecdsa(&msg, &sigr),
-                   full.recover_ecdsa(&msg, &sigr));
+        assert_eq!(vrfy.recover_ecdsa(&msg, &sigr), full.recover_ecdsa(&msg, &sigr));
         assert_eq!(full.recover_ecdsa(&msg, &sigr), Ok(pk));
     }
 
@@ -315,7 +312,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -339,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn sign_with_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -356,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn sign_with_recovery_and_noncedata() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -375,7 +372,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std"))]
     fn bad_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut thread_rng());
@@ -419,10 +416,7 @@ mod tests {
             0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
             0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
             0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89];
-        let sig = RecoverableSignature::from_compact(
-            bytes_in,
-            recid_in,
-        ).unwrap();
+        let sig = RecoverableSignature::from_compact(bytes_in, recid_in).unwrap();
         let (recid_out, bytes_out) = sig.serialize_compact();
         assert_eq!(recid_in, recid_out);
         assert_eq!(&bytes_in[..], &bytes_out[..]);
@@ -446,7 +440,8 @@ mod tests {
 #[cfg(bench)]
 mod benches {
     use rand::{thread_rng, RngCore};
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
+
     use super::{Message, Secp256k1};
 
     #[bench]

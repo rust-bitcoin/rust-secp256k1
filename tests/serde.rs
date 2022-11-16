@@ -5,9 +5,9 @@ extern crate bincode;
 extern crate cbor;
 extern crate secp256k1;
 
-use secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
-use secp256k1::{Secp256k1, KeyPair};
+use secp256k1::{KeyPair, Secp256k1};
+use secp256k1::{PublicKey, SecretKey, XOnlyPublicKey};
 
 // Arbitrary key data.
 
@@ -70,7 +70,8 @@ fn bincode_key_pair() {
 
 #[test]
 fn bincode_x_only_public_key() {
-    let pk = XOnlyPublicKey::from_slice(&XONLY_PK_BYTES).expect("failed to create xonly pk from slice");
+    let pk =
+        XOnlyPublicKey::from_slice(&XONLY_PK_BYTES).expect("failed to create xonly pk from slice");
     let ser = bincode::serialize(&pk).unwrap();
 
     assert_eq!(ser, XONLY_PK_BYTES);
