@@ -24,11 +24,11 @@ use core::{fmt, ptr, str};
 use serde::ser::SerializeTuple;
 
 use crate::ffi::types::c_uint;
-use crate::ffi::{self, impl_array_newtype, CPtr};
+use crate::ffi::{self, CPtr};
 #[cfg(all(feature = "global-context", feature = "rand-std"))]
 use crate::schnorr;
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use crate::{constants, from_hex, Scalar, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, impl_array_newtype, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "global-context")]
 use crate::{ecdsa, Message, SECP256K1};
 #[cfg(feature = "bitcoin-hashes")]

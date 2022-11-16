@@ -200,7 +200,7 @@ pub use serde;
 
 pub use crate::context::*;
 use crate::ffi::types::AlignedType;
-use crate::ffi::{impl_array_newtype, CPtr};
+use crate::ffi::CPtr;
 #[cfg(feature = "bitcoin-hashes")]
 use crate::hashes::Hash;
 pub use crate::key::{PublicKey, SecretKey, *};
