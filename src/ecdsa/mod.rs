@@ -23,6 +23,7 @@ use crate::SECP256K1;
 #[derive(Copy, Clone)]
 #[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct Signature(pub(crate) ffi::Signature);
+impl_fast_comparisons!(Signature);
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -104,6 +104,7 @@ pub const ONE_KEY: SecretKey = SecretKey(constants::ONE);
 #[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
+impl_fast_comparisons!(PublicKey);
 
 impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -802,6 +803,7 @@ impl core::hash::Hash for PublicKey {
 #[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
+impl_fast_comparisons!(KeyPair);
 
 impl KeyPair {
     /// Obtains a raw const pointer suitable for use with FFI functions.
@@ -1177,6 +1179,7 @@ impl CPtr for KeyPair {
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
+impl_fast_comparisons!(XOnlyPublicKey);
 
 impl fmt::LowerHex for XOnlyPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

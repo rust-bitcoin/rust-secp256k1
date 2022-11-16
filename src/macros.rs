@@ -45,3 +45,32 @@ macro_rules! write_err {
         }
     }
 }
+
+/// Implements fast unstable versions of Ord, PartialOrd, Eq, PartialEq, and Hash.
+macro_rules! impl_fast_comparisons {
+    ($ty:ident) => {
+        impl $ty {
+            /// Equivalent to `Ord` but faster and not stable across library versions.
+            ///
+            /// The `Ord` implementation for `Self` is stable but slow because we first serialize
+            /// `self` and `other` before comparing them. The `Ord` implementation for FFI types
+            /// compares the inner bytes directly. The inner bytes are passed across the FFI boundry
+            /// and as such there are no guarantees to the layout of the bytes. The layout may
+            /// change unexpectedly between versions of the library, even minor versions.
+            pub fn cmp_fast_unstable(&self, other: &Self) -> core::cmp::Ordering {
+                self.0.cmp(&other.0)
+            }
+
+            /// Equivalent to `Eq` but faster and not stable across library versions.
+            ///
+            /// The `Eq` implementation for `Self` is stable but slow because we first serialize
+            /// `self` and `other` before comparing them. The `Eq` implementation for FFI types
+            /// compares the inner bytes directly. The inner bytes are passed across the FFI boundry
+            /// and as such there are no guarantees to the layout of the bytes. The layout may
+            /// change unexpectedly between versions of the library, even minor versions.
+            pub fn eq_fast_unstable(&self, other: &Self) -> bool {
+                self.0.eq(&other.0)
+            }
+        }
+    }
+}
