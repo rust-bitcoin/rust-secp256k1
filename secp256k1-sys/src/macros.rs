@@ -47,8 +47,8 @@ macro_rules! impl_array_newtype {
 
         impl Eq for $thing {}
 
-        impl ::core::hash::Hash for $thing {
-            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+        impl core::hash::Hash for $thing {
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
                 (&self[..]).hash(state)
             }
         }
