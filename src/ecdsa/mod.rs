@@ -20,7 +20,8 @@ pub use serialized_signature::SerializedSignature;
 use crate::SECP256K1;
 
 /// An ECDSA signature
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone)]
+#[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct Signature(pub(crate) ffi::Signature);
 
 impl fmt::Debug for Signature {
@@ -194,6 +195,40 @@ impl Signature {
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), Error> {
         SECP256K1.verify_ecdsa(msg, self, pk)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for Signature {
+    fn partial_cmp(&self, other: &Signature) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for Signature {
+    fn cmp(&self, other: &Signature) -> core::cmp::Ordering {
+        let this = self.serialize_compact();
+        let that = other.serialize_compact();
+        this.cmp(&that)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for Signature {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for Signature {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for Signature {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize_compact();
+        ser.hash(state);
     }
 }
 

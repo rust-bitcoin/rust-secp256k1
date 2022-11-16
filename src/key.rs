@@ -798,7 +798,8 @@ impl core::hash::Hash for PublicKey {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone)]
+#[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
 
@@ -1007,6 +1008,44 @@ impl KeyPair {
     }
 }
 
+#[cfg(not(fuzzing))]
+impl PartialOrd for KeyPair {
+    fn partial_cmp(&self, other: &KeyPair) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for KeyPair {
+    fn cmp(&self, other: &KeyPair) -> core::cmp::Ordering {
+        let this = self.public_key();
+        let that = other.public_key();
+        this.cmp(&that)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for KeyPair {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for KeyPair {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for KeyPair {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        // To hash the keypair we just hash the serialized public key. Since any change to the
+        // secret key would also be a change to the public key this is a valid one way function from
+        // the keypair to the digest.
+        let pk = self.public_key();
+        let ser = pk.serialize();
+        ser.hash(state);
+    }
+}
+
 impl From<KeyPair> for SecretKey {
     #[inline]
     fn from(pair: KeyPair) -> Self {
@@ -1135,7 +1174,8 @@ impl CPtr for KeyPair {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
 
 impl fmt::LowerHex for XOnlyPublicKey {
@@ -1361,6 +1401,41 @@ impl XOnlyPublicKey {
     #[inline]
     pub fn public_key(&self, parity: Parity) -> PublicKey {
         PublicKey::from_x_only_public_key(*self, parity)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for XOnlyPublicKey {
+    fn partial_cmp(&self, other: &XOnlyPublicKey) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for XOnlyPublicKey {
+    fn cmp(&self, other: &XOnlyPublicKey) -> core::cmp::Ordering {
+        let ret = unsafe {
+            ffi::secp256k1_xonly_pubkey_cmp(ffi::secp256k1_context_no_precomp, self.as_c_ptr(), other.as_c_ptr())
+        };
+        ret.cmp(&0i32)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for XOnlyPublicKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for XOnlyPublicKey {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for XOnlyPublicKey {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
     }
 }
 
