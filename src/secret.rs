@@ -118,7 +118,9 @@ impl SecretKey {
     ///
     /// ```
     /// # #[cfg(feature = "std")] {
-    /// let key = secp256k1::ONE_KEY;
+    /// # use std::str::FromStr;
+    /// use secp256k1::SecretKey;
+    /// let key = SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001").unwrap();
     ///
     /// // Normal debug hides value (`Display` is not implemented for `SecretKey`).
     /// // E.g., `format!("{:?}", key)` prints "SecretKey(#2518682f7819fb2d)".
@@ -152,12 +154,11 @@ impl KeyPair {
     ///
     /// ```
     /// # #[cfg(feature = "std")] {
-    /// use secp256k1::ONE_KEY;
-    /// use secp256k1::KeyPair;
-    /// use secp256k1::Secp256k1;
+    /// # use std::str::FromStr;
+    /// use secp256k1::{KeyPair, Secp256k1, SecretKey};
     ///
     /// let secp = Secp256k1::new();
-    /// let key = ONE_KEY;
+    /// let key = SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001").unwrap();
     /// let key = KeyPair::from_secret_key(&secp, &key);
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
@@ -190,7 +191,7 @@ impl SharedSecret {
     /// # #[cfg(not(fuzzing))]
     /// # #[cfg(feature = "std")] {
     /// # use std::str::FromStr;
-    /// # use secp256k1::{SecretKey, PublicKey};
+    /// use secp256k1::{SecretKey, PublicKey};
     /// use secp256k1::ecdh::SharedSecret;
     ///
     /// # let pk = PublicKey::from_slice(&[3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41, 111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78]).expect("hard coded slice should parse correctly");

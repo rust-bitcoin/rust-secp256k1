@@ -76,19 +76,19 @@ pub trait Signing: Context {}
 /// Marker trait for indicating that an instance of `Secp256k1` can be used for verification.
 pub trait Verification: Context {}
 
-/// Represents the set of capabilities needed for signing with a user preallocated memory.
+/// Represents the set of capabilities needed for signing (preallocated memory).
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SignOnlyPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
-/// Represents the set of capabilities needed for verification with a user preallocated memory.
+/// Represents the set of capabilities needed for verification (preallocated memory).
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VerifyOnlyPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
 }
 
-/// Represents the set of all capabilities with a user preallocated memory.
+/// Represents the set of all capabilities (preallocated memory).
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AllPreallocated<'buf> {
     phantom: PhantomData<&'buf ()>,
@@ -121,17 +121,14 @@ mod alloc_only {
     const ALIGN_TO: usize = core::mem::align_of::<AlignedType>();
 
     /// Represents the set of capabilities needed for signing.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum SignOnly {}
 
     /// Represents the set of capabilities needed for verification.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum VerifyOnly {}
 
     /// Represents the set of all capabilities.
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "alloc"))))]
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub enum All {}
 
@@ -301,7 +298,7 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 }
 
 impl<'buf, C: Context + 'buf> Secp256k1<C> {
-    /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
+    /// Lets you create a context with a preallocated buffer in a generic manner(sign/verify/all).
     pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
