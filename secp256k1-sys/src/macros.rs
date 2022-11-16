@@ -20,20 +20,6 @@ macro_rules! impl_array_newtype {
         impl Copy for $thing {}
 
         impl $thing {
-            /// Converts the object to a raw pointer for FFI interfacing.
-            #[inline]
-            pub fn as_ptr(&self) -> *const $ty {
-                let &$thing(ref dat) = self;
-                dat.as_ptr()
-            }
-
-            /// Converts the object to a mutable raw pointer for FFI interfacing.
-            #[inline]
-            pub fn as_mut_ptr(&mut self) -> *mut $ty {
-                let &mut $thing(ref mut dat) = self;
-                dat.as_mut_ptr()
-            }
-
             /// Returns the length of the object as an array.
             #[inline]
             pub fn len(&self) -> usize { $len }
@@ -101,20 +87,15 @@ macro_rules! impl_array_newtype {
 
         impl $crate::CPtr for $thing {
             type Target = $ty;
+
             fn as_c_ptr(&self) -> *const Self::Target {
-                if self.is_empty() {
-                    core::ptr::null()
-                } else {
-                    self.as_ptr()
-                }
+                let &$thing(ref dat) = self;
+                dat.as_ptr()
             }
 
             fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-                if self.is_empty() {
-                    core::ptr::null::<Self::Target>() as *mut _
-                } else {
-                    self.as_mut_ptr()
-                }
+                let &mut $thing(ref mut dat) = self;
+                dat.as_mut_ptr()
             }
         }
     }

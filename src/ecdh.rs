@@ -146,7 +146,7 @@ pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
             ffi::secp256k1_context_no_precomp,
             xy.as_mut_ptr(),
             point.as_c_ptr(),
-            scalar.as_ptr(),
+            scalar.as_c_ptr(),
             Some(c_callback),
             ptr::null_mut(),
         )
