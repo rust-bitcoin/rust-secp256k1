@@ -45,15 +45,6 @@ macro_rules! impl_array_newtype {
             }
         }
 
-        impl AsRef<[$ty; $len]> for $thing {
-            #[inline]
-            /// Gets a reference to the underlying array
-            fn as_ref(&self) -> &[$ty; $len] {
-                let &$thing(ref dat) = self;
-                dat
-            }
-        }
-
         // We cannot derive these traits because Rust 1.41.1 requires `std::array::LengthAtMost32`.
 
        #[cfg(fuzzing)]
@@ -87,6 +78,15 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
                 self[..].cmp(&other[..])
+            }
+        }
+
+        impl AsRef<[$ty; $len]> for $thing {
+            #[inline]
+            /// Gets a reference to the underlying array
+            fn as_ref(&self) -> &[$ty; $len] {
+                let &$thing(ref dat) = self;
+                dat
             }
         }
 
