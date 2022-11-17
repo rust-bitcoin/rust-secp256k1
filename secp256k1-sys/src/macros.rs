@@ -19,16 +19,6 @@ macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
         impl Copy for $thing {}
 
-        impl $thing {
-            /// Returns the length of the object as an array.
-            #[inline]
-            pub fn len(&self) -> usize { $len }
-
-            /// Returns whether the object as an array is empty.
-            #[inline]
-            pub fn is_empty(&self) -> bool { false }
-        }
-
         impl AsRef<[$ty; $len]> for $thing {
             #[inline]
             /// Gets a reference to the underlying array
