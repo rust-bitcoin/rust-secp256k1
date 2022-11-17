@@ -17,8 +17,6 @@
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl Copy for $thing {}
-
         impl $thing {
             /// Like `cmp::Ord` but faster and with no guarantees across library versions.
             ///
@@ -89,14 +87,6 @@ macro_rules! impl_array_newtype {
             #[inline]
             fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
                 self[..].cmp(&other[..])
-            }
-        }
-
-        impl Clone for $thing {
-            #[inline]
-            fn clone(&self) -> $thing {
-                let &$thing(ref dat) = self;
-                $thing(dat.clone())
             }
         }
 

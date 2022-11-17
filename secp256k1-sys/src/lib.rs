@@ -133,6 +133,7 @@ impl SchnorrSigExtraParams {
 
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct PublicKey([c_uchar; 64]);
 impl_array_newtype!(PublicKey, c_uchar, 64);
 impl_raw_debug!(PublicKey);
@@ -226,6 +227,7 @@ impl core::hash::Hash for PublicKey {
 
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
@@ -313,6 +315,7 @@ impl core::hash::Hash for Signature {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct XOnlyPublicKey([c_uchar; 64]);
 impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
 impl_raw_debug!(XOnlyPublicKey);
@@ -401,6 +404,7 @@ impl core::hash::Hash for XOnlyPublicKey {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct KeyPair([c_uchar; 96]);
 impl_array_newtype!(KeyPair, c_uchar, 96);
 impl_raw_debug!(KeyPair);

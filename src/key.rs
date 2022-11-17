@@ -56,6 +56,7 @@ use crate::{hashes, ThirtyTwoByteHash};
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
+#[derive(Copy, Clone)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_display_secret!(SecretKey);
