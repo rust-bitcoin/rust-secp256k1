@@ -220,7 +220,6 @@ impl<C: Verification> Secp256k1<C> {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use rand::{thread_rng, RngCore};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
@@ -229,18 +228,17 @@ mod tests {
     use crate::{Error, Message, Secp256k1, SecretKey};
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
         let full = Secp256k1::new();
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut thread_rng());
+        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa_recoverable(&msg, &sk), full.sign_ecdsa_recoverable(&msg, &sk));
@@ -262,11 +260,11 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
     fn sign() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
         let sk = SecretKey::from_slice(&ONE).unwrap();
         let msg = Message::from_slice(&ONE).unwrap();
@@ -287,11 +285,11 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(all(feature="std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
         let sk = SecretKey::from_slice(&ONE).unwrap();
         let msg = Message::from_slice(&ONE).unwrap();
@@ -312,22 +310,20 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         let sigr = s.sign_ecdsa_recoverable(&msg, &sk);
         let sig = sigr.to_standard();
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
         assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
 
@@ -336,16 +332,15 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn sign_with_recovery() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
@@ -353,18 +348,17 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn sign_with_recovery_and_noncedata() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
         let noncedata = [42u8; 32];
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
 
@@ -372,10 +366,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn bad_recovery() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut thread_rng());
+        s.randomize(&mut rand::thread_rng());
 
         let msg = Message::from_slice(&[0x55; 32]).unwrap();
 
@@ -438,8 +432,8 @@ mod tests {
 }
 
 #[cfg(bench)]
+#[cfg(feature = "rand-std")]    // Currently only a single bench that requires "rand-std".
 mod benches {
-    use rand::{thread_rng, RngCore};
     use test::{black_box, Bencher};
 
     use super::{Message, Secp256k1};
@@ -447,10 +441,9 @@ mod benches {
     #[bench]
     pub fn bench_recover(bh: &mut Bencher) {
         let s = Secp256k1::new();
-        let mut msg = [0u8; 32];
-        thread_rng().fill_bytes(&mut msg);
+        let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, _) = s.generate_keypair(&mut thread_rng());
+        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
         bh.iter(|| {

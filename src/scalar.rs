@@ -37,12 +37,12 @@ impl Scalar {
     pub const MAX: Scalar = Scalar(MAX_RAW);
 
     /// Generates a random scalar
-    #[cfg(any(test, feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn random() -> Self { Self::random_custom(rand::thread_rng()) }
 
     /// Generates a random scalar using supplied RNG
-    #[cfg(any(test, feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn random_custom<R: rand::Rng>(mut rng: R) -> Self {
         let mut bytes = [0u8; 32];
