@@ -94,10 +94,10 @@ impl str::FromStr for SecretKey {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(fuzzing, derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
+#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
+impl_fast_comparisons!(PublicKey);
 
 impl fmt::LowerHex for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -718,43 +718,6 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
     }
 }
 
-#[cfg(not(fuzzing))]
-impl PartialOrd for PublicKey {
-    fn partial_cmp(&self, other: &PublicKey) -> Option<core::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-#[cfg(not(fuzzing))]
-impl Ord for PublicKey {
-    fn cmp(&self, other: &PublicKey) -> core::cmp::Ordering {
-        let ret = unsafe {
-            ffi::secp256k1_ec_pubkey_cmp(
-                ffi::secp256k1_context_no_precomp,
-                self.as_c_ptr(),
-                other.as_c_ptr(),
-            )
-        };
-        ret.cmp(&0i32)
-    }
-}
-
-#[cfg(not(fuzzing))]
-impl PartialEq for PublicKey {
-    fn eq(&self, other: &Self) -> bool { self.cmp(other) == core::cmp::Ordering::Equal }
-}
-
-#[cfg(not(fuzzing))]
-impl Eq for PublicKey {}
-
-#[cfg(not(fuzzing))]
-impl core::hash::Hash for PublicKey {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        let ser = self.serialize();
-        ser.hash(state);
-    }
-}
-
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
 ///
 /// # Serde support
@@ -779,9 +742,10 @@ impl core::hash::Hash for PublicKey {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct KeyPair(ffi::KeyPair);
 impl_display_secret!(KeyPair);
+impl_fast_comparisons!(KeyPair);
 
 impl KeyPair {
     /// Obtains a raw const pointer suitable for use with FFI functions.
@@ -1091,8 +1055,9 @@ impl CPtr for KeyPair {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialEq, Eq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
+impl_fast_comparisons!(XOnlyPublicKey);
 
 impl fmt::LowerHex for XOnlyPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

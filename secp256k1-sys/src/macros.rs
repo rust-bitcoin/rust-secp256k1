@@ -19,6 +19,34 @@ macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
         impl Copy for $thing {}
 
+        impl $thing {
+            /// Like `cmp::Ord` but faster and with no guarantees across library versions.
+            ///
+            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// no guarantees on its layout and it is subject to change across library versions,
+            /// even minor versions. For this reason comparison function implementations (e.g.
+            /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by
+            /// serializing it to a guaranteed format). This means they may be slow, this function
+            /// provides a faster comparison if you know that your types come from the same library
+            /// version.
+            pub fn cmp_fast_unstable(&self, other: &Self) -> core::cmp::Ordering {
+                self[..].cmp(&other[..])
+            }
+
+            /// Like `cmp::Eq` but faster and with no guarantees across library versions.
+            ///
+            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// no guarantees on its layout and it is subject to change across library versions,
+            /// even minor versions. For this reason comparison function implementations (e.g.
+            /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by
+            /// serializing it to a guaranteed format). This means they may be slow, this function
+            /// provides a faster equality check if you know that your types come from the same
+            /// library version.
+            pub fn eq_fast_unstable(&self, other: &Self) -> bool {
+                self[..].eq(&other[..])
+            }
+        }
+
         impl AsRef<[$ty; $len]> for $thing {
             #[inline]
             /// Gets a reference to the underlying array
@@ -28,6 +56,9 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        // We cannot derive these traits because Rust 1.41.1 requires `std::array::LengthAtMost32`.
+
+       #[cfg(fuzzing)]
         impl PartialEq for $thing {
             #[inline]
             fn eq(&self, other: &$thing) -> bool {
@@ -35,14 +66,17 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(fuzzing)]
         impl Eq for $thing {}
 
+        #[cfg(fuzzing)]
         impl core::hash::Hash for $thing {
             fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
                 (&self[..]).hash(state)
             }
         }
 
+        #[cfg(fuzzing)]
         impl PartialOrd for $thing {
             #[inline]
             fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
@@ -50,6 +84,7 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        #[cfg(fuzzing)]
         impl Ord for $thing {
             #[inline]
             fn cmp(&self, other: &$thing) -> core::cmp::Ordering {

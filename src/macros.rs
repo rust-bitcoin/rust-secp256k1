@@ -28,6 +28,8 @@ macro_rules! impl_array_newtype {
             }
         }
 
+        // We cannot derive these traits because Rust 1.41.1 requires `std::array::LengthAtMost32`.
+
         impl PartialEq for $thing {
             #[inline]
             fn eq(&self, other: &$thing) -> bool {
@@ -119,6 +121,31 @@ macro_rules! write_err {
             #[cfg(not(feature = "std"))]
             {
                 write!($writer, concat!($string, ": {}") $(, $args)*, $source)
+            }
+        }
+    }
+}
+
+/// Implements fast unstable comparison methods for `$ty`.
+macro_rules! impl_fast_comparisons {
+    ($ty:ident) => {
+        impl $ty {
+            /// Like `cmp::Cmp` but faster and with no guarantees across library versions.
+            ///
+            /// The `Cmp` implementation for FFI types is stable but slow because it first
+            /// serializes `self` and `other` before comparing them. This function provides a faster
+            /// comparison if you know that your types come from the same library version.
+            pub fn cmp_fast_unstable(&self, other: &Self) -> core::cmp::Ordering {
+                self.0.cmp_fast_unstable(&other.0)
+            }
+
+            /// Like `cmp::Eq` but faster and with no guarantees across library versions.
+            ///
+            /// The `Eq` implementation for FFI types is stable but slow because it first serializes
+            /// `self` and `other` before comparing them. This function provides a faster equality
+            /// check if you know that your types come from the same library version.
+            pub fn eq_fast_unstable(&self, other: &Self) -> bool {
+                self.0.eq_fast_unstable(&other.0)
             }
         }
     }
