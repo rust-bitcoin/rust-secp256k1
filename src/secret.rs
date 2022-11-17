@@ -15,7 +15,11 @@
 //! Helpers for displaying secret values
 
 use core::fmt;
-use crate::{to_hex, constants::SECRET_KEY_SIZE, key::{SecretKey, KeyPair}, ecdh::SharedSecret};
+
+use crate::constants::SECRET_KEY_SIZE;
+use crate::ecdh::SharedSecret;
+use crate::key::{KeyPair, SecretKey};
+use crate::to_hex;
 macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
@@ -27,7 +31,7 @@ macro_rules! impl_display_secret {
                 const DEBUG_HASH_TAG: &[u8] = &[
                     0x66, 0xa6, 0x77, 0x1b, 0x9b, 0x6d, 0xae, 0xa1, 0xb2, 0xee, 0x4e, 0x07, 0x49,
                     0x4a, 0xac, 0x87, 0xa9, 0xb8, 0x5b, 0x4b, 0x35, 0x02, 0xaa, 0x6d, 0x0f, 0x79,
-                    0xcb, 0x63, 0xe6, 0xf8, 0x66, 0x22
+                    0xcb, 0x63, 0xe6, 0xf8, 0x66, 0x22,
                 ]; // =SHA256(b"rust-secp256k1DEBUG");
 
                 let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -37,9 +41,7 @@ macro_rules! impl_display_secret {
                 hasher.write(&self.secret_bytes());
                 let hash = hasher.finish();
 
-                f.debug_tuple(stringify!($thing))
-                    .field(&format_args!("#{:016x}", hash))
-                    .finish()
+                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:016x}", hash)).finish()
             }
         }
 
@@ -57,9 +59,7 @@ macro_rules! impl_display_secret {
                 engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 
-                f.debug_tuple(stringify!($thing))
-                    .field(&format_args!("#{:016x}", hash))
-                    .finish()
+                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:016x}", hash)).finish()
             }
         }
 
@@ -69,7 +69,7 @@ macro_rules! impl_display_secret {
                 write!(f, "<secret requires std or bitcoin_hashes feature to display>")
             }
         }
-     }
+    };
 }
 
 /// Helper struct for safely printing secrets (like [`SecretKey`] value).
@@ -84,7 +84,7 @@ macro_rules! impl_display_secret {
 /// [`Debug`]: fmt::Debug
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DisplaySecret {
-    secret: [u8; SECRET_KEY_SIZE]
+    secret: [u8; SECRET_KEY_SIZE],
 }
 
 impl fmt::Debug for DisplaySecret {
@@ -92,9 +92,7 @@ impl fmt::Debug for DisplaySecret {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut slice = [0u8; SECRET_KEY_SIZE * 2];
         let hex = to_hex(&self.secret, &mut slice).expect("fixed-size hex serializer failed");
-        f.debug_tuple("DisplaySecret")
-            .field(&hex)
-            .finish()
+        f.debug_tuple("DisplaySecret").field(&hex).finish()
     }
 }
 
@@ -138,9 +136,7 @@ impl SecretKey {
     /// # }
     /// ```
     #[inline]
-    pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.secret_bytes() }
-    }
+    pub fn display_secret(&self) -> DisplaySecret { DisplaySecret { secret: self.secret_bytes() } }
 }
 
 impl KeyPair {
@@ -173,9 +169,7 @@ impl KeyPair {
     /// # }
     /// ```
     #[inline]
-    pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.secret_bytes() }
-    }
+    pub fn display_secret(&self) -> DisplaySecret { DisplaySecret { secret: self.secret_bytes() } }
 }
 
 impl SharedSecret {
@@ -211,7 +205,5 @@ impl SharedSecret {
     /// # }
     /// ```
     #[inline]
-    pub fn display_secret(&self) -> DisplaySecret {
-        DisplaySecret { secret: self.secret_bytes() }
-    }
+    pub fn display_secret(&self) -> DisplaySecret { DisplaySecret { secret: self.secret_bytes() } }
 }

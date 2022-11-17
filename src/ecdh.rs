@@ -15,11 +15,14 @@
 //! Support for shared secret computations.
 //!
 
-use core::{borrow::Borrow, ptr, str};
+use core::borrow::Borrow;
+use core::{ptr, str};
 
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
-use crate::{constants, Error, ffi::{self, CPtr}, key::{PublicKey, SecretKey}};
+use crate::ffi::{self, CPtr};
+use crate::key::{PublicKey, SecretKey};
+use crate::{constants, Error};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -51,7 +54,7 @@ impl SharedSecret {
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         let mut buf = [0u8; SHARED_SECRET_SIZE];
         let res = unsafe {
-             ffi::secp256k1_ecdh(
+            ffi::secp256k1_ecdh(
                 ffi::secp256k1_context_no_precomp,
                 buf.as_mut_ptr(),
                 point.as_c_ptr(),
@@ -66,15 +69,11 @@ impl SharedSecret {
 
     /// Returns the shared secret as a byte value.
     #[inline]
-    pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] {
-        self.0
-    }
+    pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] { self.0 }
 
     /// Creates a shared secret from `bytes` array.
     #[inline]
-    pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret {
-        SharedSecret(bytes)
-    }
+    pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret { SharedSecret(bytes) }
 
     /// Creates a shared secret from `bytes` slice.
     #[inline]
@@ -85,7 +84,7 @@ impl SharedSecret {
                 ret[..].copy_from_slice(bytes);
                 Ok(SharedSecret(ret))
             }
-            _ => Err(Error::InvalidSharedSecret)
+            _ => Err(Error::InvalidSharedSecret),
         }
     }
 }
@@ -96,21 +95,17 @@ impl str::FromStr for SharedSecret {
         let mut res = [0u8; SHARED_SECRET_SIZE];
         match crate::from_hex(s, &mut res) {
             Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),
-            _ => Err(Error::InvalidSharedSecret)
+            _ => Err(Error::InvalidSharedSecret),
         }
     }
 }
 
 impl Borrow<[u8]> for SharedSecret {
-    fn borrow(&self) -> &[u8] {
-        &self.0
-    }
+    fn borrow(&self) -> &[u8] { &self.0 }
 }
 
 impl AsRef<[u8]> for SharedSecret {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
+    fn as_ref(&self) -> &[u8] { &self.0 }
 }
 
 /// Creates a shared point from public key and secret key.
@@ -162,7 +157,12 @@ pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
     xy
 }
 
-unsafe extern "C" fn c_callback(output: *mut c_uchar, x: *const c_uchar, y: *const c_uchar, _data: *mut c_void) -> c_int {
+unsafe extern "C" fn c_callback(
+    output: *mut c_uchar,
+    x: *const c_uchar,
+    y: *const c_uchar,
+    _data: *mut c_void,
+) -> c_int {
     ptr::copy_nonoverlapping(x, output, 32);
     ptr::copy_nonoverlapping(y, output.offset(32), 32);
     1
@@ -187,12 +187,12 @@ impl<'de> ::serde::Deserialize<'de> for SharedSecret {
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
-                "a hex string representing 32 byte SharedSecret"
+                "a hex string representing 32 byte SharedSecret",
             ))
         } else {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "raw 32 bytes SharedSecret",
-                SharedSecret::from_slice
+                SharedSecret::from_slice,
             ))
         }
     }
@@ -205,11 +205,11 @@ mod tests {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use crate::Secp256k1;
     use super::SharedSecret;
+    use crate::Secp256k1;
 
     #[test]
-    #[cfg(all(feature="rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
     fn ecdh() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
@@ -227,7 +227,9 @@ mod tests {
         let x = [5u8; 32];
         let y = [7u8; 32];
         let mut output = [0u8; 64];
-        let res = unsafe { super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), core::ptr::null_mut()) };
+        let res = unsafe {
+            super::c_callback(output.as_mut_ptr(), x.as_ptr(), y.as_ptr(), core::ptr::null_mut())
+        };
         assert_eq!(res, 1);
         let mut new_x = [0u8; 32];
         let mut new_y = [0u8; 32];
@@ -239,9 +241,10 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]
-    #[cfg(all(feature="std", feature = "rand-std", feature = "bitcoin-hashes-std"))]
+    #[cfg(all(feature = "std", feature = "rand-std", feature = "bitcoin-hashes-std"))]
     fn bitcoin_hashes_and_sys_generate_same_secret() {
         use bitcoin_hashes::{sha256, Hash, HashEngine};
+
         use crate::ecdh::shared_secret_point;
 
         let s = Secp256k1::signing_only();
@@ -265,7 +268,8 @@ mod tests {
     #[test]
     #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
     fn serde() {
-        use serde_test::{Configure, Token, assert_tokens};
+        use serde_test::{assert_tokens, Configure, Token};
+        #[rustfmt::skip]
         static BYTES: [u8; 32] = [
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 1, 2, 3, 4, 5, 6, 7,
@@ -288,23 +292,20 @@ mod tests {
 
 #[cfg(bench)]
 mod benches {
-    use test::{Bencher, black_box};
-
     use rand::thread_rng;
-
-    use crate::Secp256k1;
+    use test::{black_box, Bencher};
 
     use super::SharedSecret;
+    use crate::Secp256k1;
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
         let s = Secp256k1::signing_only();
         let (sk, pk) = s.generate_keypair(&mut thread_rng());
 
-        bh.iter( || {
+        bh.iter(|| {
             let res = SharedSecret::new(&pk, &sk);
             black_box(res);
         });
     }
 }
-

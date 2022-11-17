@@ -1,32 +1,28 @@
 //! Structs and functionality related to the ECDSA signature algorithm.
 
-use core::{fmt, str, ptr};
-
-use crate::{Signing, Verification, Message, PublicKey, Secp256k1, SecretKey, from_hex, Error, ffi};
-use crate::ffi::CPtr;
-
-pub mod serialized_signature;
-
 #[cfg(feature = "recovery")]
 mod recovery;
+pub mod serialized_signature;
+
+use core::{fmt, ptr, str};
 
 #[cfg(feature = "recovery")]
 #[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
-pub use self::recovery::{RecoveryId, RecoverableSignature};
-
-pub use serialized_signature::SerializedSignature;
-
+pub use self::recovery::{RecoverableSignature, RecoveryId};
+pub use self::serialized_signature::SerializedSignature;
+use crate::ffi::CPtr;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
+use crate::{
+    ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
+};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Signature(pub(crate) ffi::Signature);
 
 impl fmt::Debug for Signature {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Display::fmt(self, f) }
 }
 
 impl fmt::Display for Signature {
@@ -51,7 +47,9 @@ impl Signature {
     #[inline]
     /// Converts a DER-encoded byte slice to a signature
     pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
-        if data.is_empty() {return Err(Error::InvalidSignature);}
+        if data.is_empty() {
+            return Err(Error::InvalidSignature);
+        }
 
         unsafe {
             let mut ret = ffi::Signature::new();
@@ -72,7 +70,7 @@ impl Signature {
     /// Converts a 64-byte compact-encoded byte slice to a signature
     pub fn from_compact(data: &[u8]) -> Result<Signature, Error> {
         if data.len() != 64 {
-            return Err(Error::InvalidSignature)
+            return Err(Error::InvalidSignature);
         }
 
         unsafe {
@@ -95,7 +93,9 @@ impl Signature {
     /// 2016. It should never be used in new applications. This library does not
     /// support serializing to this "format"
     pub fn from_der_lax(data: &[u8]) -> Result<Signature, Error> {
-        if data.is_empty() {return Err(Error::InvalidSignature);}
+        if data.is_empty() {
+            return Err(Error::InvalidSignature);
+        }
 
         unsafe {
             let mut ret = ffi::Signature::new();
@@ -145,16 +145,15 @@ impl Signature {
     /// Obtains a raw pointer suitable for use with FFI functions
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::Signature {
-        self.as_c_ptr()
-    }
+    pub fn as_ptr(&self) -> *const ffi::Signature { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions
     #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_mut_c_ptr if you need to access the FFI layer")]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature {
-        self.as_mut_c_ptr()
-    }
+    #[deprecated(
+        since = "0.25.0",
+        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
+    )]
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature { self.as_mut_c_ptr() }
 
     #[inline]
     /// Serializes the signature in DER format
@@ -200,21 +199,15 @@ impl Signature {
 impl CPtr for Signature {
     type Target = ffi::Signature;
 
-    fn as_c_ptr(&self) -> *const Self::Target {
-        &self.0
-    }
+    fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
 
-    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        &mut self.0
-    }
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
 
 /// Creates a new signature from a FFI signature
 impl From<ffi::Signature> for Signature {
     #[inline]
-    fn from(sig: ffi::Signature) -> Signature {
-        Signature(sig)
-    }
+    fn from(sig: ffi::Signature) -> Signature { Signature(sig) }
 }
 
 #[cfg(feature = "serde")]
@@ -235,12 +228,12 @@ impl<'de> serde::Deserialize<'de> for Signature {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(crate::serde_util::FromStrVisitor::new(
-                "a hex string representing a DER encoded Signature"
+                "a hex string representing a DER encoded Signature",
             ))
         } else {
             d.deserialize_bytes(crate::serde_util::BytesVisitor::new(
                 "raw byte stream, that represents a DER encoded Signature",
-                Signature::from_der
+                Signature::from_der,
             ))
         }
     }
@@ -261,9 +254,17 @@ impl<C: Signing> Secp256k1<C> {
             };
             // We can assume the return value because it's not possible to construct
             // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
-                                                 sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
-                                                 noncedata_ptr), 1);
+            assert_eq!(
+                ffi::secp256k1_ecdsa_sign(
+                    self.ctx,
+                    &mut ret,
+                    msg.as_c_ptr(),
+                    sk.as_c_ptr(),
+                    ffi::secp256k1_nonce_function_rfc6979,
+                    noncedata_ptr
+                ),
+                1
+            );
             Signature::from(ret)
         }
     }
@@ -289,33 +290,43 @@ impl<C: Signing> Secp256k1<C> {
     }
 
     fn sign_grind_with_check(
-        &self, msg: &Message,
+        &self,
+        msg: &Message,
         sk: &SecretKey,
-        check: impl Fn(&ffi::Signature) -> bool) -> Signature {
-            let mut entropy_p : *const ffi::types::c_void = ptr::null();
-            let mut counter : u32 = 0;
-            let mut extra_entropy = [0u8; 32];
-            loop {
-                unsafe {
-                    let mut ret = ffi::Signature::new();
-                    // We can assume the return value because it's not possible to construct
-                    // an invalid signature from a valid `Message` and `SecretKey`
-                    assert_eq!(ffi::secp256k1_ecdsa_sign(self.ctx, &mut ret, msg.as_c_ptr(),
-                                                        sk.as_c_ptr(), ffi::secp256k1_nonce_function_rfc6979,
-                                                        entropy_p), 1);
-                    if check(&ret) {
-                        return Signature::from(ret);
-                    }
-
-                    counter += 1;
-                    extra_entropy[..4].copy_from_slice(&counter.to_le_bytes());
-                    entropy_p = extra_entropy.as_c_ptr().cast::<ffi::types::c_void>();
-
-                    // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
-                    #[cfg(fuzzing)]
+        check: impl Fn(&ffi::Signature) -> bool,
+    ) -> Signature {
+        let mut entropy_p: *const ffi::types::c_void = ptr::null();
+        let mut counter: u32 = 0;
+        let mut extra_entropy = [0u8; 32];
+        loop {
+            unsafe {
+                let mut ret = ffi::Signature::new();
+                // We can assume the return value because it's not possible to construct
+                // an invalid signature from a valid `Message` and `SecretKey`
+                assert_eq!(
+                    ffi::secp256k1_ecdsa_sign(
+                        self.ctx,
+                        &mut ret,
+                        msg.as_c_ptr(),
+                        sk.as_c_ptr(),
+                        ffi::secp256k1_nonce_function_rfc6979,
+                        entropy_p
+                    ),
+                    1
+                );
+                if check(&ret) {
                     return Signature::from(ret);
                 }
+
+                counter += 1;
+                extra_entropy[..4].copy_from_slice(&counter.to_le_bytes());
+                entropy_p = extra_entropy.as_c_ptr().cast::<ffi::types::c_void>();
+
+                // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
+                #[cfg(fuzzing)]
+                return Signature::from(ret);
             }
+        }
     }
 
     /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
@@ -324,8 +335,13 @@ impl<C: Signing> Secp256k1<C> {
     /// of signing operation performed by this function is exponential in the
     /// number of bytes grinded.
     /// Requires a signing capable context.
-    pub fn sign_ecdsa_grind_r(&self, msg: &Message, sk: &SecretKey, bytes_to_grind: usize) -> Signature {
-        let len_check = |s : &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
+    pub fn sign_ecdsa_grind_r(
+        &self,
+        msg: &Message,
+        sk: &SecretKey,
+        bytes_to_grind: usize,
+    ) -> Signature {
+        let len_check = |s: &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
         self.sign_grind_with_check(msg, sk, len_check)
     }
 
@@ -364,9 +380,16 @@ impl<C: Verification> Secp256k1<C> {
     /// # }
     /// ```
     #[inline]
-    pub fn verify_ecdsa(&self, msg: &Message, sig: &Signature, pk: &PublicKey) -> Result<(), Error> {
+    pub fn verify_ecdsa(
+        &self,
+        msg: &Message,
+        sig: &Signature,
+        pk: &PublicKey,
+    ) -> Result<(), Error> {
         unsafe {
-            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_c_ptr(), msg.as_c_ptr(), pk.as_c_ptr()) == 0 {
+            if ffi::secp256k1_ecdsa_verify(self.ctx, sig.as_c_ptr(), msg.as_c_ptr(), pk.as_c_ptr())
+                == 0
+            {
                 Err(Error::IncorrectSignature)
             } else {
                 Ok(())

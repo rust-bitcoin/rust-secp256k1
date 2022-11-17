@@ -5,11 +5,12 @@
 //! unable to run on platforms without allocator. We implement a special type to encapsulate
 //! serialized signatures and since it's a bit more complicated it has its own module.
 
+use core::{fmt, ops};
+
 pub use into_iter::IntoIter;
 
-use core::{fmt, ops};
-use crate::Error;
 use super::Signature;
+use crate::Error;
 
 pub(crate) const MAX_LEN: usize = 72;
 
@@ -21,9 +22,7 @@ pub struct SerializedSignature {
 }
 
 impl fmt::Debug for SerializedSignature {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Display::fmt(self, f) }
 }
 
 impl fmt::Display for SerializedSignature {
@@ -37,25 +36,19 @@ impl fmt::Display for SerializedSignature {
 
 impl PartialEq for SerializedSignature {
     #[inline]
-    fn eq(&self, other: &SerializedSignature) -> bool {
-        **self == **other
-    }
+    fn eq(&self, other: &SerializedSignature) -> bool { **self == **other }
 }
 
 impl AsRef<[u8]> for SerializedSignature {
     #[inline]
-    fn as_ref(&self) -> &[u8] {
-        self
-    }
+    fn as_ref(&self) -> &[u8] { self }
 }
 
 impl ops::Deref for SerializedSignature {
     type Target = [u8];
 
     #[inline]
-    fn deref(&self) -> &[u8] {
-        &self.data[..self.len]
-    }
+    fn deref(&self) -> &[u8] { &self.data[..self.len] }
 }
 
 impl Eq for SerializedSignature {}
@@ -65,9 +58,7 @@ impl IntoIterator for SerializedSignature {
     type Item = u8;
 
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter::new(self)
-    }
+    fn into_iter(self) -> Self::IntoIter { IntoIter::new(self) }
 }
 
 impl<'a> IntoIterator for &'a SerializedSignature {
@@ -75,9 +66,7 @@ impl<'a> IntoIterator for &'a SerializedSignature {
     type Item = &'a u8;
 
     #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
+    fn into_iter(self) -> Self::IntoIter { self.iter() }
 }
 
 impl SerializedSignature {
@@ -89,43 +78,30 @@ impl SerializedSignature {
     #[inline]
     pub(crate) fn from_raw_parts(data: [u8; MAX_LEN], len: usize) -> Self {
         assert!(len <= MAX_LEN, "attempt to set length to {} but the maximum is {}", len, MAX_LEN);
-        SerializedSignature {
-            data,
-            len,
-        }
+        SerializedSignature { data, len }
     }
 
     /// Get the capacity of the underlying data buffer.
     #[inline]
-    pub fn capacity(&self) -> usize {
-        self.data.len()
-    }
+    pub fn capacity(&self) -> usize { self.data.len() }
 
     /// Get the len of the used data.
     #[inline]
-    pub fn len(&self) -> usize {
-        self.len
-    }
+    pub fn len(&self) -> usize { self.len }
 
     /// Set the length of the object.
     #[inline]
-    pub(crate) fn set_len_unchecked(&mut self, len: usize) {
-        self.len = len;
-    }
+    pub(crate) fn set_len_unchecked(&mut self, len: usize) { self.len = len; }
 
     /// Convert the serialized signature into the Signature struct.
     /// (This DER deserializes it)
     #[inline]
-    pub fn to_signature(&self) -> Result<Signature, Error> {
-        Signature::from_der(self)
-    }
+    pub fn to_signature(&self) -> Result<Signature, Error> { Signature::from_der(self) }
 
     /// Create a SerializedSignature from a Signature.
     /// (this DER serializes it)
     #[inline]
-    pub fn from_signature(sig: &Signature) -> SerializedSignature {
-        sig.serialize_der()
-    }
+    pub fn from_signature(sig: &Signature) -> SerializedSignature { sig.serialize_der() }
 
     /// Check if the space is zero.
     #[inline]
@@ -162,9 +138,7 @@ mod into_iter {
         ///
         /// This method is analogous to [`core::slice::Iter::as_slice`].
         #[inline]
-        pub fn as_slice(&self) -> &[u8] {
-            &self.signature[self.pos..]
-        }
+        pub fn as_slice(&self) -> &[u8] { &self.signature[self.pos..] }
     }
 
     impl Iterator for IntoIter {
