@@ -1058,7 +1058,7 @@ mod benches {
     use super::{Message, Secp256k1};
 
     #[bench]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(all(feature = "std", feature = "rnd-std"))]
     pub fn generate(bh: &mut Bencher) {
 
         let s = Secp256k1::new();
@@ -1071,7 +1071,7 @@ mod benches {
     }
 
     #[bench]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(all(feature = "std", feature = "rnd-std"))]
     pub fn bench_sign_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
@@ -1086,7 +1086,7 @@ mod benches {
     }
 
     #[bench]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(all(feature = "std", feature = "rnd-std"))]
     pub fn bench_verify_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let mut msg = [0u8; 32];
