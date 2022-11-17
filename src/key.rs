@@ -1301,10 +1301,10 @@ impl XOnlyPublicKey {
         }
     }
 
-    /// Verifies that a tweak produced by [`XOnlyPublicKey::tweak_add_assign`] was computed correctly.
+    /// Verifies that a tweak produced by [`XOnlyPublicKey::add_tweak`] was computed correctly.
     ///
     /// Should be called on the original untweaked key. Takes the tweaked key and output parity from
-    /// [`XOnlyPublicKey::tweak_add_assign`] as input.
+    /// [`XOnlyPublicKey::add_tweak`] as input.
     ///
     /// Currently this is not much more efficient than just recomputing the tweak and checking
     /// equality. However, in future this API will support batch verification, which is
