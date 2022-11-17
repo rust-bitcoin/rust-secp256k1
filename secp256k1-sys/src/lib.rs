@@ -724,6 +724,15 @@ impl<T> CPtr for [T] {
 
 #[cfg(fuzzing)]
 mod fuzz_dummy {
+    /// Serialization logic:
+    /// If pk is created from sk keypair:
+    ///     - It is serialized with prefix 0x02: sk || [0xaa;32]
+    /// If pk is created from from slice:
+    ///     - 0x02||pk_bytes -> pk_bytes||[0xaa;32]
+    ///     - 0x03||pk_bytes -> pk_bytes||[0xbb;32]
+    ///     - 0x04||pk_bytes -> pk_bytes
+    /// This leaves the room for collision between compressed and uncompressed pks,
+    /// but as such collisions should be improbable. 2/2^128
     use super::*;
     use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -814,24 +823,14 @@ mod fuzz_dummy {
         assert_eq!(cx_flags & required_flags, required_flags);
     }
 
-    /// Checks that pk != 0xffff...ffff and pk[1..32] == pk[33..64]
+    /// Checks that pk is valid
     unsafe fn test_pk_validate(cx: *const Context,
                                pk: *const PublicKey) -> c_int {
         check_context_flags(cx, 0);
-        if (*pk).0[1..32] != (*pk).0[33..64] ||
-           ((*pk).0[32] != 0 && (*pk).0[32] != 0xff) ||
-           secp256k1_ec_seckey_verify(cx, (*pk).0[0..32].as_ptr()) == 0 {
+        if secp256k1_ec_seckey_verify(cx, (*pk).0[0..32].as_ptr()) == 0 {
             0
         } else {
             1
-        }
-    }
-    unsafe fn test_cleanup_pk(pk: *mut PublicKey) {
-        (*pk).0[32..].copy_from_slice(&(*pk).0[..32]);
-        if (*pk).0[32] <= 0x7f {
-            (*pk).0[32] = 0;
-        } else {
-            (*pk).0[32] = 0xff;
         }
     }
 
@@ -846,11 +845,10 @@ mod fuzz_dummy {
                     0
                 } else {
                     ptr::copy(input.offset(1), (*pk).0[0..32].as_mut_ptr(), 32);
-                    ptr::copy(input.offset(2), (*pk).0[33..64].as_mut_ptr(), 31);
                     if *input == 3 {
-                        (*pk).0[32] = 0xff;
+                        ptr::write_bytes((*pk).0[32..64].as_mut_ptr(), 0xbb, 32);
                     } else {
-                        (*pk).0[32] = 0;
+                        ptr::write_bytes((*pk).0[32..64].as_mut_ptr(), 0xaa, 32);
                     }
                     test_pk_validate(cx, pk)
                 }
@@ -860,7 +858,6 @@ mod fuzz_dummy {
                     0
                 } else {
                     ptr::copy(input.offset(1), (*pk).0.as_mut_ptr(), 64);
-                    test_cleanup_pk(pk);
                     test_pk_validate(cx, pk)
                 }
             },
@@ -877,10 +874,10 @@ mod fuzz_dummy {
         assert_eq!(test_pk_validate(cx, pk), 1);
         if compressed == SECP256K1_SER_COMPRESSED {
             assert_eq!(*out_len, 33);
-            if (*pk).0[32] <= 0x7f {
-                *output = 2;
-            } else {
+            if &(*pk).0[32..64] == &[0xbb; 32] {
                 *output = 3;
+            } else {
+                *output = 2;
             }
             ptr::copy((*pk).0.as_ptr(), output.offset(1), 32);
         } else if compressed == SECP256K1_SER_UNCOMPRESSED {
@@ -900,7 +897,7 @@ mod fuzz_dummy {
         check_context_flags(cx, SECP256K1_START_SIGN);
         if secp256k1_ec_seckey_verify(cx, sk) != 1 { return 0; }
         ptr::copy(sk, (*pk).0[0..32].as_mut_ptr(), 32);
-        test_cleanup_pk(pk);
+        ptr::write_bytes((*pk).0[32..64].as_mut_ptr(), 0xaa, 32);
         assert_eq!(test_pk_validate(cx, pk), 1);
         1
     }
@@ -910,7 +907,6 @@ mod fuzz_dummy {
         check_context_flags(cx, 0);
         assert_eq!(test_pk_validate(cx, pk), 1);
         if secp256k1_ec_seckey_negate(cx, (*pk).0[..32].as_mut_ptr()) != 1 { return 0; }
-        test_cleanup_pk(pk);
         assert_eq!(test_pk_validate(cx, pk), 1);
         1
     }
@@ -923,7 +919,6 @@ mod fuzz_dummy {
         check_context_flags(cx, SECP256K1_START_VERIFY);
         assert_eq!(test_pk_validate(cx, pk), 1);
         if secp256k1_ec_seckey_tweak_add(cx, (*pk).0[..32].as_mut_ptr(), tweak) != 1 { return 0; }
-        test_cleanup_pk(pk);
         assert_eq!(test_pk_validate(cx, pk), 1);
         1
     }
@@ -936,7 +931,6 @@ mod fuzz_dummy {
         check_context_flags(cx, 0);
         assert_eq!(test_pk_validate(cx, pk), 1);
         if secp256k1_ec_seckey_tweak_mul(cx, (*pk).0[..32].as_mut_ptr(), tweak) != 1 { return 0; }
-        test_cleanup_pk(pk);
         assert_eq!(test_pk_validate(cx, pk), 1);
         1
     }
@@ -955,7 +949,6 @@ mod fuzz_dummy {
                 return 0;
             }
         }
-        test_cleanup_pk(out);
         assert_eq!(test_pk_validate(cx, out), 1);
         1
     }
@@ -1103,8 +1096,7 @@ mod fuzz_dummy {
         check_context_flags(cx, 0);
         let inslice = slice::from_raw_parts(input32, 32);
         (*pubkey).0[..32].copy_from_slice(inslice);
-        (*pubkey).0[32..].copy_from_slice(inslice);
-        test_cleanup_pk(pubkey as *mut PublicKey);
+        ptr::write_bytes((*pubkey).0[32..64].as_mut_ptr(), 0xaa, 32);
         test_pk_validate(cx, pubkey as *mut PublicKey)
     }
 
