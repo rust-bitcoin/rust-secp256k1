@@ -4,12 +4,12 @@
 
 use core::{fmt, ptr, str};
 
-#[cfg(any(test, feature = "rand"))]
+#[cfg(feature = "rand")]
 use rand::{CryptoRng, Rng};
 
 use crate::ffi::{self, impl_array_newtype, CPtr};
 use crate::key::{KeyPair, XOnlyPublicKey};
-#[cfg(all(feature = "global-context", feature = "rand-std"))]
+#[cfg(feature = "global-context")]
 use crate::SECP256K1;
 use crate::{constants, from_hex, Error, Message, Secp256k1, Signing, Verification};
 
@@ -86,8 +86,8 @@ impl Signature {
 
     /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand-std"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
+    #[cfg(feature = "global-context")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
         SECP256K1.verify_schnorr(self, msg, pk)
     }
@@ -119,7 +119,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Create a schnorr signature internally using the ThreadRng random number
     /// generator to generate the auxiliary random data.
-    #[cfg(any(test, feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
@@ -142,7 +142,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Create a schnorr signature using the given random number generator to
     /// generate the auxiliary random data.
-    #[cfg(any(test, feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
         &self,
@@ -187,8 +187,8 @@ impl<C: Verification> Secp256k1<C> {
 mod tests {
     use core::str::FromStr;
 
+    #[cfg(feature = "rand-std")]
     use rand::rngs::ThreadRng;
-    use rand::{thread_rng, RngCore};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
@@ -197,7 +197,7 @@ mod tests {
     use crate::Error::InvalidPublicKey;
     use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
 
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0u8; 32];
@@ -207,45 +207,42 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn schnorr_sign_with_aux_rand_verify() {
         sign_helper(|secp, msg, seckey, rng| {
-            let mut aux_rand = [0u8; 32];
-            rng.fill_bytes(&mut aux_rand);
+            let aux_rand = crate::random_32_bytes(rng);
             secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
         })
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn schnor_sign_with_rng_verify() {
-        sign_helper(|secp, msg, seckey, mut rng| secp.sign_schnorr_with_rng(msg, seckey, &mut rng))
+        sign_helper(|secp, msg, seckey, rng| secp.sign_schnorr_with_rng(msg, seckey, rng))
     }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn schnorr_sign_verify() { sign_helper(|secp, msg, seckey, _| secp.sign_schnorr(msg, seckey)) }
 
     #[test]
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn schnorr_sign_no_aux_rand_verify() {
         sign_helper(|secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
     }
 
-    #[cfg(all(feature = "std", feature = "rand-std"))]
+    #[cfg(feature = "rand-std")]
     fn sign_helper(
         sign: fn(&Secp256k1<crate::All>, &Message, &KeyPair, &mut ThreadRng) -> Signature,
     ) {
         let secp = Secp256k1::new();
 
-        let mut rng = thread_rng();
+        let mut rng = rand::thread_rng();
         let kp = KeyPair::new(&secp, &mut rng);
         let (pk, _parity) = kp.x_only_public_key();
 
-        let mut msg = [0u8; 32];
-
         for _ in 0..100 {
-            rng.fill_bytes(&mut msg);
+            let msg = crate::random_32_bytes(&mut rand::thread_rng());
             let msg = Message::from_slice(&msg).unwrap();
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
@@ -255,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
     fn schnorr_sign() {
         let secp = Secp256k1::new();
@@ -278,7 +275,7 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     fn schnorr_verify() {
         let secp = Secp256k1::new();
 
@@ -306,10 +303,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
-        let kp = KeyPair::new(&secp, &mut thread_rng());
+        let kp = KeyPair::new(&secp, &mut rand::thread_rng());
         let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
@@ -318,7 +315,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     fn test_xonly_key_extraction() {
         let secp = Secp256k1::new();
         let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
@@ -426,7 +423,7 @@ mod tests {
     // In fuzzing mode secret->public key derivation is different, so
     // this test will never correctly derive the static pubkey.
     #[cfg(not(fuzzing))]
-    #[cfg(all(feature = "rand", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_pubkey_serialize() {
         use rand::rngs::mock::StepRng;
         let secp = Secp256k1::new();
@@ -443,7 +440,7 @@ mod tests {
 
     #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
     #[test]
-    #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "serde", feature = "alloc"))]
     fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 

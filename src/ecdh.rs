@@ -32,13 +32,12 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 /// # Examples
 ///
 /// ```
-/// # #[cfg(all(feature = "std", feature = "rand-std"))] {
-/// # use secp256k1::Secp256k1;
+/// # #[cfg(feature = "rand-std")] {
+/// # use secp256k1::{rand, Secp256k1};
 /// # use secp256k1::ecdh::SharedSecret;
-/// # use secp256k1::rand::thread_rng;
 /// let s = Secp256k1::new();
-/// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-/// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+/// let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
 /// let sec1 = SharedSecret::new(&pk2, &sk1);
 /// let sec2 = SharedSecret::new(&pk1, &sk2);
 /// assert_eq!(sec1, sec2);
@@ -122,14 +121,13 @@ impl AsRef<[u8]> for SharedSecret {
 ///
 /// # Examples
 /// ```
-/// # #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std", feature = "std"))] {
-/// # use secp256k1::{ecdh, Secp256k1, PublicKey, SecretKey};
+/// # #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std"))] {
+/// # use secp256k1::{ecdh, rand, Secp256k1, PublicKey, SecretKey};
 /// # use secp256k1::hashes::{Hash, sha512};
-/// # use secp256k1::rand::thread_rng;
 ///
 /// let s = Secp256k1::new();
-/// let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-/// let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+/// let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
 ///
 /// let point1 = ecdh::shared_secret_point(&pk2, &sk1);
 /// let secret1 = sha512::Hash::hash(&point1);
@@ -201,7 +199,6 @@ impl<'de> ::serde::Deserialize<'de> for SharedSecret {
 #[cfg(test)]
 #[allow(unused_imports)]
 mod tests {
-    use rand::thread_rng;
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
@@ -209,11 +206,11 @@ mod tests {
     use crate::Secp256k1;
 
     #[test]
-    #[cfg(all(feature = "rand-std", any(feature = "alloc", feature = "std")))]
+    #[cfg(feature = "rand-std")]
     fn ecdh() {
         let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
 
         let sec1 = SharedSecret::new(&pk2, &sk1);
         let sec2 = SharedSecret::new(&pk1, &sk2);
@@ -241,15 +238,15 @@ mod tests {
 
     #[test]
     #[cfg(not(fuzzing))]
-    #[cfg(all(feature = "std", feature = "rand-std", feature = "bitcoin-hashes-std"))]
+    #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std"))]
     fn bitcoin_hashes_and_sys_generate_same_secret() {
         use bitcoin_hashes::{sha256, Hash, HashEngine};
 
         use crate::ecdh::shared_secret_point;
 
         let s = Secp256k1::signing_only();
-        let (sk1, _) = s.generate_keypair(&mut thread_rng());
-        let (_, pk2) = s.generate_keypair(&mut thread_rng());
+        let (sk1, _) = s.generate_keypair(&mut rand::thread_rng());
+        let (_, pk2) = s.generate_keypair(&mut rand::thread_rng());
 
         let secret_sys = SharedSecret::new(&pk2, &sk1);
 
@@ -266,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "serde", feature = "alloc"))]
     fn serde() {
         use serde_test::{assert_tokens, Configure, Token};
         #[rustfmt::skip]
@@ -291,8 +288,8 @@ mod tests {
 }
 
 #[cfg(bench)]
+#[cfg(feature = "rand-std")]    // Currently only a single bench that requires "rand-std".
 mod benches {
-    use rand::thread_rng;
     use test::{black_box, Bencher};
 
     use super::SharedSecret;
@@ -301,7 +298,7 @@ mod benches {
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
         let s = Secp256k1::signing_only();
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         bh.iter(|| {
             let res = SharedSecret::new(&pk, &sk);

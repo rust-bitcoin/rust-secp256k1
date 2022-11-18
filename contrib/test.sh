@@ -2,10 +2,7 @@
 
 set -ex
 
-FEATURES="bitcoin-hashes global-context lowmemory rand recovery serde std alloc"
-# These features are typically enabled along with the 'std' feature, so we test
-# them together with 'std'.
-STD_FEATURES="rand-std bitcoin-hashes-std"
+FEATURES="bitcoin-hashes global-context lowmemory rand recovery serde std alloc bitcoin-hashes-std rand-std"
 
 cargo --version
 rustc --version
@@ -49,7 +46,6 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all
     RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
-    cargo test --features="$STD_FEATURES"
 
     if [ "$NIGHTLY" = true ]; then
         cargo test --all --all-features
@@ -57,9 +53,9 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     fi
 
     # Examples
-    cargo run --example sign_verify --features=std
-    cargo run --example sign_verify_recovery --features=std,recovery
-    cargo run --example generate_keys --features=std,rand-std
+    cargo run --example sign_verify --features=bitcoin-hashes-std
+    cargo run --example sign_verify_recovery --features=recovery,bitcoin-hashes-std
+    cargo run --example generate_keys --features=rand-std
 fi
 
 # Build the docs if told to (this only works with the nightly toolchain)
@@ -96,7 +92,7 @@ fi
 # Bench if told to, only works with non-stable toolchain (nightly, beta).
 if [ "$DO_BENCH" = true ]
 then
-    RUSTFLAGS='--cfg=bench' cargo bench --features=recovery
+    RUSTFLAGS='--cfg=bench' cargo bench --features=recovery,rand-std
 fi
 
 exit 0

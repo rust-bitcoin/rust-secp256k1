@@ -23,8 +23,8 @@ std = ["alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
 bitcoin-hashes = ["bitcoin_hashes"] # Feature alias because of the underscore.
-bitcoin-hashes-std = ["bitcoin-hashes", "bitcoin_hashes/std"]
-rand-std = ["rand/std", "rand/std_rng"]
+bitcoin-hashes-std = ["std", "bitcoin_hashes/std"]
+rand-std = ["std", "rand/std", "rand/std_rng"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
@@ -46,10 +46,8 @@ bitcoin_hashes = { version = "0.11", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
-rand = "0.8"
 rand_core = "0.6"
 serde_test = "1.0"
-bitcoin_hashes = "0.11"
 bincode = "1.3.3"
 
 # cbor does not build on WASM, we use it in a single trivial test (an example of when
@@ -64,15 +62,15 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["std", "recovery"]
+required-features = ["recovery", "bitcoin-hashes-std"]
 
 [[example]]
 name = "sign_verify"
-required-features = ["std"]
+required-features = ["bitcoin-hashes-std"]
 
 [[example]]
 name = "generate_keys"
-required-features = ["std", "rand-std"]
+required-features = ["rand-std"]
 
 [workspace]
 members = ["secp256k1-sys"]

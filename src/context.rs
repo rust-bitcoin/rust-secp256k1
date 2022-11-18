@@ -31,8 +31,7 @@ pub mod global {
     /// ```
     /// # #[cfg(all(feature = "global-context", feature = "rand-std"))] {
     /// use secp256k1::{PublicKey, SECP256K1};
-    /// use secp256k1::rand::thread_rng;
-    /// let _ = SECP256K1.generate_keypair(&mut thread_rng());
+    /// let _ = SECP256K1.generate_keypair(&mut rand::thread_rng());
     /// # }
     /// ```
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
@@ -106,7 +105,7 @@ mod private {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 mod alloc_only {
     use core::marker::PhantomData;
 
@@ -176,7 +175,7 @@ mod alloc_only {
         /// If `rand-std` feature is enabled, context will have been randomized using `thread_rng`.
         /// If `rand-std` feature is not enabled please consider randomizing the context as follows:
         /// ```
-        /// # #[cfg(all(feature = "std", feature = "rand-std"))] {
+        /// # #[cfg(feature = "rand-std")] {
         /// # use secp256k1::Secp256k1;
         /// # use secp256k1::rand::{thread_rng, RngCore};
         /// let mut ctx = Secp256k1::new();

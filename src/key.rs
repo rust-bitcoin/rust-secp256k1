@@ -47,7 +47,7 @@ use crate::{hashes, ThirtyTwoByteHash};
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+/// # #[cfg(feature =  "rand-std")] {
 /// use secp256k1::{rand, Secp256k1, SecretKey};
 ///
 /// let secp = Secp256k1::new();
@@ -84,7 +84,7 @@ impl str::FromStr for SecretKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(any(feature =  "alloc", feature = "std"))] {
+/// # #[cfg(feature =  "alloc")] {
 /// use secp256k1::{SecretKey, Secp256k1, PublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -126,13 +126,6 @@ impl str::FromStr for PublicKey {
     }
 }
 
-#[cfg(any(test, feature = "rand"))]
-fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
-    let mut ret = [0u8; 32];
-    rng.fill_bytes(&mut ret);
-    ret
-}
-
 impl SecretKey {
     /// Generates a new random secret key.
     ///
@@ -145,17 +138,17 @@ impl SecretKey {
     /// # }
     /// ```
     #[inline]
-    #[cfg(any(test, feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: rand::Rng + ?Sized>(rng: &mut R) -> SecretKey {
-        let mut data = random_32_bytes(rng);
+        let mut data = crate::random_32_bytes(rng);
         unsafe {
             while ffi::secp256k1_ec_seckey_verify(
                 ffi::secp256k1_context_no_precomp,
                 data.as_c_ptr(),
             ) == 0
             {
-                data = random_32_bytes(rng);
+                data = crate::random_32_bytes(rng);
             }
         }
         SecretKey(data)
@@ -193,7 +186,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -394,7 +387,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -450,7 +443,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{rand, Secp256k1, PublicKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -579,7 +572,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "rand-std", any(feature =  "alloc", feature = "std")))] {
+    /// # #[cfg(feature = "rand-std")] {
     /// use secp256k1::{rand, Secp256k1};
     ///
     /// let secp = Secp256k1::new();
@@ -588,7 +581,7 @@ impl PublicKey {
     /// let (_, pk2) = secp.generate_keypair(&mut rng);
     /// let sum = pk1.combine(&pk2).expect("It's improbable to fail for 2 random public keys");
     /// # }
-    ///```
+    /// ```
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         PublicKey::combine_keys(&[self, other])
     }
@@ -605,7 +598,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{rand, Secp256k1, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -769,7 +762,7 @@ impl core::hash::Hash for PublicKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+/// # #[cfg(feature =  "rand-std")] {
 /// use secp256k1::{rand, KeyPair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
@@ -866,7 +859,7 @@ impl KeyPair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
     ///
     /// let secp = Secp256k1::new();
@@ -874,19 +867,14 @@ impl KeyPair {
     /// # }
     /// ```
     #[inline]
-    #[cfg(any(test, feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
-        let mut random_32_bytes = || {
-            let mut ret = [0u8; 32];
-            rng.fill_bytes(&mut ret);
-            ret
-        };
-        let mut data = random_32_bytes();
+        let mut data = crate::random_32_bytes(rng);
         unsafe {
             let mut keypair = ffi::KeyPair::new();
             while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
-                data = random_32_bytes();
+                data = crate::random_32_bytes(rng);
             }
             KeyPair(keypair)
         }
@@ -918,14 +906,13 @@ impl KeyPair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{Secp256k1, KeyPair, Scalar};
-    /// use secp256k1::rand::{RngCore, thread_rng};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
     /// let tweaked = key_pair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
@@ -999,6 +986,7 @@ impl<'a> From<&'a KeyPair> for PublicKey {
 impl str::FromStr for KeyPair {
     type Err = Error;
 
+    #[allow(unused_variables, unreachable_code)]  // When built with no default features.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         #[cfg(feature = "global-context")]
         let ctx = SECP256K1;
@@ -1081,7 +1069,7 @@ impl CPtr for KeyPair {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+/// # #[cfg(feature =  "rand-std")] {
 /// use secp256k1::{rand, Secp256k1, KeyPair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -1212,14 +1200,13 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{Secp256k1, KeyPair, Scalar, XOnlyPublicKey};
-    /// use secp256k1::rand::{RngCore, thread_rng};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
     /// let (xonly, _parity) = key_pair.x_only_public_key();
     /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
@@ -1273,14 +1260,13 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(feature =  "rand-std")] {
     /// use secp256k1::{Secp256k1, KeyPair, Scalar};
-    /// use secp256k1::rand::{thread_rng, RngCore};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut thread_rng());
+    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
     /// let (mut public_key, _) = key_pair.x_only_public_key();
     /// let original = public_key;
     /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
@@ -1562,9 +1548,8 @@ pub mod serde_keypair {
 mod test {
     use core::str::FromStr;
 
-    use bitcoin_hashes::hex::ToHex;
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    use rand::{rngs::mock::StepRng, thread_rng, Error, RngCore};
+    #[cfg(feature = "rand")]
+    use rand::{self, RngCore, rngs::mock::StepRng};
     use serde_test::{Configure, Token};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -1612,18 +1597,17 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
         assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
     #[rustfmt::skip]
     fn invalid_secret_key() {
         // Zero
@@ -1651,7 +1635,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_out_of_range() {
         struct BadRng(u8);
         impl RngCore for BadRng {
@@ -1672,7 +1656,7 @@ mod test {
                 data[31] = self.0;
                 self.0 -= 1;
             }
-            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
                 self.fill_bytes(dest);
                 Ok(())
             }
@@ -1738,7 +1722,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_debug_output() {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
@@ -1753,7 +1737,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     fn test_display_output() {
         #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
@@ -1859,7 +1843,7 @@ mod test {
     // In fuzzing mode the Y coordinate is expected to match the X, so this
     // test uses invalid public keys.
     #[cfg(not(fuzzing))]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(all(feature = "alloc", feature = "rand"))]
     fn test_pubkey_serialize() {
         let s = Secp256k1::new();
         let (_, pk1) = s.generate_keypair(&mut StepRng::new(1, 1));
@@ -1886,7 +1870,7 @@ mod test {
     fn tweak_add_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
@@ -1901,11 +1885,11 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn tweak_add_zero() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         let tweak = Scalar::ZERO;
 
@@ -1920,7 +1904,7 @@ mod test {
     fn tweak_mul_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
@@ -1935,21 +1919,21 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn tweak_mul_zero() {
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut thread_rng());
+        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
 
         let tweak = Scalar::ZERO;
         assert!(sk.mul_tweak(&tweak).is_err())
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn test_negation() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
@@ -1967,7 +1951,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn pubkey_hash() {
         use std::collections::hash_map::DefaultHasher;
         use std::collections::HashSet;
@@ -1983,7 +1967,7 @@ mod test {
         let mut set = HashSet::new();
         const COUNT: usize = 1024;
         for _ in 0..COUNT {
-            let (_, pk) = s.generate_keypair(&mut thread_rng());
+            let (_, pk) = s.generate_keypair(&mut rand::thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
@@ -2050,12 +2034,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn create_pubkey_combine() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
 
         let sum1 = pk1.combine(&pk2);
         assert!(sum1.is_ok());
@@ -2095,7 +2079,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "serde", any(feature = "alloc", feature = "std")))]
+    #[cfg(all(feature = "serde", feature = "alloc"))]
     fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
         #[rustfmt::skip]
@@ -2160,7 +2144,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "rand-std")]
     fn test_tweak_add_then_tweak_add_check() {
         let s = Secp256k1::new();
 
@@ -2168,7 +2152,7 @@ mod test {
         for _ in 0..10 {
             let tweak = Scalar::random();
 
-            let kp = KeyPair::new(&s, &mut thread_rng());
+            let kp = KeyPair::new(&s, &mut rand::thread_rng());
             let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
             let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
@@ -2259,7 +2243,7 @@ mod test {
         assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
     }
 
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
         let secp = Secp256k1::new();
 
@@ -2292,7 +2276,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn convert_public_key_to_xonly_public_key() {
         let (_sk, pk, _kp, want) = keys();
         let (got, parity) = pk.x_only_public_key();
@@ -2302,7 +2286,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn convert_secret_key_to_public_key() {
         let secp = Secp256k1::new();
 
@@ -2313,7 +2297,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn convert_secret_key_to_x_only_public_key() {
         let secp = Secp256k1::new();
 
@@ -2325,7 +2309,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn convert_keypair_to_public_key() {
         let (_sk, want, kp, _xonly) = keys();
         let got = kp.public_key();
@@ -2334,7 +2318,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn convert_keypair_to_x_only_public_key() {
         let (_sk, _pk, kp, want) = keys();
         let (got, parity) = kp.x_only_public_key();
@@ -2345,7 +2329,7 @@ mod test {
 
     // SecretKey -> KeyPair -> SecretKey
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn roundtrip_secret_key_via_keypair() {
         let secp = Secp256k1::new();
         let (sk, _pk, _kp, _xonly) = keys();
@@ -2358,7 +2342,7 @@ mod test {
 
     // KeyPair -> SecretKey -> KeyPair
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn roundtrip_keypair_via_secret_key() {
         let secp = Secp256k1::new();
         let (_sk, _pk, kp, _xonly) = keys();
@@ -2371,7 +2355,7 @@ mod test {
 
     // XOnlyPublicKey -> PublicKey -> XOnlyPublicKey
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn roundtrip_x_only_public_key_via_public_key() {
         let (_sk, _pk, _kp, xonly) = keys();
 
@@ -2384,7 +2368,7 @@ mod test {
 
     // PublicKey -> XOnlyPublicKey -> PublicKey
     #[test]
-    #[cfg(all(not(fuzzing), any(feature = "alloc", feature = "std")))]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn roundtrip_public_key_via_x_only_public_key() {
         let (_sk, pk, _kp, _xonly) = keys();
 
@@ -2444,10 +2428,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(any(feature = "alloc", feature = "global-context"))]
+    #[cfg(all(feature = "rand-std", feature = "bitcoin-hashes-std"))]
     fn test_keypair_from_str() {
+        use bitcoin_hashes::hex::ToHex;
+
         let ctx = crate::Secp256k1::new();
-        let keypair = KeyPair::new(&ctx, &mut thread_rng());
+        let keypair = KeyPair::new(&ctx, &mut rand::thread_rng());
         let msg = keypair.secret_key().secret_bytes().to_hex();
         let parsed_key: KeyPair = msg.parse().unwrap();
         assert_eq!(parsed_key, keypair);
