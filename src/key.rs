@@ -17,7 +17,7 @@
 //!
 
 use core::convert::TryFrom;
-use core::ops::BitXor;
+use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
 #[cfg(feature = "serde")]
@@ -28,7 +28,7 @@ use crate::ffi::{self, CPtr};
 #[cfg(all(feature = "global-context", feature = "rand-std"))]
 use crate::schnorr;
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use crate::{constants, from_hex, impl_array_newtype, Scalar, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "global-context")]
 use crate::{ecdsa, Message, SECP256K1};
 #[cfg(feature = "bitcoin-hashes")]
@@ -58,8 +58,69 @@ use crate::{hashes, ThirtyTwoByteHash};
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_display_secret!(SecretKey);
+
+impl PartialEq for SecretKey {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self[..] == other[..]
+    }
+}
+
+impl Eq for SecretKey {}
+
+impl core::hash::Hash for SecretKey {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self[..].hash(state)
+    }
+}
+
+impl PartialOrd for SecretKey {
+    #[inline]
+    fn partial_cmp(&self, other: &SecretKey) -> Option<core::cmp::Ordering> {
+        self[..].partial_cmp(&other[..])
+    }
+}
+
+impl Ord for SecretKey {
+    #[inline]
+    fn cmp(&self, other: &SecretKey) -> core::cmp::Ordering {
+        self[..].cmp(&other[..])
+    }
+}
+
+impl AsRef<[u8; constants::SECRET_KEY_SIZE]> for SecretKey {
+    /// Gets a reference to the underlying array
+    #[inline]
+    fn as_ref(&self) -> &[u8; constants::SECRET_KEY_SIZE] {
+        let &SecretKey(ref dat) = self;
+        dat
+    }
+}
+
+impl<I> ops::Index<I> for SecretKey
+where
+    [u8]: ops::Index<I>,
+{
+    type Output = <[u8] as ops::Index<I>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output { &self.0[index] }
+}
+
+impl ffi::CPtr for SecretKey {
+    type Target = u8;
+
+    fn as_c_ptr(&self) -> *const Self::Target {
+        let &SecretKey(ref dat) = self;
+        dat.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        let &mut SecretKey(ref mut dat) = self;
+        dat.as_mut_ptr()
+    }
+}
 
 impl str::FromStr for SecretKey {
     type Err = Error;
