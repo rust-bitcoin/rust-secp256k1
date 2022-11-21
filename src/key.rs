@@ -61,9 +61,12 @@ pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_display_secret!(SecretKey);
 
 impl PartialEq for SecretKey {
+    /// This implementation is designed to be constant time to help prevent side channel attacks.
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self[..] == other[..]
+        let accum = self.0.iter().zip(&other.0)
+            .fold(0, |accum, (a, b)| accum | a ^ b);
+        unsafe { core::ptr::read_volatile(&accum) == 0 }
     }
 }
 
