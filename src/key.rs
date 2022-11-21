@@ -36,6 +36,13 @@ use crate::{hashes, ThirtyTwoByteHash};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
 ///
+/// # Side channel attacks
+///
+/// We have attempted to reduce the side channel attack surface by implementing a constant time `eq`
+/// method. For similar reasons we explicitly do not implement `PartialOrd`, `Ord`, or `Hash` on
+/// `SecretKey`. If you really want to order secrets keys then you can use `AsRef` to get at the
+/// underlying bytes and compare them - however this is almost certainly a bad idea.
+///
 /// # Serde support
 ///
 /// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
@@ -73,7 +80,14 @@ impl PartialEq for SecretKey {
 impl Eq for SecretKey {}
 
 impl AsRef<[u8; constants::SECRET_KEY_SIZE]> for SecretKey {
-    /// Gets a reference to the underlying array
+    /// Gets a reference to the underlying array.
+    ///
+    /// # Side channel attacks
+    ///
+    /// Using ordering functions (`PartialOrd`/`Ord`) on a reference to secret keys leaks data
+    /// because the implementations are not constant time. Doing so will make your code vulnerable
+    /// to side channel attacks. [`SecretKey::eq`] is implemented using a constant time algorithm,
+    /// please consider using it to do comparisons of secret keys.
     #[inline]
     fn as_ref(&self) -> &[u8; constants::SECRET_KEY_SIZE] {
         let &SecretKey(ref dat) = self;
