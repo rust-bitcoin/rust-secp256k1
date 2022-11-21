@@ -19,8 +19,6 @@
 // Coding conventions
 #![deny(non_upper_case_globals, non_camel_case_types, non_snake_case, unused_mut)]
 
-#![allow(clippy::missing_safety_doc)]
-
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -781,10 +779,25 @@ extern "C" {
 ///
 /// Input `flags` control which parts of the context to initialize.
 ///
+/// # Safety
+///
+/// This function is unsafe because it calls unsafe functions however (assuming no bugs) no
+/// undefined behavior is possible.
+///
 /// # Returns
 ///
 /// The newly created secp256k1 raw context.
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
+pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
+    rustsecp256k1_v0_6_1_context_create(flags)
+}
+
+/// A reimplementation of the C function `secp256k1_context_create` in rust.
+///
+/// See [`secp256k1_context_create`] for documentation and safety constraints.
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *mut Context {
@@ -805,19 +818,23 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *
     secp256k1_context_preallocated_create(ptr, flags)
 }
 
-#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
-    rustsecp256k1_v0_6_1_context_create(flags)
-}
-
 /// A reimplementation of the C function `secp256k1_context_destroy` in rust.
 ///
 /// This function destroys and deallcates the context created by `secp256k1_context_create`.
 ///
 /// The pointer shouldn't be used after passing to this function, consider it as passing it to `free()`.
 ///
+/// # Safety
+///
+///  `ctx` must be a valid pointer to a block of memory created using [`secp256k1_context_create`].
+#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
+pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
+    rustsecp256k1_v0_6_1_context_destroy(ctx)
+}
+
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_destroy(ctx: *mut Context) {
@@ -828,13 +845,6 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_destroy(ctx: *mut Context)
     let layout = alloc::Layout::from_size_align(bytes, ALIGN_TO).unwrap();
     alloc::dealloc(ptr, layout);
 }
-
-#[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
-    rustsecp256k1_v0_6_1_context_destroy(ctx)
-}
-
 
 /// **This function is an override for the C function, this is the an edited version of the original description:**
 ///
@@ -854,6 +864,12 @@ pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
 ///
 /// See also secp256k1_default_error_callback_fn.
 ///
+///
+/// # Safety
+///
+/// `message` string should be a null terminated C string and, up to the first null byte, must be valid UTF8.
+///
+/// For exact safety constraints see [`std::slice::from_raw_parts`] and [`std::str::from_utf8_unchecked`].
 #[no_mangle]
 #[cfg(not(rust_secp_no_symbol_renaming))]
 pub unsafe extern "C" fn rustsecp256k1_v0_6_1_default_illegal_callback_fn(message: *const c_char, _data: *mut c_void) {
@@ -877,6 +893,11 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_default_illegal_callback_fn(messag
 ///
 /// See also secp256k1_default_illegal_callback_fn.
 ///
+/// # Safety
+///
+/// `message` string should be a null terminated C string and, up to the first null byte, must be valid UTF8.
+///
+/// For exact safety constraints see [`std::slice::from_raw_parts`] and [`std::str::from_utf8_unchecked`].
 #[no_mangle]
 #[cfg(not(rust_secp_no_symbol_renaming))]
 pub unsafe extern "C" fn rustsecp256k1_v0_6_1_default_error_callback_fn(message: *const c_char, _data: *mut c_void) {
@@ -886,6 +907,11 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_default_error_callback_fn(message:
     panic!("[libsecp256k1] internal consistency check failed {}", msg);
 }
 
+/// Returns the length of the `str_ptr` string.
+///
+/// # Safety
+///
+/// `str_ptr` must be valid pointer and point to a valid null terminated C string.
 #[cfg(not(rust_secp_no_symbol_renaming))]
 unsafe fn strlen(mut str_ptr: *const c_char) -> usize {
     let mut ctr = 0;
