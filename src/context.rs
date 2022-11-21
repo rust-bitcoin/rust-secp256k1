@@ -62,12 +62,20 @@ pub mod global {
 
 /// A trait for all kinds of contexts that lets you define the exact flags and a function to
 /// deallocate memory. It isn't possible to implement this for types outside this crate.
+///
+/// # Safety
+///
+/// This trait is marked unsafe to allow unsafe implementations of `deallocate`.
 pub unsafe trait Context: private::Sealed {
     /// Flags for the ffi.
     const FLAGS: c_uint;
     /// A constant description of the context.
     const DESCRIPTION: &'static str;
     /// A function to deallocate the memory when the context is dropped.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must be valid. Further safety constraints may be imposed by [`std::alloc::dealloc`].
     unsafe fn deallocate(ptr: *mut u8, size: usize);
 }
 
