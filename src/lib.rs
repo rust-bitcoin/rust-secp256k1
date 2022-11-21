@@ -199,7 +199,7 @@ pub use serde;
 
 pub use crate::context::*;
 use crate::ffi::types::AlignedType;
-use crate::ffi::{impl_array_newtype, CPtr};
+use crate::ffi::CPtr;
 #[cfg(feature = "bitcoin-hashes")]
 use crate::hashes::Hash;
 pub use crate::key::{PublicKey, SecretKey, *};
@@ -232,6 +232,7 @@ impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
 }
 
 /// A (hashed) message input to an ECDSA signature.
+#[derive(Copy, Clone)]
 pub struct Message([u8; constants::MESSAGE_SIZE]);
 impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);

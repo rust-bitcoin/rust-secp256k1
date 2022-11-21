@@ -7,13 +7,14 @@ use core::{fmt, ptr, str};
 #[cfg(feature = "rand")]
 use rand::{CryptoRng, Rng};
 
-use crate::ffi::{self, impl_array_newtype, CPtr};
+use crate::ffi::{self, CPtr};
 use crate::key::{KeyPair, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{constants, from_hex, Error, Message, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, impl_array_newtype, Error, Message, Secp256k1, Signing, Verification};
 
 /// Represents a Schnorr signature.
+#[derive(Copy, Clone)]
 pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);

@@ -133,6 +133,7 @@ impl SchnorrSigExtraParams {
 
 /// Library-internal representation of a Secp256k1 public key
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct PublicKey([c_uchar; 64]);
 impl_array_newtype!(PublicKey, c_uchar, 64);
 impl_raw_debug!(PublicKey);
@@ -169,10 +170,64 @@ impl PublicKey {
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
         self.0
     }
+
+    /// Serializes this public key as a byte-encoded pair of values, in compressed form.
+    fn serialize(&self) -> [u8; 33] {
+        let mut buf = [0u8; 33];
+        let mut len = 33;
+        unsafe {
+            let ret = secp256k1_ec_pubkey_serialize(
+                secp256k1_context_no_precomp,
+                buf.as_mut_c_ptr(),
+                &mut len,
+                self,
+                SECP256K1_SER_COMPRESSED,
+            );
+            debug_assert_eq!(ret, 1);
+            debug_assert_eq!(len, 33);
+        };
+        buf
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for PublicKey {
+    fn partial_cmp(&self, other: &PublicKey) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for PublicKey {
+    fn cmp(&self, other: &PublicKey) -> core::cmp::Ordering {
+        let ret = unsafe {
+            secp256k1_ec_pubkey_cmp(secp256k1_context_no_precomp, self, other)
+        };
+        ret.cmp(&0i32)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for PublicKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for PublicKey {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for PublicKey {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
+    }
 }
 
 /// Library-internal representation of a Secp256k1 signature
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Signature([c_uchar; 64]);
 impl_array_newtype!(Signature, c_uchar, 64);
 impl_raw_debug!(Signature);
@@ -209,9 +264,58 @@ impl Signature {
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
         self.0
     }
+
+    /// Serializes the signature in compact format.
+    fn serialize(&self) -> [u8; 64] {
+        let mut buf = [0u8; 64];
+        unsafe {
+            let ret = secp256k1_ecdsa_signature_serialize_compact(
+                secp256k1_context_no_precomp,
+                buf.as_mut_c_ptr(),
+                self,
+            );
+            debug_assert!(ret == 1);
+        }
+        buf
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for Signature {
+    fn partial_cmp(&self, other: &Signature) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for Signature {
+    fn cmp(&self, other: &Signature) -> core::cmp::Ordering {
+        let this = self.serialize();
+        let that = other.serialize();
+        this.cmp(&that)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for Signature {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for Signature {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for Signature {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
+    }
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct XOnlyPublicKey([c_uchar; 64]);
 impl_array_newtype!(XOnlyPublicKey, c_uchar, 64);
 impl_raw_debug!(XOnlyPublicKey);
@@ -248,9 +352,59 @@ impl XOnlyPublicKey {
     pub fn underlying_bytes(self) -> [c_uchar; 64] {
         self.0
     }
+
+    /// Serializes this key as a byte-encoded x coordinate value (32 bytes).
+    fn serialize(&self) -> [u8; 32] {
+        let mut buf = [0u8; 32];
+        unsafe {
+            let ret = secp256k1_xonly_pubkey_serialize(
+                secp256k1_context_no_precomp,
+                buf.as_mut_c_ptr(),
+                self,
+            );
+            assert_eq!(ret, 1);
+        };
+        buf
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for XOnlyPublicKey {
+    fn partial_cmp(&self, other: &XOnlyPublicKey) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for XOnlyPublicKey {
+    fn cmp(&self, other: &XOnlyPublicKey) -> core::cmp::Ordering {
+        let ret = unsafe {
+            secp256k1_xonly_pubkey_cmp(secp256k1_context_no_precomp, self, other)
+        };
+        ret.cmp(&0i32)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for XOnlyPublicKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for XOnlyPublicKey {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for XOnlyPublicKey {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
+    }
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct KeyPair([c_uchar; 96]);
 impl_array_newtype!(KeyPair, c_uchar, 96);
 impl_raw_debug!(KeyPair);
@@ -286,6 +440,58 @@ impl KeyPair {
     /// essentially only useful for extending the FFI interface itself.
     pub fn underlying_bytes(self) -> [c_uchar; 96] {
         self.0
+    }
+
+    /// Creates a new compressed public key from this key pair.
+    fn public_key(&self) -> PublicKey {
+        unsafe {
+            let mut pk = PublicKey::new();
+            let ret = secp256k1_keypair_pub(
+                secp256k1_context_no_precomp,
+                &mut pk,
+                self,
+            );
+            debug_assert_eq!(ret, 1);
+            pk
+        }
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for KeyPair {
+    fn partial_cmp(&self, other: &KeyPair) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for KeyPair {
+    fn cmp(&self, other: &KeyPair) -> core::cmp::Ordering {
+        let this = self.public_key();
+        let that = other.public_key();
+        this.cmp(&that)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for KeyPair {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for KeyPair {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for KeyPair {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        // To hash the key pair we just hash the serialized public key. Since any change to the
+        // secret key would also be a change to the public key this is a valid one way function from
+        // the key pair to the digest.
+        let pk = self.public_key();
+        let ser = pk.serialize();
+        ser.hash(state);
     }
 }
 

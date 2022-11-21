@@ -17,30 +17,68 @@
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-        impl Copy for $thing {}
-
         impl $thing {
-            /// Converts the object to a raw pointer for FFI interfacing.
-            #[inline]
-            pub fn as_ptr(&self) -> *const $ty {
-                let &$thing(ref dat) = self;
-                dat.as_ptr()
+            /// Like `cmp::Ord` but faster and with no guarantees across library versions.
+            ///
+            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// no guarantees on its layout and it is subject to change across library versions,
+            /// even minor versions. For this reason comparison function implementations (e.g.
+            /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by
+            /// serializing it to a guaranteed format). This means they may be slow, this function
+            /// provides a faster comparison if you know that your types come from the same library
+            /// version.
+            pub fn cmp_fast_unstable(&self, other: &Self) -> core::cmp::Ordering {
+                self[..].cmp(&other[..])
             }
 
-            /// Converts the object to a mutable raw pointer for FFI interfacing.
-            #[inline]
-            pub fn as_mut_ptr(&mut self) -> *mut $ty {
-                let &mut $thing(ref mut dat) = self;
-                dat.as_mut_ptr()
+            /// Like `cmp::Eq` but faster and with no guarantees across library versions.
+            ///
+            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// no guarantees on its layout and it is subject to change across library versions,
+            /// even minor versions. For this reason comparison function implementations (e.g.
+            /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by
+            /// serializing it to a guaranteed format). This means they may be slow, this function
+            /// provides a faster equality check if you know that your types come from the same
+            /// library version.
+            pub fn eq_fast_unstable(&self, other: &Self) -> bool {
+                self[..].eq(&other[..])
             }
+        }
 
-            /// Returns the length of the object as an array.
-            #[inline]
-            pub fn len(&self) -> usize { $len }
+        // We cannot derive these traits because Rust 1.41.1 requires `std::array::LengthAtMost32`.
 
-            /// Returns whether the object as an array is empty.
+       #[cfg(fuzzing)]
+        impl PartialEq for $thing {
             #[inline]
-            pub fn is_empty(&self) -> bool { false }
+            fn eq(&self, other: &$thing) -> bool {
+                &self[..] == &other[..]
+            }
+        }
+
+        #[cfg(fuzzing)]
+        impl Eq for $thing {}
+
+        #[cfg(fuzzing)]
+        impl core::hash::Hash for $thing {
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+                (&self[..]).hash(state)
+            }
+        }
+
+        #[cfg(fuzzing)]
+        impl PartialOrd for $thing {
+            #[inline]
+            fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
+                self[..].partial_cmp(&other[..])
+            }
+        }
+
+        #[cfg(fuzzing)]
+        impl Ord for $thing {
+            #[inline]
+            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
+                self[..].cmp(&other[..])
+            }
         }
 
         impl AsRef<[$ty; $len]> for $thing {
@@ -49,43 +87,6 @@ macro_rules! impl_array_newtype {
             fn as_ref(&self) -> &[$ty; $len] {
                 let &$thing(ref dat) = self;
                 dat
-            }
-        }
-
-        impl PartialEq for $thing {
-            #[inline]
-            fn eq(&self, other: &$thing) -> bool {
-                &self[..] == &other[..]
-            }
-        }
-
-        impl Eq for $thing {}
-
-        impl ::core::hash::Hash for $thing {
-            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-                (&self[..]).hash(state)
-            }
-        }
-
-        impl PartialOrd for $thing {
-            #[inline]
-            fn partial_cmp(&self, other: &$thing) -> Option<core::cmp::Ordering> {
-                self[..].partial_cmp(&other[..])
-            }
-        }
-
-        impl Ord for $thing {
-            #[inline]
-            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
-                self[..].cmp(&other[..])
-            }
-        }
-
-        impl Clone for $thing {
-            #[inline]
-            fn clone(&self) -> $thing {
-                let &$thing(ref dat) = self;
-                $thing(dat.clone())
             }
         }
 
@@ -101,20 +102,15 @@ macro_rules! impl_array_newtype {
 
         impl $crate::CPtr for $thing {
             type Target = $ty;
+
             fn as_c_ptr(&self) -> *const Self::Target {
-                if self.is_empty() {
-                    core::ptr::null()
-                } else {
-                    self.as_ptr()
-                }
+                let &$thing(ref dat) = self;
+                dat.as_ptr()
             }
 
             fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-                if self.is_empty() {
-                    core::ptr::null::<Self::Target>() as *mut _
-                } else {
-                    self.as_mut_ptr()
-                }
+                let &mut $thing(ref mut dat) = self;
+                dat.as_mut_ptr()
             }
         }
     }

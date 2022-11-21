@@ -15,18 +15,36 @@
 
 //! # FFI of the recovery module
 
-use crate::{Context, Signature, NonceFn, PublicKey, CPtr, impl_array_newtype};
+use crate::{Context, Signature, NonceFn, PublicKey, CPtr, impl_array_newtype, secp256k1_context_no_precomp};
 use crate::types::*;
 use core::fmt;
 
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 
 impl RecoverableSignature {
     /// Create a new (zeroed) signature usable for the FFI interface
     pub fn new() -> RecoverableSignature { RecoverableSignature([0; 65]) }
+
+    /// Serializes the signature in compact format.
+    fn serialize(&self) -> [u8; 65] {
+        let mut buf = [0u8; 65];
+        let mut recid = 0;
+        unsafe {
+            let ret = secp256k1_ecdsa_recoverable_signature_serialize_compact(
+                secp256k1_context_no_precomp,
+                buf.as_mut_c_ptr(),
+                &mut recid,
+                self,
+            );
+            debug_assert!(ret == 1);
+        }
+        buf[64] = (recid & 0xFF) as u8;
+        buf
+    }
 }
 
 impl Default for RecoverableSignature {
@@ -56,6 +74,40 @@ impl fmt::Debug for RecoverableSignature {
         write!(f, "{:02x}", recid as u8)?;
 
         Ok(())
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialOrd for RecoverableSignature {
+    fn partial_cmp(&self, other: &RecoverableSignature) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Ord for RecoverableSignature {
+    fn cmp(&self, other: &RecoverableSignature) -> core::cmp::Ordering {
+        let this = self.serialize();
+        let that = other.serialize();
+        this.cmp(&that)
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl PartialEq for RecoverableSignature {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == core::cmp::Ordering::Equal
+    }
+}
+
+#[cfg(not(fuzzing))]
+impl Eq for RecoverableSignature {}
+
+#[cfg(not(fuzzing))]
+impl core::hash::Hash for RecoverableSignature {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let ser = self.serialize();
+        ser.hash(state);
     }
 }
 
