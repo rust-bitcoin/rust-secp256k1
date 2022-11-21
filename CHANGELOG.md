@@ -1,3 +1,11 @@
+# 0.25.0 - 2022-11-22
+
+* Use type system to [improve safety](https://github.com/rust-bitcoin/rust-secp256k1/pull/483).
+* [Change secp256k1-sys symbol names to 0_6_1](https://github.com/rust-bitcoin/rust-secp256k1/pull/490).
+* [Introduce `rustfmt`](https://github.com/rust-bitcoin/rust-secp256k1/pull/499) to the codebase.
+* [Make all raw pointer methods go through the CPtr trait](https://github.com/rust-bitcoin/rust-secp256k1/pull/507).
+* [Make comparison functions stable](https://github.com/rust-bitcoin/rust-secp256k1/pull/518).
+
 # 0.24.1 - 2022-10-25
 
 * [Fix broken deserialization logic of `KeyPair`](https://github.com/rust-bitcoin/rust-secp256k1/issues/491) that previously always panicked. After the patch deserialization only panics if neither the `global-context` nor the `alloc` (default) feature is active.
