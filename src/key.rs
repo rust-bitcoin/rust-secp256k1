@@ -951,7 +951,7 @@ impl<'a> From<&'a KeyPair> for PublicKey {
 impl str::FromStr for KeyPair {
     type Err = Error;
 
-    #[allow(unused_variables, unreachable_code)]  // When built with no default features.
+    #[allow(unused_variables, unreachable_code)] // When built with no default features.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         #[cfg(feature = "global-context")]
         let ctx = SECP256K1;
@@ -1515,7 +1515,7 @@ mod test {
     use core::str::FromStr;
 
     #[cfg(feature = "rand")]
-    use rand::{self, RngCore, rngs::mock::StepRng};
+    use rand::{self, rngs::mock::StepRng, RngCore};
     use serde_test::{Configure, Token};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
