@@ -69,26 +69,6 @@ impl PartialEq for SecretKey {
 
 impl Eq for SecretKey {}
 
-impl core::hash::Hash for SecretKey {
-    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-        self[..].hash(state)
-    }
-}
-
-impl PartialOrd for SecretKey {
-    #[inline]
-    fn partial_cmp(&self, other: &SecretKey) -> Option<core::cmp::Ordering> {
-        self[..].partial_cmp(&other[..])
-    }
-}
-
-impl Ord for SecretKey {
-    #[inline]
-    fn cmp(&self, other: &SecretKey) -> core::cmp::Ordering {
-        self[..].cmp(&other[..])
-    }
-}
-
 impl AsRef<[u8; constants::SECRET_KEY_SIZE]> for SecretKey {
     /// Gets a reference to the underlying array
     #[inline]
