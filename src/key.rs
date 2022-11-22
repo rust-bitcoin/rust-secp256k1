@@ -17,7 +17,7 @@
 //!
 
 use core::convert::TryFrom;
-use core::ops::BitXor;
+use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
 #[cfg(feature = "serde")]
@@ -28,13 +28,20 @@ use crate::ffi::{self, CPtr};
 #[cfg(all(feature = "global-context", feature = "rand-std"))]
 use crate::schnorr;
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use crate::{constants, from_hex, impl_array_newtype, Scalar, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "global-context")]
 use crate::{ecdsa, Message, SECP256K1};
 #[cfg(feature = "bitcoin-hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
+///
+/// # Side channel attacks
+///
+/// We have attempted to reduce the side channel attack surface by implementing a constant time `eq`
+/// method. For similar reasons we explicitly do not implement `PartialOrd`, `Ord`, or `Hash` on
+/// `SecretKey`. If you really want to order secrets keys then you can use `AsRef` to get at the
+/// underlying bytes and compare them - however this is almost certainly a bad idea.
 ///
 /// # Serde support
 ///
@@ -58,8 +65,59 @@ use crate::{hashes, ThirtyTwoByteHash};
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
-impl_array_newtype!(SecretKey, u8, constants::SECRET_KEY_SIZE);
 impl_display_secret!(SecretKey);
+
+impl PartialEq for SecretKey {
+    /// This implementation is designed to be constant time to help prevent side channel attacks.
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        let accum = self.0.iter().zip(&other.0)
+            .fold(0, |accum, (a, b)| accum | a ^ b);
+        unsafe { core::ptr::read_volatile(&accum) == 0 }
+    }
+}
+
+impl Eq for SecretKey {}
+
+impl AsRef<[u8; constants::SECRET_KEY_SIZE]> for SecretKey {
+    /// Gets a reference to the underlying array.
+    ///
+    /// # Side channel attacks
+    ///
+    /// Using ordering functions (`PartialOrd`/`Ord`) on a reference to secret keys leaks data
+    /// because the implementations are not constant time. Doing so will make your code vulnerable
+    /// to side channel attacks. [`SecretKey::eq`] is implemented using a constant time algorithm,
+    /// please consider using it to do comparisons of secret keys.
+    #[inline]
+    fn as_ref(&self) -> &[u8; constants::SECRET_KEY_SIZE] {
+        let &SecretKey(ref dat) = self;
+        dat
+    }
+}
+
+impl<I> ops::Index<I> for SecretKey
+where
+    [u8]: ops::Index<I>,
+{
+    type Output = <[u8] as ops::Index<I>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output { &self.0[index] }
+}
+
+impl ffi::CPtr for SecretKey {
+    type Target = u8;
+
+    fn as_c_ptr(&self) -> *const Self::Target {
+        let &SecretKey(ref dat) = self;
+        dat.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        let &mut SecretKey(ref mut dat) = self;
+        dat.as_mut_ptr()
+    }
+}
 
 impl str::FromStr for SecretKey {
     type Err = Error;
