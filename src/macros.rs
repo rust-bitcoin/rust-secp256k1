@@ -17,22 +17,17 @@
 #[macro_export]
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
-
         // We cannot derive these traits because Rust 1.41.1 requires `std::array::LengthAtMost32`.
 
         impl PartialEq for $thing {
             #[inline]
-            fn eq(&self, other: &$thing) -> bool {
-                &self[..] == &other[..]
-            }
+            fn eq(&self, other: &$thing) -> bool { &self[..] == &other[..] }
         }
 
         impl Eq for $thing {}
 
         impl core::hash::Hash for $thing {
-            fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-                (&self[..]).hash(state)
-            }
+            fn hash<H: core::hash::Hasher>(&self, state: &mut H) { (&self[..]).hash(state) }
         }
 
         impl PartialOrd for $thing {
@@ -44,9 +39,7 @@ macro_rules! impl_array_newtype {
 
         impl Ord for $thing {
             #[inline]
-            fn cmp(&self, other: &$thing) -> core::cmp::Ordering {
-                self[..].cmp(&other[..])
-            }
+            fn cmp(&self, other: &$thing) -> core::cmp::Ordering { self[..].cmp(&other[..]) }
         }
 
         impl AsRef<[$ty; $len]> for $thing {
@@ -81,7 +74,7 @@ macro_rules! impl_array_newtype {
                 dat.as_mut_ptr()
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_pretty_debug {
@@ -139,5 +132,5 @@ macro_rules! impl_fast_comparisons {
                 self.0.eq_fast_unstable(&other.0)
             }
         }
-    }
+    };
 }

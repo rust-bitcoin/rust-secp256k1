@@ -530,19 +530,16 @@ pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
 
 #[cfg(test)]
 mod tests {
-    #[allow(unused_imports)]    // When building with no default features.
-    use super::*;
-
     use std::str::FromStr;
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
+    #[allow(unused_imports)] // When building with no default features.
+    use super::*;
+    use crate::{constants, ecdsa, from_hex, Error, Message};
     #[cfg(feature = "alloc")]
     use crate::{ffi, PublicKey, Secp256k1, SecretKey};
-    use crate::{
-        constants, ecdsa, from_hex, Error, Message,
-    };
 
     macro_rules! hex {
         ($hex:expr) => {{
@@ -889,8 +886,9 @@ mod tests {
     #[test]
     #[cfg(feature = "rand-std")]
     fn test_hex() {
-        use super::to_hex;
         use rand::RngCore;
+
+        use super::to_hex;
 
         let mut rng = rand::thread_rng();
         const AMOUNT: usize = 1024;

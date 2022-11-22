@@ -432,7 +432,7 @@ mod tests {
 }
 
 #[cfg(bench)]
-#[cfg(feature = "rand-std")]    // Currently only a single bench that requires "rand-std".
+#[cfg(feature = "rand-std")] // Currently only a single bench that requires "rand-std".
 mod benches {
     use test::{black_box, Bencher};
 

@@ -18,6 +18,10 @@ jobs:
           toolchain: nightly
           override: true
           components: rust-src
+      - name: Check formatting
+        env:
+          DO_FMT: true
+        run: ./contrib/test.sh
       - name: Running address sanitizer
         env:
           DO_ASAN: true
