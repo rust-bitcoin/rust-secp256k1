@@ -299,13 +299,12 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
 }
 
-/// An ECDSA error
+/// The main error type for this library.
 #[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub enum Error {
-    /// Signature failed verification
+    /// Signature failed verification.
     IncorrectSignature,
-    /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
-    /// constant).
+    /// Bad sized message ("messages" are actually fixed-sized digests [`constants::MESSAGE_SIZE`]).
     InvalidMessage,
     /// Bad public key.
     InvalidPublicKey,
