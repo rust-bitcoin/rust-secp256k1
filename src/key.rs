@@ -1530,42 +1530,6 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
     }
 }
 
-/// Serde implementation for the [`KeyPair`] type.
-///
-/// Only the secret key part of the [`KeyPair`] is serialized using the [`SecretKey`] serde
-/// implementation, meaning the public key has to be regenerated on deserialization.
-///
-/// **Attention:** The deserialization algorithm uses the [global context] to generate the public key
-/// belonging to the secret key to form a [`KeyPair`]. The typical caveats regarding use of the
-/// [global context] with secret data apply.
-///
-/// [`SecretKey`]: crate::SecretKey
-/// [global context]: crate::SECP256K1
-#[cfg(all(feature = "global-context", feature = "serde"))]
-pub mod serde_keypair {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    use crate::key::{KeyPair, SecretKey};
-
-    #[allow(missing_docs)]
-    pub fn serialize<S>(key: &KeyPair, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        SecretKey::from_keypair(key).serialize(serializer)
-    }
-
-    #[allow(missing_docs)]
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<KeyPair, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let secret_key = SecretKey::deserialize(deserializer)?;
-
-        Ok(KeyPair::from_secret_key(crate::SECP256K1, &secret_key))
-    }
-}
-
 #[cfg(test)]
 #[allow(unused_imports)]
 mod test {
@@ -2215,31 +2179,8 @@ mod test {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{assert_tokens, Configure, Token};
 
-        use super::serde_keypair;
         use crate::key::KeyPair;
-
-        // Normally users would derive the serde traits, but we can't easily enable the serde macros
-        // here, so they are implemented manually to be able to test the behaviour.
-        #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-        struct KeyPairWrapper(KeyPair);
-
-        impl<'de> Deserialize<'de> for KeyPairWrapper {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                serde_keypair::deserialize(deserializer).map(KeyPairWrapper)
-            }
-        }
-
-        impl Serialize for KeyPairWrapper {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                serde_keypair::serialize(&self.0, serializer)
-            }
-        }
+        use crate::SECP256K1;
 
         #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
@@ -2250,7 +2191,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let sk = KeyPairWrapper(KeyPair::from_seckey_slice(&crate::SECP256K1, &SK_BYTES).unwrap());
+        let sk = KeyPair::from_seckey_slice(&SECP256K1, &SK_BYTES).unwrap();
         #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
