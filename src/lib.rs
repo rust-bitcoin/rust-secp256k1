@@ -304,8 +304,7 @@ impl fmt::Display for Message {
 pub enum Error {
     /// Signature failed verification
     IncorrectSignature,
-    /// Badly sized message ("messages" are actually fixed-sized digests; see the `MESSAGE_SIZE`
-    /// constant).
+    /// Bad sized message ("messages" are actually fixed-sized digests [`constants::MESSAGE_SIZE`]).
     InvalidMessage,
     /// Bad public key.
     InvalidPublicKey,
