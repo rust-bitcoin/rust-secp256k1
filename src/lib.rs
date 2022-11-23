@@ -302,7 +302,7 @@ impl fmt::Display for Message {
 /// The main error type for this library.
 #[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub enum Error {
-    /// Signature failed verification
+    /// Signature failed verification.
     IncorrectSignature,
     /// Bad sized message ("messages" are actually fixed-sized digests [`constants::MESSAGE_SIZE`]).
     InvalidMessage,
