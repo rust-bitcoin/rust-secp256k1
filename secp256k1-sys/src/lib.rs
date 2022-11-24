@@ -39,6 +39,7 @@ pub mod types;
 pub mod recovery;
 
 use core::{slice, ptr};
+use core::sync::atomic::AtomicPtr;
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -511,10 +512,10 @@ extern "C" {
     pub static secp256k1_context_no_precomp: *const Context;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_signing_1")]
-    pub static secp256k1_context_signing_1: *mut Context;
+    pub static secp256k1_context_signing_1: AtomicPtr<Context>;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_signing_2")]
-    pub static secp256k1_context_signing_2: *mut Context;
+    pub static secp256k1_context_signing_2: AtomicPtr<Context>;
 
     // Contexts
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_preallocated_destroy")]
