@@ -1,21 +1,25 @@
-226,228d225
+206a207,209
+> SECP256K1_API extern secp256k1_context *secp256k1_context_signing_1;
+> SECP256K1_API extern secp256k1_context *secp256k1_context_signing_2;
+> 
+218,220d220
 < SECP256K1_API secp256k1_context* secp256k1_context_create(
 <     unsigned int flags
 < ) SECP256K1_WARN_UNUSED_RESULT;
-231,233d227
+231,233d230
 < SECP256K1_API secp256k1_context* secp256k1_context_clone(
 <     const secp256k1_context* ctx
 < ) SECP256K1_ARG_NONNULL(1) SECP256K1_WARN_UNUSED_RESULT;
-248,250d241
+248,250d244
 < SECP256K1_API void secp256k1_context_destroy(
 <     secp256k1_context* ctx
 < ) SECP256K1_ARG_NONNULL(1);
-327,330d317
+327,330d320
 < SECP256K1_API SECP256K1_WARN_UNUSED_RESULT secp256k1_scratch_space* secp256k1_scratch_space_create(
 <     const secp256k1_context* ctx,
 <     size_t size
 < ) SECP256K1_ARG_NONNULL(1);
-338,341d324
+338,341d327
 < SECP256K1_API void secp256k1_scratch_space_destroy(
 <     const secp256k1_context* ctx,
 <     secp256k1_scratch_space* scratch

@@ -59,6 +59,34 @@ static const rustsecp256k1_v0_6_1_context rustsecp256k1_v0_6_1_context_no_precom
 };
 const rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_no_precomp = &rustsecp256k1_v0_6_1_context_no_precomp_;
 
+/* rust-secp: add two static contexts which are initialized for signing. We
+ * need two so that we can effect updates (i.e. rerandomization) by atomic
+ * pointer assignment */
+static rustsecp256k1_v0_6_1_context rustsecp256k1_v0_6_1_context_signing_1_ = {
+    {
+        1,
+        SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
+        SECP256K1_GEJ_CONST_INFINITY
+    },
+    { rustsecp256k1_v0_6_1_default_illegal_callback_fn, 0 },
+    { rustsecp256k1_v0_6_1_default_error_callback_fn, 0 },
+    0
+};
+rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_signing_1 = &rustsecp256k1_v0_6_1_context_signing_1_;
+
+static rustsecp256k1_v0_6_1_context rustsecp256k1_v0_6_1_context_signing_2_ = {
+    {
+        1,
+        SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
+        SECP256K1_GEJ_CONST_INFINITY
+    },
+    { rustsecp256k1_v0_6_1_default_illegal_callback_fn, 0 },
+    { rustsecp256k1_v0_6_1_default_error_callback_fn, 0 },
+    0
+};
+rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_signing_2 = &rustsecp256k1_v0_6_1_context_signing_2_;
+/* end rust-secp */
+
 size_t rustsecp256k1_v0_6_1_context_preallocated_size(unsigned int flags) {
     size_t ret = sizeof(rustsecp256k1_v0_6_1_context);
     /* A return value of 0 is reserved as an indicator for errors when we call this function internally. */

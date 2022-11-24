@@ -1,4 +1,33 @@
-139,149d138
+61a62,89
+> /* rust-secp: add two static contexts which are initialized for signing. We
+>  * need two so that we can effect updates (i.e. rerandomization) by atomic
+>  * pointer assignment */
+> static secp256k1_context secp256k1_context_signing_1_ = {
+>     {
+>         1,
+>         SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
+>         SECP256K1_GEJ_CONST_INFINITY
+>     },
+>     { secp256k1_default_illegal_callback_fn, 0 },
+>     { secp256k1_default_error_callback_fn, 0 },
+>     0
+> };
+> secp256k1_context *secp256k1_context_signing_1 = &secp256k1_context_signing_1_;
+> 
+> static secp256k1_context secp256k1_context_signing_2_ = {
+>     {
+>         1,
+>         SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0),
+>         SECP256K1_GEJ_CONST_INFINITY
+>     },
+>     { secp256k1_default_illegal_callback_fn, 0 },
+>     { secp256k1_default_error_callback_fn, 0 },
+>     0
+> };
+> secp256k1_context *secp256k1_context_signing_2 = &secp256k1_context_signing_2_;
+> /* end rust-secp */
+> 
+107,117d125
 < secp256k1_context* secp256k1_context_create(unsigned int flags) {
 <     size_t const prealloc_size = secp256k1_context_preallocated_size(flags);
 <     secp256k1_context* ctx = (secp256k1_context*)checked_malloc(&default_error_callback, prealloc_size);
@@ -10,7 +39,7 @@
 <     return ctx;
 < }
 < 
-164,174d152
+128,138d135
 < secp256k1_context* secp256k1_context_clone(const secp256k1_context* ctx) {
 <     secp256k1_context* ret;
 <     size_t prealloc_size;
@@ -22,7 +51,7 @@
 <     return ret;
 < }
 < 
-183,189d160
+146,152d142
 < void secp256k1_context_destroy(secp256k1_context* ctx) {
 <     if (ctx != NULL) {
 <         secp256k1_context_preallocated_destroy(ctx);
@@ -30,7 +59,7 @@
 <     }
 < }
 < 
-206,215d176
+169,178d158
 < }
 < 
 < secp256k1_scratch_space* secp256k1_scratch_space_create(const secp256k1_context* ctx, size_t max_size) {

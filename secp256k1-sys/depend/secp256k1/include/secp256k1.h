@@ -204,6 +204,9 @@ typedef int (*rustsecp256k1_v0_6_1_nonce_function)(
  */
 SECP256K1_API extern const rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_no_precomp;
 
+SECP256K1_API extern rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_signing_1;
+SECP256K1_API extern rustsecp256k1_v0_6_1_context *rustsecp256k1_v0_6_1_context_signing_2;
+
 /** Create a secp256k1 context object (in dynamically allocated memory).
  *
  *  This function uses malloc to allocate memory. It is guaranteed that malloc is
