@@ -1,4 +1,3 @@
-//! # schnorrsig
 //! Support for Schnorr signatures.
 //!
 

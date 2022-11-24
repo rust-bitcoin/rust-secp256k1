@@ -4,6 +4,7 @@
 //! points. The most common type of scalars are private keys. However not all scalars are private
 //! keys. They can even be public *values*. To make handling them safer and easier this module
 //! provides the `Scalar` type and related.
+//!
 
 use core::fmt;
 
