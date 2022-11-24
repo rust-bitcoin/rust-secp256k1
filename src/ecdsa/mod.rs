@@ -1,4 +1,5 @@
 //! Structs and functionality related to the ECDSA signature algorithm.
+//!
 
 #[cfg(feature = "recovery")]
 mod recovery;
