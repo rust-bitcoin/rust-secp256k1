@@ -8,6 +8,98 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
+// This module will be renamed to `global` in later commit which eliminates the other `global` module
+#[cfg(feature = "std")]
+pub mod global_ {
+    use core::cell::RefCell;
+    use crate::{ffi, All, Secp256k1};
+
+    thread_local! {
+        pub static CONTEXT: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
+    }
+
+    /// Do some operation using an immutable reference to the global signing context
+    ///
+    /// Safety: you are being given a raw pointer. Do not mutate through it. Do not
+    /// move it, or any reference to it, across thread boundaries.
+    pub unsafe fn with_global_context<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
+        CONTEXT.with(|refcell| f(refcell.borrow().ctx as *const _))
+    }
+
+    /// Rerandomize the global signing context
+    ///
+    /// # Panics
+    ///
+    /// Will panic if called from a closure passed to `with_global_ctx`.
+    pub fn rerandomize_context(seed: &[u8; 32]) {
+        CONTEXT.with(|refcell| {
+            let borrow = refcell.borrow_mut();
+            let bare = borrow.ctx;
+            unsafe {
+                let ret = ffi::secp256k1_context_randomize(bare, seed.as_ptr());
+                assert_eq!(ret, 1); // sanity check: context_randomize cannot fail
+            }
+        });
+    }
+}
+
+#[cfg(not(feature = "std"))]
+mod global_ {
+    use core::sync::atomic::{AtomicBool, Ordering};
+    use crate::ffi;
+
+    static LOCK: AtomicBool = AtomicBool::new(false);
+
+    // Safety: all of the unsafe blocks in this module are due to our accessing
+    // extern statics (the ffi::* context objects). Rust cannot control access
+    // to these, so we need unsafe.
+    //
+    // In particular, we are promising here that nothing else will concurrently
+    // access ffi::secp256k1_context_signing_{1, 2} ... though in principle,
+    // any code that can see the `ffi` module will be able to do so. We can only
+    // make promises about our own code.
+    //
+    // Other accessors, who to be clear SHOULD NOT EXIST, will need their own
+    // unsafe block. As far as I know this is the best we can do.
+
+    /// Do some operation using an immutable reference to the global signing context
+    pub unsafe fn with_global_ctx<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
+        let ctx = unsafe { ffi::secp256k1_context_signing_1.load(Ordering::Acquire) };
+        f(ctx as *const _)
+    }
+
+    /// Do some operation using a mutable reference to the global signing context
+    pub fn rerandomize_context(seed: &[u8; 32]) {
+        if LOCK.swap(true, Ordering::Acquire) {
+            // Concurrent operation in progress; give up
+            return;
+        }
+
+        unsafe {
+            // Obtain a pointer to the alternate context.
+            let alt_ctx = ffi::secp256k1_context_signing_2.load(Ordering::Acquire);
+            // Obtain a pointer to the signing context, atomically replacing it with
+            // the alternate signing context (which never gets modified). Any concurrent
+            // callers to `with_global_ctx` will see the alternate context, not any
+            // inconsistent state of this one.
+            //
+            // (Concurrent callers to `with_global_ctx_mut` will fail after checking `LOCK`.).
+            let ctx = ffi::secp256k1_context_signing_1.swap(alt_ctx, Ordering::Acquire);
+            // Do the rerandomization. Note that unlike in the `std` case, we don't
+            // panic if this function fails (which again, it is guaranteed not to).
+            // The reason is that a panic at this point in the code would leave
+            // `LOCK` at true (as well as both `signing_1` and `signing_2` pointing
+            // at the same, never-rerandomized, place) and therefore prevent any
+            // future rerandomizations from succeeding.
+            ffi::secp256k1_context_randomize(ctx, seed.as_ptr());
+            // Atomically swap completely-modified context into place
+            ffi::secp256k1_context_signing_1.swap(ctx, Ordering::Release);
+        };
+
+        LOCK.store(false, Ordering::Release);
+    }
+}
+
 #[cfg(all(feature = "global-context", feature = "std"))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
