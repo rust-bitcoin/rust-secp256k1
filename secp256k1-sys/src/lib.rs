@@ -811,6 +811,9 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *
     let bytes = secp256k1_context_preallocated_size(flags) + ALIGN_TO;
     let layout = alloc::Layout::from_size_align(bytes, ALIGN_TO).unwrap();
     let ptr = alloc::alloc(layout);
+    if ptr.is_null() {
+        alloc::handle_alloc_error(layout);
+    }
     (ptr as *mut usize).write(bytes);
     // We must offset a whole ALIGN_TO in order to preserve the same alignment
     // this means we "lose" ALIGN_TO-size_of(usize) for padding.
