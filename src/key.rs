@@ -1078,7 +1078,7 @@ impl CPtr for KeyPair {
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
 
-/// An x-only public key, used for verification of Schnorr signatures and serialized according to BIP-340.
+/// An x-only public key, used for verification of schnorr signatures and serialized according to BIP-340.
 ///
 /// # Serde support
 ///
@@ -1165,7 +1165,7 @@ impl XOnlyPublicKey {
         }
     }
 
-    /// Creates a Schnorr public key directly from a slice.
+    /// Creates a schnorr public key directly from a slice.
     ///
     /// # Errors
     ///
@@ -1472,7 +1472,7 @@ impl CPtr for XOnlyPublicKey {
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
 
-/// Creates a new Schnorr public key from a FFI x-only public key.
+/// Creates a new schnorr public key from a FFI x-only public key.
 impl From<ffi::XOnlyPublicKey> for XOnlyPublicKey {
     #[inline]
     fn from(pk: ffi::XOnlyPublicKey) -> XOnlyPublicKey { XOnlyPublicKey(pk) }
