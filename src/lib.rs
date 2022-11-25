@@ -1054,6 +1054,25 @@ mod tests {
         assert_eq!(msg.0, hash.into_inner());
         assert_eq!(msg, Message::from_hashed_data::<hashes::sha256d::Hash>(test_bytes));
     }
+
+    #[test]
+    fn test_sign_verify_nostd() {
+        let mut buf_ful = vec![AlignedType::zeroed(); Secp256k1::preallocate_size()];
+        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
+
+        let sk = SecretKey::from_slice(&[3u8; 32]).unwrap();
+        let pk = PublicKey::from_secret_key(&full, &sk);
+        let msg = Message::from_slice(&[2u8; 32]).unwrap();
+
+        // ECDSA
+        let sig = full.sign_ecdsa(&msg, &sk);
+        assert!(full.verify_ecdsa(&msg, &sig, &pk).is_ok());
+
+        // Schnorr
+        let kp = KeyPair::from_secret_key(&full, &sk);
+        let sig = full.sign_schnorr_no_aux_rand(&msg, &kp);
+        assert!(full.verify_schnorr(&sig, &msg, &kp.x_only_public_key().0).is_ok());
+    }
 }
 
 #[cfg(bench)]

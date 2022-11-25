@@ -44,7 +44,7 @@ pub mod global_ {
 }
 
 #[cfg(not(feature = "std"))]
-mod global_ {
+pub mod global_ {
     use core::sync::atomic::{AtomicBool, Ordering};
     use crate::ffi;
 
@@ -63,7 +63,7 @@ mod global_ {
     // unsafe block. As far as I know this is the best we can do.
 
     /// Do some operation using an immutable reference to the global signing context
-    pub unsafe fn with_global_ctx<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
+    pub unsafe fn with_global_context<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
         let ctx = unsafe { ffi::secp256k1_context_signing_1.load(Ordering::Acquire) };
         f(ctx as *const _)
     }
