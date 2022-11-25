@@ -103,22 +103,22 @@ impl<C: Signing> Secp256k1<C> {
         nonce_data: *const ffi::types::c_uchar,
     ) -> Signature {
         unsafe {
-crate::context::global_::rerandomize_context(b"this is a 32-byte random string!");
-crate::context::global_::with_global_context(|ctx| {
-            let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-            assert_eq!(
-                1,
-                ffi::secp256k1_schnorrsig_sign(
-                    ctx,
-                    sig.as_mut_c_ptr(),
-                    msg.as_c_ptr(),
-                    keypair.as_c_ptr(),
-                    nonce_data,
-                )
-            );
+            crate::context::global_::rerandomize_context(b"this is a 32-byte random string!");
+            crate::context::global_::with_global_context(|ctx| {
+                let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
+                assert_eq!(
+                    1,
+                    ffi::secp256k1_schnorrsig_sign(
+                        ctx,
+                        sig.as_mut_c_ptr(),
+                        msg.as_c_ptr(),
+                        keypair.as_c_ptr(),
+                        nonce_data,
+                    )
+                );
 
-            Signature(sig)
-})
+                Signature(sig)
+            })
         }
     }
 

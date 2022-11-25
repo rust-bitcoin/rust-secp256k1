@@ -12,6 +12,7 @@ use crate::{Error, Secp256k1};
 #[cfg(feature = "std")]
 pub mod global_ {
     use core::cell::RefCell;
+
     use crate::{ffi, All, Secp256k1};
 
     thread_local! {
@@ -46,6 +47,7 @@ pub mod global_ {
 #[cfg(not(feature = "std"))]
 pub mod global_ {
     use core::sync::atomic::{AtomicBool, Ordering};
+
     use crate::ffi;
 
     static LOCK: AtomicBool = AtomicBool::new(false);
