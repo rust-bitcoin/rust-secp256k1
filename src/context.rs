@@ -201,7 +201,6 @@ mod alloc_only {
                     ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS)
                 },
                 phantom: PhantomData,
-                size,
             };
 
             #[cfg(all(
@@ -259,7 +258,6 @@ mod alloc_only {
                     ffi::secp256k1_context_preallocated_clone(self.ctx, ptr as *mut c_void)
                 },
                 phantom: PhantomData,
-                size,
             }
         }
     }
@@ -315,7 +313,6 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
                 )
             },
             phantom: PhantomData,
-            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
         })
     }
 }
@@ -344,11 +341,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     pub unsafe fn from_raw_all(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<AllPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 {
-            ctx: raw_ctx,
-            phantom: PhantomData,
-            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
-        })
+        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
     }
 }
 
@@ -378,11 +371,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     pub unsafe fn from_raw_signing_only(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 {
-            ctx: raw_ctx,
-            phantom: PhantomData,
-            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
-        })
+        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
     }
 }
 
@@ -412,10 +401,6 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     pub unsafe fn from_raw_verification_only(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<VerifyOnlyPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 {
-            ctx: raw_ctx,
-            phantom: PhantomData,
-            size: 0, // We don't care about the size because it's the caller responsibility to deallocate.
-        })
+        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
     }
 }
