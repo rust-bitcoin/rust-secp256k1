@@ -371,7 +371,6 @@ impl std::error::Error for Error {
 pub struct Secp256k1<C: Context> {
     ctx: *mut ffi::Context,
     phantom: PhantomData<C>,
-    size: usize,
 }
 
 // The underlying secp context does not contain any references to memory it does not own.
@@ -388,8 +387,9 @@ impl<C: Context> Eq for Secp256k1<C> {}
 impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
         unsafe {
+            let size = ffi::secp256k1_context_preallocated_clone_size(self.ctx);
             ffi::secp256k1_context_preallocated_destroy(self.ctx);
-            C::deallocate(self.ctx as _, self.size);
+            C::deallocate(self.ctx as _, size);
         }
     }
 }
@@ -556,13 +556,11 @@ mod tests {
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
         let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
 
-        let size = 0;
-        let full: Secp256k1<AllPreallocated> =
-            Secp256k1 { ctx: ctx_full, phantom: PhantomData, size };
+        let full: Secp256k1<AllPreallocated> = Secp256k1 { ctx: ctx_full, phantom: PhantomData };
         let sign: Secp256k1<SignOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_sign, phantom: PhantomData, size };
+            Secp256k1 { ctx: ctx_sign, phantom: PhantomData };
         let vrfy: Secp256k1<VerifyOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_vrfy, phantom: PhantomData, size };
+            Secp256k1 { ctx: ctx_vrfy, phantom: PhantomData };
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
