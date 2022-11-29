@@ -107,7 +107,7 @@ impl<C: Signing> Secp256k1<C> {
             assert_eq!(
                 1,
                 ffi::secp256k1_schnorrsig_sign(
-                    self.ctx,
+                    self.ctx.as_ptr(),
                     sig.as_mut_c_ptr(),
                     msg.as_c_ptr(),
                     keypair.as_c_ptr(),
@@ -168,7 +168,7 @@ impl<C: Verification> Secp256k1<C> {
     ) -> Result<(), Error> {
         unsafe {
             let ret = ffi::secp256k1_schnorrsig_verify(
-                self.ctx,
+                self.ctx.as_ptr(),
                 sig.as_c_ptr(),
                 msg.as_c_ptr(),
                 32,

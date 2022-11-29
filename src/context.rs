@@ -1,5 +1,6 @@
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
+use core::ptr::NonNull;
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -116,6 +117,7 @@ mod private {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 mod alloc_only {
     use core::marker::PhantomData;
+    use core::ptr::NonNull;
 
     use super::private;
     use crate::alloc::alloc;
@@ -209,7 +211,10 @@ mod alloc_only {
             #[allow(unused_mut)] // ctx is not mutated under some feature combinations.
             let mut ctx = Secp256k1 {
                 ctx: unsafe {
-                    ffi::secp256k1_context_preallocated_create(ptr as *mut c_void, C::FLAGS)
+                    NonNull::new_unchecked(ffi::secp256k1_context_preallocated_create(
+                        ptr as *mut c_void,
+                        C::FLAGS,
+                    ))
                 },
                 phantom: PhantomData,
             };
@@ -261,7 +266,7 @@ mod alloc_only {
 
     impl<C: Context> Clone for Secp256k1<C> {
         fn clone(&self) -> Secp256k1<C> {
-            let size = unsafe { ffi::secp256k1_context_preallocated_clone_size(self.ctx as _) };
+            let size = unsafe { ffi::secp256k1_context_preallocated_clone_size(self.ctx.as_ptr()) };
             let layout = alloc::Layout::from_size_align(size, ALIGN_TO).unwrap();
             let ptr = unsafe { alloc::alloc(layout) };
             if ptr.is_null() {
@@ -269,7 +274,10 @@ mod alloc_only {
             }
             Secp256k1 {
                 ctx: unsafe {
-                    ffi::secp256k1_context_preallocated_clone(self.ctx, ptr as *mut c_void)
+                    NonNull::new_unchecked(ffi::secp256k1_context_preallocated_clone(
+                        self.ctx.as_ptr(),
+                        ptr as *mut c_void,
+                    ))
                 },
                 phantom: PhantomData,
             }
@@ -321,10 +329,10 @@ impl<'buf, C: Context + 'buf> Secp256k1<C> {
         }
         Ok(Secp256k1 {
             ctx: unsafe {
-                ffi::secp256k1_context_preallocated_create(
+                NonNull::new_unchecked(ffi::secp256k1_context_preallocated_create(
                     buf.as_mut_c_ptr() as *mut c_void,
                     C::FLAGS,
-                )
+                ))
             },
             phantom: PhantomData,
         })
@@ -355,7 +363,7 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     pub unsafe fn from_raw_all(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<AllPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
+        ManuallyDrop::new(Secp256k1 { ctx: NonNull::new_unchecked(raw_ctx), phantom: PhantomData })
     }
 }
 
@@ -386,7 +394,7 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     pub unsafe fn from_raw_signing_only(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<SignOnlyPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
+        ManuallyDrop::new(Secp256k1 { ctx: NonNull::new_unchecked(raw_ctx), phantom: PhantomData })
     }
 }
 
@@ -417,6 +425,6 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     pub unsafe fn from_raw_verification_only(
         raw_ctx: *mut ffi::Context,
     ) -> ManuallyDrop<Secp256k1<VerifyOnlyPreallocated<'buf>>> {
-        ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
+        ManuallyDrop::new(Secp256k1 { ctx: NonNull::new_unchecked(raw_ctx), phantom: PhantomData })
     }
 }

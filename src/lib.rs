@@ -180,6 +180,7 @@ pub mod schnorr;
 mod serde_util;
 
 use core::marker::PhantomData;
+use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
 #[cfg(feature = "bitcoin-hashes")]
@@ -369,7 +370,7 @@ impl std::error::Error for Error {
 
 /// The secp256k1 engine, used to execute all signature operations.
 pub struct Secp256k1<C: Context> {
-    ctx: *mut ffi::Context,
+    ctx: NonNull<ffi::Context>,
     phantom: PhantomData<C>,
 }
 
@@ -387,9 +388,10 @@ impl<C: Context> Eq for Secp256k1<C> {}
 impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
         unsafe {
-            let size = ffi::secp256k1_context_preallocated_clone_size(self.ctx);
-            ffi::secp256k1_context_preallocated_destroy(self.ctx);
-            C::deallocate(self.ctx as _, size);
+            let size = ffi::secp256k1_context_preallocated_clone_size(self.ctx.as_ptr());
+            ffi::secp256k1_context_preallocated_destroy(self.ctx.as_ptr());
+
+            C::deallocate(self.ctx.as_ptr() as _, size);
         }
     }
 }
@@ -405,7 +407,7 @@ impl<C: Context> Secp256k1<C> {
     /// shouldn't be needed with normal usage of the library. It enables
     /// extending the Secp256k1 with more cryptographic algorithms outside of
     /// this crate.
-    pub fn ctx(&self) -> &*mut ffi::Context { &self.ctx }
+    pub fn ctx(&self) -> NonNull<ffi::Context> { self.ctx }
 
     /// Returns the required memory for a preallocated context buffer in a generic manner(sign/verify/all).
     pub fn preallocate_size_gen() -> usize {
@@ -432,7 +434,7 @@ impl<C: Context> Secp256k1<C> {
     /// see comment in libsecp256k1 commit d2275795f by Gregory Maxwell.
     pub fn seeded_randomize(&mut self, seed: &[u8; 32]) {
         unsafe {
-            let err = ffi::secp256k1_context_randomize(self.ctx, seed.as_c_ptr());
+            let err = ffi::secp256k1_context_randomize(self.ctx.as_ptr(), seed.as_c_ptr());
             // This function cannot fail; it has an error return for future-proofing.
             // We do not expose this error since it is impossible to hit, and we have
             // precedent for not exposing impossible errors (for example in
@@ -556,11 +558,12 @@ mod tests {
         let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
         let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
 
-        let full: Secp256k1<AllPreallocated> = Secp256k1 { ctx: ctx_full, phantom: PhantomData };
+        let full: Secp256k1<AllPreallocated> =
+            Secp256k1 { ctx: unsafe { NonNull::new_unchecked(ctx_full) }, phantom: PhantomData };
         let sign: Secp256k1<SignOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_sign, phantom: PhantomData };
+            Secp256k1 { ctx: unsafe { NonNull::new_unchecked(ctx_sign) }, phantom: PhantomData };
         let vrfy: Secp256k1<VerifyOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_vrfy, phantom: PhantomData };
+            Secp256k1 { ctx: unsafe { NonNull::new_unchecked(ctx_vrfy) }, phantom: PhantomData };
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
@@ -590,9 +593,9 @@ mod tests {
         let ctx_sign = Secp256k1::signing_only();
         let ctx_vrfy = Secp256k1::verification_only();
 
-        let mut full = unsafe { Secp256k1::from_raw_all(ctx_full.ctx) };
-        let mut sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
-        let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
+        let mut full = unsafe { Secp256k1::from_raw_all(ctx_full.ctx.as_ptr()) };
+        let mut sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx.as_ptr()) };
+        let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx.as_ptr()) };
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();

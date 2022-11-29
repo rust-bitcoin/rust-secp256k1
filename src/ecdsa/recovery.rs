@@ -158,7 +158,7 @@ impl<C: Signing> Secp256k1<C> {
             // an invalid signature from a valid `Message` and `SecretKey`
             assert_eq!(
                 ffi::secp256k1_ecdsa_sign_recoverable(
-                    self.ctx,
+                    self.ctx.as_ptr(),
                     &mut ret,
                     msg.as_c_ptr(),
                     sk.as_c_ptr(),
@@ -208,7 +208,12 @@ impl<C: Verification> Secp256k1<C> {
     ) -> Result<key::PublicKey, Error> {
         unsafe {
             let mut pk = super_ffi::PublicKey::new();
-            if ffi::secp256k1_ecdsa_recover(self.ctx, &mut pk, sig.as_c_ptr(), msg.as_c_ptr()) != 1
+            if ffi::secp256k1_ecdsa_recover(
+                self.ctx.as_ptr(),
+                &mut pk,
+                sig.as_c_ptr(),
+                msg.as_c_ptr(),
+            ) != 1
             {
                 return Err(Error::InvalidSignature);
             }

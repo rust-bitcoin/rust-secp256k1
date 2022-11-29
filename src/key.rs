@@ -459,7 +459,7 @@ impl PublicKey {
             let mut pk = ffi::PublicKey::new();
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something.
-            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx, &mut pk, sk.as_c_ptr());
+            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx.as_ptr(), &mut pk, sk.as_c_ptr());
             debug_assert_eq!(res, 1);
             PublicKey(pk)
         }
@@ -575,7 +575,7 @@ impl PublicKey {
     #[must_use = "you forgot to use the negated public key"]
     pub fn negate<C: Verification>(mut self, secp: &Secp256k1<C>) -> PublicKey {
         unsafe {
-            let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx, &mut self.0);
+            let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx.as_ptr(), &mut self.0);
             debug_assert_eq!(res, 1);
         }
         self
@@ -593,7 +593,9 @@ impl PublicKey {
         tweak: &Scalar,
     ) -> Result<PublicKey, Error> {
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx, &mut self.0, tweak.as_c_ptr()) == 1 {
+            if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx.as_ptr(), &mut self.0, tweak.as_c_ptr())
+                == 1
+            {
                 Ok(self)
             } else {
                 Err(Error::InvalidTweak)
@@ -613,7 +615,9 @@ impl PublicKey {
         other: &Scalar,
     ) -> Result<PublicKey, Error> {
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx, &mut self.0, other.as_c_ptr()) == 1 {
+            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx.as_ptr(), &mut self.0, other.as_c_ptr())
+                == 1
+            {
                 Ok(self)
             } else {
                 Err(Error::InvalidTweak)
@@ -817,7 +821,7 @@ impl KeyPair {
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> KeyPair {
         unsafe {
             let mut kp = ffi::KeyPair::new();
-            if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, sk.as_c_ptr()) == 1 {
+            if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, sk.as_c_ptr()) == 1 {
                 KeyPair(kp)
             } else {
                 panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
@@ -842,7 +846,7 @@ impl KeyPair {
 
         unsafe {
             let mut kp = ffi::KeyPair::new();
-            if ffi::secp256k1_keypair_create(secp.ctx, &mut kp, data.as_c_ptr()) == 1 {
+            if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
                 Ok(KeyPair(kp))
             } else {
                 Err(Error::InvalidSecretKey)
@@ -895,7 +899,9 @@ impl KeyPair {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
             let mut keypair = ffi::KeyPair::new();
-            while ffi::secp256k1_keypair_create(secp.ctx, &mut keypair, data.as_c_ptr()) == 0 {
+            while ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut keypair, data.as_c_ptr())
+                == 0
+            {
                 data = crate::random_32_bytes(rng);
             }
             KeyPair(keypair)
@@ -946,8 +952,11 @@ impl KeyPair {
         tweak: &Scalar,
     ) -> Result<KeyPair, Error> {
         unsafe {
-            let err =
-                ffi::secp256k1_keypair_xonly_tweak_add(secp.ctx, &mut self.0, tweak.as_c_ptr());
+            let err = ffi::secp256k1_keypair_xonly_tweak_add(
+                secp.ctx.as_ptr(),
+                &mut self.0,
+                tweak.as_c_ptr(),
+            );
             if err != 1 {
                 return Err(Error::InvalidTweak);
             }
@@ -1243,7 +1252,7 @@ impl XOnlyPublicKey {
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
             let mut err = ffi::secp256k1_xonly_pubkey_tweak_add(
-                secp.ctx,
+                secp.ctx.as_ptr(),
                 &mut pubkey,
                 self.as_c_ptr(),
                 tweak.as_c_ptr(),
@@ -1253,7 +1262,7 @@ impl XOnlyPublicKey {
             }
 
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
-                secp.ctx,
+                secp.ctx.as_ptr(),
                 &mut self.0,
                 &mut pk_parity,
                 &pubkey,
@@ -1306,7 +1315,7 @@ impl XOnlyPublicKey {
         let tweaked_ser = tweaked_key.serialize();
         unsafe {
             let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
-                secp.ctx,
+                secp.ctx.as_ptr(),
                 tweaked_ser.as_c_ptr(),
                 tweaked_parity.to_i32(),
                 &self.0,
