@@ -39,6 +39,7 @@ pub mod types;
 pub mod recovery;
 
 use core::{slice, ptr};
+use core::ptr::NonNull;
 use types::*;
 
 /// Flag for context to enable no precomputation
@@ -512,7 +513,7 @@ extern "C" {
 
     // Contexts
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_preallocated_destroy")]
-    pub fn secp256k1_context_preallocated_destroy(cx: *mut Context);
+    pub fn secp256k1_context_preallocated_destroy(cx: NonNull<Context>);
 
     // Signatures
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_ecdsa_signature_parse_der")]
@@ -585,16 +586,16 @@ extern "C" {
     pub fn secp256k1_context_preallocated_size(flags: c_uint) -> size_t;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_preallocated_create")]
-    pub fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context;
+    pub fn secp256k1_context_preallocated_create(prealloc: NonNull<c_void>, flags: c_uint) -> NonNull<Context>;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_preallocated_clone_size")]
     pub fn secp256k1_context_preallocated_clone_size(cx: *const Context) -> size_t;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_preallocated_clone")]
-    pub fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
+    pub fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: NonNull<c_void>) -> NonNull<Context>;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_6_1_context_randomize")]
-    pub fn secp256k1_context_randomize(cx: *mut Context,
+    pub fn secp256k1_context_randomize(cx: NonNull<Context>,
                                        seed32: *const c_uchar)
                                        -> c_int;
     // Pubkeys
@@ -789,7 +790,7 @@ extern "C" {
 /// The newly created secp256k1 raw context.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
+pub unsafe fn secp256k1_context_create(flags: c_uint) -> NonNull<Context> {
     rustsecp256k1_v0_6_1_context_create(flags)
 }
 
@@ -800,7 +801,7 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> *mut Context {
 #[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *mut Context {
+pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> NonNull<Context> {
     use core::mem;
     use crate::alloc::alloc;
     assert!(ALIGN_TO >= mem::align_of::<usize>());
@@ -817,7 +818,8 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *
     (ptr as *mut usize).write(bytes);
     // We must offset a whole ALIGN_TO in order to preserve the same alignment
     // this means we "lose" ALIGN_TO-size_of(usize) for padding.
-    let ptr = ptr.add(ALIGN_TO) as *mut c_void;
+    let ptr = ptr.add(ALIGN_TO);
+    let ptr = NonNull::new_unchecked(ptr as *mut c_void); // Checked above.
     secp256k1_context_preallocated_create(ptr, flags)
 }
 
@@ -832,7 +834,7 @@ pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_create(flags: c_uint) -> *
 ///  `ctx` must be a valid pointer to a block of memory created using [`secp256k1_context_create`].
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
+pub unsafe fn secp256k1_context_destroy(ctx: NonNull<Context>) {
     rustsecp256k1_v0_6_1_context_destroy(ctx)
 }
 
@@ -840,9 +842,10 @@ pub unsafe fn secp256k1_context_destroy(ctx: *mut Context) {
 #[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
-pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_destroy(ctx: *mut Context) {
+pub unsafe extern "C" fn rustsecp256k1_v0_6_1_context_destroy(mut ctx: NonNull<Context>) {
     use crate::alloc::alloc;
     secp256k1_context_preallocated_destroy(ctx);
+    let ctx: *mut Context = ctx.as_mut();
     let ptr = (ctx as *mut u8).sub(ALIGN_TO);
     let bytes = (ptr as *mut usize).read();
     let layout = alloc::Layout::from_size_align(bytes, ALIGN_TO).unwrap();
@@ -966,8 +969,8 @@ mod fuzz_dummy {
 
     extern "C" {
         fn rustsecp256k1_v0_6_1_context_preallocated_size(flags: c_uint) -> size_t;
-        fn rustsecp256k1_v0_6_1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context;
-        fn rustsecp256k1_v0_6_1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context;
+        fn rustsecp256k1_v0_6_1_context_preallocated_create(prealloc: NonNull<c_void>, flags: c_uint) -> NonNull<Context>;
+        fn rustsecp256k1_v0_6_1_context_preallocated_clone(cx: *const Context, prealloc: NonNull<c_void>) -> NonNull<Context>;
     }
 
     #[cfg(feature = "lowmemory")]
@@ -985,7 +988,7 @@ mod fuzz_dummy {
     const HAVE_CONTEXT_WORKING: usize = 1;
     const HAVE_CONTEXT_DONE: usize = 2;
     static mut PREALLOCATED_CONTEXT: [u8; CTX_SIZE] = [0; CTX_SIZE];
-    pub unsafe fn secp256k1_context_preallocated_create(prealloc: *mut c_void, flags: c_uint) -> *mut Context {
+    pub unsafe fn secp256k1_context_preallocated_create(prealloc: NonNull<c_void>, flags: c_uint) -> NonNull<Context> {
         // While applications should generally avoid creating too many contexts, sometimes fuzzers
         // perform tasks repeatedly which real applications may only do rarely. Thus, we want to
         // avoid being overly slow here. We do so by having a static context and copying it into
@@ -998,9 +1001,9 @@ mod fuzz_dummy {
                 if have_ctx == HAVE_CONTEXT_NONE {
                     assert!(rustsecp256k1_v0_6_1_context_preallocated_size(SECP256K1_START_SIGN | SECP256K1_START_VERIFY) + std::mem::size_of::<c_uint>() <= CTX_SIZE);
                     assert_eq!(rustsecp256k1_v0_6_1_context_preallocated_create(
-                            PREALLOCATED_CONTEXT[..].as_ptr() as *mut c_void,
+                            NonNull::new_unchecked(PREALLOCATED_CONTEXT[..].as_mut_ptr() as *mut c_void),
                             SECP256K1_START_SIGN | SECP256K1_START_VERIFY),
-                        PREALLOCATED_CONTEXT[..].as_ptr() as *mut Context);
+                        NonNull::new_unchecked(PREALLOCATED_CONTEXT[..].as_mut_ptr() as *mut Context));
                     assert_eq!(HAVE_PREALLOCATED_CONTEXT.swap(HAVE_CONTEXT_DONE, Ordering::AcqRel),
                         HAVE_CONTEXT_WORKING);
                 } else if have_ctx == HAVE_CONTEXT_DONE {
@@ -1015,25 +1018,25 @@ mod fuzz_dummy {
                 std::thread::yield_now();
             }
         }
-        ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc as *mut u8, CTX_SIZE);
-        let ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        ptr::copy_nonoverlapping(PREALLOCATED_CONTEXT[..].as_ptr(), prealloc.as_ptr() as *mut u8, CTX_SIZE);
+        let ptr = (prealloc.as_ptr()).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
         (ptr as *mut c_uint).write(flags);
-        prealloc as *mut Context
+        NonNull::new_unchecked(prealloc.as_ptr() as *mut Context)
     }
     pub unsafe fn secp256k1_context_preallocated_clone_size(_cx: *const Context) -> size_t { CTX_SIZE }
-    pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: *mut c_void) -> *mut Context {
+    pub unsafe fn secp256k1_context_preallocated_clone(cx: *const Context, prealloc: NonNull<c_void>) -> NonNull<Context> {
         let orig_ptr = (cx as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
-        let new_ptr = (prealloc as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
+        let new_ptr = (prealloc.as_ptr() as *mut u8).add(CTX_SIZE).sub(std::mem::size_of::<c_uint>());
         let flags = (orig_ptr as *mut c_uint).read();
         (new_ptr as *mut c_uint).write(flags);
         rustsecp256k1_v0_6_1_context_preallocated_clone(cx, prealloc)
     }
 
-    pub unsafe fn secp256k1_context_randomize(cx: *mut Context,
+    pub unsafe fn secp256k1_context_randomize(cx: NonNull<Context>,
                                               _seed32: *const c_uchar)
                                               -> c_int {
         // This function is really slow, and unsuitable for fuzzing
-        check_context_flags(cx, 0);
+        check_context_flags(cx.as_ptr(), 0);
         1
     }
 
