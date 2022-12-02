@@ -297,8 +297,16 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
     }
 }
 
-impl<'buf, C: Context + 'buf> Secp256k1<C> {
-    /// Lets you create a context with preallocated buffer in a generic manner(sign/verify/all)
+/// Trait marking that a particular context object internally points to
+/// memory that must outlive `'a`
+pub unsafe trait PreallocatedContext<'a> {}
+
+unsafe impl<'buf> PreallocatedContext<'buf> for AllPreallocated<'buf> {}
+unsafe impl<'buf> PreallocatedContext<'buf> for SignOnlyPreallocated<'buf> {}
+unsafe impl<'buf> PreallocatedContext<'buf> for VerifyOnlyPreallocated<'buf> {}
+
+impl<'buf, C: Context + PreallocatedContext<'buf>> Secp256k1<C> {
+    /// Lets you create a context with a preallocated buffer in a generic manner (sign/verify/all).
     pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
