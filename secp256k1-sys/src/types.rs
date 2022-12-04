@@ -11,21 +11,15 @@ pub type c_char = i8;
 
 pub use core::ffi::c_void;
 
-/// A type that is as aligned as the biggest alignment for fundamental types in C
-/// since C11 that means as aligned as `max_align_t` is.
-/// the exact size/alignment is unspecified.
-// 16 matches is as big as the biggest alignment in any arch that rust currently supports https://github.com/rust-lang/rust/blob/2c31b45ae878b821975c4ebd94cc1e49f6073fd0/library/std/src/sys_common/alloc.rs
-#[repr(align(16))]
-#[derive(Default, Copy, Clone)]
-pub struct AlignedType([u8; 16]);
+include!(concat!(env!("OUT_DIR"), "/aligned_type.rs"));
 
 impl AlignedType {
     pub fn zeroed() -> Self {
-        AlignedType([0u8; 16])
+        Self::ZERO
     }
 
     /// A static zeroed out AlignedType for use in static assignments of [AlignedType; _]
-    pub const ZERO: AlignedType = AlignedType([0u8; 16]);
+    pub const ZERO: AlignedType = AlignedType([0u8; core::mem::size_of::<AlignedType>()]);
 }
 
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
