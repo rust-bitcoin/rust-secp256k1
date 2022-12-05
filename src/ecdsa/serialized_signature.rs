@@ -45,7 +45,7 @@ impl PartialEq for SerializedSignature {
 impl AsRef<[u8]> for SerializedSignature {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        &*self
+        self
     }
 }
 
