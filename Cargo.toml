@@ -1,6 +1,6 @@
 [package]
 name = "secp256k1"
-version = "0.23.4"
+version = "0.23.5"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
