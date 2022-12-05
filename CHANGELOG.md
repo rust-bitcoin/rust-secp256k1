@@ -1,3 +1,8 @@
+
+# 0.24.2 - 2022-12-05
+
+* Backport [fix soundness issue with `preallocated_gen_new`](https://github.com/rust-bitcoin/rust-secp256k1/pull/548)
+
 # 0.24.1 - 2022-10-25
 
 * [Fix broken deserialization logic of `KeyPair`](https://github.com/rust-bitcoin/rust-secp256k1/issues/491) that previously always panicked. After the patch deserialization only panics if neither the `global-context` nor the `alloc` (default) feature is active.
