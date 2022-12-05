@@ -1,5 +1,6 @@
-# 0.25.0 - 2022-11-22
+# 0.25.0 - 2022-12-07
 
+* [Fix soundness issue with `preallocated_gen_new`](https://github.com/rust-bitcoin/rust-secp256k1/pull/548)
 * Use type system to [improve safety](https://github.com/rust-bitcoin/rust-secp256k1/pull/483).
 * [Change secp256k1-sys symbol names to 0_6_1](https://github.com/rust-bitcoin/rust-secp256k1/pull/490).
 * [Introduce `rustfmt`](https://github.com/rust-bitcoin/rust-secp256k1/pull/499) to the codebase.
