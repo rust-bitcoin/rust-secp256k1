@@ -299,6 +299,12 @@ unsafe impl<'buf> Context for AllPreallocated<'buf> {
 
 /// Trait marking that a particular context object internally points to
 /// memory that must outlive `'a`
+///
+/// # Safety
+///
+/// This trait is used internally to gate which context markers can safely
+/// be used with the `preallocated_gen_new` function. Do not implement it
+/// on your own structures.
 pub unsafe trait PreallocatedContext<'a> {}
 
 unsafe impl<'buf> PreallocatedContext<'buf> for AllPreallocated<'buf> {}
