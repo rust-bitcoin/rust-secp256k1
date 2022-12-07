@@ -1,3 +1,7 @@
+# 0.22.2 - 2022-12-05
+
+* Backport [fix soundness issue with `preallocated_gen_new`](https://github.com/rust-bitcoin/rust-secp256k1/pull/548)
+
 # 0.22.1 - 2022-03-10
 
 * [Reintroduce](https://github.com/rust-bitcoin/rust-secp256k1/pull/417) accidentally removed possibility to create `SharedSecret` from byte serialization
