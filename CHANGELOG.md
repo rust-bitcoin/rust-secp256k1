@@ -1,3 +1,8 @@
+
+# 0.23.5 - 2022-12-05
+
+* Backport [fix soundness issue with `preallocated_gen_new`](https://github.com/rust-bitcoin/rust-secp256k1/pull/548)
+
 # 0.23.4 - 2022-07-14
 
 * [Disable automatic rerandomization of contexts under WASM](https://github.com/rust-bitcoin/rust-secp256k1/pull/474)
