@@ -183,7 +183,7 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 pub use bitcoin_hashes as hashes;
 #[cfg(feature = "global-context")]
@@ -200,7 +200,7 @@ pub use serde;
 pub use crate::context::*;
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 use crate::hashes::Hash;
 pub use crate::key::{PublicKey, SecretKey, *};
 pub use crate::scalar::Scalar;
@@ -213,19 +213,19 @@ pub trait ThirtyTwoByteHash {
     fn into_32(self) -> [u8; 32];
 }
 
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256::Hash {
     fn into_32(self) -> [u8; 32] { self.into_inner() }
 }
 
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256d::Hash {
     fn into_32(self) -> [u8; 32] { self.into_inner() }
 }
 
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     fn into_32(self) -> [u8; 32] { self.into_inner() }
@@ -274,7 +274,7 @@ impl Message {
     /// assert_eq!(m1, m2);
     /// # }
     /// ```
-    #[cfg(feature = "bitcoin-hashes")]
+    #[cfg(feature = "bitcoin_hashes")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
@@ -1037,7 +1037,7 @@ mod tests {
         assert!(SECP256K1.verify_ecdsa(&msg, &sig, &pk).is_ok());
     }
 
-    #[cfg(feature = "bitcoin-hashes")]
+    #[cfg(feature = "bitcoin_hashes")]
     #[test]
     fn test_from_hash() {
         use crate::hashes::{self, Hash};

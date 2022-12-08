@@ -45,7 +45,7 @@ macro_rules! impl_display_secret {
             }
         }
 
-        #[cfg(all(not(feature = "std"), feature = "bitcoin-hashes"))]
+        #[cfg(all(not(feature = "std"), feature = "bitcoin_hashes"))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 use crate::hashes::{sha256, Hash, HashEngine};
@@ -63,7 +63,7 @@ macro_rules! impl_display_secret {
             }
         }
 
-        #[cfg(all(not(feature = "std"), not(feature = "bitcoin-hashes")))]
+        #[cfg(all(not(feature = "std"), not(feature = "bitcoin_hashes")))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 write!(f, "<secret requires std or bitcoin_hashes feature to display>")

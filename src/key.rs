@@ -31,7 +31,7 @@ use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey
 use crate::{constants, from_hex, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "global-context")]
 use crate::{ecdsa, Message, SECP256K1};
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
 /// Secret 256-bit key used as `x` in an ECDSA signature.
@@ -268,12 +268,12 @@ impl SecretKey {
 
     /// Constructs a [`SecretKey`] by hashing `data` with hash algorithm `H`.
     ///
-    /// Requires the feature `bitcoin_hashes` to be enabled.
+    /// Requires the feature `bitcoin-hashes` to be enabled.
     ///
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature="bitcoin_hashes")] {
+    /// # #[cfg(feature="bitcoin-hashes")] {
     /// use secp256k1::hashes::{sha256, Hash};
     /// use secp256k1::SecretKey;
     ///
@@ -284,7 +284,7 @@ impl SecretKey {
     /// assert_eq!(sk1, sk2);
     /// # }
     /// ```
-    #[cfg(feature = "bitcoin-hashes")]
+    #[cfg(feature = "bitcoin_hashes")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     #[inline]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
@@ -383,7 +383,7 @@ impl SecretKey {
     }
 }
 
-#[cfg(feature = "bitcoin-hashes")]
+#[cfg(feature = "bitcoin_hashes")]
 impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
     /// Converts a 32-byte hash directly to a secret key without error paths.
     fn from(t: T) -> SecretKey {
