@@ -1,3 +1,7 @@
+# 0.7.0 - 2022-12-01
+
+* [Make comparison functions stable across library versions](https://github.com/rust-bitcoin/rust-secp256k1/pull/518)
+* Add public methods `cmp_fast_unstable` and `eq_fast_unstable` for types that contain an inner array (see PR linked above).
 
 # 0.6.0 - 2022-06-21
 
