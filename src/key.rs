@@ -486,7 +486,7 @@ impl PublicKey {
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
                 data.as_c_ptr(),
-                data.len() as usize,
+                data.len(),
             ) == 1
             {
                 Ok(PublicKey(pk))

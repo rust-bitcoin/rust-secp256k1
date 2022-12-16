@@ -59,7 +59,7 @@ impl Signature {
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_c_ptr(),
-                data.len() as usize,
+                data.len(),
             ) == 1
             {
                 Ok(Signature(ret))
@@ -105,7 +105,7 @@ impl Signature {
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_c_ptr(),
-                data.len() as usize,
+                data.len(),
             ) == 1
             {
                 Ok(Signature(ret))
