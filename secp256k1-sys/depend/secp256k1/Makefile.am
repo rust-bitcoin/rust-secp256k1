@@ -8,7 +8,7 @@ AM_CFLAGS = $(SECP_CFLAGS)
 
 lib_LTLIBRARIES = libsecp256k1.la
 include_HEADERS = include/secp256k1.h
-include_HEADERS += include/rustsecp256k1_v0_7_0_preallocated.h
+include_HEADERS += include/rustsecp256k1_v0_8_0_preallocated.h
 noinst_HEADERS =
 noinst_HEADERS += src/scalar.h
 noinst_HEADERS += src/scalar_4x64.h
@@ -48,6 +48,12 @@ noinst_HEADERS += src/precomputed_ecmult.h
 noinst_HEADERS += src/precomputed_ecmult_gen.h
 noinst_HEADERS += src/assumptions.h
 noinst_HEADERS += src/util.h
+noinst_HEADERS += src/int128.h
+noinst_HEADERS += src/int128_impl.h
+noinst_HEADERS += src/int128_native.h
+noinst_HEADERS += src/int128_native_impl.h
+noinst_HEADERS += src/int128_struct.h
+noinst_HEADERS += src/int128_struct_impl.h
 noinst_HEADERS += src/scratch.h
 noinst_HEADERS += src/scratch_impl.h
 noinst_HEADERS += src/selftest.h
@@ -58,19 +64,19 @@ noinst_HEADERS += src/hash_impl.h
 noinst_HEADERS += src/field.h
 noinst_HEADERS += src/field_impl.h
 noinst_HEADERS += src/bench.h
-noinst_HEADERS += src/basic-config.h
 noinst_HEADERS += contrib/lax_der_parsing.h
 noinst_HEADERS += contrib/lax_der_parsing.c
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.c
+noinst_HEADERS += examples/random.h
 
-PRECOMPUTED_LIB = librustsecp256k1_v0_7_0_precomputed.la
+PRECOMPUTED_LIB = librustsecp256k1_v0_8_0_precomputed.la
 noinst_LTLIBRARIES = $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_7_0_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
-librustsecp256k1_v0_7_0_precomputed_la_CPPFLAGS = $(SECP_INCLUDES)
+librustsecp256k1_v0_8_0_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
+librustsecp256k1_v0_8_0_precomputed_la_CPPFLAGS = $(SECP_INCLUDES)
 
 if USE_EXTERNAL_ASM
-COMMON_LIB = librustsecp256k1_v0_7_0_common.la
+COMMON_LIB = librustsecp256k1_v0_8_0_common.la
 else
 COMMON_LIB =
 endif
@@ -81,17 +87,17 @@ pkgconfig_DATA = libsecp256k1.pc
 
 if USE_EXTERNAL_ASM
 if USE_ASM_ARM
-librustsecp256k1_v0_7_0_common_la_SOURCES = src/asm/field_10x26_arm.s
+librustsecp256k1_v0_8_0_common_la_SOURCES = src/asm/field_10x26_arm.s
 endif
 endif
 
-librustsecp256k1_v0_7_0_la_SOURCES = src/secp256k1.c
-librustsecp256k1_v0_7_0_la_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src $(SECP_INCLUDES)
-librustsecp256k1_v0_7_0_la_LIBADD = $(SECP_LIBS) $(COMMON_LIB) $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_7_0_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
+librustsecp256k1_v0_8_0_la_SOURCES = src/secp256k1.c
+librustsecp256k1_v0_8_0_la_CPPFLAGS = $(SECP_INCLUDES)
+librustsecp256k1_v0_8_0_la_LIBADD = $(SECP_LIBS) $(COMMON_LIB) $(PRECOMPUTED_LIB)
+librustsecp256k1_v0_8_0_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
 
 if VALGRIND_ENABLED
-librustsecp256k1_v0_7_0_la_CPPFLAGS += -DVALGRIND
+librustsecp256k1_v0_8_0_la_CPPFLAGS += -DVALGRIND
 endif
 
 noinst_PROGRAMS =
@@ -111,7 +117,7 @@ TESTS =
 if USE_TESTS
 noinst_PROGRAMS += tests
 tests_SOURCES = src/tests.c
-tests_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/include $(SECP_INCLUDES) $(SECP_TEST_INCLUDES)
+tests_CPPFLAGS = $(SECP_INCLUDES) $(SECP_TEST_INCLUDES)
 if VALGRIND_ENABLED
 tests_CPPFLAGS += -DVALGRIND
 noinst_PROGRAMS += valgrind_ctime_test
@@ -137,6 +143,40 @@ endif
 exhaustive_tests_LDADD = $(SECP_LIBS) $(COMMON_LIB)
 exhaustive_tests_LDFLAGS = -static
 TESTS += exhaustive_tests
+endif
+
+if USE_EXAMPLES
+noinst_PROGRAMS += ecdsa_example
+ecdsa_example_SOURCES = examples/ecdsa.c
+ecdsa_example_CPPFLAGS = -I$(top_srcdir)/include
+ecdsa_example_LDADD = libsecp256k1.la
+ecdsa_example_LDFLAGS = -static
+if BUILD_WINDOWS
+ecdsa_example_LDFLAGS += -lbcrypt
+endif
+TESTS += ecdsa_example
+if ENABLE_MODULE_ECDH
+noinst_PROGRAMS += ecdh_example
+ecdh_example_SOURCES = examples/ecdh.c
+ecdh_example_CPPFLAGS = -I$(top_srcdir)/include
+ecdh_example_LDADD = libsecp256k1.la
+ecdh_example_LDFLAGS = -static
+if BUILD_WINDOWS
+ecdh_example_LDFLAGS += -lbcrypt
+endif
+TESTS += ecdh_example
+endif
+if ENABLE_MODULE_SCHNORRSIG
+noinst_PROGRAMS += schnorr_example
+schnorr_example_SOURCES = examples/schnorr.c
+schnorr_example_CPPFLAGS = -I$(top_srcdir)/include
+schnorr_example_LDADD = libsecp256k1.la
+schnorr_example_LDFLAGS = -static
+if BUILD_WINDOWS
+schnorr_example_LDFLAGS += -lbcrypt
+endif
+TESTS += schnorr_example
+endif
 endif
 
 ### Precomputed tables
@@ -176,7 +216,15 @@ maintainer-clean-local: clean-precomp
 clean-precomp:
 	rm -f $(PRECOMP)
 
-EXTRA_DIST = autogen.sh SECURITY.md
+EXTRA_DIST = autogen.sh CHANGELOG.md SECURITY.md
+EXTRA_DIST += doc/release-process.md doc/safegcd_implementation.md
+EXTRA_DIST += examples/EXAMPLES_COPYING
+EXTRA_DIST += sage/gen_exhaustive_groups.sage
+EXTRA_DIST += sage/gen_split_lambda_constants.sage
+EXTRA_DIST += sage/group_prover.sage
+EXTRA_DIST += sage/prove_group_implementations.sage
+EXTRA_DIST += sage/rustsecp256k1_v0_8_0_params.sage
+EXTRA_DIST += sage/weierstrass_prover.sage
 
 if ENABLE_MODULE_ECDH
 include src/modules/ecdh/Makefile.am.include
