@@ -1,3 +1,7 @@
+# 0.26.0 - 2202-12-19
+
+* Update libsecp25k1 to v0.2.0
+
 # 0.25.0 - 2022-12-07
 
 * [Fix soundness issue with `preallocated_gen_new`](https://github.com/rust-bitcoin/rust-secp256k1/pull/548)
