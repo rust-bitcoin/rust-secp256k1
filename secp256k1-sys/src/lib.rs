@@ -1315,6 +1315,19 @@ mod fuzz_dummy {
         1
     }
 
+
+    // Forwards to regular schnorrsig_sign function.
+    pub unsafe fn secp256k1_schnorrsig_sign_custom(
+        cx: *const Context,
+        sig: *mut c_uchar,
+        msg: *const c_uchar,
+        _msg_len: size_t,
+        keypair: *const KeyPair,
+        _extra_params: *const SchnorrSigExtraParams,
+    ) -> c_int {
+        secp256k1_schnorrsig_sign(cx, sig, msg, keypair, ptr::null())
+    }
+
     // Extra keys
     pub unsafe fn secp256k1_keypair_create(
         cx: *const Context,
