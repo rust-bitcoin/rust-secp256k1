@@ -1,6 +1,6 @@
 [package]
 name = "secp256k1"
-version = "0.24.2"
+version = "0.24.3"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
@@ -23,7 +23,7 @@ std = ["alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
 bitcoin-hashes-std = ["bitcoin_hashes/std"]
-rand-std = ["rand/std", "rand/std_rng"]
+rand-std = ["rand", "rand/std", "rand/std_rng"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
