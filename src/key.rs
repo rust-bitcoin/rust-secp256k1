@@ -2401,14 +2401,13 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand-std", feature = "bitcoin-hashes-std"))]
+    #[cfg(feature = "rand-std")]
     fn test_keypair_from_str() {
-        use bitcoin_hashes::hex::ToHex;
-
         let ctx = crate::Secp256k1::new();
         let keypair = KeyPair::new(&ctx, &mut rand::thread_rng());
-        let msg = keypair.secret_key().secret_bytes().to_hex();
-        let parsed_key: KeyPair = msg.parse().unwrap();
+        let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
+        let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
+        let parsed_key = KeyPair::from_str(s).unwrap();
         assert_eq!(parsed_key, keypair);
     }
 
