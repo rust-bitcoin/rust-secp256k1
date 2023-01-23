@@ -81,8 +81,10 @@ if [ "$DO_ASAN" = true ]; then
     ASAN_OPTIONS='detect_leaks=1 detect_invalid_pointer_pairs=1 detect_stack_use_after_return=1' \
     cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
     cargo clean
-    CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                         \
-    RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes'   \
+    # The -Cllvm-args=-msan-eager-checks=0 flag was added to overcome this issue:
+    # https://github.com/rust-bitcoin/rust-secp256k1/pull/573#issuecomment-1399465995
+    CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                                                        \
+    RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes -Cllvm-args=-msan-eager-checks=0' \
     cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
     cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
     cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
