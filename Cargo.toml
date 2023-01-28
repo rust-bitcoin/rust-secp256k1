@@ -37,8 +37,8 @@ global-context = ["std"]
 global-context-less-secure = ["global-context"]
 
 [patch.crates-io]
-# This is the commit that we imported hashes into rust-bitcoin.
-bitcoin_hashes = { git = "https://github.com/rust-bitcoin/rust-bitcoin", rev = "b9643bf3e9b21e4e2207ea210d1d57ffa014d271" }
+# Arbitrary commit during dev of v0.12.0 (and rust-bitcoin v0.30.0)
+bitcoin_hashes = { git = "https://github.com/rust-bitcoin/rust-bitcoin", rev = "f90338021bda8be8c648cdd0e9276ccad54eef9a" }
 
 [dependencies]
 secp256k1-sys = { version = "0.8.0", default-features = false, path = "./secp256k1-sys" }
