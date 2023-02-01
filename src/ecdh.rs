@@ -260,7 +260,7 @@ mod tests {
         engine.input(&xy.as_ref()[..32]);
         let secret_bh = sha256::Hash::from_engine(engine);
 
-        assert_eq!(secret_bh.as_inner(), secret_sys.as_ref());
+        assert_eq!(secret_bh.as_byte_array(), secret_sys.as_ref());
     }
 
     #[test]
