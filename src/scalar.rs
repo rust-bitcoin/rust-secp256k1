@@ -20,7 +20,6 @@ use crate::constants;
 // Internal represenation is big endian to match what `libsecp256k1` uses.
 // Also easier to implement comparison.
 // Debug impl omitted for now, the bytes may be secret
-#[allow(missing_debug_implementations)]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Scalar([u8; 32]);
 impl_pretty_debug!(Scalar);
