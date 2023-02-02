@@ -6,7 +6,7 @@
 //! provides the `Scalar` type and related.
 //!
 
-use core::fmt;
+use core::{fmt, ops};
 
 use crate::constants;
 
@@ -23,6 +23,7 @@ use crate::constants;
 #[allow(missing_debug_implementations)]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Scalar([u8; 32]);
+impl_pretty_debug!(Scalar);
 
 const MAX_RAW: [u8; 32] = [
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
@@ -105,6 +106,16 @@ impl Scalar {
 
         self.as_be_bytes().as_c_ptr()
     }
+}
+
+impl<I> ops::Index<I> for Scalar
+where
+    [u8]: ops::Index<I>,
+{
+    type Output = <[u8] as ops::Index<I>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output { &self.0[index] }
 }
 
 impl From<crate::SecretKey> for Scalar {
