@@ -21,7 +21,7 @@ int main(void) {
     unsigned char msg[12] = "Hello World!";
     unsigned char msg_hash[32];
     unsigned char tag[17] = "my_fancy_protocol";
-    unsigned char seckey[32];
+    volatile unsigned char seckey[32];
     unsigned char randomize[32];
     unsigned char auxiliary_rand[32];
     unsigned char serialized_pubkey[32];
@@ -140,7 +140,7 @@ int main(void) {
      * example through "out of bounds" array access (see Heartbleed), Or the OS
      * swapping them to disk. Hence, we overwrite the secret key buffer with zeros.
      *
-     * TODO: Prevent these writes from being optimized out, as any good compiler
+     * Here we are preventing these writes from being optimized out, as any good compiler
      * will remove any writes that aren't used. */
     memset(seckey, 0, sizeof(seckey));
 

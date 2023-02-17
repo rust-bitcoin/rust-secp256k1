@@ -29,7 +29,7 @@ int main(void) {
         0x61, 0x2B, 0x1F, 0xCE, 0x77, 0xC8, 0x69, 0x34,
         0x5B, 0xFC, 0x94, 0xC7, 0x58, 0x94, 0xED, 0xD3,
     };
-    unsigned char seckey[32];
+    volatile unsigned char seckey[32];
     unsigned char randomize[32];
     unsigned char compressed_pubkey[33];
     unsigned char serialized_signature[64];
@@ -125,7 +125,7 @@ int main(void) {
      * example through "out of bounds" array access (see Heartbleed), Or the OS
      * swapping them to disk. Hence, we overwrite the secret key buffer with zeros.
      *
-     * TODO: Prevent these writes from being optimized out, as any good compiler
+     * Here we are preventing these writes from being optimized out, as any good compiler
      * will remove any writes that aren't used. */
     memset(seckey, 0, sizeof(seckey));
 

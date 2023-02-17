@@ -18,12 +18,12 @@
 
 
 int main(void) {
-    unsigned char seckey1[32];
-    unsigned char seckey2[32];
+    volatile unsigned char seckey1[32];
+    volatile unsigned char seckey2[32];
     unsigned char compressed_pubkey1[33];
     unsigned char compressed_pubkey2[33];
-    unsigned char shared_secret1[32];
-    unsigned char shared_secret2[32];
+    volatile unsigned char shared_secret1[32];
+    volatile unsigned char shared_secret2[32];
     unsigned char randomize[32];
     int return_val;
     size_t len;
@@ -112,7 +112,7 @@ int main(void) {
      * example through "out of bounds" array access (see Heartbleed), Or the OS
      * swapping them to disk. Hence, we overwrite the secret key buffer with zeros.
      *
-     * TODO: Prevent these writes from being optimized out, as any good compiler
+     * Here we are preventing these writes from being optimized out, as any good compiler
      * will remove any writes that aren't used. */
     memset(seckey1, 0, sizeof(seckey1));
     memset(seckey2, 0, sizeof(seckey2));
