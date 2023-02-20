@@ -454,6 +454,38 @@ impl KeyPair {
             pk
         }
     }
+
+    /// Attempts to erase the contents of the underlying array.
+    ///
+    /// Note, however, that the compiler is allowed to freely copy or move the
+    /// contents of this array to other places in memory. Preventing this behavior
+    /// is very subtle. For more discussion on this, please see the documentation
+    /// of the [`zeroize`](https://docs.rs/zeroize) crate.
+    #[inline]
+    pub fn non_secure_erase(&mut self) {
+        non_secure_erase_impl(&mut self.0, DUMMY_KEYPAIR);
+    }
+}
+
+// DUMMY_KEYPAIR is the internal repr of a valid key pair with secret key `[1u8; 32]`
+#[cfg(target_endian = "little")]
+const DUMMY_KEYPAIR: [c_uchar; 96] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 143, 7, 221, 213, 233, 245, 23, 156, 255, 25, 72, 96, 52, 24, 30, 215, 101, 5, 186, 170, 213, 62, 93, 153, 64, 100, 18, 123, 86, 197, 132, 27, 209, 232, 168, 105, 122, 212, 34, 81, 222, 57, 246, 167, 32, 129, 223, 223, 66, 171, 197, 66, 166, 214, 254, 7, 21, 84, 139, 88, 143, 175, 190, 112];
+#[cfg(all(target_endian = "big", target_pointer_width = "32"))]
+const DUMMY_KEYPAIR: [c_uchar; 96] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 213, 221, 7, 143, 156, 23, 245, 233, 96, 72, 25, 255, 215, 30, 24, 52, 170, 186, 5, 101, 153, 93, 62, 213, 123, 18, 100, 64, 27, 132, 197, 86, 105, 168, 232, 209, 81, 34, 212, 122, 167, 246, 57, 222, 223, 223, 129, 32, 66, 197, 171, 66, 7, 254, 214, 166, 88, 139, 84, 21, 112, 190, 175, 143];
+#[cfg(all(target_endian = "big", target_pointer_width = "64"))]
+const DUMMY_KEYPAIR: [c_uchar; 96] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156, 23, 245, 233, 213, 221, 7, 143, 215, 30, 24, 52, 96, 72, 25, 255, 153, 93, 62, 213, 170, 186, 5, 101, 27, 132, 197, 86, 123, 18, 100, 64, 81, 34, 212, 122, 105, 168, 232, 209, 223, 223, 129, 32, 167, 246, 57, 222, 7, 254, 214, 166, 66, 197, 171, 66, 112, 190, 175, 143, 88, 139, 84, 21];
+
+/// Does a best attempt at secure erasure using Rust intrinsics.
+///
+/// The implementation is based on the approach used by the [`zeroize`](https://docs.rs/zeroize) crate.
+#[inline(always)]
+pub fn non_secure_erase_impl<T>(dst: &mut T, src: T) {
+    use core::sync::atomic;
+    // overwrite using volatile value
+    unsafe { ptr::write_volatile(dst, src); }
+
+    // prevent future accesses from being reordered to before erasure
+    atomic::compiler_fence(atomic::Ordering::SeqCst);
 }
 
 #[cfg(not(fuzzing))]

@@ -86,6 +86,7 @@ macro_rules! impl_display_secret {
 pub struct DisplaySecret {
     secret: [u8; SECRET_KEY_SIZE],
 }
+impl_non_secure_erase!(DisplaySecret, secret, [0u8; SECRET_KEY_SIZE]);
 
 impl fmt::Debug for DisplaySecret {
     #[inline]

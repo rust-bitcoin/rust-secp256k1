@@ -23,6 +23,7 @@ use crate::constants;
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Scalar([u8; 32]);
 impl_pretty_debug!(Scalar);
+impl_non_secure_erase!(Scalar, 0, [0u8; 32]);
 
 const MAX_RAW: [u8; 32] = [
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,

@@ -38,6 +38,16 @@ Alternatively add symlinks in your `.git/hooks` directory to any of the githooks
 We use a custom Rust compiler configuration conditional to guard the bench mark code. To run the
 bench marks use: `RUSTFLAGS='--cfg=bench' cargo +nightly bench --features=recovery`.
 
+### A note on `non_secure_erase`
+
+This crate's secret types (`SecretKey`, `KeyPair`, `SharedSecret`, `Scalar`, and `DisplaySecret`)
+have a method called `non_secure_erase` that *attempts* to overwrite the contained secret. This
+method is provided to assist other libraries in building secure secret erasure. However, this
+library makes no guarantees about the security of using `non_secure_erase`. In particular,
+the compiler doesn't have any concept of secrets and in most cases can arbitrarily move or copy
+values anywhere it pleases. For more information, consult the [`zeroize`](https://docs.rs/zeroize)
+documentation.
+
 ## Fuzzing
 
 If you want to fuzz this library, or any library which depends on it, you will
