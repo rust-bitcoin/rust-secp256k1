@@ -46,6 +46,7 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SharedSecret([u8; SHARED_SECRET_SIZE]);
 impl_display_secret!(SharedSecret);
+impl_non_secure_erase!(SharedSecret, 0, [0u8; SHARED_SECRET_SIZE]);
 
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key.

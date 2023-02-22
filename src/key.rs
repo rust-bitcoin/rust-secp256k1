@@ -66,6 +66,7 @@ use crate::{hashes, ThirtyTwoByteHash};
 #[derive(Copy, Clone)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_display_secret!(SecretKey);
+impl_non_secure_erase!(SecretKey, 0, [1u8; constants::SECRET_KEY_SIZE]);
 
 impl PartialEq for SecretKey {
     /// This implementation is designed to be constant time to help prevent side channel attacks.
@@ -992,6 +993,15 @@ impl KeyPair {
     pub fn sign_schnorr(&self, msg: Message) -> schnorr::Signature {
         SECP256K1.sign_schnorr(&msg, self)
     }
+
+    /// Attempts to erase the secret within the underlying array.
+    ///
+    /// Note, however, that the compiler is allowed to freely copy or move the contents
+    /// of this array to other places in memory. Preventing this behavior is very subtle.
+    /// For more discussion on this, please see the documentation of the
+    /// [`zeroize`](https://docs.rs/zeroize) crate.
+    #[inline]
+    pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
 }
 
 impl From<KeyPair> for SecretKey {
@@ -1601,6 +1611,17 @@ mod test {
         assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
+    }
+
+    #[test]
+    #[cfg(all(feature = "std", not(fuzzing)))]
+    fn erased_keypair_is_valid() {
+        let s = Secp256k1::new();
+        let kp = KeyPair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+            .expect("valid secret key");
+        let mut kp2 = kp;
+        kp2.non_secure_erase();
+        assert!(kp.eq_fast_unstable(&kp2));
     }
 
     #[test]

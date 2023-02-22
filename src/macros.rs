@@ -91,6 +91,23 @@ macro_rules! impl_pretty_debug {
     };
 }
 
+macro_rules! impl_non_secure_erase {
+    ($thing:ident, $target:tt, $value:expr) => {
+        impl $thing {
+            /// Attempts to erase the contents of the underlying array.
+            ///
+            /// Note, however, that the compiler is allowed to freely copy or move the
+            /// contents of this array to other places in memory. Preventing this behavior
+            /// is very subtle. For more discussion on this, please see the documentation
+            /// of the [`zeroize`](https://docs.rs/zeroize) crate.
+            #[inline]
+            pub fn non_secure_erase(&mut self) {
+                secp256k1_sys::non_secure_erase_impl(&mut self.$target, $value);
+            }
+        }
+    };
+}
+
 /// Formats error. If `std` feature is OFF appends error source (delimited by `: `). We do this
 /// because `e.source()` is only available in std builds, without this macro the error source is
 /// lost for no-std builds.
