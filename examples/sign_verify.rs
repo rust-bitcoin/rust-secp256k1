@@ -11,7 +11,7 @@ fn verify<C: Verification>(
     pubkey: [u8; 33],
 ) -> Result<bool, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from_slice(msg.as_ref())?;
     let sig = ecdsa::Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
@@ -24,7 +24,7 @@ fn sign<C: Signing>(
     seckey: [u8; 32],
 ) -> Result<ecdsa::Signature, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_slice(&msg)?;
+    let msg = Message::from_slice(msg.as_ref())?;
     let seckey = SecretKey::from_slice(&seckey)?;
     Ok(secp.sign_ecdsa(&msg, &seckey))
 }

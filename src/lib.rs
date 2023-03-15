@@ -216,19 +216,19 @@ pub trait ThirtyTwoByteHash {
 #[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256::Hash {
-    fn into_32(self) -> [u8; 32] { self.into_inner() }
+    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256d::Hash {
-    fn into_32(self) -> [u8; 32] { self.into_inner() }
+    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
-    fn into_32(self) -> [u8; 32] { self.into_inner() }
+    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 /// A (hashed) message input to an ECDSA signature.
@@ -1046,12 +1046,12 @@ mod tests {
 
         let hash = hashes::sha256::Hash::hash(test_bytes);
         let msg = Message::from(hash);
-        assert_eq!(msg.0, hash.into_inner());
+        assert_eq!(msg.0, hash.to_byte_array());
         assert_eq!(msg, Message::from_hashed_data::<hashes::sha256::Hash>(test_bytes));
 
         let hash = hashes::sha256d::Hash::hash(test_bytes);
         let msg = Message::from(hash);
-        assert_eq!(msg.0, hash.into_inner());
+        assert_eq!(msg.0, hash.to_byte_array());
         assert_eq!(msg, Message::from_hashed_data::<hashes::sha256d::Hash>(test_bytes));
     }
 }
