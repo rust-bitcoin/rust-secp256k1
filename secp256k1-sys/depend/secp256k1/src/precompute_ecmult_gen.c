@@ -44,15 +44,15 @@ int main(int argc, char **argv) {
     fprintf(fp, "#    error Cannot compile precomputed_ecmult_gen.c in exhaustive test mode\n");
     fprintf(fp, "#endif /* EXHAUSTIVE_TEST_ORDER */\n");
     fprintf(fp, "#define S(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) SECP256K1_GE_STORAGE_CONST(0x##a##u,0x##b##u,0x##c##u,0x##d##u,0x##e##u,0x##f##u,0x##g##u,0x##h##u,0x##i##u,0x##j##u,0x##k##u,0x##l##u,0x##m##u,0x##n##u,0x##o##u,0x##p##u)\n");
-    fprintf(fp, "const rustsecp256k1_v0_8_0_ge_storage rustsecp256k1_v0_8_0_ecmult_gen_prec_table[ECMULT_GEN_PREC_N(ECMULT_GEN_PREC_BITS)][ECMULT_GEN_PREC_G(ECMULT_GEN_PREC_BITS)] = {\n");
+    fprintf(fp, "const rustsecp256k1_v0_8_1_ge_storage rustsecp256k1_v0_8_1_ecmult_gen_prec_table[ECMULT_GEN_PREC_N(ECMULT_GEN_PREC_BITS)][ECMULT_GEN_PREC_G(ECMULT_GEN_PREC_BITS)] = {\n");
 
     for (bits = 2; bits <= 8; bits *= 2) {
         int g = ECMULT_GEN_PREC_G(bits);
         int n = ECMULT_GEN_PREC_N(bits);
         int inner, outer;
 
-        rustsecp256k1_v0_8_0_ge_storage* table = checked_malloc(&default_error_callback, n * g * sizeof(rustsecp256k1_v0_8_0_ge_storage));
-        rustsecp256k1_v0_8_0_ecmult_gen_compute_table(table, &rustsecp256k1_v0_8_0_ge_const_g, bits);
+        rustsecp256k1_v0_8_1_ge_storage* table = checked_malloc(&default_error_callback, n * g * sizeof(rustsecp256k1_v0_8_1_ge_storage));
+        rustsecp256k1_v0_8_1_ecmult_gen_compute_table(table, &rustsecp256k1_v0_8_1_ge_const_g, bits);
 
         fprintf(fp, "#if ECMULT_GEN_PREC_BITS == %d\n", bits);
         for(outer = 0; outer != n; outer++) {

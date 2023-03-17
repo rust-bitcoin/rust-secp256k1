@@ -8,9 +8,9 @@
 #define SECP256K1_ECMULT_COMPUTE_TABLE_H
 
 /* Construct table of all odd multiples of gen in range 1..(2**(window_g-1)-1). */
-static void rustsecp256k1_v0_8_0_ecmult_compute_table(rustsecp256k1_v0_8_0_ge_storage* table, int window_g, const rustsecp256k1_v0_8_0_gej* gen);
+static void rustsecp256k1_v0_8_1_ecmult_compute_table(rustsecp256k1_v0_8_1_ge_storage* table, int window_g, const rustsecp256k1_v0_8_1_gej* gen);
 
-/* Like rustsecp256k1_v0_8_0_ecmult_compute_table, but one for both gen and gen*2^128. */
-static void rustsecp256k1_v0_8_0_ecmult_compute_two_tables(rustsecp256k1_v0_8_0_ge_storage* table, rustsecp256k1_v0_8_0_ge_storage* table_128, int window_g, const rustsecp256k1_v0_8_0_ge* gen);
+/* Like rustsecp256k1_v0_8_1_ecmult_compute_table, but one for both gen and gen*2^128. */
+static void rustsecp256k1_v0_8_1_ecmult_compute_two_tables(rustsecp256k1_v0_8_1_ge_storage* table, rustsecp256k1_v0_8_1_ge_storage* table_128, int window_g, const rustsecp256k1_v0_8_1_ge* gen);
 
 #endif /* SECP256K1_ECMULT_COMPUTE_TABLE_H */

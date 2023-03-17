@@ -33,16 +33,16 @@ typedef struct {
     int built;
 
     /* Blinding values used when computing (n-b)G + bG. */
-    rustsecp256k1_v0_8_0_scalar blind; /* -b */
-    rustsecp256k1_v0_8_0_gej initial;  /* bG */
-} rustsecp256k1_v0_8_0_ecmult_gen_context;
+    rustsecp256k1_v0_8_1_scalar blind; /* -b */
+    rustsecp256k1_v0_8_1_gej initial;  /* bG */
+} rustsecp256k1_v0_8_1_ecmult_gen_context;
 
-static void rustsecp256k1_v0_8_0_ecmult_gen_context_build(rustsecp256k1_v0_8_0_ecmult_gen_context* ctx);
-static void rustsecp256k1_v0_8_0_ecmult_gen_context_clear(rustsecp256k1_v0_8_0_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_8_1_ecmult_gen_context_build(rustsecp256k1_v0_8_1_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_8_1_ecmult_gen_context_clear(rustsecp256k1_v0_8_1_ecmult_gen_context* ctx);
 
 /** Multiply with the generator: R = a*G */
-static void rustsecp256k1_v0_8_0_ecmult_gen(const rustsecp256k1_v0_8_0_ecmult_gen_context* ctx, rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_scalar *a);
+static void rustsecp256k1_v0_8_1_ecmult_gen(const rustsecp256k1_v0_8_1_ecmult_gen_context* ctx, rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_scalar *a);
 
-static void rustsecp256k1_v0_8_0_ecmult_gen_blind(rustsecp256k1_v0_8_0_ecmult_gen_context *ctx, const unsigned char *seed32);
+static void rustsecp256k1_v0_8_1_ecmult_gen_blind(rustsecp256k1_v0_8_1_ecmult_gen_context *ctx, const unsigned char *seed32);
 
 #endif /* SECP256K1_ECMULT_GEN_H */

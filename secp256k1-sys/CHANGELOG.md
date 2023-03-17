@@ -1,3 +1,11 @@
+# 0.8.1 - 2023-13-16
+
+* [Implement `insecure-erase`](https://github.com/rust-bitcoin/rust-secp256k1/pull/582).
+
+# 0.8.0 - 2202-12-19
+
+* Update libsecp25k1 to v0.2.0
+
 # 0.7.0 - 2022-12-01
 
 * [Make comparison functions stable across library versions](https://github.com/rust-bitcoin/rust-secp256k1/pull/518)

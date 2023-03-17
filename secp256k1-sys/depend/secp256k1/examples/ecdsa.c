@@ -36,18 +36,18 @@ int main(void) {
     size_t len;
     int is_signature_valid;
     int return_val;
-    rustsecp256k1_v0_8_0_pubkey pubkey;
-    rustsecp256k1_v0_8_0_ecdsa_signature sig;
+    rustsecp256k1_v0_8_1_pubkey pubkey;
+    rustsecp256k1_v0_8_1_ecdsa_signature sig;
     /* Before we can call actual API functions, we need to create a "context". */
-    rustsecp256k1_v0_8_0_context* ctx = rustsecp256k1_v0_8_0_context_create(SECP256K1_CONTEXT_NONE);
+    rustsecp256k1_v0_8_1_context* ctx = rustsecp256k1_v0_8_1_context_create(SECP256K1_CONTEXT_NONE);
     if (!fill_random(randomize, sizeof(randomize))) {
         printf("Failed to generate randomness\n");
         return 1;
     }
     /* Randomizing the context is recommended to protect against side-channel
-     * leakage See `rustsecp256k1_v0_8_0_context_randomize` in secp256k1.h for more
+     * leakage See `rustsecp256k1_v0_8_1_context_randomize` in secp256k1.h for more
      * information about it. This should never fail. */
-    return_val = rustsecp256k1_v0_8_0_context_randomize(ctx, randomize);
+    return_val = rustsecp256k1_v0_8_1_context_randomize(ctx, randomize);
     assert(return_val);
 
     /*** Key Generation ***/
@@ -60,18 +60,18 @@ int main(void) {
             printf("Failed to generate randomness\n");
             return 1;
         }
-        if (rustsecp256k1_v0_8_0_ec_seckey_verify(ctx, seckey)) {
+        if (rustsecp256k1_v0_8_1_ec_seckey_verify(ctx, seckey)) {
             break;
         }
     }
 
     /* Public key creation using a valid context with a verified secret key should never fail */
-    return_val = rustsecp256k1_v0_8_0_ec_pubkey_create(ctx, &pubkey, seckey);
+    return_val = rustsecp256k1_v0_8_1_ec_pubkey_create(ctx, &pubkey, seckey);
     assert(return_val);
 
     /* Serialize the pubkey in a compressed form(33 bytes). Should always return 1. */
     len = sizeof(compressed_pubkey);
-    return_val = rustsecp256k1_v0_8_0_ec_pubkey_serialize(ctx, compressed_pubkey, &len, &pubkey, SECP256K1_EC_COMPRESSED);
+    return_val = rustsecp256k1_v0_8_1_ec_pubkey_serialize(ctx, compressed_pubkey, &len, &pubkey, SECP256K1_EC_COMPRESSED);
     assert(return_val);
     /* Should be the same size as the size of the output, because we passed a 33 byte array. */
     assert(len == sizeof(compressed_pubkey));
@@ -82,31 +82,31 @@ int main(void) {
      * custom nonce function, passing `NULL` will use the RFC-6979 safe default.
      * Signing with a valid context, verified secret key
      * and the default nonce function should never fail. */
-    return_val = rustsecp256k1_v0_8_0_ecdsa_sign(ctx, &sig, msg_hash, seckey, NULL, NULL);
+    return_val = rustsecp256k1_v0_8_1_ecdsa_sign(ctx, &sig, msg_hash, seckey, NULL, NULL);
     assert(return_val);
 
     /* Serialize the signature in a compact form. Should always return 1
      * according to the documentation in secp256k1.h. */
-    return_val = rustsecp256k1_v0_8_0_ecdsa_signature_serialize_compact(ctx, serialized_signature, &sig);
+    return_val = rustsecp256k1_v0_8_1_ecdsa_signature_serialize_compact(ctx, serialized_signature, &sig);
     assert(return_val);
 
 
     /*** Verification ***/
 
     /* Deserialize the signature. This will return 0 if the signature can't be parsed correctly. */
-    if (!rustsecp256k1_v0_8_0_ecdsa_signature_parse_compact(ctx, &sig, serialized_signature)) {
+    if (!rustsecp256k1_v0_8_1_ecdsa_signature_parse_compact(ctx, &sig, serialized_signature)) {
         printf("Failed parsing the signature\n");
         return 1;
     }
 
     /* Deserialize the public key. This will return 0 if the public key can't be parsed correctly. */
-    if (!rustsecp256k1_v0_8_0_ec_pubkey_parse(ctx, &pubkey, compressed_pubkey, sizeof(compressed_pubkey))) {
+    if (!rustsecp256k1_v0_8_1_ec_pubkey_parse(ctx, &pubkey, compressed_pubkey, sizeof(compressed_pubkey))) {
         printf("Failed parsing the public key\n");
         return 1;
     }
 
     /* Verify a signature. This will return 1 if it's valid and 0 if it's not. */
-    is_signature_valid = rustsecp256k1_v0_8_0_ecdsa_verify(ctx, &sig, msg_hash, &pubkey);
+    is_signature_valid = rustsecp256k1_v0_8_1_ecdsa_verify(ctx, &sig, msg_hash, &pubkey);
 
     printf("Is the signature valid? %s\n", is_signature_valid ? "true" : "false");
     printf("Secret Key: ");
@@ -118,7 +118,7 @@ int main(void) {
 
 
     /* This will clear everything from the context and free the memory */
-    rustsecp256k1_v0_8_0_context_destroy(ctx);
+    rustsecp256k1_v0_8_1_context_destroy(ctx);
 
     /* It's best practice to try to clear secrets from memory after using them.
      * This is done because some bugs can allow an attacker to leak memory, for
