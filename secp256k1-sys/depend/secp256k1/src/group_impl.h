@@ -42,16 +42,16 @@
  */
 #if defined(EXHAUSTIVE_TEST_ORDER)
 #  if EXHAUSTIVE_TEST_ORDER == 13
-static const rustsecp256k1_v0_8_0_ge rustsecp256k1_v0_8_0_ge_const_g = SECP256K1_G_ORDER_13;
+static const rustsecp256k1_v0_8_1_ge rustsecp256k1_v0_8_1_ge_const_g = SECP256K1_G_ORDER_13;
 
-static const rustsecp256k1_v0_8_0_fe rustsecp256k1_v0_8_0_fe_const_b = SECP256K1_FE_CONST(
+static const rustsecp256k1_v0_8_1_fe rustsecp256k1_v0_8_1_fe_const_b = SECP256K1_FE_CONST(
     0x3d3486b2, 0x159a9ca5, 0xc75638be, 0xb23a69bc,
     0x946a45ab, 0x24801247, 0xb4ed2b8e, 0x26b6a417
 );
 #  elif EXHAUSTIVE_TEST_ORDER == 199
-static const rustsecp256k1_v0_8_0_ge rustsecp256k1_v0_8_0_ge_const_g = SECP256K1_G_ORDER_199;
+static const rustsecp256k1_v0_8_1_ge rustsecp256k1_v0_8_1_ge_const_g = SECP256K1_G_ORDER_199;
 
-static const rustsecp256k1_v0_8_0_fe rustsecp256k1_v0_8_0_fe_const_b = SECP256K1_FE_CONST(
+static const rustsecp256k1_v0_8_1_fe rustsecp256k1_v0_8_1_fe_const_b = SECP256K1_FE_CONST(
     0x2cca28fa, 0xfc614b80, 0x2a3db42b, 0x00ba00b1,
     0xbea8d943, 0xdace9ab2, 0x9536daea, 0x0074defb
 );
@@ -59,80 +59,80 @@ static const rustsecp256k1_v0_8_0_fe rustsecp256k1_v0_8_0_fe_const_b = SECP256K1
 #    error No known generator for the specified exhaustive test group order.
 #  endif
 #else
-static const rustsecp256k1_v0_8_0_ge rustsecp256k1_v0_8_0_ge_const_g = SECP256K1_G;
+static const rustsecp256k1_v0_8_1_ge rustsecp256k1_v0_8_1_ge_const_g = SECP256K1_G;
 
-static const rustsecp256k1_v0_8_0_fe rustsecp256k1_v0_8_0_fe_const_b = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 7);
+static const rustsecp256k1_v0_8_1_fe rustsecp256k1_v0_8_1_fe_const_b = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 7);
 #endif
 
-static void rustsecp256k1_v0_8_0_ge_set_gej_zinv(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_fe *zi) {
-    rustsecp256k1_v0_8_0_fe zi2;
-    rustsecp256k1_v0_8_0_fe zi3;
+static void rustsecp256k1_v0_8_1_ge_set_gej_zinv(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_fe *zi) {
+    rustsecp256k1_v0_8_1_fe zi2;
+    rustsecp256k1_v0_8_1_fe zi3;
     VERIFY_CHECK(!a->infinity);
-    rustsecp256k1_v0_8_0_fe_sqr(&zi2, zi);
-    rustsecp256k1_v0_8_0_fe_mul(&zi3, &zi2, zi);
-    rustsecp256k1_v0_8_0_fe_mul(&r->x, &a->x, &zi2);
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &a->y, &zi3);
+    rustsecp256k1_v0_8_1_fe_sqr(&zi2, zi);
+    rustsecp256k1_v0_8_1_fe_mul(&zi3, &zi2, zi);
+    rustsecp256k1_v0_8_1_fe_mul(&r->x, &a->x, &zi2);
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &a->y, &zi3);
     r->infinity = a->infinity;
 }
 
-static void rustsecp256k1_v0_8_0_ge_set_xy(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_fe *x, const rustsecp256k1_v0_8_0_fe *y) {
+static void rustsecp256k1_v0_8_1_ge_set_xy(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_fe *x, const rustsecp256k1_v0_8_1_fe *y) {
     r->infinity = 0;
     r->x = *x;
     r->y = *y;
 }
 
-static int rustsecp256k1_v0_8_0_ge_is_infinity(const rustsecp256k1_v0_8_0_ge *a) {
+static int rustsecp256k1_v0_8_1_ge_is_infinity(const rustsecp256k1_v0_8_1_ge *a) {
     return a->infinity;
 }
 
-static void rustsecp256k1_v0_8_0_ge_neg(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_ge *a) {
+static void rustsecp256k1_v0_8_1_ge_neg(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge *a) {
     *r = *a;
-    rustsecp256k1_v0_8_0_fe_normalize_weak(&r->y);
-    rustsecp256k1_v0_8_0_fe_negate(&r->y, &r->y, 1);
+    rustsecp256k1_v0_8_1_fe_normalize_weak(&r->y);
+    rustsecp256k1_v0_8_1_fe_negate(&r->y, &r->y, 1);
 }
 
-static void rustsecp256k1_v0_8_0_ge_set_gej(rustsecp256k1_v0_8_0_ge *r, rustsecp256k1_v0_8_0_gej *a) {
-    rustsecp256k1_v0_8_0_fe z2, z3;
+static void rustsecp256k1_v0_8_1_ge_set_gej(rustsecp256k1_v0_8_1_ge *r, rustsecp256k1_v0_8_1_gej *a) {
+    rustsecp256k1_v0_8_1_fe z2, z3;
     r->infinity = a->infinity;
-    rustsecp256k1_v0_8_0_fe_inv(&a->z, &a->z);
-    rustsecp256k1_v0_8_0_fe_sqr(&z2, &a->z);
-    rustsecp256k1_v0_8_0_fe_mul(&z3, &a->z, &z2);
-    rustsecp256k1_v0_8_0_fe_mul(&a->x, &a->x, &z2);
-    rustsecp256k1_v0_8_0_fe_mul(&a->y, &a->y, &z3);
-    rustsecp256k1_v0_8_0_fe_set_int(&a->z, 1);
+    rustsecp256k1_v0_8_1_fe_inv(&a->z, &a->z);
+    rustsecp256k1_v0_8_1_fe_sqr(&z2, &a->z);
+    rustsecp256k1_v0_8_1_fe_mul(&z3, &a->z, &z2);
+    rustsecp256k1_v0_8_1_fe_mul(&a->x, &a->x, &z2);
+    rustsecp256k1_v0_8_1_fe_mul(&a->y, &a->y, &z3);
+    rustsecp256k1_v0_8_1_fe_set_int(&a->z, 1);
     r->x = a->x;
     r->y = a->y;
 }
 
-static void rustsecp256k1_v0_8_0_ge_set_gej_var(rustsecp256k1_v0_8_0_ge *r, rustsecp256k1_v0_8_0_gej *a) {
-    rustsecp256k1_v0_8_0_fe z2, z3;
+static void rustsecp256k1_v0_8_1_ge_set_gej_var(rustsecp256k1_v0_8_1_ge *r, rustsecp256k1_v0_8_1_gej *a) {
+    rustsecp256k1_v0_8_1_fe z2, z3;
     if (a->infinity) {
-        rustsecp256k1_v0_8_0_ge_set_infinity(r);
+        rustsecp256k1_v0_8_1_ge_set_infinity(r);
         return;
     }
-    rustsecp256k1_v0_8_0_fe_inv_var(&a->z, &a->z);
-    rustsecp256k1_v0_8_0_fe_sqr(&z2, &a->z);
-    rustsecp256k1_v0_8_0_fe_mul(&z3, &a->z, &z2);
-    rustsecp256k1_v0_8_0_fe_mul(&a->x, &a->x, &z2);
-    rustsecp256k1_v0_8_0_fe_mul(&a->y, &a->y, &z3);
-    rustsecp256k1_v0_8_0_fe_set_int(&a->z, 1);
-    rustsecp256k1_v0_8_0_ge_set_xy(r, &a->x, &a->y);
+    rustsecp256k1_v0_8_1_fe_inv_var(&a->z, &a->z);
+    rustsecp256k1_v0_8_1_fe_sqr(&z2, &a->z);
+    rustsecp256k1_v0_8_1_fe_mul(&z3, &a->z, &z2);
+    rustsecp256k1_v0_8_1_fe_mul(&a->x, &a->x, &z2);
+    rustsecp256k1_v0_8_1_fe_mul(&a->y, &a->y, &z3);
+    rustsecp256k1_v0_8_1_fe_set_int(&a->z, 1);
+    rustsecp256k1_v0_8_1_ge_set_xy(r, &a->x, &a->y);
 }
 
-static void rustsecp256k1_v0_8_0_ge_set_all_gej_var(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_gej *a, size_t len) {
-    rustsecp256k1_v0_8_0_fe u;
+static void rustsecp256k1_v0_8_1_ge_set_all_gej_var(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_gej *a, size_t len) {
+    rustsecp256k1_v0_8_1_fe u;
     size_t i;
     size_t last_i = SIZE_MAX;
 
     for (i = 0; i < len; i++) {
         if (a[i].infinity) {
-            rustsecp256k1_v0_8_0_ge_set_infinity(&r[i]);
+            rustsecp256k1_v0_8_1_ge_set_infinity(&r[i]);
         } else {
             /* Use destination's x coordinates as scratch space */
             if (last_i == SIZE_MAX) {
                 r[i].x = a[i].z;
             } else {
-                rustsecp256k1_v0_8_0_fe_mul(&r[i].x, &r[last_i].x, &a[i].z);
+                rustsecp256k1_v0_8_1_fe_mul(&r[i].x, &r[last_i].x, &a[i].z);
             }
             last_i = i;
         }
@@ -140,14 +140,14 @@ static void rustsecp256k1_v0_8_0_ge_set_all_gej_var(rustsecp256k1_v0_8_0_ge *r, 
     if (last_i == SIZE_MAX) {
         return;
     }
-    rustsecp256k1_v0_8_0_fe_inv_var(&u, &r[last_i].x);
+    rustsecp256k1_v0_8_1_fe_inv_var(&u, &r[last_i].x);
 
     i = last_i;
     while (i > 0) {
         i--;
         if (!a[i].infinity) {
-            rustsecp256k1_v0_8_0_fe_mul(&r[last_i].x, &r[i].x, &u);
-            rustsecp256k1_v0_8_0_fe_mul(&u, &u, &a[last_i].z);
+            rustsecp256k1_v0_8_1_fe_mul(&r[last_i].x, &r[i].x, &u);
+            rustsecp256k1_v0_8_1_fe_mul(&u, &u, &a[last_i].z);
             last_i = i;
         }
     }
@@ -156,130 +156,130 @@ static void rustsecp256k1_v0_8_0_ge_set_all_gej_var(rustsecp256k1_v0_8_0_ge *r, 
 
     for (i = 0; i < len; i++) {
         if (!a[i].infinity) {
-            rustsecp256k1_v0_8_0_ge_set_gej_zinv(&r[i], &a[i], &r[i].x);
+            rustsecp256k1_v0_8_1_ge_set_gej_zinv(&r[i], &a[i], &r[i].x);
         }
     }
 }
 
-static void rustsecp256k1_v0_8_0_ge_table_set_globalz(size_t len, rustsecp256k1_v0_8_0_ge *a, const rustsecp256k1_v0_8_0_fe *zr) {
+static void rustsecp256k1_v0_8_1_ge_table_set_globalz(size_t len, rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_fe *zr) {
     size_t i = len - 1;
-    rustsecp256k1_v0_8_0_fe zs;
+    rustsecp256k1_v0_8_1_fe zs;
 
     if (len > 0) {
         /* Ensure all y values are in weak normal form for fast negation of points */
-        rustsecp256k1_v0_8_0_fe_normalize_weak(&a[i].y);
+        rustsecp256k1_v0_8_1_fe_normalize_weak(&a[i].y);
         zs = zr[i];
 
         /* Work our way backwards, using the z-ratios to scale the x/y values. */
         while (i > 0) {
-            rustsecp256k1_v0_8_0_gej tmpa;
+            rustsecp256k1_v0_8_1_gej tmpa;
             if (i != len - 1) {
-                rustsecp256k1_v0_8_0_fe_mul(&zs, &zs, &zr[i]);
+                rustsecp256k1_v0_8_1_fe_mul(&zs, &zs, &zr[i]);
             }
             i--;
             tmpa.x = a[i].x;
             tmpa.y = a[i].y;
             tmpa.infinity = 0;
-            rustsecp256k1_v0_8_0_ge_set_gej_zinv(&a[i], &tmpa, &zs);
+            rustsecp256k1_v0_8_1_ge_set_gej_zinv(&a[i], &tmpa, &zs);
         }
     }
 }
 
-static void rustsecp256k1_v0_8_0_gej_set_infinity(rustsecp256k1_v0_8_0_gej *r) {
+static void rustsecp256k1_v0_8_1_gej_set_infinity(rustsecp256k1_v0_8_1_gej *r) {
     r->infinity = 1;
-    rustsecp256k1_v0_8_0_fe_clear(&r->x);
-    rustsecp256k1_v0_8_0_fe_clear(&r->y);
-    rustsecp256k1_v0_8_0_fe_clear(&r->z);
+    rustsecp256k1_v0_8_1_fe_clear(&r->x);
+    rustsecp256k1_v0_8_1_fe_clear(&r->y);
+    rustsecp256k1_v0_8_1_fe_clear(&r->z);
 }
 
-static void rustsecp256k1_v0_8_0_ge_set_infinity(rustsecp256k1_v0_8_0_ge *r) {
+static void rustsecp256k1_v0_8_1_ge_set_infinity(rustsecp256k1_v0_8_1_ge *r) {
     r->infinity = 1;
-    rustsecp256k1_v0_8_0_fe_clear(&r->x);
-    rustsecp256k1_v0_8_0_fe_clear(&r->y);
+    rustsecp256k1_v0_8_1_fe_clear(&r->x);
+    rustsecp256k1_v0_8_1_fe_clear(&r->y);
 }
 
-static void rustsecp256k1_v0_8_0_gej_clear(rustsecp256k1_v0_8_0_gej *r) {
+static void rustsecp256k1_v0_8_1_gej_clear(rustsecp256k1_v0_8_1_gej *r) {
     r->infinity = 0;
-    rustsecp256k1_v0_8_0_fe_clear(&r->x);
-    rustsecp256k1_v0_8_0_fe_clear(&r->y);
-    rustsecp256k1_v0_8_0_fe_clear(&r->z);
+    rustsecp256k1_v0_8_1_fe_clear(&r->x);
+    rustsecp256k1_v0_8_1_fe_clear(&r->y);
+    rustsecp256k1_v0_8_1_fe_clear(&r->z);
 }
 
-static void rustsecp256k1_v0_8_0_ge_clear(rustsecp256k1_v0_8_0_ge *r) {
+static void rustsecp256k1_v0_8_1_ge_clear(rustsecp256k1_v0_8_1_ge *r) {
     r->infinity = 0;
-    rustsecp256k1_v0_8_0_fe_clear(&r->x);
-    rustsecp256k1_v0_8_0_fe_clear(&r->y);
+    rustsecp256k1_v0_8_1_fe_clear(&r->x);
+    rustsecp256k1_v0_8_1_fe_clear(&r->y);
 }
 
-static int rustsecp256k1_v0_8_0_ge_set_xo_var(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_fe *x, int odd) {
-    rustsecp256k1_v0_8_0_fe x2, x3;
+static int rustsecp256k1_v0_8_1_ge_set_xo_var(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_fe *x, int odd) {
+    rustsecp256k1_v0_8_1_fe x2, x3;
     r->x = *x;
-    rustsecp256k1_v0_8_0_fe_sqr(&x2, x);
-    rustsecp256k1_v0_8_0_fe_mul(&x3, x, &x2);
+    rustsecp256k1_v0_8_1_fe_sqr(&x2, x);
+    rustsecp256k1_v0_8_1_fe_mul(&x3, x, &x2);
     r->infinity = 0;
-    rustsecp256k1_v0_8_0_fe_add(&x3, &rustsecp256k1_v0_8_0_fe_const_b);
-    if (!rustsecp256k1_v0_8_0_fe_sqrt(&r->y, &x3)) {
+    rustsecp256k1_v0_8_1_fe_add(&x3, &rustsecp256k1_v0_8_1_fe_const_b);
+    if (!rustsecp256k1_v0_8_1_fe_sqrt(&r->y, &x3)) {
         return 0;
     }
-    rustsecp256k1_v0_8_0_fe_normalize_var(&r->y);
-    if (rustsecp256k1_v0_8_0_fe_is_odd(&r->y) != odd) {
-        rustsecp256k1_v0_8_0_fe_negate(&r->y, &r->y, 1);
+    rustsecp256k1_v0_8_1_fe_normalize_var(&r->y);
+    if (rustsecp256k1_v0_8_1_fe_is_odd(&r->y) != odd) {
+        rustsecp256k1_v0_8_1_fe_negate(&r->y, &r->y, 1);
     }
     return 1;
 
 }
 
-static void rustsecp256k1_v0_8_0_gej_set_ge(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_ge *a) {
+static void rustsecp256k1_v0_8_1_gej_set_ge(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_ge *a) {
    r->infinity = a->infinity;
    r->x = a->x;
    r->y = a->y;
-   rustsecp256k1_v0_8_0_fe_set_int(&r->z, 1);
+   rustsecp256k1_v0_8_1_fe_set_int(&r->z, 1);
 }
 
-static int rustsecp256k1_v0_8_0_gej_eq_var(const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_gej *b) {
-    rustsecp256k1_v0_8_0_gej tmp;
-    rustsecp256k1_v0_8_0_gej_neg(&tmp, a);
-    rustsecp256k1_v0_8_0_gej_add_var(&tmp, &tmp, b, NULL);
-    return rustsecp256k1_v0_8_0_gej_is_infinity(&tmp);
+static int rustsecp256k1_v0_8_1_gej_eq_var(const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_gej *b) {
+    rustsecp256k1_v0_8_1_gej tmp;
+    rustsecp256k1_v0_8_1_gej_neg(&tmp, a);
+    rustsecp256k1_v0_8_1_gej_add_var(&tmp, &tmp, b, NULL);
+    return rustsecp256k1_v0_8_1_gej_is_infinity(&tmp);
 }
 
-static int rustsecp256k1_v0_8_0_gej_eq_x_var(const rustsecp256k1_v0_8_0_fe *x, const rustsecp256k1_v0_8_0_gej *a) {
-    rustsecp256k1_v0_8_0_fe r, r2;
+static int rustsecp256k1_v0_8_1_gej_eq_x_var(const rustsecp256k1_v0_8_1_fe *x, const rustsecp256k1_v0_8_1_gej *a) {
+    rustsecp256k1_v0_8_1_fe r, r2;
     VERIFY_CHECK(!a->infinity);
-    rustsecp256k1_v0_8_0_fe_sqr(&r, &a->z); rustsecp256k1_v0_8_0_fe_mul(&r, &r, x);
-    r2 = a->x; rustsecp256k1_v0_8_0_fe_normalize_weak(&r2);
-    return rustsecp256k1_v0_8_0_fe_equal_var(&r, &r2);
+    rustsecp256k1_v0_8_1_fe_sqr(&r, &a->z); rustsecp256k1_v0_8_1_fe_mul(&r, &r, x);
+    r2 = a->x; rustsecp256k1_v0_8_1_fe_normalize_weak(&r2);
+    return rustsecp256k1_v0_8_1_fe_equal_var(&r, &r2);
 }
 
-static void rustsecp256k1_v0_8_0_gej_neg(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a) {
+static void rustsecp256k1_v0_8_1_gej_neg(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a) {
     r->infinity = a->infinity;
     r->x = a->x;
     r->y = a->y;
     r->z = a->z;
-    rustsecp256k1_v0_8_0_fe_normalize_weak(&r->y);
-    rustsecp256k1_v0_8_0_fe_negate(&r->y, &r->y, 1);
+    rustsecp256k1_v0_8_1_fe_normalize_weak(&r->y);
+    rustsecp256k1_v0_8_1_fe_negate(&r->y, &r->y, 1);
 }
 
-static int rustsecp256k1_v0_8_0_gej_is_infinity(const rustsecp256k1_v0_8_0_gej *a) {
+static int rustsecp256k1_v0_8_1_gej_is_infinity(const rustsecp256k1_v0_8_1_gej *a) {
     return a->infinity;
 }
 
-static int rustsecp256k1_v0_8_0_ge_is_valid_var(const rustsecp256k1_v0_8_0_ge *a) {
-    rustsecp256k1_v0_8_0_fe y2, x3;
+static int rustsecp256k1_v0_8_1_ge_is_valid_var(const rustsecp256k1_v0_8_1_ge *a) {
+    rustsecp256k1_v0_8_1_fe y2, x3;
     if (a->infinity) {
         return 0;
     }
     /* y^2 = x^3 + 7 */
-    rustsecp256k1_v0_8_0_fe_sqr(&y2, &a->y);
-    rustsecp256k1_v0_8_0_fe_sqr(&x3, &a->x); rustsecp256k1_v0_8_0_fe_mul(&x3, &x3, &a->x);
-    rustsecp256k1_v0_8_0_fe_add(&x3, &rustsecp256k1_v0_8_0_fe_const_b);
-    rustsecp256k1_v0_8_0_fe_normalize_weak(&x3);
-    return rustsecp256k1_v0_8_0_fe_equal_var(&y2, &x3);
+    rustsecp256k1_v0_8_1_fe_sqr(&y2, &a->y);
+    rustsecp256k1_v0_8_1_fe_sqr(&x3, &a->x); rustsecp256k1_v0_8_1_fe_mul(&x3, &x3, &a->x);
+    rustsecp256k1_v0_8_1_fe_add(&x3, &rustsecp256k1_v0_8_1_fe_const_b);
+    rustsecp256k1_v0_8_1_fe_normalize_weak(&x3);
+    return rustsecp256k1_v0_8_1_fe_equal_var(&y2, &x3);
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_8_0_gej_double(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a) {
+static SECP256K1_INLINE void rustsecp256k1_v0_8_1_gej_double(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a) {
     /* Operations: 3 mul, 4 sqr, 8 add/half/mul_int/negate */
-    rustsecp256k1_v0_8_0_fe l, s, t;
+    rustsecp256k1_v0_8_1_fe l, s, t;
 
     r->infinity = a->infinity;
 
@@ -292,24 +292,24 @@ static SECP256K1_INLINE void rustsecp256k1_v0_8_0_gej_double(rustsecp256k1_v0_8_
      * Z3 = Y1*Z1
      */
 
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &a->z, &a->y); /* Z3 = Y1*Z1 (1) */
-    rustsecp256k1_v0_8_0_fe_sqr(&s, &a->y);           /* S = Y1^2 (1) */
-    rustsecp256k1_v0_8_0_fe_sqr(&l, &a->x);           /* L = X1^2 (1) */
-    rustsecp256k1_v0_8_0_fe_mul_int(&l, 3);           /* L = 3*X1^2 (3) */
-    rustsecp256k1_v0_8_0_fe_half(&l);                 /* L = 3/2*X1^2 (2) */
-    rustsecp256k1_v0_8_0_fe_negate(&t, &s, 1);        /* T = -S (2) */
-    rustsecp256k1_v0_8_0_fe_mul(&t, &t, &a->x);       /* T = -X1*S (1) */
-    rustsecp256k1_v0_8_0_fe_sqr(&r->x, &l);           /* X3 = L^2 (1) */
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);           /* X3 = L^2 + T (2) */
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);           /* X3 = L^2 + 2*T (3) */
-    rustsecp256k1_v0_8_0_fe_sqr(&s, &s);              /* S' = S^2 (1) */
-    rustsecp256k1_v0_8_0_fe_add(&t, &r->x);           /* T' = X3 + T (4) */
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &t, &l);       /* Y3 = L*(X3 + T) (1) */
-    rustsecp256k1_v0_8_0_fe_add(&r->y, &s);           /* Y3 = L*(X3 + T) + S^2 (2) */
-    rustsecp256k1_v0_8_0_fe_negate(&r->y, &r->y, 2);  /* Y3 = -(L*(X3 + T) + S^2) (3) */
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &a->z, &a->y); /* Z3 = Y1*Z1 (1) */
+    rustsecp256k1_v0_8_1_fe_sqr(&s, &a->y);           /* S = Y1^2 (1) */
+    rustsecp256k1_v0_8_1_fe_sqr(&l, &a->x);           /* L = X1^2 (1) */
+    rustsecp256k1_v0_8_1_fe_mul_int(&l, 3);           /* L = 3*X1^2 (3) */
+    rustsecp256k1_v0_8_1_fe_half(&l);                 /* L = 3/2*X1^2 (2) */
+    rustsecp256k1_v0_8_1_fe_negate(&t, &s, 1);        /* T = -S (2) */
+    rustsecp256k1_v0_8_1_fe_mul(&t, &t, &a->x);       /* T = -X1*S (1) */
+    rustsecp256k1_v0_8_1_fe_sqr(&r->x, &l);           /* X3 = L^2 (1) */
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);           /* X3 = L^2 + T (2) */
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);           /* X3 = L^2 + 2*T (3) */
+    rustsecp256k1_v0_8_1_fe_sqr(&s, &s);              /* S' = S^2 (1) */
+    rustsecp256k1_v0_8_1_fe_add(&t, &r->x);           /* T' = X3 + T (4) */
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &t, &l);       /* Y3 = L*(X3 + T) (1) */
+    rustsecp256k1_v0_8_1_fe_add(&r->y, &s);           /* Y3 = L*(X3 + T) + S^2 (2) */
+    rustsecp256k1_v0_8_1_fe_negate(&r->y, &r->y, 2);  /* Y3 = -(L*(X3 + T) + S^2) (3) */
 }
 
-static void rustsecp256k1_v0_8_0_gej_double_var(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, rustsecp256k1_v0_8_0_fe *rzr) {
+static void rustsecp256k1_v0_8_1_gej_double_var(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, rustsecp256k1_v0_8_1_fe *rzr) {
     /** For secp256k1, 2Q is infinity if and only if Q is infinity. This is because if 2Q = infinity,
      *  Q must equal -Q, or that Q.y == -(Q.y), or Q.y is 0. For a point on y^2 = x^3 + 7 to have
      *  y=0, x^3 must be -7 mod p. However, -7 has no cube root mod p.
@@ -321,24 +321,24 @@ static void rustsecp256k1_v0_8_0_gej_double_var(rustsecp256k1_v0_8_0_gej *r, con
      *  point will be gibberish (z = 0 but infinity = 0).
      */
     if (a->infinity) {
-        rustsecp256k1_v0_8_0_gej_set_infinity(r);
+        rustsecp256k1_v0_8_1_gej_set_infinity(r);
         if (rzr != NULL) {
-            rustsecp256k1_v0_8_0_fe_set_int(rzr, 1);
+            rustsecp256k1_v0_8_1_fe_set_int(rzr, 1);
         }
         return;
     }
 
     if (rzr != NULL) {
         *rzr = a->y;
-        rustsecp256k1_v0_8_0_fe_normalize_weak(rzr);
+        rustsecp256k1_v0_8_1_fe_normalize_weak(rzr);
     }
 
-    rustsecp256k1_v0_8_0_gej_double(r, a);
+    rustsecp256k1_v0_8_1_gej_double(r, a);
 }
 
-static void rustsecp256k1_v0_8_0_gej_add_var(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_gej *b, rustsecp256k1_v0_8_0_fe *rzr) {
+static void rustsecp256k1_v0_8_1_gej_add_var(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_gej *b, rustsecp256k1_v0_8_1_fe *rzr) {
     /* 12 mul, 4 sqr, 11 add/negate/normalizes_to_zero (ignoring special cases) */
-    rustsecp256k1_v0_8_0_fe z22, z12, u1, u2, s1, s2, h, i, h2, h3, t;
+    rustsecp256k1_v0_8_1_fe z22, z12, u1, u2, s1, s2, h, i, h2, h3, t;
 
     if (a->infinity) {
         VERIFY_CHECK(rzr == NULL);
@@ -347,86 +347,86 @@ static void rustsecp256k1_v0_8_0_gej_add_var(rustsecp256k1_v0_8_0_gej *r, const 
     }
     if (b->infinity) {
         if (rzr != NULL) {
-            rustsecp256k1_v0_8_0_fe_set_int(rzr, 1);
+            rustsecp256k1_v0_8_1_fe_set_int(rzr, 1);
         }
         *r = *a;
         return;
     }
 
-    rustsecp256k1_v0_8_0_fe_sqr(&z22, &b->z);
-    rustsecp256k1_v0_8_0_fe_sqr(&z12, &a->z);
-    rustsecp256k1_v0_8_0_fe_mul(&u1, &a->x, &z22);
-    rustsecp256k1_v0_8_0_fe_mul(&u2, &b->x, &z12);
-    rustsecp256k1_v0_8_0_fe_mul(&s1, &a->y, &z22); rustsecp256k1_v0_8_0_fe_mul(&s1, &s1, &b->z);
-    rustsecp256k1_v0_8_0_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_0_fe_mul(&s2, &s2, &a->z);
-    rustsecp256k1_v0_8_0_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_0_fe_add(&h, &u2);
-    rustsecp256k1_v0_8_0_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_0_fe_add(&i, &s1);
-    if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&h)) {
-        if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&i)) {
-            rustsecp256k1_v0_8_0_gej_double_var(r, a, rzr);
+    rustsecp256k1_v0_8_1_fe_sqr(&z22, &b->z);
+    rustsecp256k1_v0_8_1_fe_sqr(&z12, &a->z);
+    rustsecp256k1_v0_8_1_fe_mul(&u1, &a->x, &z22);
+    rustsecp256k1_v0_8_1_fe_mul(&u2, &b->x, &z12);
+    rustsecp256k1_v0_8_1_fe_mul(&s1, &a->y, &z22); rustsecp256k1_v0_8_1_fe_mul(&s1, &s1, &b->z);
+    rustsecp256k1_v0_8_1_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_1_fe_mul(&s2, &s2, &a->z);
+    rustsecp256k1_v0_8_1_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_1_fe_add(&h, &u2);
+    rustsecp256k1_v0_8_1_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_1_fe_add(&i, &s1);
+    if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&h)) {
+        if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&i)) {
+            rustsecp256k1_v0_8_1_gej_double_var(r, a, rzr);
         } else {
             if (rzr != NULL) {
-                rustsecp256k1_v0_8_0_fe_set_int(rzr, 0);
+                rustsecp256k1_v0_8_1_fe_set_int(rzr, 0);
             }
-            rustsecp256k1_v0_8_0_gej_set_infinity(r);
+            rustsecp256k1_v0_8_1_gej_set_infinity(r);
         }
         return;
     }
 
     r->infinity = 0;
-    rustsecp256k1_v0_8_0_fe_mul(&t, &h, &b->z);
+    rustsecp256k1_v0_8_1_fe_mul(&t, &h, &b->z);
     if (rzr != NULL) {
         *rzr = t;
     }
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &a->z, &t);
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &a->z, &t);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&h2, &h);
-    rustsecp256k1_v0_8_0_fe_negate(&h2, &h2, 1);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h2, &h);
-    rustsecp256k1_v0_8_0_fe_mul(&t, &u1, &h2);
+    rustsecp256k1_v0_8_1_fe_sqr(&h2, &h);
+    rustsecp256k1_v0_8_1_fe_negate(&h2, &h2, 1);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h2, &h);
+    rustsecp256k1_v0_8_1_fe_mul(&t, &u1, &h2);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&r->x, &i);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &h3);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_sqr(&r->x, &i);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
 
-    rustsecp256k1_v0_8_0_fe_add(&t, &r->x);
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &t, &i);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h3, &s1);
-    rustsecp256k1_v0_8_0_fe_add(&r->y, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&t, &r->x);
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &t, &i);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h3, &s1);
+    rustsecp256k1_v0_8_1_fe_add(&r->y, &h3);
 }
 
-static void rustsecp256k1_v0_8_0_gej_add_ge_var(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_ge *b, rustsecp256k1_v0_8_0_fe *rzr) {
+static void rustsecp256k1_v0_8_1_gej_add_ge_var(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_ge *b, rustsecp256k1_v0_8_1_fe *rzr) {
     /* 8 mul, 3 sqr, 13 add/negate/normalize_weak/normalizes_to_zero (ignoring special cases) */
-    rustsecp256k1_v0_8_0_fe z12, u1, u2, s1, s2, h, i, h2, h3, t;
+    rustsecp256k1_v0_8_1_fe z12, u1, u2, s1, s2, h, i, h2, h3, t;
     if (a->infinity) {
         VERIFY_CHECK(rzr == NULL);
-        rustsecp256k1_v0_8_0_gej_set_ge(r, b);
+        rustsecp256k1_v0_8_1_gej_set_ge(r, b);
         return;
     }
     if (b->infinity) {
         if (rzr != NULL) {
-            rustsecp256k1_v0_8_0_fe_set_int(rzr, 1);
+            rustsecp256k1_v0_8_1_fe_set_int(rzr, 1);
         }
         *r = *a;
         return;
     }
 
-    rustsecp256k1_v0_8_0_fe_sqr(&z12, &a->z);
-    u1 = a->x; rustsecp256k1_v0_8_0_fe_normalize_weak(&u1);
-    rustsecp256k1_v0_8_0_fe_mul(&u2, &b->x, &z12);
-    s1 = a->y; rustsecp256k1_v0_8_0_fe_normalize_weak(&s1);
-    rustsecp256k1_v0_8_0_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_0_fe_mul(&s2, &s2, &a->z);
-    rustsecp256k1_v0_8_0_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_0_fe_add(&h, &u2);
-    rustsecp256k1_v0_8_0_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_0_fe_add(&i, &s1);
-    if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&h)) {
-        if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&i)) {
-            rustsecp256k1_v0_8_0_gej_double_var(r, a, rzr);
+    rustsecp256k1_v0_8_1_fe_sqr(&z12, &a->z);
+    u1 = a->x; rustsecp256k1_v0_8_1_fe_normalize_weak(&u1);
+    rustsecp256k1_v0_8_1_fe_mul(&u2, &b->x, &z12);
+    s1 = a->y; rustsecp256k1_v0_8_1_fe_normalize_weak(&s1);
+    rustsecp256k1_v0_8_1_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_1_fe_mul(&s2, &s2, &a->z);
+    rustsecp256k1_v0_8_1_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_1_fe_add(&h, &u2);
+    rustsecp256k1_v0_8_1_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_1_fe_add(&i, &s1);
+    if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&h)) {
+        if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&i)) {
+            rustsecp256k1_v0_8_1_gej_double_var(r, a, rzr);
         } else {
             if (rzr != NULL) {
-                rustsecp256k1_v0_8_0_fe_set_int(rzr, 0);
+                rustsecp256k1_v0_8_1_fe_set_int(rzr, 0);
             }
-            rustsecp256k1_v0_8_0_gej_set_infinity(r);
+            rustsecp256k1_v0_8_1_gej_set_infinity(r);
         }
         return;
     }
@@ -435,36 +435,36 @@ static void rustsecp256k1_v0_8_0_gej_add_ge_var(rustsecp256k1_v0_8_0_gej *r, con
     if (rzr != NULL) {
         *rzr = h;
     }
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &a->z, &h);
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &a->z, &h);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&h2, &h);
-    rustsecp256k1_v0_8_0_fe_negate(&h2, &h2, 1);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h2, &h);
-    rustsecp256k1_v0_8_0_fe_mul(&t, &u1, &h2);
+    rustsecp256k1_v0_8_1_fe_sqr(&h2, &h);
+    rustsecp256k1_v0_8_1_fe_negate(&h2, &h2, 1);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h2, &h);
+    rustsecp256k1_v0_8_1_fe_mul(&t, &u1, &h2);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&r->x, &i);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &h3);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_sqr(&r->x, &i);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
 
-    rustsecp256k1_v0_8_0_fe_add(&t, &r->x);
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &t, &i);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h3, &s1);
-    rustsecp256k1_v0_8_0_fe_add(&r->y, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&t, &r->x);
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &t, &i);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h3, &s1);
+    rustsecp256k1_v0_8_1_fe_add(&r->y, &h3);
 }
 
-static void rustsecp256k1_v0_8_0_gej_add_zinv_var(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_ge *b, const rustsecp256k1_v0_8_0_fe *bzinv) {
+static void rustsecp256k1_v0_8_1_gej_add_zinv_var(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_ge *b, const rustsecp256k1_v0_8_1_fe *bzinv) {
     /* 9 mul, 3 sqr, 13 add/negate/normalize_weak/normalizes_to_zero (ignoring special cases) */
-    rustsecp256k1_v0_8_0_fe az, z12, u1, u2, s1, s2, h, i, h2, h3, t;
+    rustsecp256k1_v0_8_1_fe az, z12, u1, u2, s1, s2, h, i, h2, h3, t;
 
     if (a->infinity) {
-        rustsecp256k1_v0_8_0_fe bzinv2, bzinv3;
+        rustsecp256k1_v0_8_1_fe bzinv2, bzinv3;
         r->infinity = b->infinity;
-        rustsecp256k1_v0_8_0_fe_sqr(&bzinv2, bzinv);
-        rustsecp256k1_v0_8_0_fe_mul(&bzinv3, &bzinv2, bzinv);
-        rustsecp256k1_v0_8_0_fe_mul(&r->x, &b->x, &bzinv2);
-        rustsecp256k1_v0_8_0_fe_mul(&r->y, &b->y, &bzinv3);
-        rustsecp256k1_v0_8_0_fe_set_int(&r->z, 1);
+        rustsecp256k1_v0_8_1_fe_sqr(&bzinv2, bzinv);
+        rustsecp256k1_v0_8_1_fe_mul(&bzinv3, &bzinv2, bzinv);
+        rustsecp256k1_v0_8_1_fe_mul(&r->x, &b->x, &bzinv2);
+        rustsecp256k1_v0_8_1_fe_mul(&r->y, &b->y, &bzinv3);
+        rustsecp256k1_v0_8_1_fe_set_int(&r->z, 1);
         return;
     }
     if (b->infinity) {
@@ -480,48 +480,48 @@ static void rustsecp256k1_v0_8_0_gej_add_zinv_var(rustsecp256k1_v0_8_0_gej *r, c
      *  The variable az below holds the modified Z coordinate for a, which is used
      *  for the computation of rx and ry, but not for rz.
      */
-    rustsecp256k1_v0_8_0_fe_mul(&az, &a->z, bzinv);
+    rustsecp256k1_v0_8_1_fe_mul(&az, &a->z, bzinv);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&z12, &az);
-    u1 = a->x; rustsecp256k1_v0_8_0_fe_normalize_weak(&u1);
-    rustsecp256k1_v0_8_0_fe_mul(&u2, &b->x, &z12);
-    s1 = a->y; rustsecp256k1_v0_8_0_fe_normalize_weak(&s1);
-    rustsecp256k1_v0_8_0_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_0_fe_mul(&s2, &s2, &az);
-    rustsecp256k1_v0_8_0_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_0_fe_add(&h, &u2);
-    rustsecp256k1_v0_8_0_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_0_fe_add(&i, &s1);
-    if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&h)) {
-        if (rustsecp256k1_v0_8_0_fe_normalizes_to_zero_var(&i)) {
-            rustsecp256k1_v0_8_0_gej_double_var(r, a, NULL);
+    rustsecp256k1_v0_8_1_fe_sqr(&z12, &az);
+    u1 = a->x; rustsecp256k1_v0_8_1_fe_normalize_weak(&u1);
+    rustsecp256k1_v0_8_1_fe_mul(&u2, &b->x, &z12);
+    s1 = a->y; rustsecp256k1_v0_8_1_fe_normalize_weak(&s1);
+    rustsecp256k1_v0_8_1_fe_mul(&s2, &b->y, &z12); rustsecp256k1_v0_8_1_fe_mul(&s2, &s2, &az);
+    rustsecp256k1_v0_8_1_fe_negate(&h, &u1, 1); rustsecp256k1_v0_8_1_fe_add(&h, &u2);
+    rustsecp256k1_v0_8_1_fe_negate(&i, &s2, 1); rustsecp256k1_v0_8_1_fe_add(&i, &s1);
+    if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&h)) {
+        if (rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(&i)) {
+            rustsecp256k1_v0_8_1_gej_double_var(r, a, NULL);
         } else {
-            rustsecp256k1_v0_8_0_gej_set_infinity(r);
+            rustsecp256k1_v0_8_1_gej_set_infinity(r);
         }
         return;
     }
 
     r->infinity = 0;
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &a->z, &h);
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &a->z, &h);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&h2, &h);
-    rustsecp256k1_v0_8_0_fe_negate(&h2, &h2, 1);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h2, &h);
-    rustsecp256k1_v0_8_0_fe_mul(&t, &u1, &h2);
+    rustsecp256k1_v0_8_1_fe_sqr(&h2, &h);
+    rustsecp256k1_v0_8_1_fe_negate(&h2, &h2, 1);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h2, &h);
+    rustsecp256k1_v0_8_1_fe_mul(&t, &u1, &h2);
 
-    rustsecp256k1_v0_8_0_fe_sqr(&r->x, &i);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &h3);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
-    rustsecp256k1_v0_8_0_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_sqr(&r->x, &i);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
+    rustsecp256k1_v0_8_1_fe_add(&r->x, &t);
 
-    rustsecp256k1_v0_8_0_fe_add(&t, &r->x);
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &t, &i);
-    rustsecp256k1_v0_8_0_fe_mul(&h3, &h3, &s1);
-    rustsecp256k1_v0_8_0_fe_add(&r->y, &h3);
+    rustsecp256k1_v0_8_1_fe_add(&t, &r->x);
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &t, &i);
+    rustsecp256k1_v0_8_1_fe_mul(&h3, &h3, &s1);
+    rustsecp256k1_v0_8_1_fe_add(&r->y, &h3);
 }
 
 
-static void rustsecp256k1_v0_8_0_gej_add_ge(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, const rustsecp256k1_v0_8_0_ge *b) {
+static void rustsecp256k1_v0_8_1_gej_add_ge(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, const rustsecp256k1_v0_8_1_ge *b) {
     /* Operations: 7 mul, 5 sqr, 24 add/cmov/half/mul_int/negate/normalize_weak/normalizes_to_zero */
-    rustsecp256k1_v0_8_0_fe zz, u1, u2, s1, s2, t, tt, m, n, q, rr;
-    rustsecp256k1_v0_8_0_fe m_alt, rr_alt;
+    rustsecp256k1_v0_8_1_fe zz, u1, u2, s1, s2, t, tt, m, n, q, rr;
+    rustsecp256k1_v0_8_1_fe m_alt, rr_alt;
     int infinity, degenerate;
     VERIFY_CHECK(!b->infinity);
     VERIFY_CHECK(a->infinity == 0 || a->infinity == 1);
@@ -576,125 +576,125 @@ static void rustsecp256k1_v0_8_0_gej_add_ge(rustsecp256k1_v0_8_0_gej *r, const r
      *      so this covers everything.
      */
 
-    rustsecp256k1_v0_8_0_fe_sqr(&zz, &a->z);                       /* z = Z1^2 */
-    u1 = a->x; rustsecp256k1_v0_8_0_fe_normalize_weak(&u1);        /* u1 = U1 = X1*Z2^2 (1) */
-    rustsecp256k1_v0_8_0_fe_mul(&u2, &b->x, &zz);                  /* u2 = U2 = X2*Z1^2 (1) */
-    s1 = a->y; rustsecp256k1_v0_8_0_fe_normalize_weak(&s1);        /* s1 = S1 = Y1*Z2^3 (1) */
-    rustsecp256k1_v0_8_0_fe_mul(&s2, &b->y, &zz);                  /* s2 = Y2*Z1^2 (1) */
-    rustsecp256k1_v0_8_0_fe_mul(&s2, &s2, &a->z);                  /* s2 = S2 = Y2*Z1^3 (1) */
-    t = u1; rustsecp256k1_v0_8_0_fe_add(&t, &u2);                  /* t = T = U1+U2 (2) */
-    m = s1; rustsecp256k1_v0_8_0_fe_add(&m, &s2);                  /* m = M = S1+S2 (2) */
-    rustsecp256k1_v0_8_0_fe_sqr(&rr, &t);                          /* rr = T^2 (1) */
-    rustsecp256k1_v0_8_0_fe_negate(&m_alt, &u2, 1);                /* Malt = -X2*Z1^2 */
-    rustsecp256k1_v0_8_0_fe_mul(&tt, &u1, &m_alt);                 /* tt = -U1*U2 (2) */
-    rustsecp256k1_v0_8_0_fe_add(&rr, &tt);                         /* rr = R = T^2-U1*U2 (3) */
+    rustsecp256k1_v0_8_1_fe_sqr(&zz, &a->z);                       /* z = Z1^2 */
+    u1 = a->x; rustsecp256k1_v0_8_1_fe_normalize_weak(&u1);        /* u1 = U1 = X1*Z2^2 (1) */
+    rustsecp256k1_v0_8_1_fe_mul(&u2, &b->x, &zz);                  /* u2 = U2 = X2*Z1^2 (1) */
+    s1 = a->y; rustsecp256k1_v0_8_1_fe_normalize_weak(&s1);        /* s1 = S1 = Y1*Z2^3 (1) */
+    rustsecp256k1_v0_8_1_fe_mul(&s2, &b->y, &zz);                  /* s2 = Y2*Z1^2 (1) */
+    rustsecp256k1_v0_8_1_fe_mul(&s2, &s2, &a->z);                  /* s2 = S2 = Y2*Z1^3 (1) */
+    t = u1; rustsecp256k1_v0_8_1_fe_add(&t, &u2);                  /* t = T = U1+U2 (2) */
+    m = s1; rustsecp256k1_v0_8_1_fe_add(&m, &s2);                  /* m = M = S1+S2 (2) */
+    rustsecp256k1_v0_8_1_fe_sqr(&rr, &t);                          /* rr = T^2 (1) */
+    rustsecp256k1_v0_8_1_fe_negate(&m_alt, &u2, 1);                /* Malt = -X2*Z1^2 */
+    rustsecp256k1_v0_8_1_fe_mul(&tt, &u1, &m_alt);                 /* tt = -U1*U2 (2) */
+    rustsecp256k1_v0_8_1_fe_add(&rr, &tt);                         /* rr = R = T^2-U1*U2 (3) */
     /** If lambda = R/M = 0/0 we have a problem (except in the "trivial"
      *  case that Z = z1z2 = 0, and this is special-cased later on). */
-    degenerate = rustsecp256k1_v0_8_0_fe_normalizes_to_zero(&m) &
-                 rustsecp256k1_v0_8_0_fe_normalizes_to_zero(&rr);
+    degenerate = rustsecp256k1_v0_8_1_fe_normalizes_to_zero(&m) &
+                 rustsecp256k1_v0_8_1_fe_normalizes_to_zero(&rr);
     /* This only occurs when y1 == -y2 and x1^3 == x2^3, but x1 != x2.
      * This means either x1 == beta*x2 or beta*x1 == x2, where beta is
      * a nontrivial cube root of one. In either case, an alternate
      * non-indeterminate expression for lambda is (y1 - y2)/(x1 - x2),
      * so we set R/M equal to this. */
     rr_alt = s1;
-    rustsecp256k1_v0_8_0_fe_mul_int(&rr_alt, 2);       /* rr = Y1*Z2^3 - Y2*Z1^3 (2) */
-    rustsecp256k1_v0_8_0_fe_add(&m_alt, &u1);          /* Malt = X1*Z2^2 - X2*Z1^2 */
+    rustsecp256k1_v0_8_1_fe_mul_int(&rr_alt, 2);       /* rr = Y1*Z2^3 - Y2*Z1^3 (2) */
+    rustsecp256k1_v0_8_1_fe_add(&m_alt, &u1);          /* Malt = X1*Z2^2 - X2*Z1^2 */
 
-    rustsecp256k1_v0_8_0_fe_cmov(&rr_alt, &rr, !degenerate);
-    rustsecp256k1_v0_8_0_fe_cmov(&m_alt, &m, !degenerate);
+    rustsecp256k1_v0_8_1_fe_cmov(&rr_alt, &rr, !degenerate);
+    rustsecp256k1_v0_8_1_fe_cmov(&m_alt, &m, !degenerate);
     /* Now Ralt / Malt = lambda and is guaranteed not to be 0/0.
      * From here on out Ralt and Malt represent the numerator
      * and denominator of lambda; R and M represent the explicit
      * expressions x1^2 + x2^2 + x1x2 and y1 + y2. */
-    rustsecp256k1_v0_8_0_fe_sqr(&n, &m_alt);                       /* n = Malt^2 (1) */
-    rustsecp256k1_v0_8_0_fe_negate(&q, &t, 2);                     /* q = -T (3) */
-    rustsecp256k1_v0_8_0_fe_mul(&q, &q, &n);                       /* q = Q = -T*Malt^2 (1) */
+    rustsecp256k1_v0_8_1_fe_sqr(&n, &m_alt);                       /* n = Malt^2 (1) */
+    rustsecp256k1_v0_8_1_fe_negate(&q, &t, 2);                     /* q = -T (3) */
+    rustsecp256k1_v0_8_1_fe_mul(&q, &q, &n);                       /* q = Q = -T*Malt^2 (1) */
     /* These two lines use the observation that either M == Malt or M == 0,
      * so M^3 * Malt is either Malt^4 (which is computed by squaring), or
      * zero (which is "computed" by cmov). So the cost is one squaring
      * versus two multiplications. */
-    rustsecp256k1_v0_8_0_fe_sqr(&n, &n);
-    rustsecp256k1_v0_8_0_fe_cmov(&n, &m, degenerate);              /* n = M^3 * Malt (2) */
-    rustsecp256k1_v0_8_0_fe_sqr(&t, &rr_alt);                      /* t = Ralt^2 (1) */
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &a->z, &m_alt);             /* r->z = Z3 = Malt*Z (1) */
-    infinity = rustsecp256k1_v0_8_0_fe_normalizes_to_zero(&r->z) & ~a->infinity;
-    rustsecp256k1_v0_8_0_fe_add(&t, &q);                           /* t = Ralt^2 + Q (2) */
+    rustsecp256k1_v0_8_1_fe_sqr(&n, &n);
+    rustsecp256k1_v0_8_1_fe_cmov(&n, &m, degenerate);              /* n = M^3 * Malt (2) */
+    rustsecp256k1_v0_8_1_fe_sqr(&t, &rr_alt);                      /* t = Ralt^2 (1) */
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &a->z, &m_alt);             /* r->z = Z3 = Malt*Z (1) */
+    infinity = rustsecp256k1_v0_8_1_fe_normalizes_to_zero(&r->z) & ~a->infinity;
+    rustsecp256k1_v0_8_1_fe_add(&t, &q);                           /* t = Ralt^2 + Q (2) */
     r->x = t;                                           /* r->x = X3 = Ralt^2 + Q (2) */
-    rustsecp256k1_v0_8_0_fe_mul_int(&t, 2);                        /* t = 2*X3 (4) */
-    rustsecp256k1_v0_8_0_fe_add(&t, &q);                           /* t = 2*X3 + Q (5) */
-    rustsecp256k1_v0_8_0_fe_mul(&t, &t, &rr_alt);                  /* t = Ralt*(2*X3 + Q) (1) */
-    rustsecp256k1_v0_8_0_fe_add(&t, &n);                           /* t = Ralt*(2*X3 + Q) + M^3*Malt (3) */
-    rustsecp256k1_v0_8_0_fe_negate(&r->y, &t, 3);                  /* r->y = -(Ralt*(2*X3 + Q) + M^3*Malt) (4) */
-    rustsecp256k1_v0_8_0_fe_half(&r->y);                           /* r->y = Y3 = -(Ralt*(2*X3 + Q) + M^3*Malt)/2 (3) */
+    rustsecp256k1_v0_8_1_fe_mul_int(&t, 2);                        /* t = 2*X3 (4) */
+    rustsecp256k1_v0_8_1_fe_add(&t, &q);                           /* t = 2*X3 + Q (5) */
+    rustsecp256k1_v0_8_1_fe_mul(&t, &t, &rr_alt);                  /* t = Ralt*(2*X3 + Q) (1) */
+    rustsecp256k1_v0_8_1_fe_add(&t, &n);                           /* t = Ralt*(2*X3 + Q) + M^3*Malt (3) */
+    rustsecp256k1_v0_8_1_fe_negate(&r->y, &t, 3);                  /* r->y = -(Ralt*(2*X3 + Q) + M^3*Malt) (4) */
+    rustsecp256k1_v0_8_1_fe_half(&r->y);                           /* r->y = Y3 = -(Ralt*(2*X3 + Q) + M^3*Malt)/2 (3) */
 
     /** In case a->infinity == 1, replace r with (b->x, b->y, 1). */
-    rustsecp256k1_v0_8_0_fe_cmov(&r->x, &b->x, a->infinity);
-    rustsecp256k1_v0_8_0_fe_cmov(&r->y, &b->y, a->infinity);
-    rustsecp256k1_v0_8_0_fe_cmov(&r->z, &rustsecp256k1_v0_8_0_fe_one, a->infinity);
+    rustsecp256k1_v0_8_1_fe_cmov(&r->x, &b->x, a->infinity);
+    rustsecp256k1_v0_8_1_fe_cmov(&r->y, &b->y, a->infinity);
+    rustsecp256k1_v0_8_1_fe_cmov(&r->z, &rustsecp256k1_v0_8_1_fe_one, a->infinity);
     r->infinity = infinity;
 }
 
-static void rustsecp256k1_v0_8_0_gej_rescale(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_fe *s) {
+static void rustsecp256k1_v0_8_1_gej_rescale(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_fe *s) {
     /* Operations: 4 mul, 1 sqr */
-    rustsecp256k1_v0_8_0_fe zz;
-    VERIFY_CHECK(!rustsecp256k1_v0_8_0_fe_is_zero(s));
-    rustsecp256k1_v0_8_0_fe_sqr(&zz, s);
-    rustsecp256k1_v0_8_0_fe_mul(&r->x, &r->x, &zz);                /* r->x *= s^2 */
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &r->y, &zz);
-    rustsecp256k1_v0_8_0_fe_mul(&r->y, &r->y, s);                  /* r->y *= s^3 */
-    rustsecp256k1_v0_8_0_fe_mul(&r->z, &r->z, s);                  /* r->z *= s   */
+    rustsecp256k1_v0_8_1_fe zz;
+    VERIFY_CHECK(!rustsecp256k1_v0_8_1_fe_is_zero(s));
+    rustsecp256k1_v0_8_1_fe_sqr(&zz, s);
+    rustsecp256k1_v0_8_1_fe_mul(&r->x, &r->x, &zz);                /* r->x *= s^2 */
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &r->y, &zz);
+    rustsecp256k1_v0_8_1_fe_mul(&r->y, &r->y, s);                  /* r->y *= s^3 */
+    rustsecp256k1_v0_8_1_fe_mul(&r->z, &r->z, s);                  /* r->z *= s   */
 }
 
-static void rustsecp256k1_v0_8_0_ge_to_storage(rustsecp256k1_v0_8_0_ge_storage *r, const rustsecp256k1_v0_8_0_ge *a) {
-    rustsecp256k1_v0_8_0_fe x, y;
+static void rustsecp256k1_v0_8_1_ge_to_storage(rustsecp256k1_v0_8_1_ge_storage *r, const rustsecp256k1_v0_8_1_ge *a) {
+    rustsecp256k1_v0_8_1_fe x, y;
     VERIFY_CHECK(!a->infinity);
     x = a->x;
-    rustsecp256k1_v0_8_0_fe_normalize(&x);
+    rustsecp256k1_v0_8_1_fe_normalize(&x);
     y = a->y;
-    rustsecp256k1_v0_8_0_fe_normalize(&y);
-    rustsecp256k1_v0_8_0_fe_to_storage(&r->x, &x);
-    rustsecp256k1_v0_8_0_fe_to_storage(&r->y, &y);
+    rustsecp256k1_v0_8_1_fe_normalize(&y);
+    rustsecp256k1_v0_8_1_fe_to_storage(&r->x, &x);
+    rustsecp256k1_v0_8_1_fe_to_storage(&r->y, &y);
 }
 
-static void rustsecp256k1_v0_8_0_ge_from_storage(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_ge_storage *a) {
-    rustsecp256k1_v0_8_0_fe_from_storage(&r->x, &a->x);
-    rustsecp256k1_v0_8_0_fe_from_storage(&r->y, &a->y);
+static void rustsecp256k1_v0_8_1_ge_from_storage(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge_storage *a) {
+    rustsecp256k1_v0_8_1_fe_from_storage(&r->x, &a->x);
+    rustsecp256k1_v0_8_1_fe_from_storage(&r->y, &a->y);
     r->infinity = 0;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_8_0_gej_cmov(rustsecp256k1_v0_8_0_gej *r, const rustsecp256k1_v0_8_0_gej *a, int flag) {
-    rustsecp256k1_v0_8_0_fe_cmov(&r->x, &a->x, flag);
-    rustsecp256k1_v0_8_0_fe_cmov(&r->y, &a->y, flag);
-    rustsecp256k1_v0_8_0_fe_cmov(&r->z, &a->z, flag);
+static SECP256K1_INLINE void rustsecp256k1_v0_8_1_gej_cmov(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_gej *a, int flag) {
+    rustsecp256k1_v0_8_1_fe_cmov(&r->x, &a->x, flag);
+    rustsecp256k1_v0_8_1_fe_cmov(&r->y, &a->y, flag);
+    rustsecp256k1_v0_8_1_fe_cmov(&r->z, &a->z, flag);
 
     r->infinity ^= (r->infinity ^ a->infinity) & flag;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_8_0_ge_storage_cmov(rustsecp256k1_v0_8_0_ge_storage *r, const rustsecp256k1_v0_8_0_ge_storage *a, int flag) {
-    rustsecp256k1_v0_8_0_fe_storage_cmov(&r->x, &a->x, flag);
-    rustsecp256k1_v0_8_0_fe_storage_cmov(&r->y, &a->y, flag);
+static SECP256K1_INLINE void rustsecp256k1_v0_8_1_ge_storage_cmov(rustsecp256k1_v0_8_1_ge_storage *r, const rustsecp256k1_v0_8_1_ge_storage *a, int flag) {
+    rustsecp256k1_v0_8_1_fe_storage_cmov(&r->x, &a->x, flag);
+    rustsecp256k1_v0_8_1_fe_storage_cmov(&r->y, &a->y, flag);
 }
 
-static void rustsecp256k1_v0_8_0_ge_mul_lambda(rustsecp256k1_v0_8_0_ge *r, const rustsecp256k1_v0_8_0_ge *a) {
+static void rustsecp256k1_v0_8_1_ge_mul_lambda(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge *a) {
     *r = *a;
-    rustsecp256k1_v0_8_0_fe_mul(&r->x, &r->x, &rustsecp256k1_v0_8_0_const_beta);
+    rustsecp256k1_v0_8_1_fe_mul(&r->x, &r->x, &rustsecp256k1_v0_8_1_const_beta);
 }
 
-static int rustsecp256k1_v0_8_0_ge_is_in_correct_subgroup(const rustsecp256k1_v0_8_0_ge* ge) {
+static int rustsecp256k1_v0_8_1_ge_is_in_correct_subgroup(const rustsecp256k1_v0_8_1_ge* ge) {
 #ifdef EXHAUSTIVE_TEST_ORDER
-    rustsecp256k1_v0_8_0_gej out;
+    rustsecp256k1_v0_8_1_gej out;
     int i;
 
     /* A very simple EC multiplication ladder that avoids a dependency on ecmult. */
-    rustsecp256k1_v0_8_0_gej_set_infinity(&out);
+    rustsecp256k1_v0_8_1_gej_set_infinity(&out);
     for (i = 0; i < 32; ++i) {
-        rustsecp256k1_v0_8_0_gej_double_var(&out, &out, NULL);
+        rustsecp256k1_v0_8_1_gej_double_var(&out, &out, NULL);
         if ((((uint32_t)EXHAUSTIVE_TEST_ORDER) >> (31 - i)) & 1) {
-            rustsecp256k1_v0_8_0_gej_add_ge_var(&out, &out, ge, NULL);
+            rustsecp256k1_v0_8_1_gej_add_ge_var(&out, &out, ge, NULL);
         }
     }
-    return rustsecp256k1_v0_8_0_gej_is_infinity(&out);
+    return rustsecp256k1_v0_8_1_gej_is_infinity(&out);
 #else
     (void)ge;
     /* The real secp256k1 group has cofactor 1, so the subgroup is the entire curve. */

@@ -28,18 +28,18 @@ int main(void) {
     unsigned char signature[64];
     int is_signature_valid;
     int return_val;
-    rustsecp256k1_v0_8_0_xonly_pubkey pubkey;
-    rustsecp256k1_v0_8_0_keypair keypair;
+    rustsecp256k1_v0_8_1_xonly_pubkey pubkey;
+    rustsecp256k1_v0_8_1_keypair keypair;
     /* Before we can call actual API functions, we need to create a "context". */
-    rustsecp256k1_v0_8_0_context* ctx = rustsecp256k1_v0_8_0_context_create(SECP256K1_CONTEXT_NONE);
+    rustsecp256k1_v0_8_1_context* ctx = rustsecp256k1_v0_8_1_context_create(SECP256K1_CONTEXT_NONE);
     if (!fill_random(randomize, sizeof(randomize))) {
         printf("Failed to generate randomness\n");
         return 1;
     }
     /* Randomizing the context is recommended to protect against side-channel
-     * leakage See `rustsecp256k1_v0_8_0_context_randomize` in secp256k1.h for more
+     * leakage See `rustsecp256k1_v0_8_1_context_randomize` in secp256k1.h for more
      * information about it. This should never fail. */
-    return_val = rustsecp256k1_v0_8_0_context_randomize(ctx, randomize);
+    return_val = rustsecp256k1_v0_8_1_context_randomize(ctx, randomize);
     assert(return_val);
 
     /*** Key Generation ***/
@@ -54,21 +54,21 @@ int main(void) {
         }
         /* Try to create a keypair with a valid context, it should only fail if
          * the secret key is zero or out of range. */
-        if (rustsecp256k1_v0_8_0_keypair_create(ctx, &keypair, seckey)) {
+        if (rustsecp256k1_v0_8_1_keypair_create(ctx, &keypair, seckey)) {
             break;
         }
     }
 
     /* Extract the X-only public key from the keypair. We pass NULL for
      * `pk_parity` as the parity isn't needed for signing or verification.
-     * `rustsecp256k1_v0_8_0_keypair_xonly_pub` supports returning the parity for
+     * `rustsecp256k1_v0_8_1_keypair_xonly_pub` supports returning the parity for
      * other use cases such as tests or verifying Taproot tweaks.
      * This should never fail with a valid context and public key. */
-    return_val = rustsecp256k1_v0_8_0_keypair_xonly_pub(ctx, &pubkey, NULL, &keypair);
+    return_val = rustsecp256k1_v0_8_1_keypair_xonly_pub(ctx, &pubkey, NULL, &keypair);
     assert(return_val);
 
     /* Serialize the public key. Should always return 1 for a valid public key. */
-    return_val = rustsecp256k1_v0_8_0_xonly_pubkey_serialize(ctx, serialized_pubkey, &pubkey);
+    return_val = rustsecp256k1_v0_8_1_xonly_pubkey_serialize(ctx, serialized_pubkey, &pubkey);
     assert(return_val);
 
     /*** Signing ***/
@@ -76,7 +76,7 @@ int main(void) {
     /* Instead of signing (possibly very long) messages directly, we sign a
      * 32-byte hash of the message in this example.
      *
-     * We use rustsecp256k1_v0_8_0_tagged_sha256 to create this hash. This function expects
+     * We use rustsecp256k1_v0_8_1_tagged_sha256 to create this hash. This function expects
      * a context-specific "tag", which restricts the context in which the signed
      * messages should be considered valid. For example, if protocol A mandates
      * to use the tag "my_fancy_protocol" and protocol B mandates to use the tag
@@ -87,7 +87,7 @@ int main(void) {
      * message that has intended consequences in the intended context (e.g.,
      * protocol A) but would have unintended consequences if it were valid in
      * some other context (e.g., protocol B). */
-    return_val = rustsecp256k1_v0_8_0_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
+    return_val = rustsecp256k1_v0_8_1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
     assert(return_val);
 
     /* Generate 32 bytes of randomness to use with BIP-340 schnorr signing. */
@@ -98,30 +98,30 @@ int main(void) {
 
     /* Generate a Schnorr signature.
      *
-     * We use the rustsecp256k1_v0_8_0_schnorrsig_sign32 function that provides a simple
+     * We use the rustsecp256k1_v0_8_1_schnorrsig_sign32 function that provides a simple
      * interface for signing 32-byte messages (which in our case is a hash of
      * the actual message). BIP-340 recommends passing 32 bytes of randomness
      * to the signing function to improve security against side-channel attacks.
      * Signing with a valid context, a 32-byte message, a verified keypair, and
      * any 32 bytes of auxiliary random data should never fail. */
-    return_val = rustsecp256k1_v0_8_0_schnorrsig_sign32(ctx, signature, msg_hash, &keypair, auxiliary_rand);
+    return_val = rustsecp256k1_v0_8_1_schnorrsig_sign32(ctx, signature, msg_hash, &keypair, auxiliary_rand);
     assert(return_val);
 
     /*** Verification ***/
 
     /* Deserialize the public key. This will return 0 if the public key can't
      * be parsed correctly */
-    if (!rustsecp256k1_v0_8_0_xonly_pubkey_parse(ctx, &pubkey, serialized_pubkey)) {
+    if (!rustsecp256k1_v0_8_1_xonly_pubkey_parse(ctx, &pubkey, serialized_pubkey)) {
         printf("Failed parsing the public key\n");
         return 1;
     }
 
     /* Compute the tagged hash on the received messages using the same tag as the signer. */
-    return_val = rustsecp256k1_v0_8_0_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
+    return_val = rustsecp256k1_v0_8_1_tagged_sha256(ctx, msg_hash, tag, sizeof(tag), msg, sizeof(msg));
     assert(return_val);
 
     /* Verify a signature. This will return 1 if it's valid and 0 if it's not. */
-    is_signature_valid = rustsecp256k1_v0_8_0_schnorrsig_verify(ctx, signature, msg_hash, 32, &pubkey);
+    is_signature_valid = rustsecp256k1_v0_8_1_schnorrsig_verify(ctx, signature, msg_hash, 32, &pubkey);
 
 
     printf("Is the signature valid? %s\n", is_signature_valid ? "true" : "false");
@@ -133,7 +133,7 @@ int main(void) {
     print_hex(signature, sizeof(signature));
 
     /* This will clear everything from the context and free the memory */
-    rustsecp256k1_v0_8_0_context_destroy(ctx);
+    rustsecp256k1_v0_8_1_context_destroy(ctx);
 
     /* It's best practice to try to clear secrets from memory after using them.
      * This is done because some bugs can allow an attacker to leak memory, for

@@ -20,12 +20,12 @@ extern "C" {
 #    else
 #        error No known generator for the specified exhaustive test group order.
 #    endif
-static rustsecp256k1_v0_8_0_ge_storage rustsecp256k1_v0_8_0_pre_g[ECMULT_TABLE_SIZE(WINDOW_G)];
-static rustsecp256k1_v0_8_0_ge_storage rustsecp256k1_v0_8_0_pre_g_128[ECMULT_TABLE_SIZE(WINDOW_G)];
+static rustsecp256k1_v0_8_1_ge_storage rustsecp256k1_v0_8_1_pre_g[ECMULT_TABLE_SIZE(WINDOW_G)];
+static rustsecp256k1_v0_8_1_ge_storage rustsecp256k1_v0_8_1_pre_g_128[ECMULT_TABLE_SIZE(WINDOW_G)];
 #else /* !defined(EXHAUSTIVE_TEST_ORDER) */
 #    define WINDOW_G ECMULT_WINDOW_SIZE
-extern const rustsecp256k1_v0_8_0_ge_storage rustsecp256k1_v0_8_0_pre_g[ECMULT_TABLE_SIZE(WINDOW_G)];
-extern const rustsecp256k1_v0_8_0_ge_storage rustsecp256k1_v0_8_0_pre_g_128[ECMULT_TABLE_SIZE(WINDOW_G)];
+extern const rustsecp256k1_v0_8_1_ge_storage rustsecp256k1_v0_8_1_pre_g[ECMULT_TABLE_SIZE(WINDOW_G)];
+extern const rustsecp256k1_v0_8_1_ge_storage rustsecp256k1_v0_8_1_pre_g_128[ECMULT_TABLE_SIZE(WINDOW_G)];
 #endif /* defined(EXHAUSTIVE_TEST_ORDER) */
 
 #ifdef __cplusplus

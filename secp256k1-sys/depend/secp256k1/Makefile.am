@@ -8,7 +8,7 @@ AM_CFLAGS = $(SECP_CFLAGS)
 
 lib_LTLIBRARIES = libsecp256k1.la
 include_HEADERS = include/secp256k1.h
-include_HEADERS += include/rustsecp256k1_v0_8_0_preallocated.h
+include_HEADERS += include/rustsecp256k1_v0_8_1_preallocated.h
 noinst_HEADERS =
 noinst_HEADERS += src/scalar.h
 noinst_HEADERS += src/scalar_4x64.h
@@ -70,13 +70,13 @@ noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.c
 noinst_HEADERS += examples/random.h
 
-PRECOMPUTED_LIB = librustsecp256k1_v0_8_0_precomputed.la
+PRECOMPUTED_LIB = librustsecp256k1_v0_8_1_precomputed.la
 noinst_LTLIBRARIES = $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_8_0_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
-librustsecp256k1_v0_8_0_precomputed_la_CPPFLAGS = $(SECP_INCLUDES)
+librustsecp256k1_v0_8_1_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
+librustsecp256k1_v0_8_1_precomputed_la_CPPFLAGS = $(SECP_INCLUDES)
 
 if USE_EXTERNAL_ASM
-COMMON_LIB = librustsecp256k1_v0_8_0_common.la
+COMMON_LIB = librustsecp256k1_v0_8_1_common.la
 else
 COMMON_LIB =
 endif
@@ -87,17 +87,17 @@ pkgconfig_DATA = libsecp256k1.pc
 
 if USE_EXTERNAL_ASM
 if USE_ASM_ARM
-librustsecp256k1_v0_8_0_common_la_SOURCES = src/asm/field_10x26_arm.s
+librustsecp256k1_v0_8_1_common_la_SOURCES = src/asm/field_10x26_arm.s
 endif
 endif
 
-librustsecp256k1_v0_8_0_la_SOURCES = src/secp256k1.c
-librustsecp256k1_v0_8_0_la_CPPFLAGS = $(SECP_INCLUDES)
-librustsecp256k1_v0_8_0_la_LIBADD = $(SECP_LIBS) $(COMMON_LIB) $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_8_0_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
+librustsecp256k1_v0_8_1_la_SOURCES = src/secp256k1.c
+librustsecp256k1_v0_8_1_la_CPPFLAGS = $(SECP_INCLUDES)
+librustsecp256k1_v0_8_1_la_LIBADD = $(SECP_LIBS) $(COMMON_LIB) $(PRECOMPUTED_LIB)
+librustsecp256k1_v0_8_1_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
 
 if VALGRIND_ENABLED
-librustsecp256k1_v0_8_0_la_CPPFLAGS += -DVALGRIND
+librustsecp256k1_v0_8_1_la_CPPFLAGS += -DVALGRIND
 endif
 
 noinst_PROGRAMS =
@@ -223,7 +223,7 @@ EXTRA_DIST += sage/gen_exhaustive_groups.sage
 EXTRA_DIST += sage/gen_split_lambda_constants.sage
 EXTRA_DIST += sage/group_prover.sage
 EXTRA_DIST += sage/prove_group_implementations.sage
-EXTRA_DIST += sage/rustsecp256k1_v0_8_0_params.sage
+EXTRA_DIST += sage/rustsecp256k1_v0_8_1_params.sage
 EXTRA_DIST += sage/weierstrass_prover.sage
 
 if ENABLE_MODULE_ECDH
