@@ -1,8 +1,8 @@
 #![cfg(feature = "serde")]
 
 extern crate bincode;
-extern crate serde_cbor;
 extern crate secp256k1;
+extern crate serde_cbor;
 
 #[cfg(feature = "global-context")]
 use secp256k1::{KeyPair, Secp256k1};
