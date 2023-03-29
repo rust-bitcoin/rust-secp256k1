@@ -7,14 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.0] - 2022-12-12
 
 ### Added
- - Added `rustsecp256k1_v0_8_0_selftest`, to be used in conjunction with `rustsecp256k1_v0_8_0_context_static`.
+ - Added `secp256k1_selftest`, to be used in conjunction with `secp256k1_context_static`.
 
 ### Changed
  - Enabled modules schnorrsig, extrakeys and ECDH by default in `./configure`.
 
 ### Deprecated
  - Deprecated context flags `SECP256K1_CONTEXT_VERIFY` and `SECP256K1_CONTEXT_SIGN`. Use `SECP256K1_CONTEXT_NONE` instead.
- - Renamed `rustsecp256k1_v0_8_0_context_no_precomp` to `rustsecp256k1_v0_8_0_context_static`.
+ - Renamed `secp256k1_context_no_precomp` to `secp256k1_context_static`.
 
 ### ABI Compatibility
 
