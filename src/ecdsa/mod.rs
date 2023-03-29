@@ -190,7 +190,7 @@ impl Signature {
     }
 
     /// Verifies an ECDSA signature for `msg` using `pk` and the global [`SECP256K1`] context.
-    /// The signature must be normalized or verification will fail (see [`normalize_s`]).
+    /// The signature must be normalized or verification will fail (see [`Signature::normalize_s`]).
     #[inline]
     #[cfg(feature = "global-context")]
     #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
