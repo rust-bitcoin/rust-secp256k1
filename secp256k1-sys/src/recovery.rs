@@ -22,6 +22,7 @@ use core::fmt;
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
 #[derive(Copy, Clone)]
+#[cfg_attr(fuzzing, derive(PartialEq, Eq, PartialOrd, Ord, Hash))]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 
