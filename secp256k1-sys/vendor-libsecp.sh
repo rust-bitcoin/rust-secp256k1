@@ -2,7 +2,11 @@
 set -e
 
 # Set default variables
-: "${SECP_VENDOR_GIT_ROOT:=$(git rev-parse --show-toplevel)}"
+if [ -z "$SECP_VENDOR_GIT_ROOT" ]; then
+    SECP_VENDOR_GIT_ROOT="$(git rev-parse --show-toplevel)"
+else
+    SECP_VENDOR_GIT_ROOT="$(realpath "$SECP_VENDOR_GIT_ROOT")"
+fi
 SECP_SYS="$SECP_VENDOR_GIT_ROOT"/secp256k1-sys
 DEFAULT_VERSION_CODE=$(grep version "$SECP_SYS/Cargo.toml" | sed 's/\./_/g' | sed 's/.*"\(.*\)".*/\1/')
 DEFAULT_DEPEND_DIR="$SECP_SYS/depend"
@@ -83,7 +87,7 @@ rm -rf .git/ || true
 popd
 
 # Record revision
-echo "# This file was automatically created by $0" > ./secp256k1-HEAD-revision.txt
+echo "# This file was automatically created by $(basename "$0")" > ./secp256k1-HEAD-revision.txt
 echo "$SOURCE_REV" >> ./secp256k1-HEAD-revision.txt
 
 # Patch source files
