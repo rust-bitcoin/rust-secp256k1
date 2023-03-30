@@ -1,4 +1,4 @@
-# 0.27.0 - 2023-13-15
+# 0.27.0 - 2023-03-15
 
 * [Depend on newly release `bitcoin_hashes` v0.12](https://github.com/rust-bitcoin/rust-secp256k1/pull/588).
 * [Implement `Debug` trait for `Scalar` type](https://github.com/rust-bitcoin/rust-secp256k1/pull/578).
