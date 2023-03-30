@@ -1,9 +1,8 @@
 #![cfg(feature = "serde")]
 
 extern crate bincode;
-#[cfg(target_arch = "x86_64")]
-extern crate cbor;
 extern crate secp256k1;
+extern crate serde_cbor;
 
 #[cfg(feature = "global-context")]
 use secp256k1::{KeyPair, Secp256k1};
@@ -77,15 +76,12 @@ fn bincode_x_only_public_key() {
     assert_eq!(ser, XONLY_PK_BYTES);
 }
 
-// cbor adds an additional byte of metadata to certain byte values (byte_value < 24).
 #[test]
-#[cfg(target_arch = "x86_64")]
 fn cbor() {
     let sk = secret_key();
-
-    let mut e = cbor::Encoder::from_memory();
-    e.encode(sk.as_ref()).unwrap();
-
-    // 52 because there are 22 bytes in the key for which cbor adds metadata.
-    assert_eq!(e.as_bytes().len(), 52);
+    let e = serde_cbor::to_vec(&sk).unwrap();
+    // Secret key is 32 bytes. CBOR adds a byte of metadata for 20 of these bytes,
+    // (Apparently, any byte whose value is <24 gets an extra byte.)
+    // It also adds a 1-byte length prefix and a byte of metadata for the whole vector.
+    assert_eq!(e.len(), 54);
 }

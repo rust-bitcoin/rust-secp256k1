@@ -13,6 +13,11 @@ if cargo --version | grep nightly; then
     NIGHTLY=true
 fi
 
+if cargo --version | grep "1\.41"; then
+    # 1.8.x uses constfns which aren't supported in 1.41
+    cargo update -p half --precise 1.7.0
+fi
+
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
 cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
 
