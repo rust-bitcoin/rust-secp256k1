@@ -20,11 +20,12 @@ This prefix ensures that no symbol collision can happen:
 To update the vendored sources, use the `vendor-libsecp.sh` script:
 
 ```
-$ ./vendor-libsecp.sh depend <version-code> <rev>
+$ ./vendor-libsecp.sh <rev>
 ```
 
-- Where `<version-code>` is the secp256k1-sys version number underscored: `0_1_2`.
-- Where `<rev>` is the git revision of libsecp256k1 to checkout.
+Where `<rev>` is the git revision of libsecp256k1 to checkout. If you do not
+specify a revision, the script will simply clone the repo and use whatever
+revision the default branch is pointing to.
 
 
 ## Linking to external symbols
