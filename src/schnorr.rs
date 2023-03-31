@@ -15,7 +15,7 @@ use crate::{
 };
 
 /// Represents a schnorr signature.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Signature([u8; constants::SCHNORR_SIGNATURE_SIZE]);
 impl_array_newtype!(Signature, u8, constants::SCHNORR_SIGNATURE_SIZE);
 impl_pretty_debug!(Signature);

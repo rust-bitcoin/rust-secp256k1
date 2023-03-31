@@ -1,4 +1,8 @@
-# 0.8.1 - 2023-13-16
+# Unreleased
+
+* Bump MSRV to 1.48
+
+# 0.8.1 - 2023-03-16
 
 * [Implement `insecure-erase`](https://github.com/rust-bitcoin/rust-secp256k1/pull/582).
 

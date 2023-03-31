@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly, 1.41.1]
+        rust: [stable, beta, nightly, 1.48.0]
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v2
