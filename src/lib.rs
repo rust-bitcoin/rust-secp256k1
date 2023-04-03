@@ -156,6 +156,8 @@
 // Experimental features we need.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(bench, feature(test))]
+// Error in no_std
+#![cfg_attr(feature = "core-error", feature(error_in_core))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -352,6 +354,25 @@ impl fmt::Display for Error {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::IncorrectSignature => None,
+            Error::InvalidMessage => None,
+            Error::InvalidPublicKey => None,
+            Error::InvalidSignature => None,
+            Error::InvalidSecretKey => None,
+            Error::InvalidSharedSecret => None,
+            Error::InvalidRecoveryId => None,
+            Error::InvalidTweak => None,
+            Error::NotEnoughMemory => None,
+            Error::InvalidPublicKeySum => None,
+            Error::InvalidParityValue(error) => Some(error),
+        }
+    }
+}
+#[cfg(all(feature = "core-error", not(feature = "std")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-error")))]
+impl core::error::Error for Error {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             Error::IncorrectSignature => None,
             Error::InvalidMessage => None,

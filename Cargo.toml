@@ -35,6 +35,7 @@ global-context = ["std"]
 # if you are doing a no-std build, then this feature does nothing
 # and is not necessary.)
 global-context-less-secure = ["global-context"]
+core-error = []
 
 [dependencies]
 secp256k1-sys = { version = "0.8.1", default-features = false, path = "./secp256k1-sys" }

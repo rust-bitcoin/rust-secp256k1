@@ -1442,6 +1442,10 @@ impl fmt::Display for InvalidParityValue {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for InvalidParityValue {}
 
+#[cfg(all(feature = "core-error", not(feature = "std")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-error")))]
+impl core::error::Error for InvalidParityValue {}
+
 impl From<InvalidParityValue> for Error {
     fn from(error: InvalidParityValue) -> Self { Error::InvalidParityValue(error) }
 }
