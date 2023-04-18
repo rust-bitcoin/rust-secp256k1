@@ -58,9 +58,23 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     cargo run --example generate_keys --features=rand-std
 fi
 
+if [ "$DO_LINT" = true ]
+then
+    cargo clippy --all-features --all-targets -- -D warnings
+    cargo clippy --example sign_verify --features=bitcoin-hashes-std -- -D warnings
+    cargo clippy --example sign_verify_recovery --features=recovery,bitcoin-hashes-std -- -D warnings
+    cargo clippy --example generate_keys --features=rand-std -- -D warnings
+fi
+
 # Build the docs if told to (this only works with the nightly toolchain)
+if [ "$DO_DOCSRS" = true ]; then
+    RUSTDOCFLAGS="--cfg docsrs -D warnings -D rustdoc::broken-intra-doc-links" cargo +nightly doc --all-features
+fi
+
+# Build the docs with a stable toolchain, in unison with the DO_DOCSRS command
+# above this checks that we feature guarded docs imports correctly.
 if [ "$DO_DOCS" = true ]; then
-    RUSTDOCFLAGS="--cfg docsrs" cargo rustdoc --features="$FEATURES" -- -D rustdoc::broken-intra-doc-links -D warnings || exit 1
+    RUSTDOCFLAGS="-D warnings" cargo +stable doc --all-features
 fi
 
 # Webassembly stuff
