@@ -29,6 +29,7 @@ fn sign_recovery<C: Signing>(
     Ok(secp.sign_ecdsa_recoverable(&msg, &seckey))
 }
 
+#[allow(unused_variables)] // triggered by matches macro.
 fn main() {
     let secp = Secp256k1::new();
 
@@ -47,5 +48,5 @@ fn main() {
 
     let (recovery_id, serialize_sig) = signature.serialize_compact();
 
-    assert_eq!(recover(&secp, msg, serialize_sig, recovery_id.to_i32() as u8), Ok(pubkey));
+    assert!(matches!(recover(&secp, msg, serialize_sig, recovery_id.to_i32() as u8), Ok(pubkey)));
 }

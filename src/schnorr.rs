@@ -294,8 +294,8 @@ mod tests {
 
     #[test]
     fn test_pubkey_from_slice() {
-        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(XOnlyPublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+        assert!(matches!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey)));
+        assert!(matches!(XOnlyPublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey)));
         let pk = XOnlyPublicKey::from_slice(&[
             0xB3, 0x3C, 0xC9, 0xED, 0xC0, 0x96, 0xD0, 0xA8, 0x34, 0x16, 0x96, 0x4B, 0xD3, 0xC6,
             0x24, 0x7B, 0x8F, 0xEC, 0xD2, 0x56, 0xE4, 0xEF, 0xA7, 0x87, 0x0D, 0x2C, 0x85, 0x4B,
@@ -333,28 +333,28 @@ mod tests {
     #[test]
     fn test_pubkey_from_bad_slice() {
         // Bad sizes
-        assert_eq!(
+        assert!(matches!(
             XOnlyPublicKey::from_slice(&[0; constants::SCHNORR_PUBLIC_KEY_SIZE - 1]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             XOnlyPublicKey::from_slice(&[0; constants::SCHNORR_PUBLIC_KEY_SIZE + 1]),
             Err(InvalidPublicKey)
-        );
+        ));
 
         // Bad parse
-        assert_eq!(
+        assert!(matches!(
             XOnlyPublicKey::from_slice(&[0xff; constants::SCHNORR_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
-        );
+        ));
         // In fuzzing mode restrictions on public key validity are much more
         // relaxed, thus the invalid check below is expected to fail.
         #[cfg(not(fuzzing))]
-        assert_eq!(
+        assert!(matches!(
             XOnlyPublicKey::from_slice(&[0x55; constants::SCHNORR_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        ));
+        assert!(matches!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey)));
     }
 
     #[test]

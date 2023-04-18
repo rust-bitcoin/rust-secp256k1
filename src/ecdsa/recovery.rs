@@ -234,6 +234,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "rand-std")]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -253,8 +254,9 @@ mod tests {
         assert!(vrfy.recover_ecdsa(&msg, &sigr).is_ok());
         assert!(full.recover_ecdsa(&msg, &sigr).is_ok());
 
-        assert_eq!(vrfy.recover_ecdsa(&msg, &sigr), full.recover_ecdsa(&msg, &sigr));
-        assert_eq!(full.recover_ecdsa(&msg, &sigr), Ok(pk));
+        let vrfy_res = vrfy.recover_ecdsa(&msg, &sigr);
+        let full_res = full.recover_ecdsa(&msg, &sigr);
+        assert!(matches!(vrfy_res, full_res));
     }
 
     #[test]
@@ -267,6 +269,7 @@ mod tests {
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
+    #[allow(unused_variables)]       // triggered by matches macro.
     fn sign() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -276,22 +279,27 @@ mod tests {
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
-        assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
-            0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
-            0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
-            0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
-            0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
-            0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
-            0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
-            0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
-            0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89],
-            RecoveryId(1)))
+        let want = RecoverableSignature::from_compact(
+            &[
+                0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
+                0x04, 0x77, 0x2b, 0x6f, 0x92, 0x1f, 0x0b, 0xa6,
+                0xaf, 0x0c, 0x1e, 0x77, 0xfc, 0x43, 0x9e, 0x65,
+                0xc3, 0x6d, 0xed, 0xf4, 0x09, 0x2e, 0x88, 0x98,
+                0x4c, 0x1a, 0x97, 0x16, 0x52, 0xe0, 0xad, 0xa8,
+                0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
+                0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
+                0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89
+            ],
+            RecoveryId(1)
+        ).unwrap();
+        assert!(matches!(sig, want));
     }
 
     #[test]
     #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
+    #[allow(unused_variables)]       // triggered by matches macro.
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -302,16 +310,21 @@ mod tests {
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
 
-        assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
-            0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
-            0x4d, 0x37, 0xc3, 0xa9, 0x7e, 0xbd, 0x06, 0xa2,
-            0x2e, 0xa3, 0x37, 0x71, 0x04, 0x0f, 0x5c, 0x05,
-            0xd6, 0xe2, 0xbb, 0x2d, 0x38, 0xc6, 0x22, 0x7c,
-            0x34, 0x3b, 0x66, 0x59, 0xdb, 0x96, 0x99, 0x59,
-            0xd9, 0xfd, 0xdb, 0x44, 0xbd, 0x0d, 0xd9, 0xb9,
-            0xdd, 0x47, 0x66, 0x6a, 0xb5, 0x28, 0x71, 0x90,
-            0x1d, 0x17, 0x61, 0xeb, 0x82, 0xec, 0x87, 0x22],
-            RecoveryId(0)))
+        let want = RecoverableSignature::from_compact(
+            &[
+                0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
+                0x4d, 0x37, 0xc3, 0xa9, 0x7e, 0xbd, 0x06, 0xa2,
+                0x2e, 0xa3, 0x37, 0x71, 0x04, 0x0f, 0x5c, 0x05,
+                0xd6, 0xe2, 0xbb, 0x2d, 0x38, 0xc6, 0x22, 0x7c,
+                0x34, 0x3b, 0x66, 0x59, 0xdb, 0x96, 0x99, 0x59,
+                0xd9, 0xfd, 0xdb, 0x44, 0xbd, 0x0d, 0xd9, 0xb9,
+                0xdd, 0x47, 0x66, 0x6a, 0xb5, 0x28, 0x71, 0x90,
+                0x1d, 0x17, 0x61, 0xeb, 0x82, 0xec, 0x87, 0x22
+            ],
+            RecoveryId(0)
+        ).unwrap();
+
+        assert!(matches!(sig, want));
     }
 
     #[test]
@@ -330,7 +343,7 @@ mod tests {
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert!(matches!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature)));
 
         let recovered_key = s.recover_ecdsa(&msg, &sigr).unwrap();
         assert!(recovered_key != pk);
@@ -349,7 +362,7 @@ mod tests {
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
+        assert_eq!(s.recover_ecdsa(&msg, &sig).unwrap(), pk);
     }
 
     #[test]
@@ -367,7 +380,7 @@ mod tests {
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
 
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
+        assert_eq!(s.recover_ecdsa(&msg, &sig).unwrap(), pk);
     }
 
     #[test]
@@ -380,7 +393,7 @@ mod tests {
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature));
+        assert!(matches!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature)));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId(0)).unwrap();
         assert!(s.recover_ecdsa(&msg, &sig).is_ok());

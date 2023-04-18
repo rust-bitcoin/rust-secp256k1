@@ -300,7 +300,9 @@ impl fmt::Display for Message {
 }
 
 /// The main error type for this library.
-#[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
+#[derive(Debug)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)]
 pub enum Error {
     /// Signature failed verification.
     IncorrectSignature,
@@ -343,7 +345,7 @@ impl fmt::Display for Error {
             InvalidPublicKeySum => f.write_str(
                 "the sum of public keys was invalid or the input vector lengths was less than 1",
             ),
-            InvalidParityValue(e) => write_err!(f, "couldn't create parity"; e),
+            InvalidParityValue(ref e) => write_err!(f, "couldn't create parity"; e),
         }
     }
 }
@@ -785,13 +787,13 @@ mod tests {
 
             let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
             let sig = s.sign_ecdsa(&msg, &sk);
-            assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Ok(()));
+            assert!(s.verify_ecdsa(&msg, &sig, &pk).is_ok());
             let noncedata_sig = s.sign_ecdsa_with_noncedata(&msg, &sk, &noncedata);
-            assert_eq!(s.verify_ecdsa(&msg, &noncedata_sig, &pk), Ok(()));
+            assert!(s.verify_ecdsa(&msg, &noncedata_sig, &pk).is_ok());
             let low_r_sig = s.sign_ecdsa_low_r(&msg, &sk);
-            assert_eq!(s.verify_ecdsa(&msg, &low_r_sig, &pk), Ok(()));
+            assert!(s.verify_ecdsa(&msg, &low_r_sig, &pk).is_ok());
             let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &sk, 1);
-            assert_eq!(s.verify_ecdsa(&msg, &grind_r_sig, &pk), Ok(()));
+            assert!(s.verify_ecdsa(&msg, &grind_r_sig, &pk).is_ok());
             let compact = sig.serialize_compact();
             if compact[0] < 0x80 {
                 assert_eq!(sig, low_r_sig);
@@ -833,9 +835,9 @@ mod tests {
                 let low_r_sig = s.sign_ecdsa_low_r(&msg, &key);
                 let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &key, 1);
                 let pk = PublicKey::from_secret_key(&s, &key);
-                assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Ok(()));
-                assert_eq!(s.verify_ecdsa(&msg, &low_r_sig, &pk), Ok(()));
-                assert_eq!(s.verify_ecdsa(&msg, &grind_r_sig, &pk), Ok(()));
+                assert!(s.verify_ecdsa(&msg, &sig, &pk).is_ok());
+                assert!(s.verify_ecdsa(&msg, &low_r_sig, &pk).is_ok());
+                assert!(s.verify_ecdsa(&msg, &grind_r_sig, &pk).is_ok());
             }
         }
     }
@@ -855,28 +857,28 @@ mod tests {
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert!(matches!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature)));
     }
 
     #[test]
     fn test_bad_slice() {
-        assert_eq!(
+        assert!(matches!(
             ecdsa::Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE + 1]),
             Err(Error::InvalidSignature)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             ecdsa::Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE]),
             Err(Error::InvalidSignature)
-        );
+        ));
 
-        assert_eq!(
+        assert!(matches!(
             Message::from_slice(&[0; constants::MESSAGE_SIZE - 1]),
             Err(Error::InvalidMessage)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             Message::from_slice(&[0; constants::MESSAGE_SIZE + 1]),
             Err(Error::InvalidMessage)
-        );
+        ));
         assert!(Message::from_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
         assert!(Message::from_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
     }
@@ -947,10 +949,10 @@ mod tests {
         let msg = Message::from_slice(&msg[..]).unwrap();
 
         // without normalization we expect this will fail
-        assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert!(matches!(secp.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature)));
         // after normalization it should pass
         sig.normalize_s();
-        assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Ok(()));
+        assert!(secp.verify_ecdsa(&msg, &sig, &pk).is_ok());
     }
 
     #[test]

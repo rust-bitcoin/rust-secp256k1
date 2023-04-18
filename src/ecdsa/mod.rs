@@ -375,10 +375,10 @@ impl<C: Verification> Secp256k1<C> {
     /// #
     /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign_ecdsa(&message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Ok(()));
+    /// assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
     ///
     /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature));
+    /// assert!(matches!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature)));
     /// # }
     /// ```
     #[inline]

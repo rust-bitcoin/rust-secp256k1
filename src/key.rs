@@ -1425,11 +1425,8 @@ impl BitXor for Parity {
 }
 
 /// Error returned when conversion from an integer to `Parity` fails.
-//
-// Note that we don't allow inspecting the value because we may change the type.
-// Yes, this comment is intentionally NOT doc comment.
-// Too many derives for compatibility with current Error type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
 pub struct InvalidParityValue(i32);
 
 impl fmt::Display for InvalidParityValue {
@@ -1576,7 +1573,7 @@ mod test {
     #[test]
     fn skey_from_slice() {
         let sk = SecretKey::from_slice(&[1; 31]);
-        assert_eq!(sk, Err(InvalidSecretKey));
+        assert!(matches!(sk, Err(InvalidSecretKey)));
 
         let sk = SecretKey::from_slice(&[1; 32]);
         assert!(sk.is_ok());
@@ -1584,8 +1581,8 @@ mod test {
 
     #[test]
     fn pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+        assert!(matches!(PublicKey::from_slice(&[]), Err(InvalidPublicKey)));
+        assert!(matches!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey)));
 
         let uncompressed = PublicKey::from_slice(&[
             4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85,
@@ -1604,13 +1601,14 @@ mod test {
 
     #[test]
     #[cfg(feature = "rand-std")]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
         let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
+        assert!(matches!(SecretKey::from_slice(&sk1[..]), Ok(sk1)));
+        assert!(matches!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1)));
+        assert!(matches!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1)));
     }
 
     #[test]
@@ -1626,15 +1624,16 @@ mod test {
 
     #[test]
     #[rustfmt::skip]
+    #[allow(unused_variables)]       // triggered by matches macro.
     fn invalid_secret_key() {
         // Zero
-        assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
-        assert_eq!(
+        assert!(matches!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey)));
+        assert!(matches!(
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
             Err(InvalidSecretKey)
-        );
+        ));
         // -1
-        assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey));
+        assert!(matches!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey)));
         // Top of range
         assert!(SecretKey::from_slice(&[
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -1684,58 +1683,60 @@ mod test {
     }
 
     #[test]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn test_pubkey_from_bad_slice() {
         // Bad sizes
-        assert_eq!(
+        assert!(matches!(
             PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE - 1]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE + 1]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE - 1]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE + 1]),
             Err(InvalidPublicKey)
-        );
+        ));
 
         // Bad parse
-        assert_eq!(
+        assert!(matches!(
             PublicKey::from_slice(&[0xff; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
-        );
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        ));
+        assert!(matches!(PublicKey::from_slice(&[]), Err(InvalidPublicKey)));
     }
 
     #[test]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn test_seckey_from_bad_slice() {
         // Bad sizes
-        assert_eq!(
+        assert!(matches!(
             SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
             Err(InvalidSecretKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
             Err(InvalidSecretKey)
-        );
+        ));
         // Bad parse
-        assert_eq!(
+        assert!(matches!(
             SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]),
             Err(InvalidSecretKey)
-        );
-        assert_eq!(
+        ));
+        assert!(matches!(
             SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]),
             Err(InvalidSecretKey)
-        );
-        assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
+        ));
+        assert!(matches!(SecretKey::from_slice(&[]), Err(InvalidSecretKey)));
     }
 
     #[test]
@@ -1994,6 +1995,7 @@ mod test {
 
     #[test]
     #[cfg(not(fuzzing))]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn pubkey_combine() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
@@ -2012,12 +2014,13 @@ mod test {
         assert!(sum1.is_ok());
         let sum2 = compressed2.combine(&compressed1);
         assert!(sum2.is_ok());
-        assert_eq!(sum1, sum2);
-        assert_eq!(sum1.unwrap(), exp_sum);
+        assert!(matches!(sum1, ref sum2));
+        assert!(matches!(sum1.unwrap(), exp_sum));
     }
 
     #[test]
     #[cfg(not(fuzzing))]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn pubkey_combine_keys() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
@@ -2040,8 +2043,8 @@ mod test {
         assert!(sum1.is_ok());
         let sum2 = PublicKey::combine_keys(&[&compressed1, &compressed2, &compressed3]);
         assert!(sum2.is_ok());
-        assert_eq!(sum1, sum2);
-        assert_eq!(sum1.unwrap(), exp_sum);
+        assert!(matches!(sum1, ref sum2));
+        assert!(matches!(sum1.unwrap(), exp_sum));
     }
 
     #[test]
@@ -2052,6 +2055,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "rand-std")]
+    #[allow(unused_variables)] // triggered by matches macro.
     fn create_pubkey_combine() {
         let s = Secp256k1::new();
 
@@ -2062,11 +2066,11 @@ mod test {
         assert!(sum1.is_ok());
         let sum2 = pk2.combine(&pk1);
         assert!(sum2.is_ok());
-        assert_eq!(sum1, sum2);
+        assert!(matches!(sum2, ref sum1));
 
         let tweaked = sk1.add_tweak(&Scalar::from(sk2)).unwrap();
         let sksum = PublicKey::from_secret_key(&s, &tweaked);
-        assert_eq!(Ok(sksum), sum1);
+        assert_eq!(sksum, sum1.unwrap());
     }
 
     #[cfg(not(fuzzing))]
