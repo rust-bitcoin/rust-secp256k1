@@ -354,18 +354,13 @@ impl fmt::Display for Error {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::IncorrectSignature => None,
-            Error::InvalidMessage => None,
-            Error::InvalidPublicKey => None,
-            Error::InvalidSignature => None,
-            Error::InvalidSecretKey => None,
-            Error::InvalidSharedSecret => None,
-            Error::InvalidRecoveryId => None,
-            Error::InvalidTweak => None,
-            Error::NotEnoughMemory => None,
-            Error::InvalidPublicKeySum => None,
-            Error::InvalidParityValue(error) => Some(error),
+        use Error::*;
+
+        match *self {
+            IncorrectSignature | InvalidMessage | InvalidPublicKey | InvalidSignature
+            | InvalidSecretKey | InvalidSharedSecret | InvalidRecoveryId | InvalidTweak
+            | NotEnoughMemory | InvalidPublicKeySum => None,
+            InvalidParityValue(ref e) => Some(e),
         }
     }
 }
