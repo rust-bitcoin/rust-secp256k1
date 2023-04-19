@@ -1560,9 +1560,41 @@ mod test {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{KeyPair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
+    use super::*;
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
+
+    #[cfg(feature = "alloc")]
+    fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
+        let secp = Secp256k1::new();
+
+        #[rustfmt::skip]
+        static SK_BYTES: [u8; 32] = [
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
+            0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
+        ];
+
+        #[rustfmt::skip]
+        static PK_BYTES: [u8; 32] = [
+            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
+            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
+            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
+            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66
+        ];
+
+        let mut pk_bytes = [0u8; 33];
+        pk_bytes[0] = 0x02; // Use positive Y co-ordinate.
+        pk_bytes[1..].clone_from_slice(&PK_BYTES);
+
+        let sk = SecretKey::from_slice(&SK_BYTES).expect("failed to parse sk bytes");
+        let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
+        let kp = KeyPair::from_secret_key(&secp, &sk);
+        let xonly = XOnlyPublicKey::from_slice(&PK_BYTES).expect("failed to get xonly from slice");
+
+        (sk, pk, kp, xonly)
+    }
 
     #[cfg(not(fuzzing))]
     macro_rules! hex {
@@ -1573,68 +1605,39 @@ mod test {
         }};
     }
 
+    // Implicitly tests `SecretKey::from_slice` and `PublicKey::from_slice`
     #[test]
-    fn skey_from_slice() {
-        let sk = SecretKey::from_slice(&[1; 31]);
-        assert_eq!(sk, Err(InvalidSecretKey));
+    #[cfg(feature = "alloc")]
+    fn sanity_get_keys_from_slice() { let _ = keys(); }
 
-        let sk = SecretKey::from_slice(&[1; 32]);
-        assert!(sk.is_ok());
+    #[test]
+    fn secret_key_all_ones() {
+        assert!(SecretKey::from_slice(&[1; 32]).is_ok());
     }
 
     #[test]
-    fn pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
-
-        let uncompressed = PublicKey::from_slice(&[
-            4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85,
-            220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124,
-            149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195,
-            155, 51, 247, 123, 113, 60, 228, 188,
-        ]);
-        assert!(uncompressed.is_ok());
-
-        let compressed = PublicKey::from_slice(&[
-            3, 23, 183, 225, 206, 31, 159, 148, 195, 42, 67, 115, 146, 41, 248, 140, 11, 3, 51, 41,
-            111, 180, 110, 143, 114, 134, 88, 73, 198, 174, 52, 184, 78,
-        ]);
-        assert!(compressed.is_ok());
+    fn invalid_secret_key_empty_slice() {
+        assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
-    fn keypair_slice_round_trip() {
-        let s = Secp256k1::new();
-
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
-    }
-
-    #[test]
-    #[cfg(all(feature = "std", not(fuzzing)))]
-    fn erased_keypair_is_valid() {
-        let s = Secp256k1::new();
-        let kp = KeyPair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
-            .expect("valid secret key");
-        let mut kp2 = kp;
-        kp2.non_secure_erase();
-        assert!(kp.eq_fast_unstable(&kp2));
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn invalid_secret_key() {
-        // Zero
+    fn invalid_secret_key_zero() {
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
+
         assert_eq!(
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
             Err(InvalidSecretKey)
         );
-        // -1
+    }
+
+    #[test]
+    fn invalid_secret_key_negative_one() {
         assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey));
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn secret_key_boundry() {
         // Top of range
         assert!(SecretKey::from_slice(&[
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -1652,8 +1655,218 @@ mod test {
     }
 
     #[test]
+    fn invalid_secret_key_one_too_short_slice_compressed() {
+        assert_eq!(
+            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
+            Err(InvalidSecretKey)
+        );
+    }
+
+    #[test]
+    fn invalid_secret_key_one_too_long_slice_compressed() {
+        assert_eq!(
+            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
+            Err(InvalidSecretKey)
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn secret_key_slice_roundtrip() {
+        let (sk, _pk, _kp, _xonly) = keys();
+        // Matches the key return by keys().
+        let s = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
+
+        assert_eq!(SecretKey::from_str(s).unwrap(), sk);
+        assert_eq!(sk.display_secret().to_string(), s);
+
+        assert_eq!(SecretKey::from_slice(&sk[..]), Ok(sk));
+    }
+
+    #[test]
+    fn secret_key_from_str_invalid() {
+        assert!(SecretKey::from_str(
+            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        )
+        .is_err());
+        assert!(SecretKey::from_str(
+            "01010101010101010001020304050607ffff0000ffff0000636363636363636363"
+        )
+        .is_err());
+        assert!(SecretKey::from_str(
+            "01010101010101010001020304050607ffff0000ffff0000636363636363636"
+        )
+        .is_err());
+        assert!(SecretKey::from_str(
+            "01010101010101010001020304050607ffff0000ffff000063636363636363"
+        )
+        .is_err());
+        assert!(SecretKey::from_str(
+            "01010101010101010001020304050607ffff0000ffff000063636363636363xx"
+        )
+        .is_err());
+    }
+
+    // compressed is tested by keys() helper function.
+    #[test]
+    fn public_keys_from_slice_uncompressed() {
+        let uncompressed = PublicKey::from_slice(&[
+            4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85,
+            220, 40, 100, 57, 121, 30, 162, 94, 156, 135, 67, 74, 49, 179, 57, 236, 53, 162, 124,
+            149, 144, 168, 77, 74, 30, 72, 211, 229, 110, 111, 55, 96, 193, 86, 227, 183, 152, 195,
+            155, 51, 247, 123, 113, 60, 228, 188,
+        ]);
+        assert!(uncompressed.is_ok());
+    }
+
+    #[test]
+    fn invalid_public_key_from_empty_slice() {
+        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
+    }
+
+    #[test]
+    fn invalid_public_key_negative_one() {
+        assert_eq!(
+            PublicKey::from_slice(&[0xff; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn invalid_public_key_from_slice_all_0x55() {
+        assert_eq!(
+            PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn invalid_public_key_from_way_too_short_slice() {
+        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+    }
+
+    #[test]
+    fn invalid_public_key_one_too_short_slice_compressed() {
+        assert_eq!(
+            PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE - 1]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn invalid_public_key_one_too_long_slice_compressed() {
+        assert_eq!(
+            PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE + 1]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn invalid_public_key_one_too_short_slice_uncompressed() {
+        assert_eq!(
+            PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE - 1]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    fn invalid_public_key_one_too_long_slice_uncompressed() {
+        assert_eq!(
+            PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE + 1]),
+            Err(InvalidPublicKey)
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn public_key_display_roundtrip() {
+        let (_sk, pk, _kp, _xonly) = keys();
+        let pk_compressed = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
+        let pk_uncompressed = "04\
+                                18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
+                                84B84DB303A340CD7D6823EE88174747D12A67D2F8F2F9BA40846EE5EE7A44F6";
+
+        assert_eq!(PublicKey::from_str(pk_compressed).unwrap(), pk);
+        assert_eq!(PublicKey::from_str(pk_uncompressed).unwrap(), pk);
+
+        assert_eq!(pk.to_string(), pk_compressed);
+
+        assert_eq!(PublicKey::from_slice(&pk.serialize()[..]), Ok(pk));
+        assert_eq!(PublicKey::from_slice(&pk.serialize_uncompressed()[..]), Ok(pk));
+    }
+
+    #[test]
+    // In fuzzing mode the Y coordinate is expected to match the X, so this
+    // test uses invalid public keys.
+    #[cfg(not(fuzzing))]
+    #[cfg(all(feature = "alloc", feature = "rand"))]
+    fn public_key_serialize() {
+        let s = Secp256k1::new();
+        let (_, pk1) = s.generate_keypair(&mut StepRng::new(1, 1));
+        assert_eq!(
+            &pk1.serialize_uncompressed()[..],
+            &[
+                4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
+                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165,
+                110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245,
+                3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163
+            ][..]
+        );
+        assert_eq!(
+            &pk1.serialize()[..],
+            &[
+                3, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
+                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
+            ][..]
+        );
+    }
+
+    #[test]
+    fn public_key_from_str_invalid() {
+        assert!(PublicKey::from_str(
+            "0300000000000000000000000000000000000000000000000000000000000000000"
+        )
+        .is_err());
+        assert!(PublicKey::from_str(
+            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16601"
+        )
+        .is_err());
+        assert!(PublicKey::from_str(
+            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16"
+        )
+        .is_err());
+        assert!(PublicKey::from_str(
+            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
+        )
+        .is_err());
+        assert!(PublicKey::from_str(
+            "xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn keys_from_str_long_invalid() {
+        let long_str = "a".repeat(1024 * 1024);
+        assert!(SecretKey::from_str(&long_str).is_err());
+        assert!(PublicKey::from_str(&long_str).is_err());
+    }
+
+    #[test]
+    #[cfg(all(feature = "std", not(fuzzing)))]
+    fn erased_keypair_is_valid() {
+        let s = Secp256k1::new();
+        let kp = KeyPair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+            .expect("valid secret key");
+        let mut kp2 = kp;
+        kp2.non_secure_erase();
+        assert!(kp.eq_fast_unstable(&kp2));
+    }
+
+    // FIXME(Tobin): I don't know what this is testing? There is no assertion or panic?
+    #[test]
     #[cfg(all(feature = "rand", feature = "alloc"))]
-    fn test_out_of_range() {
+    fn out_of_range() {
         struct BadRng(u8);
         impl RngCore for BadRng {
             fn next_u32(&mut self) -> u32 { unimplemented!() }
@@ -1684,67 +1897,19 @@ mod test {
     }
 
     #[test]
-    fn test_pubkey_from_bad_slice() {
-        // Bad sizes
-        assert_eq!(
-            PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE - 1]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(
-            PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE + 1]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(
-            PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE - 1]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(
-            PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE + 1]),
-            Err(InvalidPublicKey)
-        );
-
-        // Bad parse
-        assert_eq!(
-            PublicKey::from_slice(&[0xff; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(
-            PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
-    }
-
-    #[test]
-    fn test_seckey_from_bad_slice() {
-        // Bad sizes
-        assert_eq!(
-            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(
-            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
-            Err(InvalidSecretKey)
-        );
-        // Bad parse
-        assert_eq!(
-            SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(
-            SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
-    }
-
-    #[test]
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_debug_output() {
-        let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
+        let (sk, _pk, _kp, _xonly) = keys();
 
-        assert_eq!(&format!("{:?}", sk), "SecretKey(#d3e0c51a23169bb5)");
+        assert_eq!(&format!("{:?}", sk), "SecretKey(#2f4d520bd6874292)");
+    }
+
+    #[test]
+    #[cfg(not(fuzzing))]
+    #[cfg(all(feature = "alloc", feature = "rand"))]
+    fn secret_key_hex() {
+        let secp = Secp256k1::new();
+        let (sk, _pk) = secp.generate_keypair(&mut StepRng::new(1, 1));
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
@@ -1754,217 +1919,100 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
-    fn test_display_output() {
-        #[rustfmt::skip]
-        static SK_BYTES: [u8; 32] = [
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
-            0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
-        ];
-
-        #[cfg(not(fuzzing))]
-        let s = Secp256k1::signing_only();
-        let sk = SecretKey::from_slice(&SK_BYTES).expect("sk");
-
-        // In fuzzing mode secret->public key derivation is different, so
-        // hard-code the expected result.
-        #[cfg(not(fuzzing))]
-        let pk = PublicKey::from_secret_key(&s, &sk);
-        #[cfg(fuzzing)]
-        let pk = PublicKey::from_slice(&[
-            0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30,
-            0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87,
-            0xfe, 0x91, 0xdd, 0xd1, 0x66,
-        ])
-        .expect("pk");
-
-        assert_eq!(
-            sk.display_secret().to_string(),
-            "01010101010101010001020304050607ffff0000ffff00006363636363636363"
-        );
-        assert_eq!(
-            SecretKey::from_str("01010101010101010001020304050607ffff0000ffff00006363636363636363")
-                .unwrap(),
-            sk
-        );
-        assert_eq!(
-            pk.to_string(),
-            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166"
-        );
-        assert_eq!(
-            PublicKey::from_str(
-                "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166"
-            )
-            .unwrap(),
-            pk
-        );
-        assert_eq!(
-            PublicKey::from_str(
-                "04\
-                18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166\
-                84B84DB303A340CD7D6823EE88174747D12A67D2F8F2F9BA40846EE5EE7A44F6"
-            )
-            .unwrap(),
-            pk
-        );
-
-        assert!(SecretKey::from_str(
-            "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-        )
-        .is_err());
-        assert!(SecretKey::from_str(
-            "01010101010101010001020304050607ffff0000ffff0000636363636363636363"
-        )
-        .is_err());
-        assert!(SecretKey::from_str(
-            "01010101010101010001020304050607ffff0000ffff0000636363636363636"
-        )
-        .is_err());
-        assert!(SecretKey::from_str(
-            "01010101010101010001020304050607ffff0000ffff000063636363636363"
-        )
-        .is_err());
-        assert!(SecretKey::from_str(
-            "01010101010101010001020304050607ffff0000ffff000063636363636363xx"
-        )
-        .is_err());
-        assert!(PublicKey::from_str(
-            "0300000000000000000000000000000000000000000000000000000000000000000"
-        )
-        .is_err());
-        assert!(PublicKey::from_str(
-            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16601"
-        )
-        .is_err());
-        assert!(PublicKey::from_str(
-            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd16"
-        )
-        .is_err());
-        assert!(PublicKey::from_str(
-            "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
-        )
-        .is_err());
-        assert!(PublicKey::from_str(
-            "xx0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd1"
-        )
-        .is_err());
-
-        let long_str = "a".repeat(1024 * 1024);
-        assert!(SecretKey::from_str(&long_str).is_err());
-        assert!(PublicKey::from_str(&long_str).is_err());
-    }
-
-    #[test]
-    // In fuzzing mode the Y coordinate is expected to match the X, so this
-    // test uses invalid public keys.
     #[cfg(not(fuzzing))]
-    #[cfg(all(feature = "alloc", feature = "rand"))]
-    fn test_pubkey_serialize() {
-        let s = Secp256k1::new();
-        let (_, pk1) = s.generate_keypair(&mut StepRng::new(1, 1));
-        assert_eq!(
-            &pk1.serialize_uncompressed()[..],
-            &[
-                4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
-                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165,
-                110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245,
-                3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163
-            ][..]
-        );
-        assert_eq!(
-            &pk1.serialize()[..],
-            &[
-                3, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
-                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
-            ][..]
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(feature = "alloc")]
     fn tweak_add_arbitrary_data() {
-        let s = Secp256k1::new();
-
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
-
-        // TODO: This would be better tested with a _lot_ of different tweaks.
-        let tweak = Scalar::random();
+        let secp = Secp256k1::new();
+        let (sk, pk, _kp, _xonly) = keys();
+        let tweak = Scalar::MAX; // Arbitrary scalar.
 
         let tweaked_sk = sk.add_tweak(&tweak).unwrap();
         assert_ne!(sk, tweaked_sk); // Make sure we did something.
-        let tweaked_pk = pk.add_exp_tweak(&s, &tweak).unwrap();
+        let tweaked_pk = pk.add_exp_tweak(&secp, &tweak).unwrap();
         assert_ne!(pk, tweaked_pk);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+        assert_eq!(PublicKey::from_secret_key(&secp, &tweaked_sk), tweaked_pk);
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(feature = "alloc")]
     fn tweak_add_zero() {
-        let s = Secp256k1::new();
-
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
-
+        let secp = Secp256k1::new();
+        let (sk, pk, _kp, _xonly) = keys();
         let tweak = Scalar::ZERO;
 
         let tweaked_sk = sk.add_tweak(&tweak).unwrap();
         assert_eq!(sk, tweaked_sk); // Tweak by zero does nothing.
-        let tweaked_pk = pk.add_exp_tweak(&s, &tweak).unwrap();
+        let tweaked_pk = pk.add_exp_tweak(&secp, &tweak).unwrap();
         assert_eq!(pk, tweaked_pk);
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
     fn tweak_mul_arbitrary_data() {
-        let s = Secp256k1::new();
-
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
-
-        // TODO: This would be better tested with a _lot_ of different tweaks.
-        let tweak = Scalar::random();
+        let secp = Secp256k1::new();
+        let (sk, pk, _kp, _xonly) = keys();
+        let tweak = Scalar::MAX; // Arbitrary scalar.
 
         let tweaked_sk = sk.mul_tweak(&tweak).unwrap();
         assert_ne!(sk, tweaked_sk); // Make sure we did something.
-        let tweaked_pk = pk.mul_tweak(&s, &tweak).unwrap();
+        let tweaked_pk = pk.mul_tweak(&secp, &tweak).unwrap();
         assert_ne!(pk, tweaked_pk);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+        assert_eq!(PublicKey::from_secret_key(&secp, &tweaked_sk), tweaked_pk);
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(feature = "alloc")]
     fn tweak_mul_zero() {
-        let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
-
+        let (sk, _pk, _kp, _xonly) = keys();
         let tweak = Scalar::ZERO;
+
         assert!(sk.mul_tweak(&tweak).is_err())
     }
 
     #[test]
     #[cfg(feature = "rand-std")]
-    fn test_negation() {
+    fn tweak_add_then_tweak_add_check() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        // TODO: 10 times is arbitrary, we should test this a _lot_ of times.
+        for _ in 0..10 {
+            let tweak = Scalar::random();
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
+            let kp = KeyPair::new(&s, &mut rand::thread_rng());
+            let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
+
+            let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
+            let (tweaked_xonly, parity) =
+                xonly.add_tweak(&s, &tweak).expect("xonly pubkey tweak failed");
+
+            let (want_tweaked_xonly, tweaked_kp_parity) = XOnlyPublicKey::from_keypair(&tweaked_kp);
+
+            assert_eq!(tweaked_xonly, want_tweaked_xonly);
+            assert_eq!(parity, tweaked_kp_parity);
+
+            assert!(xonly.tweak_add_check(&s, &tweaked_xonly, parity, tweak));
+        }
+    }
+
+    #[test]
+    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    fn key_negation() {
+        let secp = Secp256k1::new();
+        let (sk, pk, _kp, _xonly) = keys();
 
         let neg = sk.negate();
         assert_ne!(sk, neg);
         let back_sk = neg.negate();
         assert_eq!(sk, back_sk);
 
-        let neg = pk.negate(&s);
+        let neg = pk.negate(&secp);
         assert_ne!(pk, neg);
-        let back_pk = neg.negate(&s);
+        let back_pk = neg.negate(&secp);
         assert_eq!(pk, back_pk);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &back_sk), pk);
+        assert_eq!(PublicKey::from_secret_key(&secp, &back_sk), pk);
     }
 
     #[test]
@@ -1980,11 +2028,11 @@ mod test {
             s.finish()
         }
 
-        let s = Secp256k1::new();
+        let secp = Secp256k1::new();
         let mut set = HashSet::new();
         const COUNT: usize = 1024;
         for _ in 0..COUNT {
-            let (_, pk) = s.generate_keypair(&mut rand::thread_rng());
+            let (_, pk) = secp.generate_keypair(&mut rand::thread_rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
@@ -1994,7 +2042,7 @@ mod test {
 
     #[test]
     #[cfg(not(fuzzing))]
-    fn pubkey_combine() {
+    fn public_key_combine() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
         ))
@@ -2018,7 +2066,7 @@ mod test {
 
     #[test]
     #[cfg(not(fuzzing))]
-    fn pubkey_combine_keys() {
+    fn public_key_combine_keys() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
         ))
@@ -2069,10 +2117,10 @@ mod test {
         assert_eq!(Ok(sksum), sum1);
     }
 
-    #[cfg(not(fuzzing))]
     #[test]
+    #[cfg(not(fuzzing))]
     #[allow(clippy::nonminimal_bool)]
-    fn pubkey_equal() {
+    fn pubkey_equality_operators() {
         let pk1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
         ))
@@ -2096,97 +2144,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "serde", feature = "alloc"))]
-    fn test_serde() {
-        use serde_test::{assert_tokens, Configure, Token};
-        #[rustfmt::skip]
-        static SK_BYTES: [u8; 32] = [
-            1, 1, 1, 1, 1, 1, 1, 1,
-            0, 1, 2, 3, 4, 5, 6, 7,
-            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
-            99, 99, 99, 99, 99, 99, 99, 99
-        ];
-        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
-
-        #[cfg(fuzzing)]
-        #[rustfmt::skip]
-        static PK_BYTES: [u8; 33] = [
-            0x02,
-            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
-            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
-            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
-            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
-        ];
-        static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
-
-        #[cfg(not(fuzzing))]
-        let s = Secp256k1::new();
-        let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
-
-        // In fuzzing mode secret->public key derivation is different, so
-        // hard-code the expected result.
-        #[cfg(not(fuzzing))]
-        let pk = PublicKey::from_secret_key(&s, &sk);
-        #[cfg(fuzzing)]
-        let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
-
-        #[rustfmt::skip]
-        assert_tokens(&sk.compact(), &[
-            Token::Tuple{ len: 32 },
-            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
-            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
-            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
-            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
-            Token::TupleEnd
-        ]);
-
-        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
-
-        #[rustfmt::skip]
-        assert_tokens(&pk.compact(), &[
-            Token::Tuple{ len: 33 },
-            Token::U8(0x02),
-            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
-            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
-            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
-            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
-            Token::TupleEnd
-        ]);
-
-        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
-        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
-        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
-    }
-
-    #[test]
-    #[cfg(feature = "rand-std")]
-    fn test_tweak_add_then_tweak_add_check() {
-        let s = Secp256k1::new();
-
-        // TODO: 10 times is arbitrary, we should test this a _lot_ of times.
-        for _ in 0..10 {
-            let tweak = Scalar::random();
-
-            let kp = KeyPair::new(&s, &mut rand::thread_rng());
-            let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
-
-            let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
-            let (tweaked_xonly, parity) =
-                xonly.add_tweak(&s, &tweak).expect("xonly pubkey tweak failed");
-
-            let (want_tweaked_xonly, tweaked_kp_parity) = XOnlyPublicKey::from_keypair(&tweaked_kp);
-
-            assert_eq!(tweaked_xonly, want_tweaked_xonly);
-            assert_eq!(parity, tweaked_kp_parity);
-
-            assert!(xonly.tweak_add_check(&s, &tweaked_xonly, parity, tweak));
-        }
-    }
-
-    #[test]
-    fn test_from_key_pubkey() {
+    fn xonly_public_key_from_public_key() {
         let kpk1 = PublicKey::from_str(
             "02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443",
         )
@@ -2201,72 +2159,6 @@ mod test {
 
         assert_eq!(pk1.serialize()[..], kpk1.serialize()[1..]);
         assert_eq!(pk2.serialize()[..], kpk2.serialize()[1..]);
-    }
-
-    #[test]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
-    fn test_serde_keypair() {
-        use serde::{Deserialize, Deserializer, Serialize, Serializer};
-        use serde_test::{assert_tokens, Configure, Token};
-
-        use crate::key::KeyPair;
-        use crate::SECP256K1;
-
-        #[rustfmt::skip]
-        static SK_BYTES: [u8; 32] = [
-            1, 1, 1, 1, 1, 1, 1, 1,
-            0, 1, 2, 3, 4, 5, 6, 7,
-            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
-            99, 99, 99, 99, 99, 99, 99, 99
-        ];
-        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
-
-        let sk = KeyPair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
-        #[rustfmt::skip]
-        assert_tokens(&sk.compact(), &[
-            Token::Tuple{ len: 32 },
-            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
-            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
-            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
-            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
-            Token::TupleEnd
-        ]);
-
-        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
-        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
-    }
-
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
-    fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
-        let secp = Secp256k1::new();
-
-        #[rustfmt::skip]
-        static SK_BYTES: [u8; 32] = [
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00,
-            0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
-        ];
-
-        #[rustfmt::skip]
-        static PK_BYTES: [u8; 32] = [
-            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
-            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
-            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
-            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66
-        ];
-
-        let mut pk_bytes = [0u8; 33];
-        pk_bytes[0] = 0x02; // Use positive Y co-ordinate.
-        pk_bytes[1..].clone_from_slice(&PK_BYTES);
-
-        let sk = SecretKey::from_slice(&SK_BYTES).expect("failed to parse sk bytes");
-        let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
-        let kp = KeyPair::from_secret_key(&secp, &sk);
-        let xonly = XOnlyPublicKey::from_slice(&PK_BYTES).expect("failed to get xonly from slice");
-
-        (sk, pk, kp, xonly)
     }
 
     #[test]
@@ -2386,40 +2278,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
-    fn test_serde_x_only_pubkey() {
-        use serde_test::{assert_tokens, Configure, Token};
-
-        #[rustfmt::skip]
-        static SK_BYTES: [u8; 32] = [
-            1, 1, 1, 1, 1, 1, 1, 1,
-            0, 1, 2, 3, 4, 5, 6, 7,
-            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
-            99, 99, 99, 99, 99, 99, 99, 99
-        ];
-
-        static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
-
-        let kp = KeyPair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
-        let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
-
-        #[rustfmt::skip]
-        assert_tokens(&pk.compact(), &[
-            Token::Tuple{ len: 32 },
-            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
-            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
-            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
-            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
-            Token::TupleEnd
-        ]);
-
-        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
-        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
-        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
-    }
-
-    #[test]
     #[cfg(feature = "rand-std")]
     fn test_keypair_from_str() {
         let ctx = crate::Secp256k1::new();
@@ -2450,9 +2308,142 @@ mod test {
     #[test]
     #[should_panic(expected = "The previous implementation was panicking too")]
     #[cfg(not(any(feature = "alloc", feature = "global-context")))]
-    fn test_parse_keypair_no_alloc_panic() {
+    fn parse_keypair_no_alloc_panic() {
         let key_hex = "4242424242424242424242424242424242424242424242424242424242424242";
         let _: KeyPair = key_hex.parse().expect("We shouldn't even get this far");
+    }
+
+    #[test]
+    #[cfg(all(feature = "serde", feature = "alloc"))]
+    fn serde_secret_and_public_keys() {
+        use serde_test::{assert_tokens, Configure, Token};
+        #[rustfmt::skip]
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
+
+        #[cfg(fuzzing)]
+        #[rustfmt::skip]
+        static PK_BYTES: [u8; 33] = [
+            0x02,
+            0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f,
+            0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92, 0x06, 0x7d,
+            0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54,
+            0x4a, 0xc8, 0x87, 0xfe, 0x91, 0xdd, 0xd1, 0x66,
+        ];
+        static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
+
+        #[cfg(not(fuzzing))]
+        let s = Secp256k1::new();
+        let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
+
+        // In fuzzing mode secret->public key derivation is different, so
+        // hard-code the expected result.
+        #[cfg(not(fuzzing))]
+        let pk = PublicKey::from_secret_key(&s, &sk);
+        #[cfg(fuzzing)]
+        let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
+
+        #[rustfmt::skip]
+        assert_tokens(&sk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
+            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
+            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
+            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
+            Token::TupleEnd
+        ]);
+
+        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+
+        #[rustfmt::skip]
+        assert_tokens(&pk.compact(), &[
+            Token::Tuple{ len: 33 },
+            Token::U8(0x02),
+            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
+            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
+            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
+            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
+            Token::TupleEnd
+        ]);
+
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
+    }
+
+    #[test]
+    #[cfg(all(feature = "global-context", feature = "serde"))]
+    fn serde_keypair() {
+        use serde::{Deserialize, Deserializer, Serialize, Serializer};
+        use serde_test::{assert_tokens, Configure, Token};
+
+        use crate::key::KeyPair;
+        use crate::SECP256K1;
+
+        #[rustfmt::skip]
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+        static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
+
+        let sk = KeyPair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
+        #[rustfmt::skip]
+        assert_tokens(&sk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1), Token::U8(1),
+            Token::U8(0), Token::U8(1), Token::U8(2), Token::U8(3), Token::U8(4), Token::U8(5), Token::U8(6), Token::U8(7),
+            Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0), Token::U8(0xff), Token::U8(0xff), Token::U8(0), Token::U8(0),
+            Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99), Token::U8(99),
+            Token::TupleEnd
+        ]);
+
+        assert_tokens(&sk.readable(), &[Token::BorrowedStr(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::Str(SK_STR)]);
+        assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
+    }
+
+    #[test]
+    #[cfg(not(fuzzing))]
+    #[cfg(all(feature = "global-context", feature = "serde"))]
+    fn serde_x_only_pubkey() {
+        use serde_test::{assert_tokens, Configure, Token};
+
+        #[rustfmt::skip]
+        static SK_BYTES: [u8; 32] = [
+            1, 1, 1, 1, 1, 1, 1, 1,
+            0, 1, 2, 3, 4, 5, 6, 7,
+            0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
+            99, 99, 99, 99, 99, 99, 99, 99
+        ];
+
+        static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
+
+        let kp = KeyPair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
+        let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
+
+        #[rustfmt::skip]
+        assert_tokens(&pk.compact(), &[
+            Token::Tuple{ len: 32 },
+            Token::U8(0x18), Token::U8(0x84), Token::U8(0x57), Token::U8(0x81), Token::U8(0xf6), Token::U8(0x31), Token::U8(0xc4), Token::U8(0x8f),
+            Token::U8(0x1c), Token::U8(0x97), Token::U8(0x09), Token::U8(0xe2), Token::U8(0x30), Token::U8(0x92), Token::U8(0x06), Token::U8(0x7d),
+            Token::U8(0x06), Token::U8(0x83), Token::U8(0x7f), Token::U8(0x30), Token::U8(0xaa), Token::U8(0x0c), Token::U8(0xd0), Token::U8(0x54),
+            Token::U8(0x4a), Token::U8(0xc8), Token::U8(0x87), Token::U8(0xfe), Token::U8(0x91), Token::U8(0xdd), Token::U8(0xd1), Token::U8(0x66),
+            Token::TupleEnd
+        ]);
+
+        assert_tokens(&pk.readable(), &[Token::BorrowedStr(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::Str(PK_STR)]);
+        assert_tokens(&pk.readable(), &[Token::String(PK_STR)]);
     }
 }
 
