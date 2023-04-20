@@ -229,7 +229,7 @@ mod tests {
         let msg = Message::from_slice(&msg).unwrap();
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa_recoverable(&msg, &sk), full.sign_ecdsa_recoverable(&msg, &sk));
@@ -309,7 +309,7 @@ mod tests {
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         let sigr = s.sign_ecdsa_recoverable(&msg, &sk);
         let sig = sigr.to_standard();
@@ -331,7 +331,7 @@ mod tests {
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
@@ -349,7 +349,7 @@ mod tests {
 
         let noncedata = [42u8; 32];
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
 

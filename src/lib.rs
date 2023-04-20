@@ -67,7 +67,7 @@
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
-//! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+//! let public_key = PublicKey::from_secret_key(&secret_key);
 //! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
 //! // See the above example for how to use this library together with `bitcoin-hashes-std`.
 //! let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
@@ -429,22 +429,24 @@ impl<C: Signing> Secp256k1<C> {
     /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
     /// [`PublicKey::from_secret_key`].
     #[inline]
-    #[cfg(feature = "rand")]
+    #[cfg(all(feature = "rand", not(feature = "std")))]
     pub fn generate_keypair<R: rand::Rng + ?Sized>(
         &self,
         rng: &mut R,
     ) -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(rng);
-        let pk = key::PublicKey::from_secret_key(self, &sk);
+        let pk = key::PublicKey::from_secret_key(&self, &sk);
         (sk, pk)
     }
 }
 
 /// Generates a random keypair using the global [`SECP256K1`] context.
 #[inline]
-#[cfg(all(feature = "global-context", feature = "rand"))]
+#[cfg(all(feature = "std", feature = "rand"))]
 pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
-    SECP256K1.generate_keypair(rng)
+    let sk = key::SecretKey::new(rng);
+    let pk = key::PublicKey::from_secret_key(&sk);
+    (sk, pk)
 }
 
 /// Utility function used to parse hex into a target u8 buffer. Returns
@@ -539,7 +541,7 @@ mod tests {
         let vrfy: Secp256k1<VerifyOnlyPreallocated> =
             Secp256k1 { ctx: ctx_vrfy, phantom: PhantomData };
 
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
@@ -571,7 +573,7 @@ mod tests {
         let mut sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
         let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
 
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
@@ -617,7 +619,7 @@ mod tests {
         //        drop(buf_vfy); // The buffer can't get dropped before the context.
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
         let msg = Message::from_slice(&[2u8; 32]).unwrap();
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
@@ -639,7 +641,7 @@ mod tests {
         let msg = Message::from_slice(&msg).unwrap();
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
@@ -667,7 +669,7 @@ mod tests {
             let msg = crate::random_32_bytes(&mut rand::thread_rng());
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+            let (sk, _) = crate::generate_keypair(&mut rand::thread_rng());
             let sig1 = s.sign_ecdsa(&msg, &sk);
             let der = sig1.serialize_der();
             let sig2 = ecdsa::Signature::from_der(&der[..]).unwrap();
@@ -758,7 +760,7 @@ mod tests {
             let msg = crate::random_32_bytes(&mut rand::thread_rng());
             let msg = Message::from_slice(&msg).unwrap();
 
-            let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+            let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
             let sig = s.sign_ecdsa(&msg, &sk);
             assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Ok(()));
             let noncedata_sig = s.sign_ecdsa_with_noncedata(&msg, &sk, &noncedata);
@@ -807,7 +809,7 @@ mod tests {
                 let sig = s.sign_ecdsa(&msg, &key);
                 let low_r_sig = s.sign_ecdsa_low_r(&msg, &key);
                 let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &key, 1);
-                let pk = PublicKey::from_secret_key(&s, &key);
+                let pk = PublicKey::from_secret_key(&key);
                 assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Ok(()));
                 assert_eq!(s.verify_ecdsa(&msg, &low_r_sig, &pk), Ok(()));
                 assert_eq!(s.verify_ecdsa(&msg, &grind_r_sig, &pk), Ok(()));
@@ -824,7 +826,7 @@ mod tests {
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa(&msg, &sk);
 
@@ -995,17 +997,16 @@ mod tests {
         assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
     }
 
-    #[cfg(feature = "global-context")]
+    #[cfg(feature = "std")]
     #[test]
     fn test_global_context() {
-        use crate::SECP256K1;
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_slice(&sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
         let msg = Message::from_slice(&msg_data).unwrap();
 
         // Check usage as explicit parameter
-        let pk = PublicKey::from_secret_key(SECP256K1, &sk);
+        let pk = PublicKey::from_secret_key(&sk);
 
         // Check usage as self
         let sig = SECP256K1.sign_ecdsa(&msg, &sk);
@@ -1044,7 +1045,7 @@ mod benches {
         let s = Secp256k1::new();
         let mut r = StepRng::new(1, 1);
         bh.iter(|| {
-            let (sk, pk) = s.generate_keypair(&mut r);
+            let (sk, pk) = crate::generate_keypair(&mut r);
             black_box(sk);
             black_box(pk);
         });
@@ -1055,7 +1056,7 @@ mod benches {
         let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, _) = crate::generate_keypair(&mut rand::thread_rng());
 
         bh.iter(|| {
             let sig = s.sign_ecdsa(&msg, &sk);
@@ -1068,7 +1069,7 @@ mod benches {
         let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_slice(&msg).unwrap();
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::thread_rng());
         let sig = s.sign_ecdsa(&msg, &sk);
 
         bh.iter(|| {

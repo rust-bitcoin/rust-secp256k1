@@ -10,6 +10,258 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
+/// TODO: Rename to global and remove the other one.
+#[cfg(feature = "std")]
+pub mod _global {
+    use core::convert::TryFrom;
+    use core::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
+    use std::ops::Deref;
+    use std::sync::Once;
+
+    use super::alloc_only::{SignOnly, VerifyOnly};
+    use crate::ffi::CPtr;
+    use crate::{ffi, Secp256k1};
+
+    struct GlobalVerifyContext {
+        __private: (),
+    }
+
+    impl Deref for GlobalVerifyContext {
+        type Target = Secp256k1<VerifyOnly>;
+
+        fn deref(&self) -> &Self::Target {
+            static ONCE: Once = Once::new();
+            static mut CONTEXT: Option<Secp256k1<VerifyOnly>> = None;
+            ONCE.call_once(|| unsafe {
+                let ctx = Secp256k1::verification_only();
+                CONTEXT = Some(ctx);
+            });
+            unsafe { CONTEXT.as_ref().unwrap() }
+        }
+    }
+
+    struct GlobalSignContext {
+        __private: (),
+    }
+
+    impl Deref for GlobalSignContext {
+        type Target = Secp256k1<SignOnly>;
+
+        fn deref(&self) -> &Self::Target {
+            static ONCE: Once = Once::new();
+            static mut CONTEXT: Option<Secp256k1<SignOnly>> = None;
+            ONCE.call_once(|| unsafe {
+                let ctx = Secp256k1::signing_only();
+                CONTEXT = Some(ctx);
+            });
+            unsafe { CONTEXT.as_ref().unwrap() }
+        }
+    }
+
+    static GLOBAL_VERIFY_CONTEXT: &GlobalVerifyContext = &GlobalVerifyContext { __private: () };
+
+    static GLOBAL_SIGN_CONTEXTS: [&GlobalSignContext; 2] =
+        [&GlobalSignContext { __private: () }, &GlobalSignContext { __private: () }];
+
+    static SIGN_CONTEXTS_DIRTY: [AtomicBool; 2] = [AtomicBool::new(false), AtomicBool::new(false)];
+
+    /// The sign contexts semaphore, stores two flags in the lowest bits and the reader count
+    /// in the remaining bits. Thus adding or subtracting 4 increments/decrements the counter.
+    ///
+    /// The two flags are:
+    /// * Active context bit - least significant (0b1)
+    /// * Swap bit - second least significant (0b10) (see [`needs_swap`]).
+    static SIGN_CONTEXTS_SEM: AtomicUsize = AtomicUsize::new(0);
+
+    /// Re-randomization lock, true==locked, false==unlocked.
+    static RERAND_LOCK: AtomicBool = AtomicBool::new(false);
+
+    /// Stores the seed for RNG. Notably it doesn't matter that a thread may read "inconsistent"
+    /// content because it's all random data. If the array is being overwritten while being read it
+    /// cannot worsen entropy and the exact data doesn't matter.
+    ///
+    /// We still have to use atomics because multiple mutable accesses is undefined behavior in Rust.
+    static GLOBAL_SEED: [AtomicU8; 32] = init_seed_buffer();
+
+    /// Rerandomizes inactive context using first half of `seed` and stores the second half in the
+    /// global seed buffer used for later rerandomizations.
+    pub fn reseed(seed: &[u8; 64]) {
+        if rerand_lock() {
+            let last = sign_contexts_inc();
+            let other = 1 - active_context(last);
+
+            _rerandomize(other, <&[u8; 32]>::try_from(&seed[0..32]).expect("32 bytes"));
+            clear_context_dirty(other);
+            rerand_unlock();
+
+            sign_contexts_dec();
+
+            // We unlock before setting the swap bit so that soon as another
+            // reader sees the swap bit set they can grab the rand lock.
+            sign_contexts_set_swap_bit();
+        }
+        write_global_seed(<&[u8; 32]>::try_from(&seed[32..64]).expect("32 bytes"));
+    }
+
+    /// Perform function using the current active global verification context.
+    ///
+    /// # Safety
+    ///
+    /// TODO: Write safety docs.
+    pub unsafe fn with_global_verify_context<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
+        f(GLOBAL_VERIFY_CONTEXT.ctx.as_ptr())
+    }
+
+    /// Perform function using the current active global signing context.
+    ///
+    /// # Safety
+    ///
+    /// TODO: Write safety docs.
+    pub unsafe fn with_global_signing_context<F: FnOnce(*const ffi::Context) -> R, R>(f: F) -> R {
+        let last = sign_contexts_inc();
+
+        // Shift 2 for the 2 flag bits.
+        if last >= usize::MAX >> 2 {
+            // Having this many threads should be impossible so if this happens it's because of a bug.
+            panic!("too many readers");
+        }
+
+        let active = active_context(last);
+
+        let res = f(GLOBAL_SIGN_CONTEXTS[active].ctx.as_ptr());
+        set_context_dirty(active);
+
+        let last = sign_contexts_dec();
+
+        // No readers and needs swap.
+        if last & !1 == 0b10 {
+            if let Some(ctx) = sign_contexts_swap(last) {
+                rerandomize_with_global_seed(ctx);
+            }
+        }
+        res
+    }
+
+    /// Returns the index (into GLOBAL_SIGN_CONTEXTS) of the active context.
+    fn active_context(sem: usize) -> usize { sem & 1 }
+
+    /// Attempts to lock the rerand lock.
+    ///
+    /// # Returns
+    ///
+    /// `true` if lock was acquired, false otherwise.
+    fn rerand_lock() -> bool {
+        RERAND_LOCK.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_ok()
+    }
+
+    /// Attempts to unlock the rerand lock.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the lock was unlocked by this operation.
+    fn rerand_unlock() -> bool {
+        RERAND_LOCK.compare_exchange(true, false, Ordering::Acquire, Ordering::Relaxed).is_ok()
+    }
+
+    /// Increments the sign-contexts reader semaphore.
+    // FIXME: What happens if we have more than usize::MAX >> 2 readers i.e., overflow?
+    fn sign_contexts_inc() -> usize { SIGN_CONTEXTS_SEM.fetch_add(4, Ordering::Acquire) }
+
+    /// Decrements the sign-contexts reader semaphore.
+    fn sign_contexts_dec() -> usize { SIGN_CONTEXTS_SEM.fetch_sub(4, Ordering::Acquire) }
+
+    /// Swap the active context and clear the swap bit.
+    ///
+    /// # Panics
+    ///
+    /// If `lock` has count > 0.
+    ///
+    /// # Returns
+    ///
+    /// The now-inactive context index (ie, the index of the context swapped out).
+    fn sign_contexts_swap(sem: usize) -> Option<usize> {
+        assert!(sem & !0b11 == 0); // reader count == 0
+        let new = (sem & !0b10) ^ 0b01; // turn off swap bit, toggle active bit.
+        match SIGN_CONTEXTS_SEM.compare_exchange(sem, new, Ordering::Relaxed, Ordering::Relaxed) {
+            Ok(last) => Some(active_context(last)),
+            // Another reader signaled before we had a chance to swap.
+            Err(_) => None,
+        }
+    }
+
+    /// Unconditionally turns on the "needs swap" bit.
+    fn sign_contexts_set_swap_bit() { SIGN_CONTEXTS_SEM.fetch_or(0b10, Ordering::Relaxed); }
+
+    fn set_context_dirty(ctx: usize) {
+        assert!(ctx < 2);
+        SIGN_CONTEXTS_DIRTY[ctx].store(true, Ordering::Relaxed);
+    }
+
+    fn clear_context_dirty(ctx: usize) {
+        assert!(ctx < 2);
+        SIGN_CONTEXTS_DIRTY[ctx].store(true, Ordering::Relaxed);
+    }
+
+    fn write_global_seed(seed: &[u8; 32]) {
+        for (i, b) in seed.iter().enumerate() {
+            GLOBAL_SEED[i].store(*b, Ordering::Relaxed);
+        }
+    }
+
+    /// Rerandomize the global signing context using randomness in the global seed.
+    fn rerandomize_with_global_seed(ctx: usize) {
+        let mut buf = [0_u8; 32];
+        for (i, b) in buf.iter_mut().enumerate() {
+            let atomic = &GLOBAL_SEED[i];
+            *b = atomic.load(Ordering::Relaxed);
+        }
+        rerandomize(ctx, &buf)
+    }
+
+    /// Rerandomize global context index `ctx` using randomness in `seed`.
+    fn rerandomize(ctx: usize, seed: &[u8; 32]) {
+        assert!(ctx < 2);
+        if rerand_lock() {
+            _rerandomize(ctx, seed);
+            clear_context_dirty(ctx);
+            rerand_unlock();
+
+            // We unlock before setting the swap bit so that soon as another
+            // reader sees the swap bit set they can grab the rand lock.
+            sign_contexts_set_swap_bit();
+        }
+    }
+
+    /// Should be called with the RERAND_LOCK held.
+    fn _rerandomize(ctx: usize, seed: &[u8; 32]) {
+        let secp = GLOBAL_SIGN_CONTEXTS[ctx];
+        unsafe {
+            let err = ffi::secp256k1_context_randomize(secp.ctx, seed.as_c_ptr());
+            // This function cannot fail; it has an error return for future-proofing.
+            // We do not expose this error since it is impossible to hit, and we have
+            // precedent for not exposing impossible errors (for example in
+            // `PublicKey::from_secret_key` where it is impossible to create an invalid
+            // secret key through the API.)
+            // However, if this DOES fail, the result is potentially weaker side-channel
+            // resistance, which is deadly and undetectable, so we take out the entire
+            // thread to be on the safe side.
+            assert_eq!(err, 1);
+        }
+    }
+
+    // TODO: Find better way to do this.
+    #[rustfmt::skip]
+    const fn init_seed_buffer() -> [AtomicU8; 32] {
+        let buf: [AtomicU8; 32] = [
+            AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0),
+            AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0),
+            AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0),
+            AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0), AtomicU8::new(0),
+        ];
+        buf
+    }
+}
+
 #[cfg(all(feature = "global-context", feature = "std"))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {

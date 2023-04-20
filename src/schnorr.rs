@@ -341,6 +341,9 @@ mod tests {
         let sk = SecretKey::from_keypair(&keypair);
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = crate::key::PublicKey::from_keypair(&keypair);
+        #[cfg(feature = "std")]
+        assert_eq!(crate::key::PublicKey::from_secret_key(&sk), pk);
+        #[cfg(not(feature = "std"))]
         assert_eq!(crate::key::PublicKey::from_secret_key(&secp, &sk), pk);
         let (xpk, _parity) = keypair.x_only_public_key();
         assert_eq!(XOnlyPublicKey::from(pk), xpk);

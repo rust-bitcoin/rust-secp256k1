@@ -195,9 +195,8 @@ mod tests {
     #[test]
     #[cfg(feature = "rand-std")]
     fn ecdh() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, pk1) = crate::generate_keypair(&mut rand::thread_rng());
+        let (sk2, pk2) = crate::generate_keypair(&mut rand::thread_rng());
 
         let sec1 = SharedSecret::new(&pk2, &sk1);
         let sec2 = SharedSecret::new(&pk1, &sk2);
@@ -231,9 +230,8 @@ mod tests {
 
         use crate::ecdh::shared_secret_point;
 
-        let s = Secp256k1::signing_only();
-        let (sk1, _) = s.generate_keypair(&mut rand::thread_rng());
-        let (_, pk2) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, _) = crate::generate_keypair(&mut rand::thread_rng());
+        let (_, pk2) = crate::generate_keypair(&mut rand::thread_rng());
 
         let secret_sys = SharedSecret::new(&pk2, &sk1);
 
