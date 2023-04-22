@@ -86,6 +86,10 @@ impl Signature {
         }
     }
 
+    /// Returns a signature as a byte array.
+    #[inline]
+    pub fn serialize(&self) -> [u8; constants::SCHNORR_SIGNATURE_SIZE] { self.0 }
+
     /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
@@ -290,6 +294,19 @@ mod tests {
         .unwrap();
 
         assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
+    }
+
+    #[test]
+    fn test_serialize() {
+        let sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
+        let sig_bytes = sig.serialize();
+        let bytes = [
+            100, 112, 253, 19, 3, 221, 164, 253, 167, 23, 185, 131, 113, 83, 194, 74, 110, 171, 55,
+            113, 131, 252, 67, 143, 147, 158, 14, 210, 182, 32, 233, 238, 80, 119, 196, 168, 184,
+            220, 162, 137, 99, 215, 114, 169, 79, 95, 13, 223, 89, 142, 28, 71, 193, 55, 249, 25,
+            51, 39, 76, 124, 62, 218, 220, 232,
+        ];
+        assert_eq!(sig_bytes, bytes);
     }
 
     #[test]
