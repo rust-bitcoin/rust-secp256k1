@@ -43,13 +43,13 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
         cargo test --all --no-default-features --features="std,$feature"
     done
     # Other combos 
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all
-    RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --features="$FEATURES"
+    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all
+    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
 
     if [ "$NIGHTLY" = true ]; then
         cargo test --all --all-features
-        RUSTFLAGS='--cfg=fuzzing' RUSTDOCFLAGS='--cfg=fuzzing' cargo test --all --all-features
+        RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all --all-features
     fi
 
     # Examples

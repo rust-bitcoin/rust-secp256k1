@@ -22,7 +22,7 @@ use core::fmt;
 /// Library-internal representation of a Secp256k1 signature + recovery ID
 #[repr(C)]
 #[derive(Copy, Clone)]
-#[cfg_attr(fuzzing, derive(PartialEq, Eq, PartialOrd, Ord, Hash))]
+#[cfg_attr(secp256k1_fuzz, derive(PartialEq, Eq, PartialOrd, Ord, Hash))]
 pub struct RecoverableSignature([c_uchar; 65]);
 impl_array_newtype!(RecoverableSignature, c_uchar, 65);
 
@@ -78,14 +78,14 @@ impl fmt::Debug for RecoverableSignature {
     }
 }
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 impl PartialOrd for RecoverableSignature {
     fn partial_cmp(&self, other: &RecoverableSignature) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 impl Ord for RecoverableSignature {
     fn cmp(&self, other: &RecoverableSignature) -> core::cmp::Ordering {
         let this = self.serialize();
@@ -94,17 +94,17 @@ impl Ord for RecoverableSignature {
     }
 }
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 impl PartialEq for RecoverableSignature {
     fn eq(&self, other: &Self) -> bool {
         self.cmp(other) == core::cmp::Ordering::Equal
     }
 }
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 impl Eq for RecoverableSignature {}
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 impl core::hash::Hash for RecoverableSignature {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let ser = self.serialize();
@@ -129,7 +129,7 @@ extern "C" {
                                                          -> c_int;
 }
 
-#[cfg(not(fuzzing))]
+#[cfg(not(secp256k1_fuzz))]
 extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_8_1_ecdsa_sign_recoverable")]
     pub fn secp256k1_ecdsa_sign_recoverable(cx: *const Context,
@@ -149,7 +149,7 @@ extern "C" {
 }
 
 
-#[cfg(fuzzing)]
+#[cfg(secp256k1_fuzz)]
 mod fuzz_dummy {
     use core::slice;
 
@@ -221,5 +221,5 @@ mod fuzz_dummy {
     }
 }
 
-#[cfg(fuzzing)]
+#[cfg(secp256k1_fuzz)]
 pub use self::fuzz_dummy::*;

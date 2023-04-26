@@ -326,7 +326,7 @@ impl<C: Signing> Secp256k1<C> {
                 entropy_p = extra_entropy.as_c_ptr().cast::<ffi::types::c_void>();
 
                 // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
-                #[cfg(fuzzing)]
+                #[cfg(secp256k1_fuzz)]
                 return Signature::from(ret);
             }
         }

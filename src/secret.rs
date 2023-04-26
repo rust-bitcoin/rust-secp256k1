@@ -183,7 +183,7 @@ impl SharedSecret {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(not(fuzzing))]
+    /// # #[cfg(not(secp256k1_fuzz))]
     /// # #[cfg(feature = "std")] {
     /// # use std::str::FromStr;
     /// use secp256k1::{SecretKey, PublicKey};

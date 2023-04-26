@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std"))]
     fn bitcoin_hashes_and_sys_generate_same_secret() {
         use bitcoin_hashes::{sha256, Hash, HashEngine};

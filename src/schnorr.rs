@@ -199,7 +199,7 @@ mod tests {
     use crate::Error::InvalidPublicKey;
     use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
 
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0u8; 32];
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "alloc")]
-    #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     fn schnorr_sign() {
         let secp = Secp256k1::new();
 
@@ -276,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "alloc")]
     fn schnorr_verify() {
         let secp = Secp256k1::new();
@@ -349,7 +349,7 @@ mod tests {
         );
         // In fuzzing mode restrictions on public key validity are much more
         // relaxed, thus the invalid check below is expected to fail.
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         assert_eq!(
             XOnlyPublicKey::from_slice(&[0x55; constants::SCHNORR_PUBLIC_KEY_SIZE]),
             Err(InvalidPublicKey)
@@ -360,7 +360,7 @@ mod tests {
     #[test]
     #[cfg(feature = "std")]
     fn test_pubkey_display_output() {
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         let pk = {
             let secp = Secp256k1::new();
             static SK_BYTES: [u8; 32] = [
@@ -376,7 +376,7 @@ mod tests {
             let (pk, _parity) = kp.x_only_public_key();
             pk
         };
-        #[cfg(fuzzing)]
+        #[cfg(secp256k1_fuzz)]
         let pk = XOnlyPublicKey::from_slice(&[
             0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30, 0x92,
             0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87, 0xfe,
@@ -424,7 +424,7 @@ mod tests {
     #[test]
     // In fuzzing mode secret->public key derivation is different, so
     // this test will never correctly derive the static pubkey.
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_pubkey_serialize() {
         use rand::rngs::mock::StepRng;
@@ -440,7 +440,7 @@ mod tests {
         );
     }
 
-    #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     #[test]
     #[cfg(all(feature = "serde", feature = "alloc"))]
     fn test_serde() {
