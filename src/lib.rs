@@ -124,7 +124,7 @@
 //!     0xc9, 0x42, 0x8f, 0xca, 0x69, 0xc1, 0x32, 0xa2,
 //! ]).expect("compact signatures are 64 bytes; DER signatures are 68-72 bytes");
 //!
-//! # #[cfg(not(fuzzing))]
+//! # #[cfg(not(secp256k1_fuzz))]
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
 //! # }
 //! ```
@@ -796,12 +796,12 @@ mod tests {
             if compact[0] < 0x80 {
                 assert_eq!(sig, low_r_sig);
             } else {
-                #[cfg(not(fuzzing))] // mocked sig generation doesn't produce low-R sigs
+                #[cfg(not(secp256k1_fuzz))] // mocked sig generation doesn't produce low-R sigs
                 assert_ne!(sig, low_r_sig);
             }
-            #[cfg(not(fuzzing))] // mocked sig generation doesn't produce low-R sigs
+            #[cfg(not(secp256k1_fuzz))] // mocked sig generation doesn't produce low-R sigs
             assert!(ecdsa::compact_sig_has_zero_first_bit(&low_r_sig.0));
-            #[cfg(not(fuzzing))] // mocked sig generation doesn't produce low-R sigs
+            #[cfg(not(secp256k1_fuzz))] // mocked sig generation doesn't produce low-R sigs
             assert!(ecdsa::der_length_check(&grind_r_sig.0, 70));
         }
     }
@@ -912,7 +912,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))] // fuzz-sigs have fixed size/format
+    #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_noncedata() {
         let secp = Secp256k1::new();
@@ -931,7 +931,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_low_s() {
         // nb this is a transaction on testnet
@@ -954,7 +954,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))] // fuzz-sigs have fixed size/format
+    #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_low_r() {
         let secp = Secp256k1::new();
@@ -972,7 +972,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))] // fuzz-sigs have fixed size/format
+    #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_grind_r() {
         let secp = Secp256k1::new();
@@ -989,7 +989,7 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
-    #[cfg(not(fuzzing))] // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     #[cfg(any(feature = "alloc", feature = "std"))]
     #[test]
     fn test_serde() {

@@ -54,7 +54,9 @@ If you want to fuzz this library, or any library which depends on it, you will
 probably want to disable the actual cryptography, since fuzzers are unable to
 forge signatures and therefore won't test many interesting codepaths. To instead
 use a trivially-broken but fuzzer-accessible signature scheme, compile with
-`--cfg=fuzzing` in your `RUSTFLAGS` variable.
+`--cfg=secp256k1_fuzz` in your `RUSTFLAGS` variable.
 
-Note that `cargo hfuzz` sets this config flag automatically.
+Note that `cargo hfuzz` does **not** set this config flag automatically. In 0.27.0
+and earlier versions, we used the `--cfg=fuzzing` which honggfuzz does set, but we
+changed this because there was no way to override it.
 

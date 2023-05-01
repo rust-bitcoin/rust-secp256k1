@@ -264,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
     fn sign() {
@@ -289,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]  // fixed sig vectors can't work with fuzz-sigs
+    #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "rand-std")]
     #[rustfmt::skip]
     fn sign_with_noncedata() {

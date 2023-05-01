@@ -1564,7 +1564,7 @@ mod test {
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
 
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     macro_rules! hex {
         ($hex:expr) => {{
             let mut result = vec![0; $hex.len() / 2];
@@ -1614,7 +1614,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "std", not(fuzzing)))]
+    #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
     fn erased_keypair_is_valid() {
         let s = Secp256k1::new();
         let kp = KeyPair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
@@ -1764,15 +1764,15 @@ mod test {
             0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
         ];
 
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         let s = Secp256k1::signing_only();
         let sk = SecretKey::from_slice(&SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         let pk = PublicKey::from_secret_key(&s, &sk);
-        #[cfg(fuzzing)]
+        #[cfg(secp256k1_fuzz)]
         let pk = PublicKey::from_slice(&[
             0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30,
             0x92, 0x06, 0x7d, 0x06, 0x83, 0x7f, 0x30, 0xaa, 0x0c, 0xd0, 0x54, 0x4a, 0xc8, 0x87,
@@ -1859,7 +1859,7 @@ mod test {
     #[test]
     // In fuzzing mode the Y coordinate is expected to match the X, so this
     // test uses invalid public keys.
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "alloc", feature = "rand"))]
     fn test_pubkey_serialize() {
         let s = Secp256k1::new();
@@ -1993,7 +1993,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     fn pubkey_combine() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
@@ -2017,7 +2017,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     fn pubkey_combine_keys() {
         let compressed1 = PublicKey::from_slice(&hex!(
             "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba"
@@ -2045,7 +2045,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     fn pubkey_combine_keys_empty_slice() {
         assert!(PublicKey::combine_keys(&[]).is_err());
     }
@@ -2069,7 +2069,7 @@ mod test {
         assert_eq!(Ok(sksum), sum1);
     }
 
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     #[test]
     #[allow(clippy::nonminimal_bool)]
     fn pubkey_equal() {
@@ -2108,7 +2108,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        #[cfg(fuzzing)]
+        #[cfg(secp256k1_fuzz)]
         #[rustfmt::skip]
         static PK_BYTES: [u8; 33] = [
             0x02,
@@ -2119,15 +2119,15 @@ mod test {
         ];
         static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         let s = Secp256k1::new();
         let sk = SecretKey::from_slice(&SK_BYTES).unwrap();
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
-        #[cfg(not(fuzzing))]
+        #[cfg(not(secp256k1_fuzz))]
         let pk = PublicKey::from_secret_key(&s, &sk);
-        #[cfg(fuzzing)]
+        #[cfg(secp256k1_fuzz)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
         #[rustfmt::skip]
@@ -2237,7 +2237,7 @@ mod test {
         assert_tokens(&sk.readable(), &[Token::String(SK_STR)]);
     }
 
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
         let secp = Secp256k1::new();
 
@@ -2270,7 +2270,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_public_key_to_xonly_public_key() {
         let (_sk, pk, _kp, want) = keys();
         let (got, parity) = pk.x_only_public_key();
@@ -2280,7 +2280,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_secret_key_to_public_key() {
         let secp = Secp256k1::new();
 
@@ -2291,7 +2291,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_secret_key_to_x_only_public_key() {
         let secp = Secp256k1::new();
 
@@ -2303,7 +2303,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_keypair_to_public_key() {
         let (_sk, want, kp, _xonly) = keys();
         let got = kp.public_key();
@@ -2312,7 +2312,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_keypair_to_x_only_public_key() {
         let (_sk, _pk, kp, want) = keys();
         let (got, parity) = kp.x_only_public_key();
@@ -2323,7 +2323,7 @@ mod test {
 
     // SecretKey -> KeyPair -> SecretKey
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_secret_key_via_keypair() {
         let secp = Secp256k1::new();
         let (sk, _pk, _kp, _xonly) = keys();
@@ -2336,7 +2336,7 @@ mod test {
 
     // KeyPair -> SecretKey -> KeyPair
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_keypair_via_secret_key() {
         let secp = Secp256k1::new();
         let (_sk, _pk, kp, _xonly) = keys();
@@ -2349,7 +2349,7 @@ mod test {
 
     // XOnlyPublicKey -> PublicKey -> XOnlyPublicKey
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_x_only_public_key_via_public_key() {
         let (_sk, _pk, _kp, xonly) = keys();
 
@@ -2362,7 +2362,7 @@ mod test {
 
     // PublicKey -> XOnlyPublicKey -> PublicKey
     #[test]
-    #[cfg(all(not(fuzzing), feature = "alloc"))]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_public_key_via_x_only_public_key() {
         let (_sk, pk, _kp, _xonly) = keys();
 
@@ -2386,7 +2386,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(fuzzing))]
+    #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "global-context", feature = "serde"))]
     fn test_serde_x_only_pubkey() {
         use serde_test::{assert_tokens, Configure, Token};
