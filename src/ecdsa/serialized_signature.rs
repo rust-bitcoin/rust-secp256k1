@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: CC0-1.0
+
 //! Implements [`SerializedSignature`] and related types.
 //!
 //! DER-serialized signatures have the issue that they can have different lengths.

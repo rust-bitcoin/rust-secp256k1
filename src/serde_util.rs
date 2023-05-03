@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: CC0-1.0
+
 use core::fmt;
 use core::marker::PhantomData;
 use core::str::{self, FromStr};
