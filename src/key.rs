@@ -198,7 +198,6 @@ impl SecretKey {
     /// ```
     #[inline]
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: rand::Rng + ?Sized>(rng: &mut R) -> SecretKey {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
@@ -286,7 +285,6 @@ impl SecretKey {
     /// # }
     /// ```
     #[cfg(feature = "bitcoin_hashes")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     #[inline]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
@@ -355,7 +353,6 @@ impl SecretKey {
     /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature { SECP256K1.sign_ecdsa(&msg, self) }
 
     /// Returns the [`KeyPair`] for this [`SecretKey`].
@@ -393,7 +390,6 @@ impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for SecretKey {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -410,7 +406,6 @@ impl serde::Serialize for SecretKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for SecretKey {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -469,7 +464,6 @@ impl PublicKey {
     /// Creates a new public key from a [`SecretKey`] and the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
         PublicKey::from_secret_key(SECP256K1, sk)
     }
@@ -740,7 +734,6 @@ impl From<ffi::PublicKey> for PublicKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for PublicKey {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -757,7 +750,6 @@ impl serde::Serialize for PublicKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for PublicKey {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
         if d.is_human_readable() {
@@ -877,7 +869,6 @@ impl KeyPair {
     /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn from_seckey_str_global(s: &str) -> Result<KeyPair, Error> {
         KeyPair::from_seckey_str(SECP256K1, s)
     }
@@ -895,7 +886,6 @@ impl KeyPair {
     /// ```
     #[inline]
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
@@ -912,7 +902,6 @@ impl KeyPair {
     /// Generates a new random secret key using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
     pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> KeyPair {
         KeyPair::new(SECP256K1, rng)
     }
@@ -989,7 +978,6 @@ impl KeyPair {
     /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand-std"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand-std"))))]
     pub fn sign_schnorr(&self, msg: Message) -> schnorr::Signature {
         SECP256K1.sign_schnorr(&msg, self)
     }
@@ -1044,7 +1032,6 @@ impl str::FromStr for KeyPair {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for KeyPair {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -1064,7 +1051,6 @@ impl serde::Serialize for KeyPair {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for KeyPair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -1439,7 +1425,6 @@ impl fmt::Display for InvalidParityValue {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for InvalidParityValue {}
 
 impl From<InvalidParityValue> for Error {
@@ -1448,7 +1433,6 @@ impl From<InvalidParityValue> for Error {
 
 /// The parity is serialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for Parity {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_u8(self.to_u8())
@@ -1457,7 +1441,6 @@ impl serde::Serialize for Parity {
 
 /// The parity is deserialized as `u8` - `0` for even, `1` for odd.
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for Parity {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         struct Visitor;
@@ -1516,7 +1499,6 @@ impl From<PublicKey> for XOnlyPublicKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for XOnlyPublicKey {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -1532,7 +1514,6 @@ impl serde::Serialize for XOnlyPublicKey {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {

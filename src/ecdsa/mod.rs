@@ -8,7 +8,6 @@ pub mod serialized_signature;
 use core::{fmt, ptr, str};
 
 #[cfg(feature = "recovery")]
-#[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub use self::recovery::{RecoverableSignature, RecoveryId};
 pub use self::serialized_signature::SerializedSignature;
 use crate::ffi::CPtr;
@@ -193,7 +192,6 @@ impl Signature {
     /// The signature must be normalized or verification will fail (see [`Signature::normalize_s`]).
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), Error> {
         SECP256K1.verify_ecdsa(msg, self, pk)
     }
@@ -214,7 +212,6 @@ impl From<ffi::Signature> for Signature {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for Signature {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
@@ -226,7 +223,6 @@ impl serde::Serialize for Signature {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for Signature {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {

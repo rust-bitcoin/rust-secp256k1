@@ -12,9 +12,8 @@ keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 edition = "2018"
 
-# Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "rand", "rand-std", "serde", "bitcoin_hashes", "recovery", "global-context" ]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]

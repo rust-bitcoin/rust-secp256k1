@@ -89,7 +89,6 @@ impl Signature {
     /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
         SECP256K1.verify_schnorr(self, msg, pk)
     }
@@ -122,7 +121,6 @@ impl<C: Signing> Secp256k1<C> {
     /// Creates a schnorr signature internally using the [`rand::rngs::ThreadRng`] random number
     /// generator to generate the auxiliary random data.
     #[cfg(feature = "rand-std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn sign_schnorr(&self, msg: &Message, keypair: &KeyPair) -> Signature {
         self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
     }
@@ -145,7 +143,6 @@ impl<C: Signing> Secp256k1<C> {
     /// Creates a schnorr signature using the given random number generator to
     /// generate the auxiliary random data.
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
         &self,
         msg: &Message,

@@ -3,14 +3,12 @@ use core::mem::ManuallyDrop;
 use core::ptr::NonNull;
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub use self::alloc_only::*;
 use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
 #[cfg(all(feature = "global-context", feature = "std"))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "std"))))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {
 
@@ -114,7 +112,6 @@ mod private {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 mod alloc_only {
     use core::marker::PhantomData;
     use core::ptr::NonNull;
