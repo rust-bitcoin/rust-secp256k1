@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: CC0-1.0
+
 //! Provides [`Scalar`] and related types.
 //!
 //! In elliptic curve cryptography scalars are non-point values that can be used to multiply
