@@ -20,7 +20,7 @@
 #![deny(non_upper_case_globals, non_camel_case_types, non_snake_case, unused_mut)]
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(any(test, feature = "std"))]
 extern crate core;

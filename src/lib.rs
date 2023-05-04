@@ -154,7 +154,7 @@
 #![warn(missing_docs, missing_copy_implementations, missing_debug_implementations)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 // Experimental features we need.
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(bench, feature(test))]
 
 #[cfg(feature = "alloc")]
@@ -184,17 +184,13 @@ use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
 #[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 pub use bitcoin_hashes as hashes;
 #[cfg(feature = "global-context")]
-#[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
 pub use context::global::SECP256K1;
 #[cfg(feature = "rand")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 pub use rand;
 pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 pub use serde;
 
 pub use crate::context::*;
@@ -214,19 +210,16 @@ pub trait ThirtyTwoByteHash {
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256::Hash {
     fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl ThirtyTwoByteHash for hashes::sha256d::Hash {
     fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 #[cfg(feature = "bitcoin_hashes")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
 impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
     fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
@@ -275,7 +268,6 @@ impl Message {
     /// # }
     /// ```
     #[cfg(feature = "bitcoin_hashes")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin-hashes")))]
     pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
         <H as hashes::Hash>::hash(data).into()
     }
@@ -349,7 +341,6 @@ impl fmt::Display for Error {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -422,7 +413,6 @@ impl<C: Context> Secp256k1<C> {
     /// Requires compilation with "rand" feature. See comment by Gregory Maxwell in
     /// [libsecp256k1](https://github.com/bitcoin-core/secp256k1/commit/d2275795ff22a6f4738869f5528fbbb61738aa48).
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn randomize<R: rand::Rng + ?Sized>(&mut self, rng: &mut R) {
         let mut seed = [0u8; 32];
         rng.fill_bytes(&mut seed);
@@ -453,7 +443,6 @@ impl<C: Signing> Secp256k1<C> {
     /// [`PublicKey::from_secret_key`].
     #[inline]
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn generate_keypair<R: rand::Rng + ?Sized>(
         &self,
         rng: &mut R,
@@ -467,7 +456,6 @@ impl<C: Signing> Secp256k1<C> {
 /// Generates a random keypair using the global [`SECP256K1`] context.
 #[inline]
 #[cfg(all(feature = "global-context", feature = "rand"))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "global-context", feature = "rand"))))]
 pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
     SECP256K1.generate_keypair(rng)
 }

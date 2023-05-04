@@ -126,7 +126,6 @@ impl RecoverableSignature {
     /// verify-capable context.
     #[inline]
     #[cfg(feature = "global-context")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "global-context")))]
     pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
         crate::SECP256K1.recover_ecdsa(msg, self)
     }

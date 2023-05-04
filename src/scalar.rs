@@ -40,12 +40,10 @@ impl Scalar {
 
     /// Generates a random scalar
     #[cfg(feature = "rand-std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand-std")))]
     pub fn random() -> Self { Self::random_custom(rand::thread_rng()) }
 
     /// Generates a random scalar using supplied RNG
     #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
     pub fn random_custom<R: rand::Rng>(mut rng: R) -> Self {
         let mut bytes = [0u8; 32];
         loop {
@@ -137,5 +135,4 @@ impl fmt::Display for OutOfRangeError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for OutOfRangeError {}

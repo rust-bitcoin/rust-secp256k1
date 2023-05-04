@@ -15,9 +15,8 @@ build = "build.rs"
 links = "rustsecp256k1_v0_8_1"
 edition = "2018"
 
-# Should make docs.rs show all functions, even those behind non-default features
 [package.metadata.docs.rs]
-features = [ "recovery", "lowmemory" ]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [build-dependencies]
