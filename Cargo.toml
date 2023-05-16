@@ -24,6 +24,7 @@ alloc = ["secp256k1-sys/alloc"]
 bitcoin-hashes = ["bitcoin_hashes"] # Feature alias because of the underscore.
 bitcoin-hashes-std = ["std", "bitcoin_hashes", "bitcoin_hashes/std"]
 rand-std = ["std", "rand", "rand/std", "rand/std_rng"]
+rand-alloc = ["alloc", "rand", "rand/alloc", "rand/getrandom"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
