@@ -1,12 +1,21 @@
-[![Build Status](https://travis-ci.org/rust-bitcoin/rust-secp256k1.png?branch=master)](https://travis-ci.org/rust-bitcoin/rust-secp256k1)
+<div align="center">
+  <h1>Rust Secp256k1</h1>
 
-[Full documentation](https://docs.rs/secp256k1/)
+  <p>
+    <a href="https://crates.io/crates/secp256k1"><img alt="Crate Info" src="https://img.shields.io/crates/v/secp256k1.svg"/></a>
+    <a href="https://github.com/rust-bitcoin/rust-secp256k1/blob/master/LICENSE"><img alt="CC0 1.0 Universal Licensed" src="https://img.shields.io/badge/license-CC0--1.0-blue.svg"/></a>
+    <a href="https://github.com/rust-bitcoin/rust-secp256k1/actions?query=workflow%3AContinuous%20integration"><img alt="CI Status" src="https://github.com/rust-bitcoin/rust-secp256k1/workflows/Continuous%20integration/badge.svg"></a>
+    <a href="https://docs.rs/secp256k1"><img alt="API Docs" src="https://img.shields.io/badge/docs.rs-secp256k1-green"/></a>
+    <a href="https://blog.rust-lang.org/2020/02/27/Rust-1.48.0.html"><img alt="Rustc Version 1.48.0+" src="https://img.shields.io/badge/rustc-1.48.0%2B-lightgrey.svg"/></a>
+  </p>
+</div>
 
-## rust-secp256k1
+`rust-secp256k1` is a wrapper around [libsecp256k1](https://github.com/bitcoin-core/secp256k1), a C
+library implementing various cryptographic functions using the [SECG](https://www.secg.org/) curve
+[secp256k1](https://en.bitcoin.it/wiki/Secp256k1).
 
-`rust-secp256k1` is a wrapper around [libsecp256k1](https://github.com/bitcoin-core/secp256k1),
-a C library by Pieter Wuille for producing ECDSA signatures using the SECG curve
-`secp256k1`. This library
+This library:
+
 * exposes type-safe Rust bindings for all `libsecp256k1` functions
 * implements key generation
 * implements deterministic nonce generation via RFC6979
