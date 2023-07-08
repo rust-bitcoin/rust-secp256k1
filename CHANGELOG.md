@@ -23,6 +23,7 @@
 * [Introduce `rustfmt`](https://github.com/rust-bitcoin/rust-secp256k1/pull/499) to the codebase.
 * [Make all raw pointer methods go through the CPtr trait](https://github.com/rust-bitcoin/rust-secp256k1/pull/507).
 * [Make comparison functions stable](https://github.com/rust-bitcoin/rust-secp256k1/pull/518).
+* [Remove](https://github.com/rust-bitcoin/rust-secp256k1/pull/512) public constant `ONE_KEY` (consider using `FromStr` as a replacement).
 
 # 0.24.1 - 2022-10-25
 
