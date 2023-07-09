@@ -12,12 +12,10 @@ use serde::ser::SerializeTuple;
 
 use crate::ffi::types::c_uint;
 use crate::ffi::{self, CPtr};
-#[cfg(all(feature = "global-context", feature = "rand-std"))]
-use crate::schnorr;
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-use crate::{constants, from_hex, Scalar, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "global-context")]
-use crate::{ecdsa, Message, SECP256K1};
+use crate::{ecdsa, SECP256K1};
 #[cfg(feature = "bitcoin_hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
@@ -1315,6 +1313,16 @@ impl XOnlyPublicKey {
     #[inline]
     pub fn public_key(&self, parity: Parity) -> PublicKey {
         PublicKey::from_x_only_public_key(*self, parity)
+    }
+
+    /// Checks that `sig` is a valid schnorr signature for `msg` using this public key.
+    pub fn verify<C: Verification>(
+        &self,
+        secp: &Secp256k1<C>,
+        msg: &Message,
+        sig: &schnorr::Signature,
+    ) -> Result<(), Error> {
+        secp.verify_schnorr(sig, msg, self)
     }
 }
 
