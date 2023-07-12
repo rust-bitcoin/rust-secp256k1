@@ -19,6 +19,13 @@ cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abno
 # Make all cargo invocations verbose
 export CARGO_TERM_VERBOSE=true
 
+# Pin dependencies as required if we are using MSRV toolchain.
+if cargo --version | grep "1\.48"; then
+    # 1.0.157 uses syn 2.0 which requires edition 2021
+    cargo update -p serde_json --precise 1.0.99
+    cargo update -p serde --precise 1.0.156
+fi
+
 # Defaults / sanity checks
 cargo build --all
 cargo test --all
