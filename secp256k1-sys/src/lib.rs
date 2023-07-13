@@ -23,7 +23,6 @@ mod macros;
 pub mod types;
 
 #[cfg(feature = "recovery")]
-#[cfg_attr(docsrs, doc(cfg(feature = "recovery")))]
 pub mod recovery;
 
 use core::{slice, ptr};
@@ -813,7 +812,6 @@ extern "C" {
 ///
 /// The newly created secp256k1 raw context.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_create(flags: c_uint) -> NonNull<Context> {
     rustsecp256k1_v0_8_1_context_create(flags)
 }
@@ -824,7 +822,6 @@ pub unsafe fn secp256k1_context_create(flags: c_uint) -> NonNull<Context> {
 #[no_mangle]
 #[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_8_1_context_create(flags: c_uint) -> NonNull<Context> {
     use core::mem;
     use crate::alloc::alloc;
@@ -857,7 +854,6 @@ pub unsafe extern "C" fn rustsecp256k1_v0_8_1_context_create(flags: c_uint) -> N
 ///
 ///  `ctx` must be a valid pointer to a block of memory created using [`secp256k1_context_create`].
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe fn secp256k1_context_destroy(ctx: NonNull<Context>) {
     rustsecp256k1_v0_8_1_context_destroy(ctx)
 }
@@ -865,7 +861,6 @@ pub unsafe fn secp256k1_context_destroy(ctx: NonNull<Context>) {
 #[no_mangle]
 #[allow(clippy::missing_safety_doc)] // Documented above.
 #[cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "alloc", not(rust_secp_no_symbol_renaming)))))]
 pub unsafe extern "C" fn rustsecp256k1_v0_8_1_context_destroy(mut ctx: NonNull<Context>) {
     use crate::alloc::alloc;
     secp256k1_context_preallocated_destroy(ctx);
