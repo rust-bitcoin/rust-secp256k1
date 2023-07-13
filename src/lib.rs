@@ -164,6 +164,7 @@ mod key;
 pub mod constants;
 pub mod ecdh;
 pub mod ecdsa;
+pub mod ellswift;
 pub mod scalar;
 pub mod schnorr;
 #[cfg(feature = "serde")]
@@ -334,6 +335,8 @@ pub enum Error {
     InvalidPublicKeySum,
     /// The only valid parity values are 0 or 1.
     InvalidParityValue(key::InvalidParityValue),
+    /// Bad EllSwift value
+    InvalidEllSwift,
 }
 
 impl fmt::Display for Error {
@@ -354,6 +357,7 @@ impl fmt::Display for Error {
                 "the sum of public keys was invalid or the input vector lengths was less than 1",
             ),
             InvalidParityValue(e) => write_err!(f, "couldn't create parity"; e),
+            InvalidEllSwift => f.write_str("malformed EllSwift value"),
         }
     }
 }
@@ -373,6 +377,7 @@ impl std::error::Error for Error {
             Error::NotEnoughMemory => None,
             Error::InvalidPublicKeySum => None,
             Error::InvalidParityValue(error) => Some(error),
+            Error::InvalidEllSwift => None,
         }
     }
 }
