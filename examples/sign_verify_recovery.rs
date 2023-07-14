@@ -1,7 +1,7 @@
-extern crate bitcoin_hashes;
+extern crate hashes;
 extern crate secp256k1;
 
-use bitcoin_hashes::{sha256, Hash};
+use hashes::{sha256, Hash};
 use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 fn recover<C: Verification>(

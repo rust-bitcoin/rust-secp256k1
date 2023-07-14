@@ -21,8 +21,7 @@ default = ["std"]
 std = ["alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
-bitcoin-hashes = ["bitcoin_hashes"] # Feature alias because of the underscore.
-bitcoin-hashes-std = ["std", "bitcoin_hashes", "bitcoin_hashes/std"]
+hashes-std = ["std", "hashes/std"]
 rand-std = ["std", "rand", "rand/std", "rand/std_rng"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
@@ -40,8 +39,8 @@ secp256k1-sys = { version = "0.8.1", default-features = false, path = "./secp256
 serde = { version = "1.0.103", default-features = false, optional = true }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
-# the respective -std feature e.g., bitcoin-hashes-std
-bitcoin_hashes = { version = "0.12", default-features = false, optional = true }
+# the respective -std feature e.g., hashes-std
+hashes = { package = "bitcoin_hashes", version = "0.12.0", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
@@ -57,11 +56,11 @@ getrandom = { version = "0.2", features = ["js"] }
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["recovery", "bitcoin-hashes-std"]
+required-features = ["recovery", "hashes-std"]
 
 [[example]]
 name = "sign_verify"
-required-features = ["bitcoin-hashes-std"]
+required-features = ["hashes-std"]
 
 [[example]]
 name = "generate_keys"
