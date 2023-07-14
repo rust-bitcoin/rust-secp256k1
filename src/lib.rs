@@ -175,6 +175,8 @@ use core::{fmt, mem, str};
 
 #[cfg(feature = "global-context")]
 pub use context::global::SECP256K1;
+#[cfg(feature = "hashes")]
+use hashes::Hash;
 #[cfg(feature = "rand")]
 pub use rand;
 pub use secp256k1_sys as ffi;
@@ -184,8 +186,6 @@ pub use serde;
 pub use crate::context::*;
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
-#[cfg(feature = "hashes")]
-use crate::hashes::Hash;
 pub use crate::key::{PublicKey, SecretKey, *};
 pub use crate::scalar::Scalar;
 
@@ -1016,16 +1016,16 @@ mod tests {
     #[cfg(feature = "hashes")]
     #[test]
     fn test_from_hash() {
-        use crate::hashes::{self, Hash};
+        use hashes::{sha256, sha256d, Hash};
 
         let test_bytes = "Hello world!".as_bytes();
 
-        let hash = hashes::sha256::Hash::hash(test_bytes);
+        let hash = sha256::Hash::hash(test_bytes);
         let msg = Message::from(hash);
         assert_eq!(msg.0, hash.to_byte_array());
         assert_eq!(msg, Message::from_hashed_data::<hashes::sha256::Hash>(test_bytes));
 
-        let hash = hashes::sha256d::Hash::hash(test_bytes);
+        let hash = sha256d::Hash::hash(test_bytes);
         let msg = Message::from(hash);
         assert_eq!(msg.0, hash.to_byte_array());
         assert_eq!(msg, Message::from_hashed_data::<hashes::sha256d::Hash>(test_bytes));

@@ -35,7 +35,7 @@ macro_rules! impl_display_secret {
         #[cfg(all(not(feature = "std"), feature = "hashes"))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use crate::hashes::{sha256, Hash, HashEngine};
+                use hashes::{sha256, Hash, HashEngine};
 
                 let tag = "rust-secp256k1DEBUG";
 
