@@ -40,7 +40,7 @@ serde = { version = "1.0.103", default-features = false, optional = true }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
 # the respective -std feature e.g., hashes-std
-hashes = { package = "bitcoin_hashes", version = "0.12.0", default-features = false, optional = true }
+hashes = { package = "bitcoin_hashes", version = "0.13.0", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
@@ -69,3 +69,12 @@ required-features = ["rand-std"]
 [workspace]
 members = ["secp256k1-sys"]
 exclude = ["no_std_test"]
+
+# TODO: Remove this when hashes v.0.13.0 is released.
+[patch.crates-io.bitcoin_hashes]
+git = "https://github.com/tcharding/rust-bitcoin"
+# source branch: tharding/06-20-hashes-release
+# rust-bicoin PR: #1917
+# One commit back from branch tip.
+# commit: `hashes: Bump version to 0.13.0`
+rev = "37d1d288a67fe7e0cd53962f66faa854621bade0"
