@@ -13,18 +13,17 @@ if cargo --version | grep nightly; then
     NIGHTLY=true
 fi
 
+# Pin dependencies as required if we are using MSRV toolchain.
+if cargo --version | grep "1\.48"; then
+    cargo update -p wasm-bindgen-test --precise 0.3.34
+    cargo update -p serde --precise 1.0.156
+fi
+
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
 cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
 
 # Make all cargo invocations verbose
 export CARGO_TERM_VERBOSE=true
-
-# Pin dependencies as required if we are using MSRV toolchain.
-if cargo --version | grep "1\.48"; then
-    # 1.0.157 uses syn 2.0 which requires edition 2021
-    cargo update -p serde_json --precise 1.0.99
-    cargo update -p serde --precise 1.0.156
-fi
 
 # Defaults / sanity checks
 cargo build --all

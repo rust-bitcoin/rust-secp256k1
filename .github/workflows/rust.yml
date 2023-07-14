@@ -105,16 +105,13 @@ jobs:
   WASM:
     name: WASM
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [stable, beta, nightly, 1.48.0]
     steps:
       - name: Checkout Crate
         uses: actions/checkout@v3
       - name: Install clang
         run: sudo apt-get install -y clang
       - name: Checkout Toolchain
-        uses: dtolnay/rust-toolchain@${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@stable
       - name: Running WASM tests
         env:
           DO_WASM: true
