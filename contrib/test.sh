@@ -2,7 +2,7 @@
 
 set -ex
 
-FEATURES="bitcoin-hashes global-context lowmemory rand recovery serde std alloc bitcoin-hashes-std rand-std"
+FEATURES="bitcoin-hashes global-context lowmemory rand recovery serde std alloc bitcoin-hashes-std rand-std core-error"
 
 cargo --version
 rustc --version
