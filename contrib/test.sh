@@ -51,7 +51,7 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
         cargo build --all --no-default-features --features="std,$feature"
         cargo test --all --no-default-features --features="std,$feature"
     done
-    # Other combos 
+    # Other combos
     RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all
     RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all --features="$FEATURES"
     cargo test --all --features="rand serde"
