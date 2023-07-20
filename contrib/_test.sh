@@ -20,56 +20,56 @@ if cargo --version | grep "1\.48"; then
 fi
 
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
-cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
+cargo test --locked -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
 
 # Make all cargo invocations verbose
 export CARGO_TERM_VERBOSE=true
 
 # Defaults / sanity checks
-cargo build --all
-cargo test --all
+cargo build --locked --all
+cargo test --locked --all
 
 if [ "$DO_FEATURE_MATRIX" = true ]; then
-    cargo build --all --no-default-features
-    cargo test --all --no-default-features
+    cargo build --locked --all --no-default-features
+    cargo test --locked --all --no-default-features
 
     # All features
-    cargo build --all --no-default-features --features="$FEATURES"
-    cargo test --all --no-default-features --features="$FEATURES"
+    cargo build --locked --all --no-default-features --features="$FEATURES"
+    cargo test --locked --all --no-default-features --features="$FEATURES"
     # Single features
     for feature in ${FEATURES}
     do
-        cargo build --all --no-default-features --features="$feature"
-        cargo test --all --no-default-features --features="$feature"
+        cargo build --locked --all --no-default-features --features="$feature"
+        cargo test --locked --all --no-default-features --features="$feature"
     done
     # Features tested with 'std' feature enabled.
     for feature in ${FEATURES}
     do
-        cargo build --all --no-default-features --features="std,$feature"
-        cargo test --all --no-default-features --features="std,$feature"
+        cargo build --locked --all --no-default-features --features="std,$feature"
+        cargo test --locked --all --no-default-features --features="std,$feature"
     done
     # Other combos
-    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all
-    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all --features="$FEATURES"
-    cargo test --all --features="rand serde"
+    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --locked --all
+    RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --locked --all --features="$FEATURES"
+    cargo test --locked --all --features="rand serde"
 
     if [ "$NIGHTLY" = true ]; then
-        cargo test --all --all-features
-        RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --all --all-features
+        cargo test --locked --all --all-features
+        RUSTFLAGS='--cfg=secp256k1_fuzz' RUSTDOCFLAGS='--cfg=secp256k1_fuzz' cargo test --locked --all --all-features
     fi
 
     # Examples
-    cargo run --example sign_verify --features=bitcoin-hashes-std
-    cargo run --example sign_verify_recovery --features=recovery,bitcoin-hashes-std
-    cargo run --example generate_keys --features=rand-std
+    cargo run --locked --example sign_verify --features=bitcoin-hashes-std
+    cargo run --locked --example sign_verify_recovery --features=recovery,bitcoin-hashes-std
+    cargo run --locked --example generate_keys --features=rand-std
 fi
 
 if [ "$DO_LINT" = true ]
 then
-    cargo clippy --all-features --all-targets -- -D warnings
-    cargo clippy --example sign_verify --features=bitcoin-hashes-std -- -D warnings
-    cargo clippy --example sign_verify_recovery --features=recovery,bitcoin-hashes-std -- -D warnings
-    cargo clippy --example generate_keys --features=rand-std -- -D warnings
+    cargo clippy --locked --all-features --all-targets -- -D warnings
+    cargo clippy --locked --example sign_verify --features=bitcoin-hashes-std -- -D warnings
+    cargo clippy --locked --example sign_verify_recovery --features=recovery,bitcoin-hashes-std -- -D warnings
+    cargo clippy --locked --example generate_keys --features=rand-std -- -D warnings
 fi
 
 # Build the docs if told to (this only works with the nightly toolchain)
