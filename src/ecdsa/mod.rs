@@ -37,7 +37,7 @@ impl fmt::Display for Signature {
 
 impl str::FromStr for Signature {
     type Err = Error;
-    fn from_str(s: &str) -> Result<Signature, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; 72];
         match from_hex(s, &mut res) {
             Ok(x) => Signature::from_der(&res[0..x]),

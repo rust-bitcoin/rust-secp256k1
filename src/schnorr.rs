@@ -64,7 +64,7 @@ impl fmt::Display for Signature {
 
 impl str::FromStr for Signature {
     type Err = Error;
-    fn from_str(s: &str) -> Result<Signature, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SCHNORR_SIGNATURE_SIZE) =>

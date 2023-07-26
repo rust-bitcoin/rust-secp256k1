@@ -79,7 +79,7 @@ impl SharedSecret {
 
 impl str::FromStr for SharedSecret {
     type Err = Error;
-    fn from_str(s: &str) -> Result<SharedSecret, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; SHARED_SECRET_SIZE];
         match crate::from_hex(s, &mut res) {
             Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),

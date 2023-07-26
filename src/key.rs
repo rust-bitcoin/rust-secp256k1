@@ -112,7 +112,7 @@ impl ffi::CPtr for SecretKey {
 
 impl str::FromStr for SecretKey {
     type Err = Error;
-    fn from_str(s: &str) -> Result<SecretKey, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_slice(&res),
@@ -165,7 +165,7 @@ impl fmt::Display for PublicKey {
 
 impl str::FromStr for PublicKey {
     type Err = Error;
-    fn from_str(s: &str) -> Result<PublicKey, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::PUBLIC_KEY_SIZE) =>
@@ -1132,7 +1132,7 @@ impl fmt::Display for XOnlyPublicKey {
 
 impl str::FromStr for XOnlyPublicKey {
     type Err = Error;
-    fn from_str(s: &str) -> Result<XOnlyPublicKey, Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) =>
