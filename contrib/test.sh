@@ -20,7 +20,9 @@ if cargo --version | grep "1\.48"; then
 fi
 
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
-cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 | tee /dev/stderr | grep "SIGILL\\|panicked at '\[libsecp256k1\]"
+cargo test -- --ignored --exact 'tests::test_panic_raw_ctx_should_terminate_abnormally' 2>&1 \
+    | tee /dev/stderr \
+    | grep "SIGILL\\|\[libsecp256k1] illegal argument. !rustsecp256k1_v0_._._fe_is_zero(&ge->x)"
 
 # Make all cargo invocations verbose
 export CARGO_TERM_VERBOSE=true
