@@ -16,7 +16,7 @@ fi
 # Pin dependencies as required if we are using MSRV toolchain.
 if cargo --version | grep "1\.48"; then
     cargo update -p wasm-bindgen-test --precise 0.3.34
-    cargo update -p serde --precise 1.0.156
+    cargo update -p serde_test --precise 1.0.175
 fi
 
 # Test if panic in C code aborts the process (either with a real panic or with SIGILL)
