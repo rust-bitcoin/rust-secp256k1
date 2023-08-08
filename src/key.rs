@@ -1053,7 +1053,7 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
                 let ctx = Secp256k1::signing_only();
 
                 #[cfg(not(any(feature = "global-context", feature = "alloc")))]
-                let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
+                let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("cannot deserialize key pair without a context (please enable either the global-context or alloc feature)");
 
                 #[allow(clippy::needless_borrow)]
                 KeyPair::from_seckey_slice(&ctx, data)
