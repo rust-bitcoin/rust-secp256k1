@@ -1036,6 +1036,8 @@ impl serde::Serialize for KeyPair {
 }
 
 #[cfg(feature = "serde")]
+#[allow(unused_variables)] // For `data` under some feature combinations (the unconditional panic below).
+#[allow(unreachable_code)] // For `KeyPair::from_seckey_slice` after unconditional panic.
 impl<'de> serde::Deserialize<'de> for KeyPair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
