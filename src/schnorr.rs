@@ -248,7 +248,7 @@ mod tests {
 
         for _ in 0..100 {
             let msg = crate::random_32_bytes(&mut rand::thread_rng());
-            let msg = Message::from_slice(&msg).unwrap();
+            let msg = Message::from_digest_slice(&msg).unwrap();
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
 
@@ -263,7 +263,7 @@ mod tests {
         let secp = Secp256k1::new();
 
         let hex_msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
-        let msg = Message::from_slice(&hex_msg).unwrap();
+        let msg = Message::from_digest_slice(&hex_msg).unwrap();
         let sk = KeyPair::from_seckey_str(
             &secp,
             "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF",
@@ -285,7 +285,7 @@ mod tests {
         let secp = Secp256k1::new();
 
         let hex_msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
-        let msg = Message::from_slice(&hex_msg).unwrap();
+        let msg = Message::from_digest_slice(&hex_msg).unwrap();
         let sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
         let pubkey = XOnlyPublicKey::from_str(
             "B33CC9EDC096D0A83416964BD3C6247B8FECD256E4EFA7870D2C854BDEB33390",
@@ -464,7 +464,7 @@ mod tests {
 
         let s = Secp256k1::new();
 
-        let msg = Message::from_slice(&[1; 32]).unwrap();
+        let msg = Message::from_digest_slice(&[1; 32]).unwrap();
         let keypair = KeyPair::from_seckey_slice(&s, &[2; 32]).unwrap();
         let aux = [3u8; 32];
         let sig = s.sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
