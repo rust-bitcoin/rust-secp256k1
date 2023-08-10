@@ -371,11 +371,11 @@ impl<C: Verification> Secp256k1<C> {
     /// # let secp = Secp256k1::new();
     /// # let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
     /// #
-    /// let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+    /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign_ecdsa(&message, &secret_key);
     /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Ok(()));
     ///
-    /// let message = Message::from_slice(&[0xcd; 32]).expect("32 bytes");
+    /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
     /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature));
     /// # }
     /// ```

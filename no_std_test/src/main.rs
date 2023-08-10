@@ -91,7 +91,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     secp.randomize(&mut FakeRng);
     let secret_key = SecretKey::new(&mut FakeRng);
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-    let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+    let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
     let sig = secp.sign_ecdsa(&message, &secret_key);
     assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
@@ -118,7 +118,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     {
         let secp_alloc = Secp256k1::new();
         let public_key = PublicKey::from_secret_key(&secp_alloc, &secret_key);
-        let message = Message::from_slice(&[0xab; 32]).expect("32 bytes");
+        let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
         let sig = secp_alloc.sign_ecdsa(&message, &secret_key);
         assert!(secp_alloc.verify_ecdsa(&message, &sig, &public_key).is_ok());
