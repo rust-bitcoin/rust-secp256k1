@@ -27,7 +27,6 @@
 //!     * Requires linking with `libc` for calling `printf`.
 //!
 
-#![feature(lang_items)]
 #![feature(start)]
 #![feature(core_intrinsics)]
 #![feature(panic_info_message)]
