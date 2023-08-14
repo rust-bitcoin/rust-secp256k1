@@ -110,7 +110,7 @@ impl AsRef<[u8]> for SharedSecret {
 ///
 /// # Examples
 /// ```
-/// # #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std"))] {
+/// # #[cfg(all(feature = "hashes-std", feature = "rand-std"))] {
 /// # use secp256k1::{ecdh, rand, Secp256k1, PublicKey, SecretKey};
 /// # use secp256k1::hashes::{Hash, sha512};
 ///
@@ -225,9 +225,9 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]
-    #[cfg(all(feature = "bitcoin-hashes-std", feature = "rand-std"))]
-    fn bitcoin_hashes_and_sys_generate_same_secret() {
-        use bitcoin_hashes::{sha256, Hash, HashEngine};
+    #[cfg(all(feature = "hashes-std", feature = "rand-std"))]
+    fn hashes_and_sys_generate_same_secret() {
+        use hashes::{sha256, Hash, HashEngine};
 
         use crate::ecdh::shared_secret_point;
 
