@@ -32,10 +32,10 @@ macro_rules! impl_display_secret {
             }
         }
 
-        #[cfg(all(not(feature = "std"), feature = "bitcoin_hashes"))]
+        #[cfg(all(not(feature = "std"), feature = "hashes"))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use crate::hashes::{sha256, Hash, HashEngine};
+                use hashes::{sha256, Hash, HashEngine};
 
                 let tag = "rust-secp256k1DEBUG";
 
@@ -50,10 +50,10 @@ macro_rules! impl_display_secret {
             }
         }
 
-        #[cfg(all(not(feature = "std"), not(feature = "bitcoin_hashes")))]
+        #[cfg(all(not(feature = "std"), not(feature = "hashes")))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(f, "<secret requires std or bitcoin_hashes feature to display>")
+                write!(f, "<secret requires std or hashes feature to display>")
             }
         }
     };
