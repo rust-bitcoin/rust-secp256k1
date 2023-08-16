@@ -591,15 +591,23 @@ mod tests {
 
     #[test]
     #[cfg(feature = "rand-std")]
+    // In rustc 1.72 this Clippy lint was pulled out of clippy and into rustc, and
+    // was made deny-by-default, breaking compilation of this test. Aside from this
+    // breaking change, which there is no point in bugging, the rename was done so
+    // clumsily that you need four separate "allow"s to disable this wrong lint.
+    #[allow(unknown_lints)]
+    #[allow(renamed_and_removed_lints)]
+    #[allow(undropped_manually_drops)]
+    #[allow(clippy::unknown_manually_drops)]
     fn test_raw_ctx() {
-        use std::mem::ManuallyDrop;
+        use std::mem::{forget, ManuallyDrop};
 
         let ctx_full = Secp256k1::new();
         let ctx_sign = Secp256k1::signing_only();
         let ctx_vrfy = Secp256k1::verification_only();
 
-        let mut full = unsafe { Secp256k1::from_raw_all(ctx_full.ctx) };
-        let mut sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
+        let full = unsafe { Secp256k1::from_raw_all(ctx_full.ctx) };
+        let sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
         let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
@@ -612,14 +620,35 @@ mod tests {
         assert!(vrfy.verify_ecdsa(&msg, &sig, &pk).is_ok());
         assert!(full.verify_ecdsa(&msg, &sig, &pk).is_ok());
 
-        unsafe {
-            ManuallyDrop::drop(&mut full);
-            ManuallyDrop::drop(&mut sign);
-            ManuallyDrop::drop(&mut vrfy);
-        }
+        // The following drop will have no effect; in fact, they will trigger a compiler
+        // error because manually dropping a `ManuallyDrop` is almost certainly incorrect.
+        // If you want to drop the inner object you should called `ManuallyDrop::drop`.
+        drop(full);
+        // This will actually drop the context, though it will leave `full` accessible and
+        // in an invalid state. However, this is almost certainly what you want to do.
         drop(ctx_full);
-        drop(ctx_sign);
-        drop(ctx_vrfy);
+        unsafe {
+            // Need to compute the allocation size, and need to do so *before* dropping
+            // anything.
+            let sz = ffi::secp256k1_context_preallocated_clone_size(ctx_sign.ctx.as_ptr());
+            // We can alternately drop the `ManuallyDrop` by unwrapping it and then letting
+            // it be dropped. This is actually a safe function, but it will destruct the
+            // underlying context without deallocating it...
+            ManuallyDrop::into_inner(sign);
+            // ...leaving us holding the bag to deallocate the context's memory without
+            // double-calling `secp256k1_context_destroy`, which cannot be done safely.
+            SignOnly::deallocate(ctx_sign.ctx.as_ptr() as *mut u8, sz);
+            forget(ctx_sign);
+        }
+
+        unsafe {
+            // Finally, we can call `ManuallyDrop::drop`, which has the same effect, but
+            let sz = ffi::secp256k1_context_preallocated_clone_size(ctx_vrfy.ctx.as_ptr());
+            // leaves the `ManuallyDrop` itself accessible. This is marked unsafe.
+            ManuallyDrop::drop(&mut vrfy);
+            VerifyOnly::deallocate(ctx_vrfy.ctx.as_ptr() as *mut u8, sz);
+            forget(ctx_vrfy);
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
