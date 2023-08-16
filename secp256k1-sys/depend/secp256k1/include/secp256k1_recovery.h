@@ -34,8 +34,8 @@ typedef struct {
  *        recid:   the recovery id (0, 1, 2 or 3)
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_parse_compact(
-    const rustsecp256k1_v0_8_1_context* ctx,
-    rustsecp256k1_v0_8_1_ecdsa_recoverable_signature* sig,
+    const rustsecp256k1_v0_8_1_context *ctx,
+    rustsecp256k1_v0_8_1_ecdsa_recoverable_signature *sig,
     const unsigned char *input64,
     int recid
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
@@ -48,9 +48,9 @@ SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_parse_compact
  *  In:   sigin:  a pointer to a recoverable signature.
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_convert(
-    const rustsecp256k1_v0_8_1_context* ctx,
-    rustsecp256k1_v0_8_1_ecdsa_signature* sig,
-    const rustsecp256k1_v0_8_1_ecdsa_recoverable_signature* sigin
+    const rustsecp256k1_v0_8_1_context *ctx,
+    rustsecp256k1_v0_8_1_ecdsa_signature *sig,
+    const rustsecp256k1_v0_8_1_ecdsa_recoverable_signature *sigin
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Serialize an ECDSA signature in compact format (64 bytes + recovery id).
@@ -62,10 +62,10 @@ SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_convert(
  *  In:   sig:      a pointer to an initialized signature object.
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_serialize_compact(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     unsigned char *output64,
     int *recid,
-    const rustsecp256k1_v0_8_1_ecdsa_recoverable_signature* sig
+    const rustsecp256k1_v0_8_1_ecdsa_recoverable_signature *sig
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
 /** Create a recoverable ECDSA signature.
@@ -82,7 +82,7 @@ SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_serialize_com
  *                      (can be NULL for rustsecp256k1_v0_8_1_nonce_function_default).
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_sign_recoverable(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_ecdsa_recoverable_signature *sig,
     const unsigned char *msghash32,
     const unsigned char *seckey,
@@ -100,7 +100,7 @@ SECP256K1_API int rustsecp256k1_v0_8_1_ecdsa_sign_recoverable(
  *           msghash32: the 32-byte message hash assumed to be signed.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_ecdsa_recover(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_pubkey *pubkey,
     const rustsecp256k1_v0_8_1_ecdsa_recoverable_signature *sig,
     const unsigned char *msghash32

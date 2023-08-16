@@ -45,8 +45,8 @@ typedef struct {
  *  In: input32: pointer to a serialized xonly_pubkey.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey_parse(
-    const rustsecp256k1_v0_8_1_context* ctx,
-    rustsecp256k1_v0_8_1_xonly_pubkey* pubkey,
+    const rustsecp256k1_v0_8_1_context *ctx,
+    rustsecp256k1_v0_8_1_xonly_pubkey *pubkey,
     const unsigned char *input32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
@@ -59,9 +59,9 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey
  *  In:    pubkey: a pointer to a rustsecp256k1_v0_8_1_xonly_pubkey containing an initialized public key.
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_xonly_pubkey_serialize(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     unsigned char *output32,
-    const rustsecp256k1_v0_8_1_xonly_pubkey* pubkey
+    const rustsecp256k1_v0_8_1_xonly_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Compare two x-only public keys using lexicographic order
@@ -74,9 +74,9 @@ SECP256K1_API int rustsecp256k1_v0_8_1_xonly_pubkey_serialize(
  *        pubkey2:  second public key to compare
  */
 SECP256K1_API int rustsecp256k1_v0_8_1_xonly_pubkey_cmp(
-    const rustsecp256k1_v0_8_1_context* ctx,
-    const rustsecp256k1_v0_8_1_xonly_pubkey* pk1,
-    const rustsecp256k1_v0_8_1_xonly_pubkey* pk2
+    const rustsecp256k1_v0_8_1_context *ctx,
+    const rustsecp256k1_v0_8_1_xonly_pubkey *pk1,
+    const rustsecp256k1_v0_8_1_xonly_pubkey *pk2
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Converts a rustsecp256k1_v0_8_1_pubkey into a rustsecp256k1_v0_8_1_xonly_pubkey.
@@ -91,7 +91,7 @@ SECP256K1_API int rustsecp256k1_v0_8_1_xonly_pubkey_cmp(
  *  In:        pubkey: pointer to a public key that is converted.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey_from_pubkey(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_xonly_pubkey *xonly_pubkey,
     int *pk_parity,
     const rustsecp256k1_v0_8_1_pubkey *pubkey
@@ -118,7 +118,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey
  *                       chance of being invalid is negligible (around 1 in 2^128).
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey_tweak_add(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_pubkey *output_pubkey,
     const rustsecp256k1_v0_8_1_xonly_pubkey *internal_pubkey,
     const unsigned char *tweak32
@@ -148,7 +148,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey
  *               tweak32: pointer to a 32-byte tweak.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey_tweak_add_check(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     const unsigned char *tweaked_pubkey32,
     int tweaked_pk_parity,
     const rustsecp256k1_v0_8_1_xonly_pubkey *internal_pubkey,
@@ -164,7 +164,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_xonly_pubkey
  *  In:   seckey: pointer to a 32-byte secret key.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_create(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_keypair *keypair,
     const unsigned char *seckey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
@@ -177,7 +177,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_crea
  *  In: keypair: pointer to a keypair.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_sec(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     unsigned char *seckey,
     const rustsecp256k1_v0_8_1_keypair *keypair
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
@@ -191,7 +191,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_sec(
  *  In: keypair: pointer to a keypair.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_pub(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_pubkey *pubkey,
     const rustsecp256k1_v0_8_1_keypair *keypair
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
@@ -211,7 +211,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_pub(
  *  In: keypair: pointer to a keypair.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_xonly_pub(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_xonly_pubkey *pubkey,
     int *pk_parity,
     const rustsecp256k1_v0_8_1_keypair *keypair
@@ -237,7 +237,7 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_xonl
  *                   is negligible (around 1 in 2^128).
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_keypair_xonly_tweak_add(
-    const rustsecp256k1_v0_8_1_context* ctx,
+    const rustsecp256k1_v0_8_1_context *ctx,
     rustsecp256k1_v0_8_1_keypair *keypair,
     const unsigned char *tweak32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);

@@ -98,7 +98,7 @@ static int rustsecp256k1_v0_8_1_ecdsa_sig_recover(const rustsecp256k1_v0_8_1_sca
     }
 
     rustsecp256k1_v0_8_1_scalar_get_b32(brx, sigr);
-    r = rustsecp256k1_v0_8_1_fe_set_b32(&fx, brx);
+    r = rustsecp256k1_v0_8_1_fe_set_b32_limit(&fx, brx);
     (void)r;
     VERIFY_CHECK(r); /* brx comes from a scalar, so is less than the order; certainly less than p */
     if (recid & 2) {

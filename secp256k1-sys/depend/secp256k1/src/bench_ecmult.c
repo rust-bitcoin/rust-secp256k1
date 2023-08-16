@@ -18,7 +18,7 @@
 
 #define POINTS 32768
 
-void help(char **argv) {
+static void help(char **argv) {
     printf("Benchmark EC multiplication algorithms\n");
     printf("\n");
     printf("Usage: %s <help|pippenger_wnaf|strauss_wnaf|simple>\n", argv[0]);
@@ -113,7 +113,7 @@ static void bench_ecmult_const(void* arg, int iters) {
     int i;
 
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_8_1_ecmult_const(&data->output[i], &data->pubkeys[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS], 256);
+        rustsecp256k1_v0_8_1_ecmult_const(&data->output[i], &data->pubkeys[(data->offset1+i) % POINTS], &data->scalars[(data->offset2+i) % POINTS]);
     }
 }
 

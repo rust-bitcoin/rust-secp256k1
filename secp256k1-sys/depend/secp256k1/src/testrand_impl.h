@@ -13,6 +13,7 @@
 
 #include "testrand.h"
 #include "hash.h"
+#include "util.h"
 
 static uint64_t rustsecp256k1_v0_8_1_test_state[4];
 static uint64_t rustsecp256k1_v0_8_1_test_rng_integer;

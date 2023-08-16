@@ -27,11 +27,11 @@ typedef int (*rustsecp256k1_v0_8_1_ecdh_hash_function)(
 
 /** An implementation of SHA256 hash function that applies to compressed public key.
  * Populates the output parameter with 32 bytes. */
-SECP256K1_API extern const rustsecp256k1_v0_8_1_ecdh_hash_function rustsecp256k1_v0_8_1_ecdh_hash_function_sha256;
+SECP256K1_API_VAR const rustsecp256k1_v0_8_1_ecdh_hash_function rustsecp256k1_v0_8_1_ecdh_hash_function_sha256;
 
 /** A default ECDH hash function (currently equal to rustsecp256k1_v0_8_1_ecdh_hash_function_sha256).
  * Populates the output parameter with 32 bytes. */
-SECP256K1_API extern const rustsecp256k1_v0_8_1_ecdh_hash_function rustsecp256k1_v0_8_1_ecdh_hash_function_default;
+SECP256K1_API_VAR const rustsecp256k1_v0_8_1_ecdh_hash_function rustsecp256k1_v0_8_1_ecdh_hash_function_default;
 
 /** Compute an EC Diffie-Hellman secret in constant time
  *
@@ -48,7 +48,7 @@ SECP256K1_API extern const rustsecp256k1_v0_8_1_ecdh_hash_function rustsecp256k1
  *                       (can be NULL for rustsecp256k1_v0_8_1_ecdh_hash_function_sha256).
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_8_1_ecdh(
-  const rustsecp256k1_v0_8_1_context* ctx,
+  const rustsecp256k1_v0_8_1_context *ctx,
   unsigned char *output,
   const rustsecp256k1_v0_8_1_pubkey *pubkey,
   const unsigned char *seckey,

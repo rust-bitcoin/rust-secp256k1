@@ -9,6 +9,7 @@
 
 #include "../../../include/secp256k1.h"
 #include "../../../include/secp256k1_extrakeys.h"
+#include "../../util.h"
 
 static SECP256K1_INLINE int rustsecp256k1_v0_8_1_xonly_pubkey_load(const rustsecp256k1_v0_8_1_context* ctx, rustsecp256k1_v0_8_1_ge *ge, const rustsecp256k1_v0_8_1_xonly_pubkey *pubkey) {
     return rustsecp256k1_v0_8_1_pubkey_load(ctx, ge, (const rustsecp256k1_v0_8_1_pubkey *) pubkey);
@@ -27,7 +28,7 @@ int rustsecp256k1_v0_8_1_xonly_pubkey_parse(const rustsecp256k1_v0_8_1_context* 
     memset(pubkey, 0, sizeof(*pubkey));
     ARG_CHECK(input32 != NULL);
 
-    if (!rustsecp256k1_v0_8_1_fe_set_b32(&x, input32)) {
+    if (!rustsecp256k1_v0_8_1_fe_set_b32_limit(&x, input32)) {
         return 0;
     }
     if (!rustsecp256k1_v0_8_1_ge_set_xo_var(&pk, &x, 0)) {

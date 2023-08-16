@@ -97,7 +97,7 @@ static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table(int n, rustsecp256k1
     rustsecp256k1_v0_8_1_gej_set_ge(&ai, &pre_a[0]);
     ai.z = a->z;
 
-    /* pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equvalent to a.
+    /* pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equivalent to a.
      * Set zr[0] to C, which is the ratio between the omitted z(pre_a[0]) value and a.z.
      */
     zr[0] = d.z;
@@ -114,13 +114,16 @@ static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table(int n, rustsecp256k1
     rustsecp256k1_v0_8_1_fe_mul(z, &ai.z, &d.z);
 }
 
-#define SECP256K1_ECMULT_TABLE_VERIFY(n,w) \
-    VERIFY_CHECK(((n) & 1) == 1); \
-    VERIFY_CHECK((n) >= -((1 << ((w)-1)) - 1)); \
+SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_verify(int n, int w) {
+    (void)n;
+    (void)w;
+    VERIFY_CHECK(((n) & 1) == 1);
+    VERIFY_CHECK((n) >= -((1 << ((w)-1)) - 1));
     VERIFY_CHECK((n) <=  ((1 << ((w)-1)) - 1));
+}
 
 SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_get_ge(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge *pre, int n, int w) {
-    SECP256K1_ECMULT_TABLE_VERIFY(n,w)
+    rustsecp256k1_v0_8_1_ecmult_table_verify(n,w);
     if (n > 0) {
         *r = pre[(n-1)/2];
     } else {
@@ -130,7 +133,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_get_ge(rustsecp25
 }
 
 SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_get_ge_lambda(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge *pre, const rustsecp256k1_v0_8_1_fe *x, int n, int w) {
-    SECP256K1_ECMULT_TABLE_VERIFY(n,w)
+    rustsecp256k1_v0_8_1_ecmult_table_verify(n,w);
     if (n > 0) {
         rustsecp256k1_v0_8_1_ge_set_xy(r, &x[(n-1)/2], &pre[(n-1)/2].y);
     } else {
@@ -140,7 +143,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_get_ge_lambda(rus
 }
 
 SECP256K1_INLINE static void rustsecp256k1_v0_8_1_ecmult_table_get_ge_storage(rustsecp256k1_v0_8_1_ge *r, const rustsecp256k1_v0_8_1_ge_storage *pre, int n, int w) {
-    SECP256K1_ECMULT_TABLE_VERIFY(n,w)
+    rustsecp256k1_v0_8_1_ecmult_table_verify(n,w);
     if (n > 0) {
         rustsecp256k1_v0_8_1_ge_from_storage(r, &pre[(n-1)/2]);
     } else {
@@ -276,9 +279,6 @@ static void rustsecp256k1_v0_8_1_ecmult_strauss_wnaf(const struct rustsecp256k1_
          */
         tmp = a[np];
         if (no) {
-#ifdef VERIFY
-            rustsecp256k1_v0_8_1_fe_normalize_var(&Z);
-#endif
             rustsecp256k1_v0_8_1_gej_rescale(&tmp, &Z);
         }
         rustsecp256k1_v0_8_1_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), state->pre_a + no * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), &Z, &tmp);
@@ -680,7 +680,7 @@ static int rustsecp256k1_v0_8_1_ecmult_pippenger_batch(const rustsecp256k1_v0_8_
     }
     state_space->ps = (struct rustsecp256k1_v0_8_1_pippenger_point_state *) rustsecp256k1_v0_8_1_scratch_alloc(error_callback, scratch, entries * sizeof(*state_space->ps));
     state_space->wnaf_na = (int *) rustsecp256k1_v0_8_1_scratch_alloc(error_callback, scratch, entries*(WNAF_SIZE(bucket_window+1)) * sizeof(int));
-    buckets = (rustsecp256k1_v0_8_1_gej *) rustsecp256k1_v0_8_1_scratch_alloc(error_callback, scratch, (1<<bucket_window) * sizeof(*buckets));
+    buckets = (rustsecp256k1_v0_8_1_gej *) rustsecp256k1_v0_8_1_scratch_alloc(error_callback, scratch, ((size_t)1 << bucket_window) * sizeof(*buckets));
     if (state_space->ps == NULL || state_space->wnaf_na == NULL || buckets == NULL) {
         rustsecp256k1_v0_8_1_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
         return 0;

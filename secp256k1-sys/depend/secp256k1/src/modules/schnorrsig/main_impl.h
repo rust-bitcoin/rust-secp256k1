@@ -232,7 +232,7 @@ int rustsecp256k1_v0_8_1_schnorrsig_verify(const rustsecp256k1_v0_8_1_context* c
     ARG_CHECK(msg != NULL || msglen == 0);
     ARG_CHECK(pubkey != NULL);
 
-    if (!rustsecp256k1_v0_8_1_fe_set_b32(&rx, &sig64[0])) {
+    if (!rustsecp256k1_v0_8_1_fe_set_b32_limit(&rx, &sig64[0])) {
         return 0;
     }
 

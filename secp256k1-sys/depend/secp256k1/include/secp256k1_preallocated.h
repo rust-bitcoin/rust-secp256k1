@@ -63,8 +63,8 @@ SECP256K1_API size_t rustsecp256k1_v0_8_1_context_preallocated_size(
  *  See also rustsecp256k1_v0_8_1_context_randomize (in secp256k1.h)
  *  and rustsecp256k1_v0_8_1_context_preallocated_destroy.
  */
-SECP256K1_API rustsecp256k1_v0_8_1_context* rustsecp256k1_v0_8_1_context_preallocated_create(
-    void* prealloc,
+SECP256K1_API rustsecp256k1_v0_8_1_context *rustsecp256k1_v0_8_1_context_preallocated_create(
+    void *prealloc,
     unsigned int flags
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_WARN_UNUSED_RESULT;
 
@@ -75,7 +75,7 @@ SECP256K1_API rustsecp256k1_v0_8_1_context* rustsecp256k1_v0_8_1_context_preallo
  *  In:      ctx: an existing context to copy.
  */
 SECP256K1_API size_t rustsecp256k1_v0_8_1_context_preallocated_clone_size(
-    const rustsecp256k1_v0_8_1_context* ctx
+    const rustsecp256k1_v0_8_1_context *ctx
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_WARN_UNUSED_RESULT;
 
 /** Copy a secp256k1 context object into caller-provided memory.
@@ -88,15 +88,18 @@ SECP256K1_API size_t rustsecp256k1_v0_8_1_context_preallocated_clone_size(
  *  the lifetime of this context object, see the description of
  *  rustsecp256k1_v0_8_1_context_preallocated_create for details.
  *
+ *  Cloning rustsecp256k1_v0_8_1_context_static is not possible, and should not be emulated by
+ *  the caller (e.g., using memcpy). Create a new context instead.
+ *
  *  Returns: a newly created context object.
- *  Args:    ctx:      an existing context to copy.
+ *  Args:    ctx:      an existing context to copy (not rustsecp256k1_v0_8_1_context_static).
  *  In:      prealloc: a pointer to a rewritable contiguous block of memory of
  *                     size at least rustsecp256k1_v0_8_1_context_preallocated_size(flags)
  *                     bytes, as detailed above.
  */
-SECP256K1_API rustsecp256k1_v0_8_1_context* rustsecp256k1_v0_8_1_context_preallocated_clone(
-    const rustsecp256k1_v0_8_1_context* ctx,
-    void* prealloc
+SECP256K1_API rustsecp256k1_v0_8_1_context *rustsecp256k1_v0_8_1_context_preallocated_clone(
+    const rustsecp256k1_v0_8_1_context *ctx,
+    void *prealloc
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_WARN_UNUSED_RESULT;
 
 /** Destroy a secp256k1 context object that has been created in
@@ -117,10 +120,11 @@ SECP256K1_API rustsecp256k1_v0_8_1_context* rustsecp256k1_v0_8_1_context_preallo
  *
  *  Args:   ctx: an existing context to destroy, constructed using
  *               rustsecp256k1_v0_8_1_context_preallocated_create or
- *               rustsecp256k1_v0_8_1_context_preallocated_clone.
+ *               rustsecp256k1_v0_8_1_context_preallocated_clone
+ *               (i.e., not rustsecp256k1_v0_8_1_context_static).
  */
 SECP256K1_API void rustsecp256k1_v0_8_1_context_preallocated_destroy(
-    rustsecp256k1_v0_8_1_context* ctx
+    rustsecp256k1_v0_8_1_context *ctx
 ) SECP256K1_ARG_NONNULL(1);
 
 #ifdef __cplusplus

@@ -9,10 +9,6 @@
 
 #include "util.h"
 
-#if defined HAVE_CONFIG_H
-#include "libsecp256k1-config.h"
-#endif
-
 #if defined(EXHAUSTIVE_TEST_ORDER)
 #include "scalar_low.h"
 #elif defined(SECP256K1_WIDEMUL_INT128)
@@ -92,9 +88,10 @@ static int rustsecp256k1_v0_8_1_scalar_eq(const rustsecp256k1_v0_8_1_scalar *a, 
 
 /** Find r1 and r2 such that r1+r2*2^128 = k. */
 static void rustsecp256k1_v0_8_1_scalar_split_128(rustsecp256k1_v0_8_1_scalar *r1, rustsecp256k1_v0_8_1_scalar *r2, const rustsecp256k1_v0_8_1_scalar *k);
-/** Find r1 and r2 such that r1+r2*lambda = k,
- * where r1 and r2 or their negations are maximum 128 bits long (see rustsecp256k1_v0_8_1_ge_mul_lambda). */
-static void rustsecp256k1_v0_8_1_scalar_split_lambda(rustsecp256k1_v0_8_1_scalar *r1, rustsecp256k1_v0_8_1_scalar *r2, const rustsecp256k1_v0_8_1_scalar *k);
+/** Find r1 and r2 such that r1+r2*lambda = k, where r1 and r2 or their
+ *  negations are maximum 128 bits long (see rustsecp256k1_v0_8_1_ge_mul_lambda). It is
+ *  required that r1, r2, and k all point to different objects. */
+static void rustsecp256k1_v0_8_1_scalar_split_lambda(rustsecp256k1_v0_8_1_scalar * SECP256K1_RESTRICT r1, rustsecp256k1_v0_8_1_scalar * SECP256K1_RESTRICT r2, const rustsecp256k1_v0_8_1_scalar * SECP256K1_RESTRICT k);
 
 /** Multiply a and b (without taking the modulus!), divide by 2**shift, and round to the nearest integer. Shift must be at least 256. */
 static void rustsecp256k1_v0_8_1_scalar_mul_shift_var(rustsecp256k1_v0_8_1_scalar *r, const rustsecp256k1_v0_8_1_scalar *a, const rustsecp256k1_v0_8_1_scalar *b, unsigned int shift);

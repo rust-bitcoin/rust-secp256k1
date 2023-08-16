@@ -108,7 +108,7 @@ static void rustsecp256k1_v0_8_1_ecmult_gen_blind(rustsecp256k1_v0_8_1_ecmult_ge
     memset(keydata, 0, sizeof(keydata));
     /* Accept unobservably small non-uniformity. */
     rustsecp256k1_v0_8_1_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
-    overflow = !rustsecp256k1_v0_8_1_fe_set_b32(&s, nonce32);
+    overflow = !rustsecp256k1_v0_8_1_fe_set_b32_limit(&s, nonce32);
     overflow |= rustsecp256k1_v0_8_1_fe_is_zero(&s);
     rustsecp256k1_v0_8_1_fe_cmov(&s, &rustsecp256k1_v0_8_1_fe_one, overflow);
     /* Randomize the projection to defend against multiplier sidechannels.

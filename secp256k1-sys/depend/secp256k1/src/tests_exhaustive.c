@@ -4,10 +4,6 @@
  * file COPYING or https://www.opensource.org/licenses/mit-license.php.*
  ***********************************************************************/
 
-#if defined HAVE_CONFIG_H
-#include "libsecp256k1-config.h"
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -17,18 +13,24 @@
 #define EXHAUSTIVE_TEST_ORDER 13
 #endif
 
+#ifdef USE_EXTERNAL_DEFAULT_CALLBACKS
+    #pragma message("Ignoring USE_EXTERNAL_CALLBACKS in exhaustive_tests.")
+    #undef USE_EXTERNAL_DEFAULT_CALLBACKS
+#endif
 #include "secp256k1.c"
+
 #include "../include/secp256k1.h"
 #include "assumptions.h"
 #include "group.h"
 #include "testrand_impl.h"
 #include "ecmult_compute_table_impl.h"
 #include "ecmult_gen_compute_table_impl.h"
+#include "util.h"
 
 static int count = 2;
 
 /** stolen from tests.c */
-void ge_equals_ge(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_ge *b) {
+static void ge_equals_ge(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_ge *b) {
     CHECK(a->infinity == b->infinity);
     if (a->infinity) {
         return;
@@ -37,7 +39,7 @@ void ge_equals_ge(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_g
     CHECK(rustsecp256k1_v0_8_1_fe_equal_var(&a->y, &b->y));
 }
 
-void ge_equals_gej(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_gej *b) {
+static void ge_equals_gej(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_gej *b) {
     rustsecp256k1_v0_8_1_fe z2s;
     rustsecp256k1_v0_8_1_fe u1, u2, s1, s2;
     CHECK(a->infinity == b->infinity);
@@ -54,14 +56,27 @@ void ge_equals_gej(const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_
     CHECK(rustsecp256k1_v0_8_1_fe_equal_var(&s1, &s2));
 }
 
-void random_fe(rustsecp256k1_v0_8_1_fe *x) {
+static void random_fe(rustsecp256k1_v0_8_1_fe *x) {
     unsigned char bin[32];
     do {
         rustsecp256k1_v0_8_1_testrand256(bin);
-        if (rustsecp256k1_v0_8_1_fe_set_b32(x, bin)) {
+        if (rustsecp256k1_v0_8_1_fe_set_b32_limit(x, bin)) {
             return;
         }
     } while(1);
+}
+
+static void random_fe_non_zero(rustsecp256k1_v0_8_1_fe *nz) {
+    int tries = 10;
+    while (--tries >= 0) {
+        random_fe(nz);
+        rustsecp256k1_v0_8_1_fe_normalize(nz);
+        if (!rustsecp256k1_v0_8_1_fe_is_zero(nz)) {
+            break;
+        }
+    }
+    /* Infinitesimal probability of spurious failure here */
+    CHECK(tries >= 0);
 }
 /** END stolen from tests.c */
 
@@ -74,7 +89,7 @@ SECP256K1_INLINE static int skip_section(uint64_t* iter) {
     return ((((uint32_t)*iter ^ (*iter >> 32)) * num_cores) >> 32) != this_core;
 }
 
-int rustsecp256k1_v0_8_1_nonce_function_smallint(unsigned char *nonce32, const unsigned char *msg32,
+static int rustsecp256k1_v0_8_1_nonce_function_smallint(unsigned char *nonce32, const unsigned char *msg32,
                                       const unsigned char *key32, const unsigned char *algo16,
                                       void *data, unsigned int attempt) {
     rustsecp256k1_v0_8_1_scalar s;
@@ -94,7 +109,7 @@ int rustsecp256k1_v0_8_1_nonce_function_smallint(unsigned char *nonce32, const u
     return 1;
 }
 
-void test_exhaustive_endomorphism(const rustsecp256k1_v0_8_1_ge *group) {
+static void test_exhaustive_endomorphism(const rustsecp256k1_v0_8_1_ge *group) {
     int i;
     for (i = 0; i < EXHAUSTIVE_TEST_ORDER; i++) {
         rustsecp256k1_v0_8_1_ge res;
@@ -103,7 +118,7 @@ void test_exhaustive_endomorphism(const rustsecp256k1_v0_8_1_ge *group) {
     }
 }
 
-void test_exhaustive_addition(const rustsecp256k1_v0_8_1_ge *group, const rustsecp256k1_v0_8_1_gej *groupj) {
+static void test_exhaustive_addition(const rustsecp256k1_v0_8_1_ge *group, const rustsecp256k1_v0_8_1_gej *groupj) {
     int i, j;
     uint64_t iter = 0;
 
@@ -163,7 +178,7 @@ void test_exhaustive_addition(const rustsecp256k1_v0_8_1_ge *group, const rustse
     }
 }
 
-void test_exhaustive_ecmult(const rustsecp256k1_v0_8_1_ge *group, const rustsecp256k1_v0_8_1_gej *groupj) {
+static void test_exhaustive_ecmult(const rustsecp256k1_v0_8_1_ge *group, const rustsecp256k1_v0_8_1_gej *groupj) {
     int i, j, r_log;
     uint64_t iter = 0;
     for (r_log = 1; r_log < EXHAUSTIVE_TEST_ORDER; r_log++) {
@@ -178,10 +193,37 @@ void test_exhaustive_ecmult(const rustsecp256k1_v0_8_1_ge *group, const rustsecp
                 rustsecp256k1_v0_8_1_ecmult(&tmp, &groupj[r_log], &na, &ng);
                 ge_equals_gej(&group[(i * r_log + j) % EXHAUSTIVE_TEST_ORDER], &tmp);
 
-                if (i > 0) {
-                    rustsecp256k1_v0_8_1_ecmult_const(&tmp, &group[i], &ng, 256);
-                    ge_equals_gej(&group[(i * j) % EXHAUSTIVE_TEST_ORDER], &tmp);
-                }
+            }
+        }
+    }
+
+    for (j = 0; j < EXHAUSTIVE_TEST_ORDER; j++) {
+        for (i = 0; i < EXHAUSTIVE_TEST_ORDER; i++) {
+            int ret;
+            rustsecp256k1_v0_8_1_gej tmp;
+            rustsecp256k1_v0_8_1_fe xn, xd, tmpf;
+            rustsecp256k1_v0_8_1_scalar ng;
+
+            if (skip_section(&iter)) continue;
+
+            rustsecp256k1_v0_8_1_scalar_set_int(&ng, j);
+
+            /* Test rustsecp256k1_v0_8_1_ecmult_const. */
+            rustsecp256k1_v0_8_1_ecmult_const(&tmp, &group[i], &ng);
+            ge_equals_gej(&group[(i * j) % EXHAUSTIVE_TEST_ORDER], &tmp);
+
+            if (i != 0 && j != 0) {
+                /* Test rustsecp256k1_v0_8_1_ecmult_const_xonly with all curve X coordinates, and xd=NULL. */
+                ret = rustsecp256k1_v0_8_1_ecmult_const_xonly(&tmpf, &group[i].x, NULL, &ng, 0);
+                CHECK(ret);
+                CHECK(rustsecp256k1_v0_8_1_fe_equal_var(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
+
+                /* Test rustsecp256k1_v0_8_1_ecmult_const_xonly with all curve X coordinates, with random xd. */
+                random_fe_non_zero(&xd);
+                rustsecp256k1_v0_8_1_fe_mul(&xn, &xd, &group[i].x);
+                ret = rustsecp256k1_v0_8_1_ecmult_const_xonly(&tmpf, &xn, &xd, &ng, 0);
+                CHECK(ret);
+                CHECK(rustsecp256k1_v0_8_1_fe_equal_var(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
             }
         }
     }
@@ -199,7 +241,7 @@ static int ecmult_multi_callback(rustsecp256k1_v0_8_1_scalar *sc, rustsecp256k1_
     return 1;
 }
 
-void test_exhaustive_ecmult_multi(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
+static void test_exhaustive_ecmult_multi(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
     int i, j, k, x, y;
     uint64_t iter = 0;
     rustsecp256k1_v0_8_1_scratch *scratch = rustsecp256k1_v0_8_1_scratch_create(&ctx->error_callback, 4096);
@@ -229,7 +271,7 @@ void test_exhaustive_ecmult_multi(const rustsecp256k1_v0_8_1_context *ctx, const
     rustsecp256k1_v0_8_1_scratch_destroy(&ctx->error_callback, scratch);
 }
 
-void r_from_k(rustsecp256k1_v0_8_1_scalar *r, const rustsecp256k1_v0_8_1_ge *group, int k, int* overflow) {
+static void r_from_k(rustsecp256k1_v0_8_1_scalar *r, const rustsecp256k1_v0_8_1_ge *group, int k, int* overflow) {
     rustsecp256k1_v0_8_1_fe x;
     unsigned char x_bin[32];
     k %= EXHAUSTIVE_TEST_ORDER;
@@ -239,7 +281,7 @@ void r_from_k(rustsecp256k1_v0_8_1_scalar *r, const rustsecp256k1_v0_8_1_ge *gro
     rustsecp256k1_v0_8_1_scalar_set_b32(r, x_bin, overflow);
 }
 
-void test_exhaustive_verify(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
+static void test_exhaustive_verify(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
     int s, r, msg, key;
     uint64_t iter = 0;
     for (s = 1; s < EXHAUSTIVE_TEST_ORDER; s++) {
@@ -292,7 +334,7 @@ void test_exhaustive_verify(const rustsecp256k1_v0_8_1_context *ctx, const rusts
     }
 }
 
-void test_exhaustive_sign(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
+static void test_exhaustive_sign(const rustsecp256k1_v0_8_1_context *ctx, const rustsecp256k1_v0_8_1_ge *group) {
     int i, j, k;
     uint64_t iter = 0;
 

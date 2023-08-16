@@ -17,10 +17,10 @@
 static int rustsecp256k1_v0_8_1_eckey_pubkey_parse(rustsecp256k1_v0_8_1_ge *elem, const unsigned char *pub, size_t size) {
     if (size == 33 && (pub[0] == SECP256K1_TAG_PUBKEY_EVEN || pub[0] == SECP256K1_TAG_PUBKEY_ODD)) {
         rustsecp256k1_v0_8_1_fe x;
-        return rustsecp256k1_v0_8_1_fe_set_b32(&x, pub+1) && rustsecp256k1_v0_8_1_ge_set_xo_var(elem, &x, pub[0] == SECP256K1_TAG_PUBKEY_ODD);
+        return rustsecp256k1_v0_8_1_fe_set_b32_limit(&x, pub+1) && rustsecp256k1_v0_8_1_ge_set_xo_var(elem, &x, pub[0] == SECP256K1_TAG_PUBKEY_ODD);
     } else if (size == 65 && (pub[0] == SECP256K1_TAG_PUBKEY_UNCOMPRESSED || pub[0] == SECP256K1_TAG_PUBKEY_HYBRID_EVEN || pub[0] == SECP256K1_TAG_PUBKEY_HYBRID_ODD)) {
         rustsecp256k1_v0_8_1_fe x, y;
-        if (!rustsecp256k1_v0_8_1_fe_set_b32(&x, pub+1) || !rustsecp256k1_v0_8_1_fe_set_b32(&y, pub+33)) {
+        if (!rustsecp256k1_v0_8_1_fe_set_b32_limit(&x, pub+1) || !rustsecp256k1_v0_8_1_fe_set_b32_limit(&y, pub+33)) {
             return 0;
         }
         rustsecp256k1_v0_8_1_ge_set_xy(elem, &x, &y);

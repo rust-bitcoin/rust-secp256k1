@@ -31,7 +31,7 @@ static void rustsecp256k1_v0_8_1_ecmult_gen_compute_table(rustsecp256k1_v0_8_1_g
         rustsecp256k1_v0_8_1_fe nums_x;
         rustsecp256k1_v0_8_1_ge nums_ge;
         int r;
-        r = rustsecp256k1_v0_8_1_fe_set_b32(&nums_x, nums_b32);
+        r = rustsecp256k1_v0_8_1_fe_set_b32_limit(&nums_x, nums_b32);
         (void)r;
         VERIFY_CHECK(r);
         r = rustsecp256k1_v0_8_1_ge_set_xo_var(&nums_ge, &nums_x, 0);

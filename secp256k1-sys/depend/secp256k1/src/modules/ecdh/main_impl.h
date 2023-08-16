@@ -50,7 +50,7 @@ int rustsecp256k1_v0_8_1_ecdh(const rustsecp256k1_v0_8_1_context* ctx, unsigned 
     overflow |= rustsecp256k1_v0_8_1_scalar_is_zero(&s);
     rustsecp256k1_v0_8_1_scalar_cmov(&s, &rustsecp256k1_v0_8_1_scalar_one, overflow);
 
-    rustsecp256k1_v0_8_1_ecmult_const(&res, &pt, &s, 256);
+    rustsecp256k1_v0_8_1_ecmult_const(&res, &pt, &s);
     rustsecp256k1_v0_8_1_ge_set_gej(&pt, &res);
 
     /* Compute a hash of the point */

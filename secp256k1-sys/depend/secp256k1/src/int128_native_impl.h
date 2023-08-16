@@ -2,6 +2,7 @@
 #define SECP256K1_INT128_NATIVE_IMPL_H
 
 #include "int128.h"
+#include "util.h"
 
 static SECP256K1_INLINE void rustsecp256k1_v0_8_1_u128_load(rustsecp256k1_v0_8_1_uint128 *r, uint64_t hi, uint64_t lo) {
     *r = (((uint128_t)hi) << 64) + lo;
@@ -67,7 +68,12 @@ static SECP256K1_INLINE void rustsecp256k1_v0_8_1_i128_rshift(rustsecp256k1_v0_8
    *r >>= n;
 }
 
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_8_1_i128_to_u64(const rustsecp256k1_v0_8_1_int128 *a) {
+   return (uint64_t)*a;
+}
+
 static SECP256K1_INLINE int64_t rustsecp256k1_v0_8_1_i128_to_i64(const rustsecp256k1_v0_8_1_int128 *a) {
+   VERIFY_CHECK(INT64_MIN <= *a && *a <= INT64_MAX);
    return *a;
 }
 
@@ -79,9 +85,10 @@ static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_eq_var(const rustsecp256k1
    return *a == *b;
 }
 
-static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_check_pow2(const rustsecp256k1_v0_8_1_int128 *r, unsigned int n) {
+static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_check_pow2(const rustsecp256k1_v0_8_1_int128 *r, unsigned int n, int sign) {
    VERIFY_CHECK(n < 127);
-   return (*r == (int128_t)1 << n);
+   VERIFY_CHECK(sign == 1 || sign == -1);
+   return (*r == (int128_t)((uint128_t)sign << n));
 }
 
 #endif

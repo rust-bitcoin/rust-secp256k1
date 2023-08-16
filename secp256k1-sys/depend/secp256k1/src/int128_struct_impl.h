@@ -2,6 +2,7 @@
 #define SECP256K1_INT128_STRUCT_IMPL_H
 
 #include "int128.h"
+#include "util.h"
 
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_ARM64)) /* MSVC */
 #    include <intrin.h>
@@ -170,8 +171,14 @@ static SECP256K1_INLINE void rustsecp256k1_v0_8_1_i128_rshift(rustsecp256k1_v0_8
    }
 }
 
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_8_1_i128_to_u64(const rustsecp256k1_v0_8_1_int128 *a) {
+   return a->lo;
+}
+
 static SECP256K1_INLINE int64_t rustsecp256k1_v0_8_1_i128_to_i64(const rustsecp256k1_v0_8_1_int128 *a) {
-   return (int64_t)a->lo;
+   /* Verify that a represents a 64 bit signed value by checking that the high bits are a sign extension of the low bits. */
+   VERIFY_CHECK(a->hi == -(a->lo >> 63));
+   return (int64_t)rustsecp256k1_v0_8_1_i128_to_u64(a);
 }
 
 static SECP256K1_INLINE void rustsecp256k1_v0_8_1_i128_from_i64(rustsecp256k1_v0_8_1_int128 *r, int64_t a) {
@@ -183,10 +190,11 @@ static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_eq_var(const rustsecp256k1
    return a->hi == b->hi && a->lo == b->lo;
 }
 
-static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_check_pow2(const rustsecp256k1_v0_8_1_int128 *r, unsigned int n) {
-   VERIFY_CHECK(n < 127);
-   return n >= 64 ? r->hi == (uint64_t)1 << (n - 64) && r->lo == 0
-                  : r->hi == 0 && r->lo == (uint64_t)1 << n;
+static SECP256K1_INLINE int rustsecp256k1_v0_8_1_i128_check_pow2(const rustsecp256k1_v0_8_1_int128 *r, unsigned int n, int sign) {
+    VERIFY_CHECK(n < 127);
+    VERIFY_CHECK(sign == 1 || sign == -1);
+    return n >= 64 ? r->hi == (uint64_t)sign << (n - 64) && r->lo == 0
+                   : r->hi == (uint64_t)(sign >> 1) && r->lo == (uint64_t)sign << n;
 }
 
 #endif

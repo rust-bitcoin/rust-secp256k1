@@ -7,9 +7,7 @@
 #ifndef SECP256K1_UTIL_H
 #define SECP256K1_UTIL_H
 
-#if defined HAVE_CONFIG_H
-#include "libsecp256k1-config.h"
-#endif
+#include "../include/secp256k1.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,6 +18,38 @@
 #define STR(x) STR_(x)
 #define DEBUG_CONFIG_MSG(x) "DEBUG_CONFIG: " x
 #define DEBUG_CONFIG_DEF(x) DEBUG_CONFIG_MSG(#x "=" STR(x))
+
+/* Debug helper for printing arrays of unsigned char. */
+#define PRINT_BUF(buf, len) do { \
+    printf("%s[%lu] = ", #buf, (unsigned long)len); \
+    print_buf_plain(buf, len); \
+} while(0)
+
+static void print_buf_plain(const unsigned char *buf, size_t len) {
+    size_t i;
+    printf("{");
+    for (i = 0; i < len; i++) {
+        if (i % 8 == 0) {
+            printf("\n    ");
+        } else {
+            printf(" ");
+        }
+        printf("0x%02X,", buf[i]);
+    }
+    printf("\n}\n");
+}
+
+# if (!defined(__STDC_VERSION__) || (__STDC_VERSION__ < 199901L) )
+#  if SECP256K1_GNUC_PREREQ(2,7)
+#   define SECP256K1_INLINE __inline__
+#  elif (defined(_MSC_VER))
+#   define SECP256K1_INLINE __inline
+#  else
+#   define SECP256K1_INLINE
+#  endif
+# else
+#  define SECP256K1_INLINE inline
+# endif
 
 typedef struct {
     void (*fn)(const char *text, void* data);
@@ -99,25 +129,6 @@ static const rustsecp256k1_v0_8_1_callback default_error_callback = {
 #else
 #define VERIFY_CHECK(cond) do { (void)(cond); } while(0)
 #define VERIFY_SETUP(stmt)
-#endif
-
-/* Define `VG_UNDEF` and `VG_CHECK` when VALGRIND is defined  */
-#if !defined(VG_CHECK)
-# if defined(VALGRIND)
-#  include <valgrind/memcheck.h>
-#  define VG_UNDEF(x,y) VALGRIND_MAKE_MEM_UNDEFINED((x),(y))
-#  define VG_CHECK(x,y) VALGRIND_CHECK_MEM_IS_DEFINED((x),(y))
-# else
-#  define VG_UNDEF(x,y)
-#  define VG_CHECK(x,y)
-# endif
-#endif
-
-/* Like `VG_CHECK` but on VERIFY only */
-#if defined(VERIFY)
-#define VG_CHECK_VERIFY(x,y) VG_CHECK((x), (y))
-#else
-#define VG_CHECK_VERIFY(x,y)
 #endif
 
 #if defined(__BIGGEST_ALIGNMENT__)
@@ -258,7 +269,7 @@ static SECP256K1_INLINE int rustsecp256k1_v0_8_1_ctz32_var_debruijn(uint32_t x) 
         0x10, 0x07, 0x0C, 0x1A, 0x1F, 0x17, 0x12, 0x05, 0x15, 0x09, 0x0F, 0x0B,
         0x1E, 0x11, 0x08, 0x0E, 0x1D, 0x0D, 0x1C, 0x1B
     };
-    return debruijn[((x & -x) * 0x04D7651F) >> 27];
+    return debruijn[(uint32_t)((x & -x) * 0x04D7651FU) >> 27];
 }
 
 /* Determine the number of trailing zero bits in a (non-zero) 64-bit x.
@@ -271,7 +282,7 @@ static SECP256K1_INLINE int rustsecp256k1_v0_8_1_ctz64_var_debruijn(uint64_t x) 
         63, 52, 6, 26, 37, 40, 33, 47, 61, 45, 43, 21, 23, 58, 17, 10,
         51, 25, 36, 32, 60, 20, 57, 16, 50, 31, 19, 15, 30, 14, 13, 12
     };
-    return debruijn[((x & -x) * 0x022FDD63CC95386D) >> 58];
+    return debruijn[(uint64_t)((x & -x) * 0x022FDD63CC95386DU) >> 58];
 }
 
 /* Determine the number of trailing zero bits in a (non-zero) 32-bit x. */

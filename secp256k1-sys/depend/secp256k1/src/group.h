@@ -164,4 +164,10 @@ static void rustsecp256k1_v0_8_1_gej_rescale(rustsecp256k1_v0_8_1_gej *r, const 
  */
 static int rustsecp256k1_v0_8_1_ge_is_in_correct_subgroup(const rustsecp256k1_v0_8_1_ge* ge);
 
+/** Check invariants on an affine group element (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_8_1_ge_verify(const rustsecp256k1_v0_8_1_ge *a);
+
+/** Check invariants on a Jacobian group element (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_8_1_gej_verify(const rustsecp256k1_v0_8_1_gej *a);
+
 #endif /* SECP256K1_GROUP_H */

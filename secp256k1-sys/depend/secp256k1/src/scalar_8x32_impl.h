@@ -7,7 +7,9 @@
 #ifndef SECP256K1_SCALAR_REPR_IMPL_H
 #define SECP256K1_SCALAR_REPR_IMPL_H
 
+#include "checkmem.h"
 #include "modinv32_impl.h"
+#include "util.h"
 
 /* Limbs of the secp256k1 order. */
 #define SECP256K1_N_0 ((uint32_t)0xD0364141UL)
@@ -140,8 +142,9 @@ static int rustsecp256k1_v0_8_1_scalar_add(rustsecp256k1_v0_8_1_scalar *r, const
 
 static void rustsecp256k1_v0_8_1_scalar_cadd_bit(rustsecp256k1_v0_8_1_scalar *r, unsigned int bit, int flag) {
     uint64_t t;
+    volatile int vflag = flag;
     VERIFY_CHECK(bit < 256);
-    bit += ((uint32_t) flag - 1) & 0x100;  /* forcing (bit >> 5) > 7 makes this a noop */
+    bit += ((uint32_t) vflag - 1) & 0x100;  /* forcing (bit >> 5) > 7 makes this a noop */
     t = (uint64_t)r->d[0] + (((uint32_t)((bit >> 5) == 0)) << (bit & 0x1F));
     r->d[0] = t & 0xFFFFFFFFULL; t >>= 32;
     t += (uint64_t)r->d[1] + (((uint32_t)((bit >> 5) == 1)) << (bit & 0x1F));
@@ -240,7 +243,8 @@ static int rustsecp256k1_v0_8_1_scalar_is_high(const rustsecp256k1_v0_8_1_scalar
 static int rustsecp256k1_v0_8_1_scalar_cond_negate(rustsecp256k1_v0_8_1_scalar *r, int flag) {
     /* If we are flag = 0, mask = 00...00 and this is a no-op;
      * if we are flag = 1, mask = 11...11 and this is identical to rustsecp256k1_v0_8_1_scalar_negate */
-    uint32_t mask = !flag - 1;
+    volatile int vflag = flag;
+    uint32_t mask = -vflag;
     uint32_t nonzero = 0xFFFFFFFFUL * (rustsecp256k1_v0_8_1_scalar_is_zero(r) == 0);
     uint64_t t = (uint64_t)(r->d[0] ^ mask) + ((SECP256K1_N_0 + 1) & mask);
     r->d[0] = t & nonzero; t >>= 32;
@@ -631,8 +635,9 @@ SECP256K1_INLINE static void rustsecp256k1_v0_8_1_scalar_mul_shift_var(rustsecp2
 
 static SECP256K1_INLINE void rustsecp256k1_v0_8_1_scalar_cmov(rustsecp256k1_v0_8_1_scalar *r, const rustsecp256k1_v0_8_1_scalar *a, int flag) {
     uint32_t mask0, mask1;
-    VG_CHECK_VERIFY(r->d, sizeof(r->d));
-    mask0 = flag + ~((uint32_t)0);
+    volatile int vflag = flag;
+    SECP256K1_CHECKMEM_CHECK_VERIFY(r->d, sizeof(r->d));
+    mask0 = vflag + ~((uint32_t)0);
     mask1 = ~mask0;
     r->d[0] = (r->d[0] & mask0) | (a->d[0] & mask1);
     r->d[1] = (r->d[1] & mask0) | (a->d[1] & mask1);

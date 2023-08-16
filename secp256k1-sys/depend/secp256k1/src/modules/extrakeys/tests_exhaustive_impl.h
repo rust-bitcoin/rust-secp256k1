@@ -47,7 +47,7 @@ static void test_exhaustive_extrakeys(const rustsecp256k1_v0_8_1_context *ctx, c
         CHECK(rustsecp256k1_v0_8_1_memcmp_var(xonly_pubkey_bytes[i - 1], buf, 32) == 0);
 
         /* Compare the xonly_pubkey bytes against the precomputed group. */
-        rustsecp256k1_v0_8_1_fe_set_b32(&fe, xonly_pubkey_bytes[i - 1]);
+        rustsecp256k1_v0_8_1_fe_set_b32_mod(&fe, xonly_pubkey_bytes[i - 1]);
         CHECK(rustsecp256k1_v0_8_1_fe_equal_var(&fe, &group[i].x));
 
         /* Check the parity against the precomputed group. */
