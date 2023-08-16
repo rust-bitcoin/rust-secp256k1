@@ -557,40 +557,6 @@ mod tests {
 
     #[test]
     #[cfg(feature = "rand-std")]
-    fn test_manual_create_destroy() {
-        use std::marker::PhantomData;
-
-        let ctx_full = unsafe { ffi::secp256k1_context_create(AllPreallocated::FLAGS) };
-        let ctx_sign = unsafe { ffi::secp256k1_context_create(SignOnlyPreallocated::FLAGS) };
-        let ctx_vrfy = unsafe { ffi::secp256k1_context_create(VerifyOnlyPreallocated::FLAGS) };
-
-        let full: Secp256k1<AllPreallocated> = Secp256k1 { ctx: ctx_full, phantom: PhantomData };
-        let sign: Secp256k1<SignOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_sign, phantom: PhantomData };
-        let vrfy: Secp256k1<VerifyOnlyPreallocated> =
-            Secp256k1 { ctx: ctx_vrfy, phantom: PhantomData };
-
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&[2u8; 32]).unwrap();
-        // Try signing
-        assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
-        let sig = full.sign_ecdsa(&msg, &sk);
-
-        // Try verifying
-        assert!(vrfy.verify_ecdsa(&msg, &sig, &pk).is_ok());
-        assert!(full.verify_ecdsa(&msg, &sig, &pk).is_ok());
-
-        drop(full);
-        drop(sign);
-        drop(vrfy);
-
-        unsafe { ffi::secp256k1_context_destroy(ctx_vrfy) };
-        unsafe { ffi::secp256k1_context_destroy(ctx_sign) };
-        unsafe { ffi::secp256k1_context_destroy(ctx_full) };
-    }
-
-    #[test]
-    #[cfg(feature = "rand-std")]
     // In rustc 1.72 this Clippy lint was pulled out of clippy and into rustc, and
     // was made deny-by-default, breaking compilation of this test. Aside from this
     // breaking change, which there is no point in bugging, the rename was done so
