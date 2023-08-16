@@ -15,25 +15,25 @@
 #endif
 
 #ifdef ENABLE_MODULE_ECDH
-# include "../include/rustsecp256k1_v0_8_1_ecdh.h"
+# include "../include/rustsecp256k1_v0_9_0_ecdh.h"
 #endif
 
 #ifdef ENABLE_MODULE_RECOVERY
-# include "../include/rustsecp256k1_v0_8_1_recovery.h"
+# include "../include/rustsecp256k1_v0_9_0_recovery.h"
 #endif
 
 #ifdef ENABLE_MODULE_EXTRAKEYS
-# include "../include/rustsecp256k1_v0_8_1_extrakeys.h"
+# include "../include/rustsecp256k1_v0_9_0_extrakeys.h"
 #endif
 
 #ifdef ENABLE_MODULE_SCHNORRSIG
 #include "../include/secp256k1_schnorrsig.h"
 #endif
 
-static void run_tests(rustsecp256k1_v0_8_1_context *ctx, unsigned char *key);
+static void run_tests(rustsecp256k1_v0_9_0_context *ctx, unsigned char *key);
 
 int main(void) {
-    rustsecp256k1_v0_8_1_context* ctx;
+    rustsecp256k1_v0_9_0_context* ctx;
     unsigned char key[32];
     int ret, i;
 
@@ -42,7 +42,7 @@ int main(void) {
         fprintf(stderr, "Usage: libtool --mode=execute valgrind ./ctime_tests\n");
         return 1;
     }
-    ctx = rustsecp256k1_v0_8_1_context_create(SECP256K1_CONTEXT_DECLASSIFY);
+    ctx = rustsecp256k1_v0_9_0_context_create(SECP256K1_CONTEXT_DECLASSIFY);
     /** In theory, testing with a single secret input should be sufficient:
      *  If control flow depended on secrets the tool would generate an error.
      */
@@ -55,17 +55,17 @@ int main(void) {
     /* Test context randomisation. Do this last because it leaves the context
      * tainted. */
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_context_randomize(ctx, key);
+    ret = rustsecp256k1_v0_9_0_context_randomize(ctx, key);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret);
 
-    rustsecp256k1_v0_8_1_context_destroy(ctx);
+    rustsecp256k1_v0_9_0_context_destroy(ctx);
     return 0;
 }
 
-static void run_tests(rustsecp256k1_v0_8_1_context *ctx, unsigned char *key) {
-    rustsecp256k1_v0_8_1_ecdsa_signature signature;
-    rustsecp256k1_v0_8_1_pubkey pubkey;
+static void run_tests(rustsecp256k1_v0_9_0_context *ctx, unsigned char *key) {
+    rustsecp256k1_v0_9_0_ecdsa_signature signature;
+    rustsecp256k1_v0_9_0_pubkey pubkey;
     size_t siglen = 74;
     size_t outputlen = 33;
     int i;
@@ -74,11 +74,11 @@ static void run_tests(rustsecp256k1_v0_8_1_context *ctx, unsigned char *key) {
     unsigned char sig[74];
     unsigned char spubkey[33];
 #ifdef ENABLE_MODULE_RECOVERY
-    rustsecp256k1_v0_8_1_ecdsa_recoverable_signature recoverable_signature;
+    rustsecp256k1_v0_9_0_ecdsa_recoverable_signature recoverable_signature;
     int recid;
 #endif
 #ifdef ENABLE_MODULE_EXTRAKEYS
-    rustsecp256k1_v0_8_1_keypair keypair;
+    rustsecp256k1_v0_9_0_keypair keypair;
 #endif
 
     for (i = 0; i < 32; i++) {
@@ -87,24 +87,24 @@ static void run_tests(rustsecp256k1_v0_8_1_context *ctx, unsigned char *key) {
 
     /* Test keygen. */
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ec_pubkey_create(ctx, &pubkey, key);
-    SECP256K1_CHECKMEM_DEFINE(&pubkey, sizeof(rustsecp256k1_v0_8_1_pubkey));
+    ret = rustsecp256k1_v0_9_0_ec_pubkey_create(ctx, &pubkey, key);
+    SECP256K1_CHECKMEM_DEFINE(&pubkey, sizeof(rustsecp256k1_v0_9_0_pubkey));
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret);
-    CHECK(rustsecp256k1_v0_8_1_ec_pubkey_serialize(ctx, spubkey, &outputlen, &pubkey, SECP256K1_EC_COMPRESSED) == 1);
+    CHECK(rustsecp256k1_v0_9_0_ec_pubkey_serialize(ctx, spubkey, &outputlen, &pubkey, SECP256K1_EC_COMPRESSED) == 1);
 
     /* Test signing. */
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ecdsa_sign(ctx, &signature, msg, key, NULL, NULL);
-    SECP256K1_CHECKMEM_DEFINE(&signature, sizeof(rustsecp256k1_v0_8_1_ecdsa_signature));
+    ret = rustsecp256k1_v0_9_0_ecdsa_sign(ctx, &signature, msg, key, NULL, NULL);
+    SECP256K1_CHECKMEM_DEFINE(&signature, sizeof(rustsecp256k1_v0_9_0_ecdsa_signature));
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret);
-    CHECK(rustsecp256k1_v0_8_1_ecdsa_signature_serialize_der(ctx, sig, &siglen, &signature));
+    CHECK(rustsecp256k1_v0_9_0_ecdsa_signature_serialize_der(ctx, sig, &siglen, &signature));
 
 #ifdef ENABLE_MODULE_ECDH
     /* Test ECDH. */
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ecdh(ctx, msg, &pubkey, key, NULL, NULL);
+    ret = rustsecp256k1_v0_9_0_ecdh(ctx, msg, &pubkey, key, NULL, NULL);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 #endif
@@ -112,62 +112,62 @@ static void run_tests(rustsecp256k1_v0_8_1_context *ctx, unsigned char *key) {
 #ifdef ENABLE_MODULE_RECOVERY
     /* Test signing a recoverable signature. */
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ecdsa_sign_recoverable(ctx, &recoverable_signature, msg, key, NULL, NULL);
+    ret = rustsecp256k1_v0_9_0_ecdsa_sign_recoverable(ctx, &recoverable_signature, msg, key, NULL, NULL);
     SECP256K1_CHECKMEM_DEFINE(&recoverable_signature, sizeof(recoverable_signature));
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret);
-    CHECK(rustsecp256k1_v0_8_1_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &recoverable_signature));
+    CHECK(rustsecp256k1_v0_9_0_ecdsa_recoverable_signature_serialize_compact(ctx, sig, &recid, &recoverable_signature));
     CHECK(recid >= 0 && recid <= 3);
 #endif
 
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ec_seckey_verify(ctx, key);
+    ret = rustsecp256k1_v0_9_0_ec_seckey_verify(ctx, key);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_ec_seckey_negate(ctx, key);
-    SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
-    CHECK(ret == 1);
-
-    SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    SECP256K1_CHECKMEM_UNDEFINE(msg, 32);
-    ret = rustsecp256k1_v0_8_1_ec_seckey_tweak_add(ctx, key, msg);
+    ret = rustsecp256k1_v0_9_0_ec_seckey_negate(ctx, key);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
     SECP256K1_CHECKMEM_UNDEFINE(msg, 32);
-    ret = rustsecp256k1_v0_8_1_ec_seckey_tweak_mul(ctx, key, msg);
+    ret = rustsecp256k1_v0_9_0_ec_seckey_tweak_add(ctx, key, msg);
+    SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
+    CHECK(ret == 1);
+
+    SECP256K1_CHECKMEM_UNDEFINE(key, 32);
+    SECP256K1_CHECKMEM_UNDEFINE(msg, 32);
+    ret = rustsecp256k1_v0_9_0_ec_seckey_tweak_mul(ctx, key, msg);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 
     /* Test keypair_create and keypair_xonly_tweak_add. */
 #ifdef ENABLE_MODULE_EXTRAKEYS
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_keypair_create(ctx, &keypair, key);
+    ret = rustsecp256k1_v0_9_0_keypair_create(ctx, &keypair, key);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 
     /* The tweak is not treated as a secret in keypair_tweak_add */
     SECP256K1_CHECKMEM_DEFINE(msg, 32);
-    ret = rustsecp256k1_v0_8_1_keypair_xonly_tweak_add(ctx, &keypair, msg);
+    ret = rustsecp256k1_v0_9_0_keypair_xonly_tweak_add(ctx, &keypair, msg);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
     SECP256K1_CHECKMEM_UNDEFINE(&keypair, sizeof(keypair));
-    ret = rustsecp256k1_v0_8_1_keypair_sec(ctx, key, &keypair);
+    ret = rustsecp256k1_v0_9_0_keypair_sec(ctx, key, &keypair);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 #endif
 
 #ifdef ENABLE_MODULE_SCHNORRSIG
     SECP256K1_CHECKMEM_UNDEFINE(key, 32);
-    ret = rustsecp256k1_v0_8_1_keypair_create(ctx, &keypair, key);
+    ret = rustsecp256k1_v0_9_0_keypair_create(ctx, &keypair, key);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
-    ret = rustsecp256k1_v0_8_1_schnorrsig_sign32(ctx, sig, msg, &keypair, NULL);
+    ret = rustsecp256k1_v0_9_0_schnorrsig_sign32(ctx, sig, msg, &keypair, NULL);
     SECP256K1_CHECKMEM_DEFINE(&ret, sizeof(ret));
     CHECK(ret == 1);
 #endif

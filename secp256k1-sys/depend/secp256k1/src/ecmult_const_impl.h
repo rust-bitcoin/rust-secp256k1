@@ -18,11 +18,11 @@
  *  coordinates as ge_storage points in pre, and stores the global Z in globalz.
  *  It only operates on tables sized for WINDOW_A wnaf multiples.
  */
-static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table_globalz_windowa(rustsecp256k1_v0_8_1_ge *pre, rustsecp256k1_v0_8_1_fe *globalz, const rustsecp256k1_v0_8_1_gej *a) {
-    rustsecp256k1_v0_8_1_fe zr[ECMULT_TABLE_SIZE(WINDOW_A)];
+static void rustsecp256k1_v0_9_0_ecmult_odd_multiples_table_globalz_windowa(rustsecp256k1_v0_9_0_ge *pre, rustsecp256k1_v0_9_0_fe *globalz, const rustsecp256k1_v0_9_0_gej *a) {
+    rustsecp256k1_v0_9_0_fe zr[ECMULT_TABLE_SIZE(WINDOW_A)];
 
-    rustsecp256k1_v0_8_1_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), pre, zr, globalz, a);
-    rustsecp256k1_v0_8_1_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A), pre, zr);
+    rustsecp256k1_v0_9_0_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), pre, zr, globalz, a);
+    rustsecp256k1_v0_9_0_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A), pre, zr);
 }
 
 /* This is like `ECMULT_TABLE_GET_GE` but is constant time */
@@ -32,12 +32,12 @@ static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table_globalz_windowa(rust
     int volatile mask = (n) >> (sizeof(n) * CHAR_BIT - 1); \
     int abs_n = ((n) + mask) ^ mask; \
     int idx_n = abs_n >> 1; \
-    rustsecp256k1_v0_8_1_fe neg_y; \
+    rustsecp256k1_v0_9_0_fe neg_y; \
     VERIFY_CHECK(((n) & 1) == 1); \
     VERIFY_CHECK((n) >= -((1 << ((w)-1)) - 1)); \
     VERIFY_CHECK((n) <=  ((1 << ((w)-1)) - 1)); \
-    VERIFY_SETUP(rustsecp256k1_v0_8_1_fe_clear(&(r)->x)); \
-    VERIFY_SETUP(rustsecp256k1_v0_8_1_fe_clear(&(r)->y)); \
+    VERIFY_SETUP(rustsecp256k1_v0_9_0_fe_clear(&(r)->x)); \
+    VERIFY_SETUP(rustsecp256k1_v0_9_0_fe_clear(&(r)->y)); \
     /* Unconditionally set r->x = (pre)[m].x. r->y = (pre)[m].y. because it's either the correct one \
      * or will get replaced in the later iterations, this is needed to make sure `r` is initialized. */ \
     (r)->x = (pre)[m].x; \
@@ -45,12 +45,12 @@ static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table_globalz_windowa(rust
     for (m = 1; m < ECMULT_TABLE_SIZE(w); m++) { \
         /* This loop is used to avoid secret data in array indices. See
          * the comment in ecmult_gen_impl.h for rationale. */ \
-        rustsecp256k1_v0_8_1_fe_cmov(&(r)->x, &(pre)[m].x, m == idx_n); \
-        rustsecp256k1_v0_8_1_fe_cmov(&(r)->y, &(pre)[m].y, m == idx_n); \
+        rustsecp256k1_v0_9_0_fe_cmov(&(r)->x, &(pre)[m].x, m == idx_n); \
+        rustsecp256k1_v0_9_0_fe_cmov(&(r)->y, &(pre)[m].y, m == idx_n); \
     } \
     (r)->infinity = 0; \
-    rustsecp256k1_v0_8_1_fe_negate(&neg_y, &(r)->y, 1); \
-    rustsecp256k1_v0_8_1_fe_cmov(&(r)->y, &neg_y, (n) != abs_n); \
+    rustsecp256k1_v0_9_0_fe_negate(&neg_y, &(r)->y, 1); \
+    rustsecp256k1_v0_9_0_fe_cmov(&(r)->y, &neg_y, (n) != abs_n); \
 } while(0)
 
 /** Convert a number to WNAF notation.
@@ -66,7 +66,7 @@ static void rustsecp256k1_v0_8_1_ecmult_odd_multiples_table_globalz_windowa(rust
  *
  *  Numbers reference steps of `Algorithm SPA-resistant Width-w NAF with Odd Scalar` on pp. 335
  */
-static int rustsecp256k1_v0_8_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_8_1_scalar *scalar, int w, int size) {
+static int rustsecp256k1_v0_9_0_wnaf_const(int *wnaf, const rustsecp256k1_v0_9_0_scalar *scalar, int w, int size) {
     int global_sign;
     int skew;
     int word = 0;
@@ -76,7 +76,7 @@ static int rustsecp256k1_v0_8_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_8_1
     int u;
 
     int flip;
-    rustsecp256k1_v0_8_1_scalar s = *scalar;
+    rustsecp256k1_v0_9_0_scalar s = *scalar;
 
     VERIFY_CHECK(w > 0);
     VERIFY_CHECK(size > 0);
@@ -93,18 +93,18 @@ static int rustsecp256k1_v0_8_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_8_1
      * particular, to ensure that the outputs from the endomorphism-split fit into
      * 128 bits). If we negate, the parity of our number flips, affecting whether
      * we want to add to the scalar to ensure that it's odd. */
-    flip = rustsecp256k1_v0_8_1_scalar_is_high(&s);
-    skew = flip ^ rustsecp256k1_v0_8_1_scalar_is_even(&s);
-    rustsecp256k1_v0_8_1_scalar_cadd_bit(&s, 0, skew);
-    global_sign = rustsecp256k1_v0_8_1_scalar_cond_negate(&s, flip);
+    flip = rustsecp256k1_v0_9_0_scalar_is_high(&s);
+    skew = flip ^ rustsecp256k1_v0_9_0_scalar_is_even(&s);
+    rustsecp256k1_v0_9_0_scalar_cadd_bit(&s, 0, skew);
+    global_sign = rustsecp256k1_v0_9_0_scalar_cond_negate(&s, flip);
 
     /* 4 */
-    u_last = rustsecp256k1_v0_8_1_scalar_shr_int(&s, w);
+    u_last = rustsecp256k1_v0_9_0_scalar_shr_int(&s, w);
     do {
         int even;
 
         /* 4.1 4.4 */
-        u = rustsecp256k1_v0_8_1_scalar_shr_int(&s, w);
+        u = rustsecp256k1_v0_9_0_scalar_shr_int(&s, w);
         /* 4.2 */
         even = ((u & 1) == 0);
         /* In contrast to the original algorithm, u_last is always > 0 and
@@ -125,35 +125,35 @@ static int rustsecp256k1_v0_8_1_wnaf_const(int *wnaf, const rustsecp256k1_v0_8_1
     } while (word * w < size);
     wnaf[word] = u * global_sign;
 
-    VERIFY_CHECK(rustsecp256k1_v0_8_1_scalar_is_zero(&s));
+    VERIFY_CHECK(rustsecp256k1_v0_9_0_scalar_is_zero(&s));
     VERIFY_CHECK(word == WNAF_SIZE_BITS(size, w));
     return skew;
 }
 
-static void rustsecp256k1_v0_8_1_ecmult_const(rustsecp256k1_v0_8_1_gej *r, const rustsecp256k1_v0_8_1_ge *a, const rustsecp256k1_v0_8_1_scalar *scalar) {
-    rustsecp256k1_v0_8_1_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
-    rustsecp256k1_v0_8_1_ge tmpa;
-    rustsecp256k1_v0_8_1_fe Z;
+static void rustsecp256k1_v0_9_0_ecmult_const(rustsecp256k1_v0_9_0_gej *r, const rustsecp256k1_v0_9_0_ge *a, const rustsecp256k1_v0_9_0_scalar *scalar) {
+    rustsecp256k1_v0_9_0_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_9_0_ge tmpa;
+    rustsecp256k1_v0_9_0_fe Z;
 
     int skew_1;
-    rustsecp256k1_v0_8_1_ge pre_a_lam[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_9_0_ge pre_a_lam[ECMULT_TABLE_SIZE(WINDOW_A)];
     int wnaf_lam[1 + WNAF_SIZE(WINDOW_A - 1)];
     int skew_lam;
-    rustsecp256k1_v0_8_1_scalar q_1, q_lam;
+    rustsecp256k1_v0_9_0_scalar q_1, q_lam;
     int wnaf_1[1 + WNAF_SIZE(WINDOW_A - 1)];
 
     int i;
 
-    if (rustsecp256k1_v0_8_1_ge_is_infinity(a)) {
-        rustsecp256k1_v0_8_1_gej_set_infinity(r);
+    if (rustsecp256k1_v0_9_0_ge_is_infinity(a)) {
+        rustsecp256k1_v0_9_0_gej_set_infinity(r);
         return;
     }
 
     /* build wnaf representation for q. */
     /* split q into q_1 and q_lam (where q = q_1 + q_lam*lambda, and q_1 and q_lam are ~128 bit) */
-    rustsecp256k1_v0_8_1_scalar_split_lambda(&q_1, &q_lam, scalar);
-    skew_1   = rustsecp256k1_v0_8_1_wnaf_const(wnaf_1,   &q_1,   WINDOW_A - 1, 128);
-    skew_lam = rustsecp256k1_v0_8_1_wnaf_const(wnaf_lam, &q_lam, WINDOW_A - 1, 128);
+    rustsecp256k1_v0_9_0_scalar_split_lambda(&q_1, &q_lam, scalar);
+    skew_1   = rustsecp256k1_v0_9_0_wnaf_const(wnaf_1,   &q_1,   WINDOW_A - 1, 128);
+    skew_lam = rustsecp256k1_v0_9_0_wnaf_const(wnaf_lam, &q_lam, WINDOW_A - 1, 128);
 
     /* Calculate odd multiples of a.
      * All multiples are brought to the same Z 'denominator', which is stored
@@ -162,13 +162,13 @@ static void rustsecp256k1_v0_8_1_ecmult_const(rustsecp256k1_v0_8_1_gej *r, const
      * the Z coordinate of the result once at the end.
      */
     VERIFY_CHECK(!a->infinity);
-    rustsecp256k1_v0_8_1_gej_set_ge(r, a);
-    rustsecp256k1_v0_8_1_ecmult_odd_multiples_table_globalz_windowa(pre_a, &Z, r);
+    rustsecp256k1_v0_9_0_gej_set_ge(r, a);
+    rustsecp256k1_v0_9_0_ecmult_odd_multiples_table_globalz_windowa(pre_a, &Z, r);
     for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
-        rustsecp256k1_v0_8_1_fe_normalize_weak(&pre_a[i].y);
+        rustsecp256k1_v0_9_0_fe_normalize_weak(&pre_a[i].y);
     }
     for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
-        rustsecp256k1_v0_8_1_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
+        rustsecp256k1_v0_9_0_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
     }
 
     /* first loop iteration (separated out so we can directly set r, rather
@@ -177,46 +177,46 @@ static void rustsecp256k1_v0_8_1_ecmult_const(rustsecp256k1_v0_8_1_gej *r, const
     i = wnaf_1[WNAF_SIZE_BITS(128, WINDOW_A - 1)];
     VERIFY_CHECK(i != 0);
     ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a, i, WINDOW_A);
-    rustsecp256k1_v0_8_1_gej_set_ge(r, &tmpa);
+    rustsecp256k1_v0_9_0_gej_set_ge(r, &tmpa);
     i = wnaf_lam[WNAF_SIZE_BITS(128, WINDOW_A - 1)];
     VERIFY_CHECK(i != 0);
     ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a_lam, i, WINDOW_A);
-    rustsecp256k1_v0_8_1_gej_add_ge(r, r, &tmpa);
+    rustsecp256k1_v0_9_0_gej_add_ge(r, r, &tmpa);
     /* remaining loop iterations */
     for (i = WNAF_SIZE_BITS(128, WINDOW_A - 1) - 1; i >= 0; i--) {
         int n;
         int j;
         for (j = 0; j < WINDOW_A - 1; ++j) {
-            rustsecp256k1_v0_8_1_gej_double(r, r);
+            rustsecp256k1_v0_9_0_gej_double(r, r);
         }
 
         n = wnaf_1[i];
         ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a, n, WINDOW_A);
         VERIFY_CHECK(n != 0);
-        rustsecp256k1_v0_8_1_gej_add_ge(r, r, &tmpa);
+        rustsecp256k1_v0_9_0_gej_add_ge(r, r, &tmpa);
         n = wnaf_lam[i];
         ECMULT_CONST_TABLE_GET_GE(&tmpa, pre_a_lam, n, WINDOW_A);
         VERIFY_CHECK(n != 0);
-        rustsecp256k1_v0_8_1_gej_add_ge(r, r, &tmpa);
+        rustsecp256k1_v0_9_0_gej_add_ge(r, r, &tmpa);
     }
 
     {
         /* Correct for wNAF skew */
-        rustsecp256k1_v0_8_1_gej tmpj;
+        rustsecp256k1_v0_9_0_gej tmpj;
 
-        rustsecp256k1_v0_8_1_ge_neg(&tmpa, &pre_a[0]);
-        rustsecp256k1_v0_8_1_gej_add_ge(&tmpj, r, &tmpa);
-        rustsecp256k1_v0_8_1_gej_cmov(r, &tmpj, skew_1);
+        rustsecp256k1_v0_9_0_ge_neg(&tmpa, &pre_a[0]);
+        rustsecp256k1_v0_9_0_gej_add_ge(&tmpj, r, &tmpa);
+        rustsecp256k1_v0_9_0_gej_cmov(r, &tmpj, skew_1);
 
-        rustsecp256k1_v0_8_1_ge_neg(&tmpa, &pre_a_lam[0]);
-        rustsecp256k1_v0_8_1_gej_add_ge(&tmpj, r, &tmpa);
-        rustsecp256k1_v0_8_1_gej_cmov(r, &tmpj, skew_lam);
+        rustsecp256k1_v0_9_0_ge_neg(&tmpa, &pre_a_lam[0]);
+        rustsecp256k1_v0_9_0_gej_add_ge(&tmpj, r, &tmpa);
+        rustsecp256k1_v0_9_0_gej_cmov(r, &tmpj, skew_lam);
     }
 
-    rustsecp256k1_v0_8_1_fe_mul(&r->z, &r->z, &Z);
+    rustsecp256k1_v0_9_0_fe_mul(&r->z, &r->z, &Z);
 }
 
-static int rustsecp256k1_v0_8_1_ecmult_const_xonly(rustsecp256k1_v0_8_1_fe* r, const rustsecp256k1_v0_8_1_fe *n, const rustsecp256k1_v0_8_1_fe *d, const rustsecp256k1_v0_8_1_scalar *q, int known_on_curve) {
+static int rustsecp256k1_v0_9_0_ecmult_const_xonly(rustsecp256k1_v0_9_0_fe* r, const rustsecp256k1_v0_9_0_fe *n, const rustsecp256k1_v0_9_0_fe *d, const rustsecp256k1_v0_9_0_scalar *q, int known_on_curve) {
 
     /* This algorithm is a generalization of Peter Dettman's technique for
      * avoiding the square root in a random-basepoint x-only multiplication
@@ -287,23 +287,23 @@ static int rustsecp256k1_v0_8_1_ecmult_const_xonly(rustsecp256k1_v0_8_1_fe* r, c
      * is needed anywhere in this computation.
      */
 
-    rustsecp256k1_v0_8_1_fe g, i;
-    rustsecp256k1_v0_8_1_ge p;
-    rustsecp256k1_v0_8_1_gej rj;
+    rustsecp256k1_v0_9_0_fe g, i;
+    rustsecp256k1_v0_9_0_ge p;
+    rustsecp256k1_v0_9_0_gej rj;
 
     /* Compute g = (n^3 + B*d^3). */
-    rustsecp256k1_v0_8_1_fe_sqr(&g, n);
-    rustsecp256k1_v0_8_1_fe_mul(&g, &g, n);
+    rustsecp256k1_v0_9_0_fe_sqr(&g, n);
+    rustsecp256k1_v0_9_0_fe_mul(&g, &g, n);
     if (d) {
-        rustsecp256k1_v0_8_1_fe b;
+        rustsecp256k1_v0_9_0_fe b;
 #ifdef VERIFY
-        VERIFY_CHECK(!rustsecp256k1_v0_8_1_fe_normalizes_to_zero(d));
+        VERIFY_CHECK(!rustsecp256k1_v0_9_0_fe_normalizes_to_zero(d));
 #endif
-        rustsecp256k1_v0_8_1_fe_sqr(&b, d);
+        rustsecp256k1_v0_9_0_fe_sqr(&b, d);
         VERIFY_CHECK(SECP256K1_B <= 8); /* magnitude of b will be <= 8 after the next call */
-        rustsecp256k1_v0_8_1_fe_mul_int(&b, SECP256K1_B);
-        rustsecp256k1_v0_8_1_fe_mul(&b, &b, d);
-        rustsecp256k1_v0_8_1_fe_add(&g, &b);
+        rustsecp256k1_v0_9_0_fe_mul_int(&b, SECP256K1_B);
+        rustsecp256k1_v0_9_0_fe_mul(&b, &b, d);
+        rustsecp256k1_v0_9_0_fe_add(&g, &b);
         if (!known_on_curve) {
             /* We need to determine whether (n/d)^3 + 7 is square.
              *
@@ -312,41 +312,41 @@ static int rustsecp256k1_v0_8_1_ecmult_const_xonly(rustsecp256k1_v0_8_1_fe* r, c
              * <=> is_square((n^3 + 7*d^3) * d)
              * <=> is_square(g * d)
              */
-            rustsecp256k1_v0_8_1_fe c;
-            rustsecp256k1_v0_8_1_fe_mul(&c, &g, d);
-            if (!rustsecp256k1_v0_8_1_fe_is_square_var(&c)) return 0;
+            rustsecp256k1_v0_9_0_fe c;
+            rustsecp256k1_v0_9_0_fe_mul(&c, &g, d);
+            if (!rustsecp256k1_v0_9_0_fe_is_square_var(&c)) return 0;
         }
     } else {
-        rustsecp256k1_v0_8_1_fe_add_int(&g, SECP256K1_B);
+        rustsecp256k1_v0_9_0_fe_add_int(&g, SECP256K1_B);
         if (!known_on_curve) {
             /* g at this point equals x^3 + 7. Test if it is square. */
-            if (!rustsecp256k1_v0_8_1_fe_is_square_var(&g)) return 0;
+            if (!rustsecp256k1_v0_9_0_fe_is_square_var(&g)) return 0;
         }
     }
 
     /* Compute base point P = (n*g, g^2), the effective affine version of (n*g, g^2, v), which has
      * corresponding affine X coordinate n/d. */
-    rustsecp256k1_v0_8_1_fe_mul(&p.x, &g, n);
-    rustsecp256k1_v0_8_1_fe_sqr(&p.y, &g);
+    rustsecp256k1_v0_9_0_fe_mul(&p.x, &g, n);
+    rustsecp256k1_v0_9_0_fe_sqr(&p.y, &g);
     p.infinity = 0;
 
     /* Perform x-only EC multiplication of P with q. */
 #ifdef VERIFY
-    VERIFY_CHECK(!rustsecp256k1_v0_8_1_scalar_is_zero(q));
+    VERIFY_CHECK(!rustsecp256k1_v0_9_0_scalar_is_zero(q));
 #endif
-    rustsecp256k1_v0_8_1_ecmult_const(&rj, &p, q);
+    rustsecp256k1_v0_9_0_ecmult_const(&rj, &p, q);
 #ifdef VERIFY
-    VERIFY_CHECK(!rustsecp256k1_v0_8_1_gej_is_infinity(&rj));
+    VERIFY_CHECK(!rustsecp256k1_v0_9_0_gej_is_infinity(&rj));
 #endif
 
     /* The resulting (X, Y, Z) point on the effective-affine isomorphic curve corresponds to
      * (X, Y, Z*v) on the secp256k1 curve. The affine version of that has X coordinate
      * (X / (Z^2*d*g)). */
-    rustsecp256k1_v0_8_1_fe_sqr(&i, &rj.z);
-    rustsecp256k1_v0_8_1_fe_mul(&i, &i, &g);
-    if (d) rustsecp256k1_v0_8_1_fe_mul(&i, &i, d);
-    rustsecp256k1_v0_8_1_fe_inv(&i, &i);
-    rustsecp256k1_v0_8_1_fe_mul(r, &rj.x, &i);
+    rustsecp256k1_v0_9_0_fe_sqr(&i, &rj.z);
+    rustsecp256k1_v0_9_0_fe_mul(&i, &i, &g);
+    if (d) rustsecp256k1_v0_9_0_fe_mul(&i, &i, d);
+    rustsecp256k1_v0_9_0_fe_inv(&i, &i);
+    rustsecp256k1_v0_9_0_fe_mul(r, &rj.x, &i);
 
     return 1;
 }
