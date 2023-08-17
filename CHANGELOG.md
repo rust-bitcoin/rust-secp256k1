@@ -3,6 +3,7 @@
 * Bump MSRV to 1.48
 * Remove implementations of `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash` from the
   `impl_array_newtype` macro. Users will now need to derive these traits if they are wanted.
+* Depend on newly released `hashes v0.13.0`.
 
 # 0.27.0 - 2023-03-15
 
