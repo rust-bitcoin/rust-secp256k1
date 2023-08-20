@@ -226,21 +226,21 @@ impl SecretKey {
         }
     }
 
-    /// Creates a new secret key using data from BIP-340 [`KeyPair`].
+    /// Creates a new secret key using data from BIP-340 [`Keypair`].
     ///
     /// # Examples
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
+    /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-    /// let secret_key = SecretKey::from_keypair(&key_pair);
+    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let secret_key = SecretKey::from_keypair(&keypair);
     /// # }
     /// ```
     #[inline]
-    pub fn from_keypair(keypair: &KeyPair) -> Self {
+    pub fn from_keypair(keypair: &Keypair) -> Self {
         let mut sk = [0u8; constants::SECRET_KEY_SIZE];
         unsafe {
             let ret = ffi::secp256k1_keypair_sec(
@@ -342,12 +342,12 @@ impl SecretKey {
     #[cfg(feature = "global-context")]
     pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature { SECP256K1.sign_ecdsa(&msg, self) }
 
-    /// Returns the [`KeyPair`] for this [`SecretKey`].
+    /// Returns the [`Keypair`] for this [`SecretKey`].
     ///
-    /// This is equivalent to using [`KeyPair::from_secret_key`].
+    /// This is equivalent to using [`Keypair::from_secret_key`].
     #[inline]
-    pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> KeyPair {
-        KeyPair::from_secret_key(secp, self)
+    pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> Keypair {
+        Keypair::from_secret_key(secp, self)
     }
 
     /// Returns the [`PublicKey`] for this [`SecretKey`].
@@ -478,21 +478,21 @@ impl PublicKey {
         }
     }
 
-    /// Creates a new compressed public key using data from BIP-340 [`KeyPair`].
+    /// Creates a new compressed public key using data from BIP-340 [`Keypair`].
     ///
     /// # Examples
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{rand, Secp256k1, PublicKey, KeyPair};
+    /// use secp256k1::{rand, Secp256k1, PublicKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-    /// let public_key = PublicKey::from_keypair(&key_pair);
+    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let public_key = PublicKey::from_keypair(&keypair);
     /// # }
     /// ```
     #[inline]
-    pub fn from_keypair(keypair: &KeyPair) -> Self {
+    pub fn from_keypair(keypair: &Keypair) -> Self {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             let ret = ffi::secp256k1_keypair_pub(
@@ -778,25 +778,25 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 ///
 /// ```
 /// # #[cfg(feature =  "rand-std")] {
-/// use secp256k1::{rand, KeyPair, Secp256k1};
+/// use secp256k1::{rand, Keypair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
 /// let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
-/// let key_pair = KeyPair::from_secret_key(&secp, &secret_key);
+/// let keypair = Keypair::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct KeyPair(ffi::KeyPair);
-impl_display_secret!(KeyPair);
-impl_fast_comparisons!(KeyPair);
+pub struct Keypair(ffi::Keypair);
+impl_display_secret!(Keypair);
+impl_fast_comparisons!(Keypair);
 
-impl KeyPair {
+impl Keypair {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::KeyPair { self.as_c_ptr() }
+    pub fn as_ptr(&self) -> *const ffi::Keypair { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
@@ -804,22 +804,22 @@ impl KeyPair {
         since = "0.25.0",
         note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
     )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::KeyPair { self.as_mut_c_ptr() }
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::Keypair { self.as_mut_c_ptr() }
 
-    /// Creates a [`KeyPair`] directly from a Secp256k1 secret key.
+    /// Creates a [`Keypair`] directly from a Secp256k1 secret key.
     #[inline]
-    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> KeyPair {
+    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> Keypair {
         unsafe {
-            let mut kp = ffi::KeyPair::new();
+            let mut kp = ffi::Keypair::new();
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, sk.as_c_ptr()) == 1 {
-                KeyPair(kp)
+                Keypair(kp)
             } else {
                 panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
             }
         }
     }
 
-    /// Creates a [`KeyPair`] directly from a secret key slice.
+    /// Creates a [`Keypair`] directly from a secret key slice.
     ///
     /// # Errors
     ///
@@ -829,45 +829,45 @@ impl KeyPair {
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
         data: &[u8],
-    ) -> Result<KeyPair, Error> {
+    ) -> Result<Keypair, Error> {
         if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
             return Err(Error::InvalidSecretKey);
         }
 
         unsafe {
-            let mut kp = ffi::KeyPair::new();
+            let mut kp = ffi::Keypair::new();
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
-                Ok(KeyPair(kp))
+                Ok(Keypair(kp))
             } else {
                 Err(Error::InvalidSecretKey)
             }
         }
     }
 
-    /// Creates a [`KeyPair`] directly from a secret key string.
+    /// Creates a [`Keypair`] directly from a secret key string.
     ///
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
     #[inline]
-    pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<KeyPair, Error> {
+    pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) =>
-                KeyPair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
+                Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
             _ => Err(Error::InvalidPublicKey),
         }
     }
 
-    /// Creates a [`KeyPair`] directly from a secret key string and the global [`SECP256K1`] context.
+    /// Creates a [`Keypair`] directly from a secret key string and the global [`SECP256K1`] context.
     ///
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn from_seckey_str_global(s: &str) -> Result<KeyPair, Error> {
-        KeyPair::from_seckey_str(SECP256K1, s)
+    pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
+        Keypair::from_seckey_str(SECP256K1, s)
     }
 
     /// Generates a new random secret key.
@@ -875,32 +875,32 @@ impl KeyPair {
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey, KeyPair};
+    /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
+    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
     /// # }
     /// ```
     #[inline]
     #[cfg(feature = "rand")]
-    pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> KeyPair {
+    pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> Keypair {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
-            let mut keypair = ffi::KeyPair::new();
+            let mut keypair = ffi::Keypair::new();
             while ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut keypair, data.as_c_ptr())
                 == 0
             {
                 data = crate::random_32_bytes(rng);
             }
-            KeyPair(keypair)
+            Keypair(keypair)
         }
     }
 
     /// Generates a new random secret key using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand"))]
-    pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> KeyPair {
-        KeyPair::new(SECP256K1, rng)
+    pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> Keypair {
+        Keypair::new(SECP256K1, rng)
     }
 
     /// Returns the secret bytes for this key pair.
@@ -922,13 +922,13 @@ impl KeyPair {
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
+    /// use secp256k1::{Secp256k1, Keypair, Scalar};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-    /// let tweaked = key_pair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let tweaked = keypair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
     // TODO: Add checked implementation
@@ -937,7 +937,7 @@ impl KeyPair {
         mut self,
         secp: &Secp256k1<C>,
         tweak: &Scalar,
-    ) -> Result<KeyPair, Error> {
+    ) -> Result<Keypair, Error> {
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx.as_ptr(),
@@ -952,19 +952,19 @@ impl KeyPair {
         }
     }
 
-    /// Returns the [`SecretKey`] for this [`KeyPair`].
+    /// Returns the [`SecretKey`] for this [`Keypair`].
     ///
     /// This is equivalent to using [`SecretKey::from_keypair`].
     #[inline]
     pub fn secret_key(&self) -> SecretKey { SecretKey::from_keypair(self) }
 
-    /// Returns the [`PublicKey`] for this [`KeyPair`].
+    /// Returns the [`PublicKey`] for this [`Keypair`].
     ///
     /// This is equivalent to using [`PublicKey::from_keypair`].
     #[inline]
     pub fn public_key(&self) -> PublicKey { PublicKey::from_keypair(self) }
 
-    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`KeyPair`].
+    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`Keypair`].
     ///
     /// This is equivalent to using [`XOnlyPublicKey::from_keypair`].
     #[inline]
@@ -989,27 +989,27 @@ impl KeyPair {
     pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
 }
 
-impl From<KeyPair> for SecretKey {
+impl From<Keypair> for SecretKey {
     #[inline]
-    fn from(pair: KeyPair) -> Self { SecretKey::from_keypair(&pair) }
+    fn from(pair: Keypair) -> Self { SecretKey::from_keypair(&pair) }
 }
 
-impl<'a> From<&'a KeyPair> for SecretKey {
+impl<'a> From<&'a Keypair> for SecretKey {
     #[inline]
-    fn from(pair: &'a KeyPair) -> Self { SecretKey::from_keypair(pair) }
+    fn from(pair: &'a Keypair) -> Self { SecretKey::from_keypair(pair) }
 }
 
-impl From<KeyPair> for PublicKey {
+impl From<Keypair> for PublicKey {
     #[inline]
-    fn from(pair: KeyPair) -> Self { PublicKey::from_keypair(&pair) }
+    fn from(pair: Keypair) -> Self { PublicKey::from_keypair(&pair) }
 }
 
-impl<'a> From<&'a KeyPair> for PublicKey {
+impl<'a> From<&'a Keypair> for PublicKey {
     #[inline]
-    fn from(pair: &'a KeyPair) -> Self { PublicKey::from_keypair(pair) }
+    fn from(pair: &'a Keypair) -> Self { PublicKey::from_keypair(pair) }
 }
 
-impl str::FromStr for KeyPair {
+impl str::FromStr for Keypair {
     type Err = Error;
 
     #[allow(unused_variables, unreachable_code)] // When built with no default features.
@@ -1024,12 +1024,12 @@ impl str::FromStr for KeyPair {
         let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
 
         #[allow(clippy::needless_borrow)]
-        KeyPair::from_seckey_str(&ctx, s)
+        Keypair::from_seckey_str(&ctx, s)
     }
 }
 
 #[cfg(feature = "serde")]
-impl serde::Serialize for KeyPair {
+impl serde::Serialize for Keypair {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
@@ -1049,15 +1049,15 @@ impl serde::Serialize for KeyPair {
 
 #[cfg(feature = "serde")]
 #[allow(unused_variables)] // For `data` under some feature combinations (the unconditional panic below).
-#[allow(unreachable_code)] // For `KeyPair::from_seckey_slice` after unconditional panic.
-impl<'de> serde::Deserialize<'de> for KeyPair {
+#[allow(unreachable_code)] // For `Keypair::from_seckey_slice` after unconditional panic.
+impl<'de> serde::Deserialize<'de> for Keypair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
-                "a hex string representing 32 byte KeyPair",
+                "a hex string representing 32 byte Keypair",
             ))
         } else {
-            let visitor = super::serde_util::Tuple32Visitor::new("raw 32 bytes KeyPair", |data| {
+            let visitor = super::serde_util::Tuple32Visitor::new("raw 32 bytes Keypair", |data| {
                 #[cfg(feature = "global-context")]
                 let ctx = SECP256K1;
 
@@ -1068,15 +1068,15 @@ impl<'de> serde::Deserialize<'de> for KeyPair {
                 let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("cannot deserialize key pair without a context (please enable either the global-context or alloc feature)");
 
                 #[allow(clippy::needless_borrow)]
-                KeyPair::from_seckey_slice(&ctx, data)
+                Keypair::from_seckey_slice(&ctx, data)
             });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
     }
 }
 
-impl CPtr for KeyPair {
-    type Target = ffi::KeyPair;
+impl CPtr for Keypair {
+    type Target = ffi::Keypair;
     fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
@@ -1096,11 +1096,11 @@ impl CPtr for KeyPair {
 ///
 /// ```
 /// # #[cfg(feature =  "rand-std")] {
-/// use secp256k1::{rand, Secp256k1, KeyPair, XOnlyPublicKey};
+/// use secp256k1::{rand, Secp256k1, Keypair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
-/// let key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-/// let xonly = XOnlyPublicKey::from_keypair(&key_pair);
+/// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+/// let xonly = XOnlyPublicKey::from_keypair(&keypair);
 /// # }
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
@@ -1151,7 +1151,7 @@ impl XOnlyPublicKey {
 
     /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for `keypair`.
     #[inline]
-    pub fn from_keypair(keypair: &KeyPair) -> (XOnlyPublicKey, Parity) {
+    pub fn from_keypair(keypair: &Keypair) -> (XOnlyPublicKey, Parity) {
         let mut pk_parity = 0;
         unsafe {
             let mut xonly_pk = ffi::XOnlyPublicKey::new();
@@ -1228,13 +1228,13 @@ impl XOnlyPublicKey {
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{Secp256k1, KeyPair, Scalar, XOnlyPublicKey};
+    /// use secp256k1::{Secp256k1, Keypair, Scalar, XOnlyPublicKey};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-    /// let (xonly, _parity) = key_pair.x_only_public_key();
+    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let (xonly, _parity) = keypair.x_only_public_key();
     /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
@@ -1288,13 +1288,13 @@ impl XOnlyPublicKey {
     ///
     /// ```
     /// # #[cfg(feature =  "rand-std")] {
-    /// use secp256k1::{Secp256k1, KeyPair, Scalar};
+    /// use secp256k1::{Secp256k1, Keypair, Scalar};
     ///
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut key_pair = KeyPair::new(&secp, &mut rand::thread_rng());
-    /// let (mut public_key, _) = key_pair.x_only_public_key();
+    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let (mut public_key, _) = keypair.x_only_public_key();
     /// let original = public_key;
     /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// assert!(original.tweak_add_check(&secp, &tweaked, parity, tweak));
@@ -1550,7 +1550,7 @@ mod test {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{KeyPair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
+    use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
 
@@ -1607,7 +1607,7 @@ mod test {
     #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
     fn erased_keypair_is_valid() {
         let s = Secp256k1::new();
-        let kp = KeyPair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+        let kp = Keypair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
             .expect("valid secret key");
         let mut kp2 = kp;
         kp2.non_secure_erase();
@@ -2159,7 +2159,7 @@ mod test {
         for _ in 0..10 {
             let tweak = Scalar::random();
 
-            let kp = KeyPair::new(&s, &mut rand::thread_rng());
+            let kp = Keypair::new(&s, &mut rand::thread_rng());
             let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
             let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
@@ -2199,7 +2199,7 @@ mod test {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{assert_tokens, Configure, Token};
 
-        use crate::key::KeyPair;
+        use crate::key::Keypair;
         use crate::SECP256K1;
 
         #[rustfmt::skip]
@@ -2211,7 +2211,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let sk = KeyPair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
+        let sk = Keypair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
         #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
@@ -2228,7 +2228,7 @@ mod test {
     }
 
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
-    fn keys() -> (SecretKey, PublicKey, KeyPair, XOnlyPublicKey) {
+    fn keys() -> (SecretKey, PublicKey, Keypair, XOnlyPublicKey) {
         let secp = Secp256k1::new();
 
         #[rustfmt::skip]
@@ -2253,7 +2253,7 @@ mod test {
 
         let sk = SecretKey::from_slice(&SK_BYTES).expect("failed to parse sk bytes");
         let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
-        let kp = KeyPair::from_secret_key(&secp, &sk);
+        let kp = Keypair::from_secret_key(&secp, &sk);
         let xonly = XOnlyPublicKey::from_slice(&PK_BYTES).expect("failed to get xonly from slice");
 
         (sk, pk, kp, xonly)
@@ -2311,7 +2311,7 @@ mod test {
         assert_eq!(got, want)
     }
 
-    // SecretKey -> KeyPair -> SecretKey
+    // SecretKey -> Keypair -> SecretKey
     #[test]
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_secret_key_via_keypair() {
@@ -2324,7 +2324,7 @@ mod test {
         assert_eq!(back, sk)
     }
 
-    // KeyPair -> SecretKey -> KeyPair
+    // Keypair -> SecretKey -> Keypair
     #[test]
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn roundtrip_keypair_via_secret_key() {
@@ -2391,7 +2391,7 @@ mod test {
 
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        let kp = KeyPair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
+        let kp = Keypair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
         let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
 
         #[rustfmt::skip]
@@ -2413,10 +2413,10 @@ mod test {
     #[cfg(feature = "rand-std")]
     fn test_keypair_from_str() {
         let ctx = crate::Secp256k1::new();
-        let keypair = KeyPair::new(&ctx, &mut rand::thread_rng());
+        let keypair = Keypair::new(&ctx, &mut rand::thread_rng());
         let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
         let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
-        let parsed_key = KeyPair::from_str(s).unwrap();
+        let parsed_key = Keypair::from_str(s).unwrap();
         assert_eq!(parsed_key, keypair);
     }
 
@@ -2425,7 +2425,7 @@ mod test {
     fn test_keypair_deserialize_serde() {
         let ctx = crate::Secp256k1::new();
         let sec_key_str = "4242424242424242424242424242424242424242424242424242424242424242";
-        let keypair = KeyPair::from_seckey_str(&ctx, sec_key_str).unwrap();
+        let keypair = Keypair::from_seckey_str(&ctx, sec_key_str).unwrap();
 
         serde_test::assert_tokens(&keypair.readable(), &[Token::String(sec_key_str)]);
 
@@ -2442,7 +2442,7 @@ mod test {
     #[cfg(not(any(feature = "alloc", feature = "global-context")))]
     fn test_parse_keypair_no_alloc_panic() {
         let key_hex = "4242424242424242424242424242424242424242424242424242424242424242";
-        let _: KeyPair = key_hex.parse().expect("We shouldn't even get this far");
+        let _: Keypair = key_hex.parse().expect("We shouldn't even get this far");
     }
 }
 

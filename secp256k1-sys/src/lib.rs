@@ -395,11 +395,11 @@ impl core::hash::Hash for XOnlyPublicKey {
 #[repr(C)]
 #[derive(Copy, Clone)]
 #[cfg_attr(secp256k1_fuzz, derive(PartialEq, Eq, PartialOrd, Ord, Hash))]
-pub struct KeyPair([c_uchar; 96]);
-impl_array_newtype!(KeyPair, c_uchar, 96);
-impl_raw_debug!(KeyPair);
+pub struct Keypair([c_uchar; 96]);
+impl_array_newtype!(Keypair, c_uchar, 96);
+impl_raw_debug!(Keypair);
 
-impl KeyPair {
+impl Keypair {
     /// Creates an "uninitialized" FFI keypair which is zeroed out
     ///
     /// # Safety
@@ -421,7 +421,7 @@ impl KeyPair {
     /// that you obtained from the FFI interface of the same version of this
     /// library.
     pub unsafe fn from_array_unchecked(data: [c_uchar; 96]) -> Self {
-        KeyPair(data)
+        Keypair(data)
     }
 
     /// Returns the underlying FFI opaque representation of the x-only public key
@@ -480,15 +480,15 @@ pub fn non_secure_erase_impl<T>(dst: &mut T, src: T) {
 }
 
 #[cfg(not(secp256k1_fuzz))]
-impl PartialOrd for KeyPair {
-    fn partial_cmp(&self, other: &KeyPair) -> Option<core::cmp::Ordering> {
+impl PartialOrd for Keypair {
+    fn partial_cmp(&self, other: &Keypair) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 #[cfg(not(secp256k1_fuzz))]
-impl Ord for KeyPair {
-    fn cmp(&self, other: &KeyPair) -> core::cmp::Ordering {
+impl Ord for Keypair {
+    fn cmp(&self, other: &Keypair) -> core::cmp::Ordering {
         let this = self.public_key();
         let that = other.public_key();
         this.cmp(&that)
@@ -496,17 +496,17 @@ impl Ord for KeyPair {
 }
 
 #[cfg(not(secp256k1_fuzz))]
-impl PartialEq for KeyPair {
+impl PartialEq for Keypair {
     fn eq(&self, other: &Self) -> bool {
         self.cmp(other) == core::cmp::Ordering::Equal
     }
 }
 
 #[cfg(not(secp256k1_fuzz))]
-impl Eq for KeyPair {}
+impl Eq for Keypair {}
 
 #[cfg(not(secp256k1_fuzz))]
-impl core::hash::Hash for KeyPair {
+impl core::hash::Hash for Keypair {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         // To hash the key pair we just hash the serialized public key. Since any change to the
         // secret key would also be a change to the public key this is a valid one way function from
@@ -592,13 +592,13 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_8_1_keypair_sec")]
     pub fn secp256k1_keypair_sec(cx: *const Context,
                                  output_seckey: *mut c_uchar,
-                                 keypair: *const KeyPair)
+                                 keypair: *const Keypair)
                                  -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_8_1_keypair_pub")]
     pub fn secp256k1_keypair_pub(cx: *const Context,
                                  output_pubkey: *mut PublicKey,
-                                 keypair: *const KeyPair)
+                                 keypair: *const Keypair)
                                  -> c_int;
 }
 
@@ -702,7 +702,7 @@ extern "C" {
         cx: *const Context,
         sig: *mut c_uchar,
         msg32: *const c_uchar,
-        keypair: *const KeyPair,
+        keypair: *const Keypair,
         aux_rand32: *const c_uchar
     ) -> c_int;
 
@@ -713,7 +713,7 @@ extern "C" {
         sig: *mut c_uchar,
         msg: *const c_uchar,
         msg_len: size_t,
-        keypair: *const KeyPair,
+        keypair: *const Keypair,
         extra_params: *const SchnorrSigExtraParams,
     ) -> c_int;
 
@@ -730,7 +730,7 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_8_1_keypair_create")]
     pub fn secp256k1_keypair_create(
         cx: *const Context,
-        keypair: *mut KeyPair,
+        keypair: *mut Keypair,
         seckey: *const c_uchar,
     ) -> c_int;
 
@@ -776,13 +776,13 @@ extern "C" {
         cx: *const Context,
         pubkey: *mut XOnlyPublicKey,
         pk_parity: *mut c_int,
-        keypair: *const KeyPair
+        keypair: *const Keypair
     ) -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_8_1_keypair_xonly_tweak_add")]
     pub fn secp256k1_keypair_xonly_tweak_add(
         cx: *const Context,
-        keypair: *mut KeyPair,
+        keypair: *mut Keypair,
         tweak32: *const c_uchar,
     ) -> c_int;
 
@@ -1316,12 +1316,12 @@ mod fuzz_dummy {
         cx: *const Context,
         sig64: *mut c_uchar,
         msg32: *const c_uchar,
-        keypair: *const KeyPair,
+        keypair: *const Keypair,
         _aux_rand32: *const c_uchar
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_SIGN);
         // Check context is built for signing
-        let mut new_kp = KeyPair::new();
+        let mut new_kp = Keypair::new();
         if secp256k1_keypair_create(cx, &mut new_kp, (*keypair).0.as_ptr()) != 1 {
             return 0;
         }
@@ -1341,7 +1341,7 @@ mod fuzz_dummy {
         sig: *mut c_uchar,
         msg: *const c_uchar,
         _msg_len: size_t,
-        keypair: *const KeyPair,
+        keypair: *const Keypair,
         _extra_params: *const SchnorrSigExtraParams,
     ) -> c_int {
         secp256k1_schnorrsig_sign(cx, sig, msg, keypair, ptr::null())
@@ -1350,7 +1350,7 @@ mod fuzz_dummy {
     // Extra keys
     pub unsafe fn secp256k1_keypair_create(
         cx: *const Context,
-        keypair: *mut KeyPair,
+        keypair: *mut Keypair,
         seckey: *const c_uchar,
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_SIGN);
@@ -1419,7 +1419,7 @@ mod fuzz_dummy {
         cx: *const Context,
         pubkey: *mut XOnlyPublicKey,
         pk_parity: *mut c_int,
-        keypair: *const KeyPair
+        keypair: *const Keypair
     ) -> c_int {
         check_context_flags(cx, 0);
         if !pk_parity.is_null() {
@@ -1431,7 +1431,7 @@ mod fuzz_dummy {
 
     pub unsafe fn secp256k1_keypair_xonly_tweak_add(
         cx: *const Context,
-        keypair: *mut KeyPair,
+        keypair: *mut Keypair,
         tweak32: *const c_uchar,
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_VERIFY);

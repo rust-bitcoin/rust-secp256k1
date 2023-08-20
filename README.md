@@ -49,7 +49,7 @@ bench marks use: `RUSTFLAGS='--cfg=bench' cargo +nightly bench --features=recove
 
 ### A note on `non_secure_erase`
 
-This crate's secret types (`SecretKey`, `KeyPair`, `SharedSecret`, `Scalar`, and `DisplaySecret`)
+This crate's secret types (`SecretKey`, `Keypair`, `SharedSecret`, `Scalar`, and `DisplaySecret`)
 have a method called `non_secure_erase` that *attempts* to overwrite the contained secret. This
 method is provided to assist other libraries in building secure secret erasure. However, this
 library makes no guarantees about the security of using `non_secure_erase`. In particular,
