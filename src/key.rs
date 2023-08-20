@@ -21,7 +21,9 @@ use crate::{
 #[cfg(feature = "hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
-/// Secret 256-bit key used as `x` in an ECDSA signature.
+/// Secret key - a 256-bit key used to create ECDSA and Taproot signatures.
+///
+/// This value should be generated using a [cryptographically secure pseudorandom number generator].
 ///
 /// # Side channel attacks
 ///
@@ -50,6 +52,7 @@ use crate::{hashes, ThirtyTwoByteHash};
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
+/// [cryptographically secure pseudorandom number generator]: https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator
 #[derive(Copy, Clone)]
 pub struct SecretKey([u8; constants::SECRET_KEY_SIZE]);
 impl_display_secret!(SecretKey);
@@ -117,7 +120,7 @@ impl str::FromStr for SecretKey {
     }
 }
 
-/// A Secp256k1 public key, used for verification of signatures.
+/// Public key - used to verify ECDSA signatures and to do Taproot tweaks.
 ///
 /// # Serde support
 ///
@@ -1082,7 +1085,7 @@ impl CPtr for Keypair {
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
 
-/// An x-only public key, used for verification of schnorr signatures and serialized according to BIP-340.
+/// An x-only public key, used for verification of Taproot signatures and serialized according to BIP-340.
 ///
 /// # Serde support
 ///
