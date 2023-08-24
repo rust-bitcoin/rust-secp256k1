@@ -1,6 +1,8 @@
-# Unreleased
+# 0.9.0 - 2023-10-23
 
-* Bump MSRV to 1.48
+* Add bindings to the ElligatorSwift implementation [#627](https://github.com/rust-bitcoin/rust-secp256k1/pull/627)
+* Update vendored lib secp256k1 to v0.4.0 [#653](https://github.com/rust-bitcoin/rust-secp256k1/pull/653)
+* Bump MSRV to 1.48 [#595](https://github.com/rust-bitcoin/rust-secp256k1/pull/595)
 
 # 0.8.1 - 2023-03-16
 

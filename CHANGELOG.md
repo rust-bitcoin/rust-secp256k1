@@ -1,6 +1,10 @@
-# Unreleased
+# 0.28.0 - 2023-10-23
 
-* Bump MSRV to 1.48
+* Add bindings to the ElligatorSwift implementation [#627](https://github.com/rust-bitcoin/rust-secp256k1/pull/627)
+* Depend on recent release of `bitcoin_hashes` v0.13.0 [#621](https://github.com/rust-bitcoin/rust-secp256k1/pull/621)
+* Add a verify function to `PublicKey` [#618](https://github.com/rust-bitcoin/rust-secp256k1/pull/618)
+* Add serialize function for schnorr::Signature [#607](https://github.com/rust-bitcoin/rust-secp256k1/pull/607)
+* Bump MSRV to 1.48 [#595](https://github.com/rust-bitcoin/rust-secp256k1/pull/595)
 * Remove implementations of `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash` from the
   `impl_array_newtype` macro. Users will now need to derive these traits if they are wanted.
 
