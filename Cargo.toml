@@ -40,7 +40,7 @@ serde = { version = "1.0.103", default-features = false, optional = true }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
 # the respective -std feature e.g., hashes-std
-hashes = { package = "bitcoin_hashes", version = "0.12", default-features = false, optional = true }
+hashes = { package = "bitcoin_hashes", version = ">= 0.12, <= 0.13", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
 [dev-dependencies]
