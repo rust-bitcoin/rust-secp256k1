@@ -138,7 +138,7 @@ static void rustsecp256k1_v0_9_0_sha256_write(rustsecp256k1_v0_9_0_sha256 *hash,
     }
     if (len) {
         /* Fill the buffer with what remains. */
-        memcpy(((unsigned char*)hash->buf) + bufsize, data, len);
+        memcpy(hash->buf + bufsize, data, len);
     }
 }
 

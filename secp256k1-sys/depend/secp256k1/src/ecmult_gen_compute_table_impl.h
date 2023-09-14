@@ -22,6 +22,9 @@ static void rustsecp256k1_v0_9_0_ecmult_gen_compute_table(rustsecp256k1_v0_9_0_g
     rustsecp256k1_v0_9_0_gej nums_gej;
     int i, j;
 
+    VERIFY_CHECK(g > 0);
+    VERIFY_CHECK(n > 0);
+
     /* get the generator */
     rustsecp256k1_v0_9_0_gej_set_ge(&gj, gen);
 

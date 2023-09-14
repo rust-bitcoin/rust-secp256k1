@@ -51,6 +51,19 @@ static void print_buf_plain(const unsigned char *buf, size_t len) {
 #  define SECP256K1_INLINE inline
 # endif
 
+/** Assert statically that expr is an integer constant expression, and run stmt.
+ *
+ * Useful for example to enforce that magnitude arguments are constant.
+ */
+#define ASSERT_INT_CONST_AND_DO(expr, stmt) do { \
+    switch(42) { \
+        case /* ERROR: integer argument is not constant */ expr: \
+            break; \
+        default: ; \
+    } \
+    stmt; \
+} while(0)
+
 typedef struct {
     void (*fn)(const char *text, void* data);
     const void* data;
@@ -335,6 +348,30 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_write_be32(unsigned char* p, u
     p[2] = x >>  8;
     p[1] = x >> 16;
     p[0] = x >> 24;
+}
+
+/* Read a uint64_t in big endian */
+SECP256K1_INLINE static uint64_t rustsecp256k1_v0_9_0_read_be64(const unsigned char* p) {
+    return (uint64_t)p[0] << 56 |
+           (uint64_t)p[1] << 48 |
+           (uint64_t)p[2] << 40 |
+           (uint64_t)p[3] << 32 |
+           (uint64_t)p[4] << 24 |
+           (uint64_t)p[5] << 16 |
+           (uint64_t)p[6] << 8  |
+           (uint64_t)p[7];
+}
+
+/* Write a uint64_t in big endian */
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_write_be64(unsigned char* p, uint64_t x) {
+    p[7] = x;
+    p[6] = x >>  8;
+    p[5] = x >> 16;
+    p[4] = x >> 24;
+    p[3] = x >> 32;
+    p[2] = x >> 40;
+    p[1] = x >> 48;
+    p[0] = x >> 56;
 }
 
 #endif /* SECP256K1_UTIL_H */

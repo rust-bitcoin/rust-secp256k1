@@ -99,4 +99,7 @@ static void rustsecp256k1_v0_9_0_scalar_mul_shift_var(rustsecp256k1_v0_9_0_scala
 /** If flag is true, set *r equal to *a; otherwise leave it. Constant-time.  Both *r and *a must be initialized.*/
 static void rustsecp256k1_v0_9_0_scalar_cmov(rustsecp256k1_v0_9_0_scalar *r, const rustsecp256k1_v0_9_0_scalar *a, int flag);
 
+/** Check invariants on a scalar (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_9_0_scalar_verify(const rustsecp256k1_v0_9_0_scalar *r);
+
 #endif /* SECP256K1_SCALAR_H */

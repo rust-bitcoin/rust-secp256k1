@@ -87,7 +87,6 @@ static void rustsecp256k1_v0_9_0_ecmult_gen_blind(rustsecp256k1_v0_9_0_ecmult_ge
     rustsecp256k1_v0_9_0_fe s;
     unsigned char nonce32[32];
     rustsecp256k1_v0_9_0_rfc6979_hmac_sha256 rng;
-    int overflow;
     unsigned char keydata[64];
     if (seed32 == NULL) {
         /* When seed is NULL, reset the initial point and blinding value. */
@@ -106,11 +105,9 @@ static void rustsecp256k1_v0_9_0_ecmult_gen_blind(rustsecp256k1_v0_9_0_ecmult_ge
     memcpy(keydata + 32, seed32, 32);
     rustsecp256k1_v0_9_0_rfc6979_hmac_sha256_initialize(&rng, keydata, 64);
     memset(keydata, 0, sizeof(keydata));
-    /* Accept unobservably small non-uniformity. */
     rustsecp256k1_v0_9_0_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
-    overflow = !rustsecp256k1_v0_9_0_fe_set_b32_limit(&s, nonce32);
-    overflow |= rustsecp256k1_v0_9_0_fe_is_zero(&s);
-    rustsecp256k1_v0_9_0_fe_cmov(&s, &rustsecp256k1_v0_9_0_fe_one, overflow);
+    rustsecp256k1_v0_9_0_fe_set_b32_mod(&s, nonce32);
+    rustsecp256k1_v0_9_0_fe_cmov(&s, &rustsecp256k1_v0_9_0_fe_one, rustsecp256k1_v0_9_0_fe_normalizes_to_zero(&s));
     /* Randomize the projection to defend against multiplier sidechannels.
        Do this before our own call to rustsecp256k1_v0_9_0_ecmult_gen below. */
     rustsecp256k1_v0_9_0_gej_rescale(&ctx->initial, &s);

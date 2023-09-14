@@ -23,28 +23,15 @@ SECP256K1_INLINE static int rustsecp256k1_v0_9_0_fe_equal(const rustsecp256k1_v0
 #ifdef VERIFY
     rustsecp256k1_v0_9_0_fe_verify(a);
     rustsecp256k1_v0_9_0_fe_verify(b);
-    VERIFY_CHECK(a->magnitude <= 1);
-    VERIFY_CHECK(b->magnitude <= 31);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 1);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(b, 31);
 #endif
     rustsecp256k1_v0_9_0_fe_negate(&na, a, 1);
     rustsecp256k1_v0_9_0_fe_add(&na, b);
     return rustsecp256k1_v0_9_0_fe_normalizes_to_zero(&na);
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_9_0_fe_equal_var(const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe *b) {
-    rustsecp256k1_v0_9_0_fe na;
-#ifdef VERIFY
-    rustsecp256k1_v0_9_0_fe_verify(a);
-    rustsecp256k1_v0_9_0_fe_verify(b);
-    VERIFY_CHECK(a->magnitude <= 1);
-    VERIFY_CHECK(b->magnitude <= 31);
-#endif
-    rustsecp256k1_v0_9_0_fe_negate(&na, a, 1);
-    rustsecp256k1_v0_9_0_fe_add(&na, b);
-    return rustsecp256k1_v0_9_0_fe_normalizes_to_zero_var(&na);
-}
-
-static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a) {
+static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT r, const rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT a) {
     /** Given that p is congruent to 3 mod 4, we can compute the square root of
      *  a mod p as the (p+1)/4'th power of a.
      *
@@ -60,7 +47,7 @@ static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe *r, const rustse
 #ifdef VERIFY
     VERIFY_CHECK(r != a);
     rustsecp256k1_v0_9_0_fe_verify(a);
-    VERIFY_CHECK(a->magnitude <= 8);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 8);
 #endif
 
     /** The binary representation of (p + 1)/4 has 3 blocks of 1s, with lengths in
@@ -151,7 +138,7 @@ static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe *r, const rustse
     if (!ret) {
         rustsecp256k1_v0_9_0_fe_negate(&t1, &t1, 1);
         rustsecp256k1_v0_9_0_fe_normalize_var(&t1);
-        VERIFY_CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&t1, a));
+        VERIFY_CHECK(rustsecp256k1_v0_9_0_fe_equal(&t1, a));
     }
 #endif
     return ret;
@@ -159,17 +146,24 @@ static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe *r, const rustse
 
 #ifndef VERIFY
 static void rustsecp256k1_v0_9_0_fe_verify(const rustsecp256k1_v0_9_0_fe *a) { (void)a; }
+static void rustsecp256k1_v0_9_0_fe_verify_magnitude(const rustsecp256k1_v0_9_0_fe *a, int m) { (void)a; (void)m; }
 #else
 static void rustsecp256k1_v0_9_0_fe_impl_verify(const rustsecp256k1_v0_9_0_fe *a);
 static void rustsecp256k1_v0_9_0_fe_verify(const rustsecp256k1_v0_9_0_fe *a) {
     /* Magnitude between 0 and 32. */
-    VERIFY_CHECK((a->magnitude >= 0) && (a->magnitude <= 32));
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 32);
     /* Normalized is 0 or 1. */
     VERIFY_CHECK((a->normalized == 0) || (a->normalized == 1));
     /* If normalized, magnitude must be 0 or 1. */
-    if (a->normalized) VERIFY_CHECK(a->magnitude <= 1);
+    if (a->normalized) rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 1);
     /* Invoke implementation-specific checks. */
     rustsecp256k1_v0_9_0_fe_impl_verify(a);
+}
+
+static void rustsecp256k1_v0_9_0_fe_verify_magnitude(const rustsecp256k1_v0_9_0_fe *a, int m) {
+    VERIFY_CHECK(m >= 0);
+    VERIFY_CHECK(m <= 32);
+    VERIFY_CHECK(a->magnitude <= m);
 }
 
 static void rustsecp256k1_v0_9_0_fe_impl_normalize(rustsecp256k1_v0_9_0_fe *r);
@@ -289,23 +283,23 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_get_b32(unsigned char *r, c
     rustsecp256k1_v0_9_0_fe_impl_get_b32(r, a);
 }
 
-static void rustsecp256k1_v0_9_0_fe_impl_negate(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m);
-SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_negate(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m) {
+static void rustsecp256k1_v0_9_0_fe_impl_negate_unchecked(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m);
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_negate_unchecked(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m) {
     rustsecp256k1_v0_9_0_fe_verify(a);
     VERIFY_CHECK(m >= 0 && m <= 31);
-    VERIFY_CHECK(a->magnitude <= m);
-    rustsecp256k1_v0_9_0_fe_impl_negate(r, a, m);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, m);
+    rustsecp256k1_v0_9_0_fe_impl_negate_unchecked(r, a, m);
     r->magnitude = m + 1;
     r->normalized = 0;
     rustsecp256k1_v0_9_0_fe_verify(r);
 }
 
-static void rustsecp256k1_v0_9_0_fe_impl_mul_int(rustsecp256k1_v0_9_0_fe *r, int a);
-SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_mul_int(rustsecp256k1_v0_9_0_fe *r, int a) {
+static void rustsecp256k1_v0_9_0_fe_impl_mul_int_unchecked(rustsecp256k1_v0_9_0_fe *r, int a);
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_mul_int_unchecked(rustsecp256k1_v0_9_0_fe *r, int a) {
     rustsecp256k1_v0_9_0_fe_verify(r);
     VERIFY_CHECK(a >= 0 && a <= 32);
     VERIFY_CHECK(a*r->magnitude <= 32);
-    rustsecp256k1_v0_9_0_fe_impl_mul_int(r, a);
+    rustsecp256k1_v0_9_0_fe_impl_mul_int_unchecked(r, a);
     r->magnitude *= a;
     r->normalized = 0;
     rustsecp256k1_v0_9_0_fe_verify(r);
@@ -326,8 +320,8 @@ static void rustsecp256k1_v0_9_0_fe_impl_mul(rustsecp256k1_v0_9_0_fe *r, const r
 SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_mul(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT b) {
     rustsecp256k1_v0_9_0_fe_verify(a);
     rustsecp256k1_v0_9_0_fe_verify(b);
-    VERIFY_CHECK(a->magnitude <= 8);
-    VERIFY_CHECK(b->magnitude <= 8);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 8);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(b, 8);
     VERIFY_CHECK(r != b);
     VERIFY_CHECK(a != b);
     rustsecp256k1_v0_9_0_fe_impl_mul(r, a, b);
@@ -339,7 +333,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_mul(rustsecp256k1_v0_9_0_fe
 static void rustsecp256k1_v0_9_0_fe_impl_sqr(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a);
 SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_sqr(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a) {
     rustsecp256k1_v0_9_0_fe_verify(a);
-    VERIFY_CHECK(a->magnitude <= 8);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(a, 8);
     rustsecp256k1_v0_9_0_fe_impl_sqr(r, a);
     r->magnitude = 1;
     r->normalized = 0;
@@ -352,10 +346,8 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_cmov(rustsecp256k1_v0_9_0_f
     rustsecp256k1_v0_9_0_fe_verify(a);
     rustsecp256k1_v0_9_0_fe_verify(r);
     rustsecp256k1_v0_9_0_fe_impl_cmov(r, a, flag);
-    if (flag) {
-        r->magnitude = a->magnitude;
-        r->normalized = a->normalized;
-    }
+    if (a->magnitude > r->magnitude) r->magnitude = a->magnitude;
+    if (!a->normalized) r->normalized = 0;
     rustsecp256k1_v0_9_0_fe_verify(r);
 }
 
@@ -420,7 +412,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_get_bounds(rustsecp256k1_v0
 static void rustsecp256k1_v0_9_0_fe_impl_half(rustsecp256k1_v0_9_0_fe *r);
 SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_half(rustsecp256k1_v0_9_0_fe *r) {
     rustsecp256k1_v0_9_0_fe_verify(r);
-    VERIFY_CHECK(r->magnitude < 32);
+    rustsecp256k1_v0_9_0_fe_verify_magnitude(r, 31);
     rustsecp256k1_v0_9_0_fe_impl_half(r);
     r->magnitude = (r->magnitude >> 1) + 1;
     r->normalized = 0;

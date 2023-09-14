@@ -20,17 +20,6 @@ static void nonce_function_bip340_bitflip(unsigned char **args, size_t n_flip, s
     CHECK(rustsecp256k1_v0_9_0_memcmp_var(nonces[0], nonces[1], 32) != 0);
 }
 
-/* Tests for the equality of two sha256 structs. This function only produces a
- * correct result if an integer multiple of 64 many bytes have been written
- * into the hash functions. */
-static void test_sha256_eq(const rustsecp256k1_v0_9_0_sha256 *sha1, const rustsecp256k1_v0_9_0_sha256 *sha2) {
-    /* Is buffer fully consumed? */
-    CHECK((sha1->bytes & 0x3F) == 0);
-
-    CHECK(sha1->bytes == sha2->bytes);
-    CHECK(rustsecp256k1_v0_9_0_memcmp_var(sha1->s, sha2->s, sizeof(sha1->s)) == 0);
-}
-
 static void run_nonce_function_bip340_tests(void) {
     unsigned char tag[13] = "BIP0340/nonce";
     unsigned char aux_tag[11] = "BIP0340/aux";

@@ -138,12 +138,10 @@ static void bench_ecmult_1p_teardown(void* arg, int iters) {
 
 static void bench_ecmult_0p_g(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
-    rustsecp256k1_v0_9_0_scalar zero;
     int i;
 
-    rustsecp256k1_v0_9_0_scalar_set_int(&zero, 0);
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_9_0_ecmult(&data->output[i], NULL, &zero, &data->scalars[(data->offset1+i) % POINTS]);
+        rustsecp256k1_v0_9_0_ecmult(&data->output[i], NULL, &rustsecp256k1_v0_9_0_scalar_zero, &data->scalars[(data->offset1+i) % POINTS]);
     }
 }
 
@@ -246,7 +244,6 @@ static void generate_scalar(uint32_t num, rustsecp256k1_v0_9_0_scalar* scalar) {
 
 static void run_ecmult_multi_bench(bench_data* data, size_t count, int includes_g, int num_iters) {
     char str[32];
-    static const rustsecp256k1_v0_9_0_scalar zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
     size_t iters = 1 + num_iters / count;
     size_t iter;
 
@@ -264,7 +261,7 @@ static void run_ecmult_multi_bench(bench_data* data, size_t count, int includes_
             rustsecp256k1_v0_9_0_scalar_add(&total, &total, &tmp);
         }
         rustsecp256k1_v0_9_0_scalar_negate(&total, &total);
-        rustsecp256k1_v0_9_0_ecmult(&data->expected_output[iter], NULL, &zero, &total);
+        rustsecp256k1_v0_9_0_ecmult(&data->expected_output[iter], NULL, &rustsecp256k1_v0_9_0_scalar_zero, &total);
     }
 
     /* Run the benchmark. */

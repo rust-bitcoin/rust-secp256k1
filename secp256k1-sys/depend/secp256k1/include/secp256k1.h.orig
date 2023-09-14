@@ -283,6 +283,9 @@ SECP256K1_API void rustsecp256k1_v0_9_0_selftest(void);
  *  Do not create a new context object for each operation, as construction and
  *  randomization can take non-negligible time.
  */
+SECP256K1_API rustsecp256k1_v0_9_0_context *rustsecp256k1_v0_9_0_context_create(
+    unsigned int flags
+) SECP256K1_WARN_UNUSED_RESULT;
 
 /** Copy a secp256k1 context object (into dynamically allocated memory).
  *
@@ -296,6 +299,9 @@ SECP256K1_API void rustsecp256k1_v0_9_0_selftest(void);
  *  Returns: a newly created context object.
  *  Args:    ctx: an existing context to copy (not rustsecp256k1_v0_9_0_context_static)
  */
+SECP256K1_API rustsecp256k1_v0_9_0_context *rustsecp256k1_v0_9_0_context_clone(
+    const rustsecp256k1_v0_9_0_context *ctx
+) SECP256K1_ARG_NONNULL(1) SECP256K1_WARN_UNUSED_RESULT;
 
 /** Destroy a secp256k1 context object (created in dynamically allocated memory).
  *
@@ -311,6 +317,9 @@ SECP256K1_API void rustsecp256k1_v0_9_0_selftest(void);
  *               rustsecp256k1_v0_9_0_context_create or rustsecp256k1_v0_9_0_context_clone
  *               (i.e., not rustsecp256k1_v0_9_0_context_static).
  */
+SECP256K1_API void rustsecp256k1_v0_9_0_context_destroy(
+    rustsecp256k1_v0_9_0_context *ctx
+) SECP256K1_ARG_NONNULL(1);
 
 /** Set a callback function to be called when an illegal argument is passed to
  *  an API call. It will only trigger for violations that are mentioned
@@ -390,6 +399,10 @@ SECP256K1_API void rustsecp256k1_v0_9_0_context_set_error_callback(
  *  In:   size: amount of memory to be available as scratch space. Some extra
  *              (<100 bytes) will be allocated for extra accounting.
  */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT rustsecp256k1_v0_9_0_scratch_space *rustsecp256k1_v0_9_0_scratch_space_create(
+    const rustsecp256k1_v0_9_0_context *ctx,
+    size_t size
+) SECP256K1_ARG_NONNULL(1);
 
 /** Destroy a secp256k1 scratch space.
  *
@@ -397,6 +410,10 @@ SECP256K1_API void rustsecp256k1_v0_9_0_context_set_error_callback(
  *  Args:       ctx: a secp256k1 context object.
  *          scratch: space to destroy
  */
+SECP256K1_API void rustsecp256k1_v0_9_0_scratch_space_destroy(
+    const rustsecp256k1_v0_9_0_context *ctx,
+    rustsecp256k1_v0_9_0_scratch_space *scratch
+) SECP256K1_ARG_NONNULL(1);
 
 /** Parse a variable-length public key into the pubkey object.
  *

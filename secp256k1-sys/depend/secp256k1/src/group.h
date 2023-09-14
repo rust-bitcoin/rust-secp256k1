@@ -44,12 +44,26 @@ typedef struct {
 
 #define SECP256K1_GE_STORAGE_CONST_GET(t) SECP256K1_FE_STORAGE_CONST_GET(t.x), SECP256K1_FE_STORAGE_CONST_GET(t.y)
 
+/** Maximum allowed magnitudes for group element coordinates
+ *  in affine (x, y) and jacobian (x, y, z) representation. */
+#define SECP256K1_GE_X_MAGNITUDE_MAX  4
+#define SECP256K1_GE_Y_MAGNITUDE_MAX  3
+#define SECP256K1_GEJ_X_MAGNITUDE_MAX 4
+#define SECP256K1_GEJ_Y_MAGNITUDE_MAX 4
+#define SECP256K1_GEJ_Z_MAGNITUDE_MAX 1
+
 /** Set a group element equal to the point with given X and Y coordinates */
 static void rustsecp256k1_v0_9_0_ge_set_xy(rustsecp256k1_v0_9_0_ge *r, const rustsecp256k1_v0_9_0_fe *x, const rustsecp256k1_v0_9_0_fe *y);
 
 /** Set a group element (affine) equal to the point with the given X coordinate, and given oddness
  *  for Y. Return value indicates whether the result is valid. */
 static int rustsecp256k1_v0_9_0_ge_set_xo_var(rustsecp256k1_v0_9_0_ge *r, const rustsecp256k1_v0_9_0_fe *x, int odd);
+
+/** Determine whether x is a valid X coordinate on the curve. */
+static int rustsecp256k1_v0_9_0_ge_x_on_curve_var(const rustsecp256k1_v0_9_0_fe *x);
+
+/** Determine whether fraction xn/xd is a valid X coordinate on the curve (xd != 0). */
+static int rustsecp256k1_v0_9_0_ge_x_frac_on_curve_var(const rustsecp256k1_v0_9_0_fe *xn, const rustsecp256k1_v0_9_0_fe *xd);
 
 /** Check whether a group element is the point at infinity. */
 static int rustsecp256k1_v0_9_0_ge_is_infinity(const rustsecp256k1_v0_9_0_ge *a);
@@ -100,7 +114,8 @@ static void rustsecp256k1_v0_9_0_gej_set_ge(rustsecp256k1_v0_9_0_gej *r, const r
 /** Check two group elements (jacobian) for equality in variable time. */
 static int rustsecp256k1_v0_9_0_gej_eq_var(const rustsecp256k1_v0_9_0_gej *a, const rustsecp256k1_v0_9_0_gej *b);
 
-/** Compare the X coordinate of a group element (jacobian). */
+/** Compare the X coordinate of a group element (jacobian).
+  * The magnitude of the group element's X coordinate must not exceed 31. */
 static int rustsecp256k1_v0_9_0_gej_eq_x_var(const rustsecp256k1_v0_9_0_fe *x, const rustsecp256k1_v0_9_0_gej *a);
 
 /** Set r equal to the inverse of a (i.e., mirrored around the X axis) */

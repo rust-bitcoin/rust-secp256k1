@@ -59,10 +59,8 @@ static int rustsecp256k1_v0_9_0_eckey_privkey_tweak_add(rustsecp256k1_v0_9_0_sca
 
 static int rustsecp256k1_v0_9_0_eckey_pubkey_tweak_add(rustsecp256k1_v0_9_0_ge *key, const rustsecp256k1_v0_9_0_scalar *tweak) {
     rustsecp256k1_v0_9_0_gej pt;
-    rustsecp256k1_v0_9_0_scalar one;
     rustsecp256k1_v0_9_0_gej_set_ge(&pt, key);
-    rustsecp256k1_v0_9_0_scalar_set_int(&one, 1);
-    rustsecp256k1_v0_9_0_ecmult(&pt, &pt, &one, tweak);
+    rustsecp256k1_v0_9_0_ecmult(&pt, &pt, &rustsecp256k1_v0_9_0_scalar_one, tweak);
 
     if (rustsecp256k1_v0_9_0_gej_is_infinity(&pt)) {
         return 0;
@@ -80,15 +78,13 @@ static int rustsecp256k1_v0_9_0_eckey_privkey_tweak_mul(rustsecp256k1_v0_9_0_sca
 }
 
 static int rustsecp256k1_v0_9_0_eckey_pubkey_tweak_mul(rustsecp256k1_v0_9_0_ge *key, const rustsecp256k1_v0_9_0_scalar *tweak) {
-    rustsecp256k1_v0_9_0_scalar zero;
     rustsecp256k1_v0_9_0_gej pt;
     if (rustsecp256k1_v0_9_0_scalar_is_zero(tweak)) {
         return 0;
     }
 
-    rustsecp256k1_v0_9_0_scalar_set_int(&zero, 0);
     rustsecp256k1_v0_9_0_gej_set_ge(&pt, key);
-    rustsecp256k1_v0_9_0_ecmult(&pt, &pt, tweak, &zero);
+    rustsecp256k1_v0_9_0_ecmult(&pt, &pt, tweak, &rustsecp256k1_v0_9_0_scalar_zero);
     rustsecp256k1_v0_9_0_ge_set_gej(key, &pt);
     return 1;
 }

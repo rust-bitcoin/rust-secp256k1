@@ -288,7 +288,9 @@ static void rustsecp256k1_v0_9_0_ecmult_strauss_wnaf(const struct rustsecp256k1_
     }
 
     /* Bring them to the same Z denominator. */
-    rustsecp256k1_v0_9_0_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A) * no, state->pre_a, state->aux);
+    if (no) {
+        rustsecp256k1_v0_9_0_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A) * no, state->pre_a, state->aux);
+    }
 
     for (np = 0; np < no; ++np) {
         for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
@@ -770,14 +772,12 @@ static size_t rustsecp256k1_v0_9_0_pippenger_max_points(const rustsecp256k1_v0_9
  * require a scratch space */
 static int rustsecp256k1_v0_9_0_ecmult_multi_simple_var(rustsecp256k1_v0_9_0_gej *r, const rustsecp256k1_v0_9_0_scalar *inp_g_sc, rustsecp256k1_v0_9_0_ecmult_multi_callback cb, void *cbdata, size_t n_points) {
     size_t point_idx;
-    rustsecp256k1_v0_9_0_scalar szero;
     rustsecp256k1_v0_9_0_gej tmpj;
 
-    rustsecp256k1_v0_9_0_scalar_set_int(&szero, 0);
     rustsecp256k1_v0_9_0_gej_set_infinity(r);
     rustsecp256k1_v0_9_0_gej_set_infinity(&tmpj);
     /* r = inp_g_sc*G */
-    rustsecp256k1_v0_9_0_ecmult(r, &tmpj, &szero, inp_g_sc);
+    rustsecp256k1_v0_9_0_ecmult(r, &tmpj, &rustsecp256k1_v0_9_0_scalar_zero, inp_g_sc);
     for (point_idx = 0; point_idx < n_points; point_idx++) {
         rustsecp256k1_v0_9_0_ge point;
         rustsecp256k1_v0_9_0_gej pointj;
@@ -825,9 +825,7 @@ static int rustsecp256k1_v0_9_0_ecmult_multi_var(const rustsecp256k1_v0_9_0_call
     if (inp_g_sc == NULL && n == 0) {
         return 1;
     } else if (n == 0) {
-        rustsecp256k1_v0_9_0_scalar szero;
-        rustsecp256k1_v0_9_0_scalar_set_int(&szero, 0);
-        rustsecp256k1_v0_9_0_ecmult(r, r, &szero, inp_g_sc);
+        rustsecp256k1_v0_9_0_ecmult(r, r, &rustsecp256k1_v0_9_0_scalar_zero, inp_g_sc);
         return 1;
     }
     if (scratch == NULL) {

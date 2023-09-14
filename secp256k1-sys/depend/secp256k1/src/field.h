@@ -88,8 +88,8 @@ static const rustsecp256k1_v0_9_0_fe rustsecp256k1_v0_9_0_const_beta = SECP256K1
 #  define rustsecp256k1_v0_9_0_fe_set_b32_mod rustsecp256k1_v0_9_0_fe_impl_set_b32_mod
 #  define rustsecp256k1_v0_9_0_fe_set_b32_limit rustsecp256k1_v0_9_0_fe_impl_set_b32_limit
 #  define rustsecp256k1_v0_9_0_fe_get_b32 rustsecp256k1_v0_9_0_fe_impl_get_b32
-#  define rustsecp256k1_v0_9_0_fe_negate rustsecp256k1_v0_9_0_fe_impl_negate
-#  define rustsecp256k1_v0_9_0_fe_mul_int rustsecp256k1_v0_9_0_fe_impl_mul_int
+#  define rustsecp256k1_v0_9_0_fe_negate_unchecked rustsecp256k1_v0_9_0_fe_impl_negate_unchecked
+#  define rustsecp256k1_v0_9_0_fe_mul_int_unchecked rustsecp256k1_v0_9_0_fe_impl_mul_int_unchecked
 #  define rustsecp256k1_v0_9_0_fe_add rustsecp256k1_v0_9_0_fe_impl_add
 #  define rustsecp256k1_v0_9_0_fe_mul rustsecp256k1_v0_9_0_fe_impl_mul
 #  define rustsecp256k1_v0_9_0_fe_sqr rustsecp256k1_v0_9_0_fe_impl_sqr
@@ -176,12 +176,6 @@ static int rustsecp256k1_v0_9_0_fe_is_odd(const rustsecp256k1_v0_9_0_fe *a);
  */
 static int rustsecp256k1_v0_9_0_fe_equal(const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe *b);
 
-/** Determine whether two field elements are equal, without constant-time guarantee.
- *
- * Identical in behavior to rustsecp256k1_v0_9_0_fe_equal, but not constant time in either a or b.
- */
-static int rustsecp256k1_v0_9_0_fe_equal_var(const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe *b);
-
 /** Compare the values represented by 2 field elements, without constant-time guarantee.
  *
  * On input, a and b must be valid normalized field elements.
@@ -192,14 +186,14 @@ static int rustsecp256k1_v0_9_0_fe_cmp_var(const rustsecp256k1_v0_9_0_fe *a, con
 
 /** Set a field element equal to a provided 32-byte big endian value, reducing it.
  *
- * On input, r does not need to be initalized. a must be a pointer to an initialized 32-byte array.
+ * On input, r does not need to be initialized. a must be a pointer to an initialized 32-byte array.
  * On output, r = a (mod p). It will have magnitude 1, and not be normalized.
  */
 static void rustsecp256k1_v0_9_0_fe_set_b32_mod(rustsecp256k1_v0_9_0_fe *r, const unsigned char *a);
 
 /** Set a field element equal to a provided 32-byte big endian value, checking for overflow.
  *
- * On input, r does not need to be initalized. a must be a pointer to an initialized 32-byte array.
+ * On input, r does not need to be initialized. a must be a pointer to an initialized 32-byte array.
  * On output, r = a if (a < p), it will be normalized with magnitude 1, and 1 is returned.
  * If a >= p, 0 is returned, and r will be made invalid (and must not be used without overwriting).
  */
@@ -214,27 +208,39 @@ static void rustsecp256k1_v0_9_0_fe_get_b32(unsigned char *r, const rustsecp256k
 /** Negate a field element.
  *
  * On input, r does not need to be initialized. a must be a valid field element with
- * magnitude not exceeding m. m must be an integer in [0,31].
+ * magnitude not exceeding m. m must be an integer constant expression in [0,31].
  * Performs {r = -a}.
  * On output, r will not be normalized, and will have magnitude m+1.
  */
-static void rustsecp256k1_v0_9_0_fe_negate(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m);
+#define rustsecp256k1_v0_9_0_fe_negate(r, a, m) ASSERT_INT_CONST_AND_DO(m, rustsecp256k1_v0_9_0_fe_negate_unchecked(r, a, m))
+
+/** Like rustsecp256k1_v0_9_0_fe_negate_unchecked but m is not checked to be an integer constant expression.
+ *
+ * Should not be called directly outside of tests.
+ */
+static void rustsecp256k1_v0_9_0_fe_negate_unchecked(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m);
 
 /** Add a small integer to a field element.
  *
  * Performs {r += a}. The magnitude of r increases by 1, and normalized is cleared.
- * a must be in range [0,0xFFFF].
+ * a must be in range [0,0x7FFF].
  */
 static void rustsecp256k1_v0_9_0_fe_add_int(rustsecp256k1_v0_9_0_fe *r, int a);
 
 /** Multiply a field element with a small integer.
  *
- * On input, r must be a valid field element. a must be an integer in [0,32].
+ * On input, r must be a valid field element. a must be an integer constant expression in [0,32].
  * The magnitude of r times a must not exceed 32.
  * Performs {r *= a}.
  * On output, r's magnitude is multiplied by a, and r will not be normalized.
  */
-static void rustsecp256k1_v0_9_0_fe_mul_int(rustsecp256k1_v0_9_0_fe *r, int a);
+#define rustsecp256k1_v0_9_0_fe_mul_int(r, a) ASSERT_INT_CONST_AND_DO(a, rustsecp256k1_v0_9_0_fe_mul_int_unchecked(r, a))
+
+/** Like rustsecp256k1_v0_9_0_fe_mul_int but a is not checked to be an integer constant expression.
+ * 
+ * Should not be called directly outside of tests.
+ */
+static void rustsecp256k1_v0_9_0_fe_mul_int_unchecked(rustsecp256k1_v0_9_0_fe *r, int a);
 
 /** Increment a field element by another.
  *
@@ -267,8 +273,10 @@ static void rustsecp256k1_v0_9_0_fe_sqr(rustsecp256k1_v0_9_0_fe *r, const rustse
 /** Compute a square root of a field element.
  *
  * On input, a must be a valid field element with magnitude<=8; r need not be initialized.
- * Performs {r = sqrt(a)} or {r = sqrt(-a)}, whichever exists. The resulting value
- * represented by r will be a square itself. Variables r and a must not point to the same object.
+ * If sqrt(a) exists, performs {r = sqrt(a)} and returns 1.
+ * Otherwise, sqrt(-a) exists. The function performs {r = sqrt(-a)} and returns 0.
+ * The resulting value represented by r will be a square itself.
+ * Variables r and a must not point to the same object.
  * On output, r will have magnitude 1 but will not be normalized.
  */
 static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT r, const rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT a);
@@ -310,7 +318,9 @@ static void rustsecp256k1_v0_9_0_fe_storage_cmov(rustsecp256k1_v0_9_0_fe_storage
  *
  * On input, both r and a must be valid field elements. Flag must be 0 or 1.
  * Performs {r = flag ? a : r}.
- * On output, r's magnitude and normalized will equal a's in case of flag=1, unchanged otherwise.
+ *
+ * On output, r's magnitude will be the maximum of both input magnitudes.
+ * It will be normalized if and only if both inputs were normalized.
  */
 static void rustsecp256k1_v0_9_0_fe_cmov(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int flag);
 
@@ -335,5 +345,8 @@ static int rustsecp256k1_v0_9_0_fe_is_square_var(const rustsecp256k1_v0_9_0_fe *
 
 /** Check invariants on a field element (no-op unless VERIFY is enabled). */
 static void rustsecp256k1_v0_9_0_fe_verify(const rustsecp256k1_v0_9_0_fe *a);
+
+/** Check that magnitude of a is at most m (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_9_0_fe_verify_magnitude(const rustsecp256k1_v0_9_0_fe *a, int m);
 
 #endif /* SECP256K1_FIELD_H */

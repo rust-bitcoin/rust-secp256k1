@@ -201,8 +201,8 @@ static int rustsecp256k1_v0_9_0_pubkey_load(const rustsecp256k1_v0_9_0_context* 
     } else {
         /* Otherwise, fall back to 32-byte big endian for X and Y. */
         rustsecp256k1_v0_9_0_fe x, y;
-        rustsecp256k1_v0_9_0_fe_set_b32_mod(&x, pubkey->data);
-        rustsecp256k1_v0_9_0_fe_set_b32_mod(&y, pubkey->data + 32);
+        ARG_CHECK(rustsecp256k1_v0_9_0_fe_set_b32_limit(&x, pubkey->data));
+        ARG_CHECK(rustsecp256k1_v0_9_0_fe_set_b32_limit(&y, pubkey->data + 32));
         rustsecp256k1_v0_9_0_ge_set_xy(ge, &x, &y);
     }
     ARG_CHECK(!rustsecp256k1_v0_9_0_fe_is_zero(&ge->x));
@@ -764,4 +764,8 @@ int rustsecp256k1_v0_9_0_tagged_sha256(const rustsecp256k1_v0_9_0_context* ctx, 
 
 #ifdef ENABLE_MODULE_SCHNORRSIG
 # include "modules/schnorrsig/main_impl.h"
+#endif
+
+#ifdef ENABLE_MODULE_ELLSWIFT
+# include "modules/ellswift/main_impl.h"
 #endif

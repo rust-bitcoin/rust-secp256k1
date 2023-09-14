@@ -261,7 +261,7 @@ int rustsecp256k1_v0_9_0_schnorrsig_verify(const rustsecp256k1_v0_9_0_context* c
 
     rustsecp256k1_v0_9_0_fe_normalize_var(&r.y);
     return !rustsecp256k1_v0_9_0_fe_is_odd(&r.y) &&
-           rustsecp256k1_v0_9_0_fe_equal_var(&rx, &r.x);
+           rustsecp256k1_v0_9_0_fe_equal(&rx, &r.x);
 }
 
 #endif

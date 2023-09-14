@@ -13,6 +13,9 @@
 #define EXHAUSTIVE_TEST_ORDER 13
 #endif
 
+/* These values of B are all values in [1, 8] that result in a curve with even order. */
+#define EXHAUSTIVE_TEST_CURVE_HAS_EVEN_ORDER (SECP256K1_B == 1 || SECP256K1_B == 6 || SECP256K1_B == 8)
+
 #ifdef USE_EXTERNAL_DEFAULT_CALLBACKS
     #pragma message("Ignoring USE_EXTERNAL_CALLBACKS in exhaustive_tests.")
     #undef USE_EXTERNAL_DEFAULT_CALLBACKS
@@ -35,8 +38,8 @@ static void ge_equals_ge(const rustsecp256k1_v0_9_0_ge *a, const rustsecp256k1_v
     if (a->infinity) {
         return;
     }
-    CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&a->x, &b->x));
-    CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&a->y, &b->y));
+    CHECK(rustsecp256k1_v0_9_0_fe_equal(&a->x, &b->x));
+    CHECK(rustsecp256k1_v0_9_0_fe_equal(&a->y, &b->y));
 }
 
 static void ge_equals_gej(const rustsecp256k1_v0_9_0_ge *a, const rustsecp256k1_v0_9_0_gej *b) {
@@ -49,11 +52,11 @@ static void ge_equals_gej(const rustsecp256k1_v0_9_0_ge *a, const rustsecp256k1_
     /* Check a.x * b.z^2 == b.x && a.y * b.z^3 == b.y, to avoid inverses. */
     rustsecp256k1_v0_9_0_fe_sqr(&z2s, &b->z);
     rustsecp256k1_v0_9_0_fe_mul(&u1, &a->x, &z2s);
-    u2 = b->x; rustsecp256k1_v0_9_0_fe_normalize_weak(&u2);
+    u2 = b->x;
     rustsecp256k1_v0_9_0_fe_mul(&s1, &a->y, &z2s); rustsecp256k1_v0_9_0_fe_mul(&s1, &s1, &b->z);
-    s2 = b->y; rustsecp256k1_v0_9_0_fe_normalize_weak(&s2);
-    CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&u1, &u2));
-    CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&s1, &s2));
+    s2 = b->y;
+    CHECK(rustsecp256k1_v0_9_0_fe_equal(&u1, &u2));
+    CHECK(rustsecp256k1_v0_9_0_fe_equal(&s1, &s2));
 }
 
 static void random_fe(rustsecp256k1_v0_9_0_fe *x) {
@@ -216,14 +219,14 @@ static void test_exhaustive_ecmult(const rustsecp256k1_v0_9_0_ge *group, const r
                 /* Test rustsecp256k1_v0_9_0_ecmult_const_xonly with all curve X coordinates, and xd=NULL. */
                 ret = rustsecp256k1_v0_9_0_ecmult_const_xonly(&tmpf, &group[i].x, NULL, &ng, 0);
                 CHECK(ret);
-                CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
+                CHECK(rustsecp256k1_v0_9_0_fe_equal(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
 
                 /* Test rustsecp256k1_v0_9_0_ecmult_const_xonly with all curve X coordinates, with random xd. */
                 random_fe_non_zero(&xd);
                 rustsecp256k1_v0_9_0_fe_mul(&xn, &xd, &group[i].x);
                 ret = rustsecp256k1_v0_9_0_ecmult_const_xonly(&tmpf, &xn, &xd, &ng, 0);
                 CHECK(ret);
-                CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
+                CHECK(rustsecp256k1_v0_9_0_fe_equal(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
             }
         }
     }
@@ -395,6 +398,10 @@ static void test_exhaustive_sign(const rustsecp256k1_v0_9_0_context *ctx, const 
 #include "modules/schnorrsig/tests_exhaustive_impl.h"
 #endif
 
+#ifdef ENABLE_MODULE_ELLSWIFT
+#include "modules/ellswift/tests_exhaustive_impl.h"
+#endif
+
 int main(int argc, char** argv) {
     int i;
     rustsecp256k1_v0_9_0_gej groupj[EXHAUSTIVE_TEST_ORDER];
@@ -468,8 +475,8 @@ int main(int argc, char** argv) {
 
                 CHECK(group[i].infinity == 0);
                 CHECK(generated.infinity == 0);
-                CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&generated.x, &group[i].x));
-                CHECK(rustsecp256k1_v0_9_0_fe_equal_var(&generated.y, &group[i].y));
+                CHECK(rustsecp256k1_v0_9_0_fe_equal(&generated.x, &group[i].x));
+                CHECK(rustsecp256k1_v0_9_0_fe_equal(&generated.y, &group[i].y));
             }
         }
 
@@ -489,6 +496,15 @@ int main(int argc, char** argv) {
 #endif
 #ifdef ENABLE_MODULE_SCHNORRSIG
         test_exhaustive_schnorrsig(ctx);
+#endif
+#ifdef ENABLE_MODULE_ELLSWIFT
+    /* The ellswift algorithm does have additional edge cases when operating on
+     * curves of even order, which are not included in the code as secp256k1 is
+     * of odd order. Skip the ellswift tests if the used exhaustive tests curve
+     * is even-ordered accordingly. */
+    #if !EXHAUSTIVE_TEST_CURVE_HAS_EVEN_ORDER
+        test_exhaustive_ellswift(ctx, group);
+    #endif
 #endif
 
         rustsecp256k1_v0_9_0_context_destroy(ctx);

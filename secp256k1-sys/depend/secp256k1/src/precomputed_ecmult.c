@@ -2,7 +2,6 @@
 /* This file contains an array rustsecp256k1_v0_9_0_pre_g with odd multiples of the base point G and
  * an array rustsecp256k1_v0_9_0_pre_g_128 with odd multiples of 2^128*G for accelerating the computation of a*P + b*G.
  */
-#include "../include/secp256k1.h"
 #include "group.h"
 #include "ecmult.h"
 #include "precomputed_ecmult.h"

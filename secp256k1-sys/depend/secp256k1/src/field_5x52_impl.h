@@ -314,7 +314,7 @@ static void rustsecp256k1_v0_9_0_fe_impl_get_b32(unsigned char *r, const rustsec
     r[31] = a->n[0] & 0xFF;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_impl_negate(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m) {
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_impl_negate_unchecked(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m) {
     /* For all legal values of m (0..31), the following properties hold: */
     VERIFY_CHECK(0xFFFFEFFFFFC2FULL * 2 * (m + 1) >= 0xFFFFFFFFFFFFFULL * 2 * m);
     VERIFY_CHECK(0xFFFFFFFFFFFFFULL * 2 * (m + 1) >= 0xFFFFFFFFFFFFFULL * 2 * m);
@@ -329,7 +329,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_impl_negate(rustsecp256k1_v
     r->n[4] = 0x0FFFFFFFFFFFFULL * 2 * (m + 1) - a->n[4];
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_impl_mul_int(rustsecp256k1_v0_9_0_fe *r, int a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_impl_mul_int_unchecked(rustsecp256k1_v0_9_0_fe *r, int a) {
     r->n[0] *= a;
     r->n[1] *= a;
     r->n[2] *= a;

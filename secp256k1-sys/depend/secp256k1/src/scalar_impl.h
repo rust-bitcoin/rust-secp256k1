@@ -30,7 +30,17 @@ static const rustsecp256k1_v0_9_0_scalar rustsecp256k1_v0_9_0_scalar_zero = SECP
 static int rustsecp256k1_v0_9_0_scalar_set_b32_seckey(rustsecp256k1_v0_9_0_scalar *r, const unsigned char *bin) {
     int overflow;
     rustsecp256k1_v0_9_0_scalar_set_b32(r, bin, &overflow);
+
+    rustsecp256k1_v0_9_0_scalar_verify(r);
     return (!overflow) & (!rustsecp256k1_v0_9_0_scalar_is_zero(r));
+}
+
+static void rustsecp256k1_v0_9_0_scalar_verify(const rustsecp256k1_v0_9_0_scalar *r) {
+#ifdef VERIFY
+    VERIFY_CHECK(rustsecp256k1_v0_9_0_scalar_check_overflow(r) == 0);
+#endif
+
+    (void)r;
 }
 
 #if defined(EXHAUSTIVE_TEST_ORDER)
@@ -53,11 +63,16 @@ static int rustsecp256k1_v0_9_0_scalar_set_b32_seckey(rustsecp256k1_v0_9_0_scala
  * (arbitrarily) set r2 = k + 5 (mod n) and r1 = k - r2 * lambda (mod n).
  */
 static void rustsecp256k1_v0_9_0_scalar_split_lambda(rustsecp256k1_v0_9_0_scalar * SECP256K1_RESTRICT r1, rustsecp256k1_v0_9_0_scalar * SECP256K1_RESTRICT r2, const rustsecp256k1_v0_9_0_scalar * SECP256K1_RESTRICT k) {
+    rustsecp256k1_v0_9_0_scalar_verify(k);
     VERIFY_CHECK(r1 != k);
     VERIFY_CHECK(r2 != k);
     VERIFY_CHECK(r1 != r2);
+
     *r2 = (*k + 5) % EXHAUSTIVE_TEST_ORDER;
     *r1 = (*k + (EXHAUSTIVE_TEST_ORDER - *r2) * EXHAUSTIVE_TEST_LAMBDA) % EXHAUSTIVE_TEST_ORDER;
+
+    rustsecp256k1_v0_9_0_scalar_verify(r1);
+    rustsecp256k1_v0_9_0_scalar_verify(r2);
 }
 #else
 /**
@@ -140,9 +155,11 @@ static void rustsecp256k1_v0_9_0_scalar_split_lambda(rustsecp256k1_v0_9_0_scalar
         0xE4437ED6UL, 0x010E8828UL, 0x6F547FA9UL, 0x0ABFE4C4UL,
         0x221208ACUL, 0x9DF506C6UL, 0x1571B4AEUL, 0x8AC47F71UL
     );
+    rustsecp256k1_v0_9_0_scalar_verify(k);
     VERIFY_CHECK(r1 != k);
     VERIFY_CHECK(r2 != k);
     VERIFY_CHECK(r1 != r2);
+
     /* these _var calls are constant time since the shift amount is constant */
     rustsecp256k1_v0_9_0_scalar_mul_shift_var(&c1, k, &g1, 384);
     rustsecp256k1_v0_9_0_scalar_mul_shift_var(&c2, k, &g2, 384);
@@ -153,6 +170,8 @@ static void rustsecp256k1_v0_9_0_scalar_split_lambda(rustsecp256k1_v0_9_0_scalar
     rustsecp256k1_v0_9_0_scalar_negate(r1, r1);
     rustsecp256k1_v0_9_0_scalar_add(r1, r1, k);
 
+    rustsecp256k1_v0_9_0_scalar_verify(r1);
+    rustsecp256k1_v0_9_0_scalar_verify(r2);
 #ifdef VERIFY
     rustsecp256k1_v0_9_0_scalar_split_lambda_verify(r1, r2, k);
 #endif
