@@ -9,16 +9,29 @@
 
 #include <stdint.h>
 
+/** This field implementation represents the value as 10 uint32_t limbs in base
+ *  2^26. */
 typedef struct {
-    /* X = sum(i=0..9, n[i]*2^(i*26)) mod p
-     * where p = 2^256 - 0x1000003D1
-     */
+   /* A field element f represents the sum(i=0..9, f.n[i] << (i*26)) mod p,
+    * where p is the field modulus, 2^256 - 2^32 - 977.
+    *
+    * The individual limbs f.n[i] can exceed 2^26; the field's magnitude roughly
+    * corresponds to how much excess is allowed. The value
+    * sum(i=0..9, f.n[i] << (i*26)) may exceed p, unless the field element is
+    * normalized. */
     uint32_t n[10];
-#ifdef VERIFY
-    int magnitude;
-    int normalized;
-#endif
-} rustsecp256k1_v0_8_1_fe;
+    /*
+     * Magnitude m requires:
+     *     n[i] <= 2 * m * (2^26 - 1) for i=0..8
+     *     n[9] <= 2 * m * (2^22 - 1)
+     *
+     * Normalized requires:
+     *     n[i] <= (2^26 - 1) for i=0..8
+     *     sum(i=0..9, n[i] << (i*26)) < p
+     *     (together these imply n[9] <= 2^22 - 1)
+     */
+    SECP256K1_FE_VERIFY_FIELDS
+} rustsecp256k1_v0_9_0_fe;
 
 /* Unpacks a constant into a overlapping multi-limbed FE element. */
 #define SECP256K1_FE_CONST_INNER(d7, d6, d5, d4, d3, d2, d1, d0) { \
@@ -34,15 +47,9 @@ typedef struct {
     (((uint32_t)d7) >> 10) \
 }
 
-#ifdef VERIFY
-#define SECP256K1_FE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) {SECP256K1_FE_CONST_INNER((d7), (d6), (d5), (d4), (d3), (d2), (d1), (d0)), 1, 1}
-#else
-#define SECP256K1_FE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) {SECP256K1_FE_CONST_INNER((d7), (d6), (d5), (d4), (d3), (d2), (d1), (d0))}
-#endif
-
 typedef struct {
     uint32_t n[8];
-} rustsecp256k1_v0_8_1_fe_storage;
+} rustsecp256k1_v0_9_0_fe_storage;
 
 #define SECP256K1_FE_STORAGE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) {{ (d0), (d1), (d2), (d3), (d4), (d5), (d6), (d7) }}
 #define SECP256K1_FE_STORAGE_CONST_GET(d) d.n[7], d.n[6], d.n[5], d.n[4],d.n[3], d.n[2], d.n[1], d.n[0]

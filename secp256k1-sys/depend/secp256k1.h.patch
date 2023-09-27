@@ -1,22 +1,36 @@
-226,228d225
-< SECP256K1_API secp256k1_context* secp256k1_context_create(
+236d235
+< SECP256K1_API const secp256k1_context *secp256k1_context_static;
+239,240d237
+< SECP256K1_API const secp256k1_context *secp256k1_context_no_precomp
+< SECP256K1_DEPRECATED("Use secp256k1_context_static instead");
+286,289d282
+< SECP256K1_API secp256k1_context *secp256k1_context_create(
 <     unsigned int flags
 < ) SECP256K1_WARN_UNUSED_RESULT;
-231,233d227
-< SECP256K1_API secp256k1_context* secp256k1_context_clone(
-<     const secp256k1_context* ctx
+< 
+302,305d294
+< SECP256K1_API secp256k1_context *secp256k1_context_clone(
+<     const secp256k1_context *ctx
 < ) SECP256K1_ARG_NONNULL(1) SECP256K1_WARN_UNUSED_RESULT;
-248,250d241
+< 
+320,323d308
 < SECP256K1_API void secp256k1_context_destroy(
-<     secp256k1_context* ctx
+<     secp256k1_context *ctx
 < ) SECP256K1_ARG_NONNULL(1);
-327,330d317
-< SECP256K1_API SECP256K1_WARN_UNUSED_RESULT secp256k1_scratch_space* secp256k1_scratch_space_create(
-<     const secp256k1_context* ctx,
+< 
+402,406d386
+< SECP256K1_API SECP256K1_WARN_UNUSED_RESULT secp256k1_scratch_space *secp256k1_scratch_space_create(
+<     const secp256k1_context *ctx,
 <     size_t size
 < ) SECP256K1_ARG_NONNULL(1);
-338,341d324
+< 
+413,417d392
 < SECP256K1_API void secp256k1_scratch_space_destroy(
-<     const secp256k1_context* ctx,
-<     secp256k1_scratch_space* scratch
+<     const secp256k1_context *ctx,
+<     secp256k1_scratch_space *scratch
 < ) SECP256K1_ARG_NONNULL(1);
+< 
+636d610
+< SECP256K1_API const secp256k1_nonce_function secp256k1_nonce_function_rfc6979;
+639d612
+< SECP256K1_API const secp256k1_nonce_function secp256k1_nonce_function_default;

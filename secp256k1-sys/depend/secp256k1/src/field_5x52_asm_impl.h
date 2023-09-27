@@ -14,7 +14,9 @@
 #ifndef SECP256K1_FIELD_INNER5X52_IMPL_H
 #define SECP256K1_FIELD_INNER5X52_IMPL_H
 
-SECP256K1_INLINE static void rustsecp256k1_v0_8_1_fe_mul_inner(uint64_t *r, const uint64_t *a, const uint64_t * SECP256K1_RESTRICT b) {
+#include "util.h"
+
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_mul_inner(uint64_t *r, const uint64_t *a, const uint64_t * SECP256K1_RESTRICT b) {
 /**
  * Registers: rdx:rax = multiplication accumulator
  *            r9:r8   = c
@@ -278,13 +280,13 @@ __asm__ __volatile__(
     "addq %%rsi,%%r8\n"
     /* r[4] = c */
     "movq %%r8,32(%%rdi)\n"
-: "+S"(a), "=m"(tmp1), "=m"(tmp2), "=m"(tmp3)
+: "+S"(a), "=&m"(tmp1), "=&m"(tmp2), "=&m"(tmp3)
 : "b"(b), "D"(r)
 : "%rax", "%rcx", "%rdx", "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15", "cc", "memory"
 );
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_8_1_fe_sqr_inner(uint64_t *r, const uint64_t *a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_9_0_fe_sqr_inner(uint64_t *r, const uint64_t *a) {
 /**
  * Registers: rdx:rax = multiplication accumulator
  *            r9:r8   = c
@@ -493,7 +495,7 @@ __asm__ __volatile__(
     "addq %%rsi,%%r8\n"
     /* r[4] = c */
     "movq %%r8,32(%%rdi)\n"
-: "+S"(a), "=m"(tmp1), "=m"(tmp2), "=m"(tmp3)
+: "+S"(a), "=&m"(tmp1), "=&m"(tmp2), "=&m"(tmp3)
 : "D"(r)
 : "%rax", "%rbx", "%rcx", "%rdx", "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15", "cc", "memory"
 );
