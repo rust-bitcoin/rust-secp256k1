@@ -7,22 +7,35 @@
 #ifndef SECP256K1_FIELD_H
 #define SECP256K1_FIELD_H
 
-/** Field element module.
- *
- *  Field elements can be represented in several ways, but code accessing
- *  it (and implementations) need to take certain properties into account:
- *  - Each field element can be normalized or not.
- *  - Each field element has a magnitude, which represents how far away
- *    its representation is away from normalization. Normalized elements
- *    always have a magnitude of 0 or 1, but a magnitude of 1 doesn't
- *    imply normality.
- */
-
-#if defined HAVE_CONFIG_H
-#include "libsecp256k1-config.h"
-#endif
-
 #include "util.h"
+
+/* This file defines the generic interface for working with rustsecp256k1_v0_9_0_fe
+ * objects, which represent field elements (integers modulo 2^256 - 2^32 - 977).
+ *
+ * The actual definition of the rustsecp256k1_v0_9_0_fe type depends on the chosen field
+ * implementation; see the field_5x52.h and field_10x26.h files for details.
+ *
+ * All rustsecp256k1_v0_9_0_fe objects have implicit properties that determine what
+ * operations are permitted on it. These are purely a function of what
+ * rustsecp256k1_v0_9_0_fe_ operations are applied on it, generally (implicitly) fixed at
+ * compile time, and do not depend on the chosen field implementation. Despite
+ * that, what these properties actually entail for the field representation
+ * values depends on the chosen field implementation. These properties are:
+ * - magnitude: an integer in [0,32]
+ * - normalized: 0 or 1; normalized=1 implies magnitude <= 1.
+ *
+ * In VERIFY mode, they are materialized explicitly as fields in the struct,
+ * allowing run-time verification of these properties. In that case, the field
+ * implementation also provides a rustsecp256k1_v0_9_0_fe_verify routine to verify that
+ * these fields match the run-time value and perform internal consistency
+ * checks. */
+#ifdef VERIFY
+#  define SECP256K1_FE_VERIFY_FIELDS \
+    int magnitude; \
+    int normalized;
+#else
+#  define SECP256K1_FE_VERIFY_FIELDS
+#endif
 
 #if defined(SECP256K1_WIDEMUL_INT128)
 #include "field_5x52.h"
@@ -32,111 +45,308 @@
 #error "Please select wide multiplication implementation"
 #endif
 
-static const rustsecp256k1_v0_8_1_fe rustsecp256k1_v0_8_1_fe_one = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 1);
-static const rustsecp256k1_v0_8_1_fe rustsecp256k1_v0_8_1_const_beta = SECP256K1_FE_CONST(
+#ifdef VERIFY
+/* Magnitude and normalized value for constants. */
+#define SECP256K1_FE_VERIFY_CONST(d7, d6, d5, d4, d3, d2, d1, d0) \
+    /* Magnitude is 0 for constant 0; 1 otherwise. */ \
+    , (((d7) | (d6) | (d5) | (d4) | (d3) | (d2) | (d1) | (d0)) != 0) \
+    /* Normalized is 1 unless sum(d_i<<(32*i) for i=0..7) exceeds field modulus. */ \
+    , (!(((d7) & (d6) & (d5) & (d4) & (d3) & (d2)) == 0xfffffffful && ((d1) == 0xfffffffful || ((d1) == 0xfffffffe && (d0 >= 0xfffffc2f)))))
+#else
+#define SECP256K1_FE_VERIFY_CONST(d7, d6, d5, d4, d3, d2, d1, d0)
+#endif
+
+/** This expands to an initializer for a rustsecp256k1_v0_9_0_fe valued sum((i*32) * d_i, i=0..7) mod p.
+ *
+ * It has magnitude 1, unless d_i are all 0, in which case the magnitude is 0.
+ * It is normalized, unless sum(2^(i*32) * d_i, i=0..7) >= p.
+ *
+ * SECP256K1_FE_CONST_INNER is provided by the implementation.
+ */
+#define SECP256K1_FE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) {SECP256K1_FE_CONST_INNER((d7), (d6), (d5), (d4), (d3), (d2), (d1), (d0)) SECP256K1_FE_VERIFY_CONST((d7), (d6), (d5), (d4), (d3), (d2), (d1), (d0)) }
+
+static const rustsecp256k1_v0_9_0_fe rustsecp256k1_v0_9_0_fe_one = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 1);
+static const rustsecp256k1_v0_9_0_fe rustsecp256k1_v0_9_0_const_beta = SECP256K1_FE_CONST(
     0x7ae96a2bul, 0x657c0710ul, 0x6e64479eul, 0xac3434e9ul,
     0x9cf04975ul, 0x12f58995ul, 0xc1396c28ul, 0x719501eeul
 );
 
-/** Normalize a field element. This brings the field element to a canonical representation, reduces
- *  its magnitude to 1, and reduces it modulo field size `p`.
+#ifndef VERIFY
+/* In non-VERIFY mode, we #define the fe operations to be identical to their
+ * internal field implementation, to avoid the potential overhead of a
+ * function call (even though presumably inlinable). */
+#  define rustsecp256k1_v0_9_0_fe_normalize rustsecp256k1_v0_9_0_fe_impl_normalize
+#  define rustsecp256k1_v0_9_0_fe_normalize_weak rustsecp256k1_v0_9_0_fe_impl_normalize_weak
+#  define rustsecp256k1_v0_9_0_fe_normalize_var rustsecp256k1_v0_9_0_fe_impl_normalize_var
+#  define rustsecp256k1_v0_9_0_fe_normalizes_to_zero rustsecp256k1_v0_9_0_fe_impl_normalizes_to_zero
+#  define rustsecp256k1_v0_9_0_fe_normalizes_to_zero_var rustsecp256k1_v0_9_0_fe_impl_normalizes_to_zero_var
+#  define rustsecp256k1_v0_9_0_fe_set_int rustsecp256k1_v0_9_0_fe_impl_set_int
+#  define rustsecp256k1_v0_9_0_fe_clear rustsecp256k1_v0_9_0_fe_impl_clear
+#  define rustsecp256k1_v0_9_0_fe_is_zero rustsecp256k1_v0_9_0_fe_impl_is_zero
+#  define rustsecp256k1_v0_9_0_fe_is_odd rustsecp256k1_v0_9_0_fe_impl_is_odd
+#  define rustsecp256k1_v0_9_0_fe_cmp_var rustsecp256k1_v0_9_0_fe_impl_cmp_var
+#  define rustsecp256k1_v0_9_0_fe_set_b32_mod rustsecp256k1_v0_9_0_fe_impl_set_b32_mod
+#  define rustsecp256k1_v0_9_0_fe_set_b32_limit rustsecp256k1_v0_9_0_fe_impl_set_b32_limit
+#  define rustsecp256k1_v0_9_0_fe_get_b32 rustsecp256k1_v0_9_0_fe_impl_get_b32
+#  define rustsecp256k1_v0_9_0_fe_negate_unchecked rustsecp256k1_v0_9_0_fe_impl_negate_unchecked
+#  define rustsecp256k1_v0_9_0_fe_mul_int_unchecked rustsecp256k1_v0_9_0_fe_impl_mul_int_unchecked
+#  define rustsecp256k1_v0_9_0_fe_add rustsecp256k1_v0_9_0_fe_impl_add
+#  define rustsecp256k1_v0_9_0_fe_mul rustsecp256k1_v0_9_0_fe_impl_mul
+#  define rustsecp256k1_v0_9_0_fe_sqr rustsecp256k1_v0_9_0_fe_impl_sqr
+#  define rustsecp256k1_v0_9_0_fe_cmov rustsecp256k1_v0_9_0_fe_impl_cmov
+#  define rustsecp256k1_v0_9_0_fe_to_storage rustsecp256k1_v0_9_0_fe_impl_to_storage
+#  define rustsecp256k1_v0_9_0_fe_from_storage rustsecp256k1_v0_9_0_fe_impl_from_storage
+#  define rustsecp256k1_v0_9_0_fe_inv rustsecp256k1_v0_9_0_fe_impl_inv
+#  define rustsecp256k1_v0_9_0_fe_inv_var rustsecp256k1_v0_9_0_fe_impl_inv_var
+#  define rustsecp256k1_v0_9_0_fe_get_bounds rustsecp256k1_v0_9_0_fe_impl_get_bounds
+#  define rustsecp256k1_v0_9_0_fe_half rustsecp256k1_v0_9_0_fe_impl_half
+#  define rustsecp256k1_v0_9_0_fe_add_int rustsecp256k1_v0_9_0_fe_impl_add_int
+#  define rustsecp256k1_v0_9_0_fe_is_square_var rustsecp256k1_v0_9_0_fe_impl_is_square_var
+#endif /* !defined(VERIFY) */
+
+/** Normalize a field element.
+ *
+ * On input, r must be a valid field element.
+ * On output, r represents the same value but has normalized=1 and magnitude=1.
  */
-static void rustsecp256k1_v0_8_1_fe_normalize(rustsecp256k1_v0_8_1_fe *r);
+static void rustsecp256k1_v0_9_0_fe_normalize(rustsecp256k1_v0_9_0_fe *r);
 
-/** Weakly normalize a field element: reduce its magnitude to 1, but don't fully normalize. */
-static void rustsecp256k1_v0_8_1_fe_normalize_weak(rustsecp256k1_v0_8_1_fe *r);
-
-/** Normalize a field element, without constant-time guarantee. */
-static void rustsecp256k1_v0_8_1_fe_normalize_var(rustsecp256k1_v0_8_1_fe *r);
-
-/** Verify whether a field element represents zero i.e. would normalize to a zero value. */
-static int rustsecp256k1_v0_8_1_fe_normalizes_to_zero(const rustsecp256k1_v0_8_1_fe *r);
-
-/** Verify whether a field element represents zero i.e. would normalize to a zero value,
- *  without constant-time guarantee. */
-static int rustsecp256k1_v0_8_1_fe_normalizes_to_zero_var(const rustsecp256k1_v0_8_1_fe *r);
-
-/** Set a field element equal to a small (not greater than 0x7FFF), non-negative integer.
- *  Resulting field element is normalized; it has magnitude 0 if a == 0, and magnitude 1 otherwise.
+/** Give a field element magnitude 1.
+ *
+ * On input, r must be a valid field element.
+ * On output, r represents the same value but has magnitude=1. Normalized is unchanged.
  */
-static void rustsecp256k1_v0_8_1_fe_set_int(rustsecp256k1_v0_8_1_fe *r, int a);
+static void rustsecp256k1_v0_9_0_fe_normalize_weak(rustsecp256k1_v0_9_0_fe *r);
 
-/** Sets a field element equal to zero, initializing all fields. */
-static void rustsecp256k1_v0_8_1_fe_clear(rustsecp256k1_v0_8_1_fe *a);
+/** Normalize a field element, without constant-time guarantee.
+ *
+ * Identical in behavior to rustsecp256k1_v0_9_0_fe_normalize, but not constant time in r.
+ */
+static void rustsecp256k1_v0_9_0_fe_normalize_var(rustsecp256k1_v0_9_0_fe *r);
 
-/** Verify whether a field element is zero. Requires the input to be normalized. */
-static int rustsecp256k1_v0_8_1_fe_is_zero(const rustsecp256k1_v0_8_1_fe *a);
+/** Determine whether r represents field element 0.
+ *
+ * On input, r must be a valid field element.
+ * Returns whether r = 0 (mod p).
+ */
+static int rustsecp256k1_v0_9_0_fe_normalizes_to_zero(const rustsecp256k1_v0_9_0_fe *r);
 
-/** Check the "oddness" of a field element. Requires the input to be normalized. */
-static int rustsecp256k1_v0_8_1_fe_is_odd(const rustsecp256k1_v0_8_1_fe *a);
+/** Determine whether r represents field element 0, without constant-time guarantee.
+ *
+ * Identical in behavior to rustsecp256k1_v0_9_0_normalizes_to_zero, but not constant time in r.
+ */
+static int rustsecp256k1_v0_9_0_fe_normalizes_to_zero_var(const rustsecp256k1_v0_9_0_fe *r);
 
-/** Compare two field elements. Requires magnitude-1 inputs. */
-static int rustsecp256k1_v0_8_1_fe_equal(const rustsecp256k1_v0_8_1_fe *a, const rustsecp256k1_v0_8_1_fe *b);
+/** Set a field element to an integer in range [0,0x7FFF].
+ *
+ * On input, r does not need to be initialized, a must be in [0,0x7FFF].
+ * On output, r represents value a, is normalized and has magnitude (a!=0).
+ */
+static void rustsecp256k1_v0_9_0_fe_set_int(rustsecp256k1_v0_9_0_fe *r, int a);
 
-/** Same as rustsecp256k1_v0_8_1_fe_equal, but may be variable time. */
-static int rustsecp256k1_v0_8_1_fe_equal_var(const rustsecp256k1_v0_8_1_fe *a, const rustsecp256k1_v0_8_1_fe *b);
+/** Set a field element to 0.
+ *
+ * On input, a does not need to be initialized.
+ * On output, a represents 0, is normalized and has magnitude 0.
+ */
+static void rustsecp256k1_v0_9_0_fe_clear(rustsecp256k1_v0_9_0_fe *a);
 
-/** Compare two field elements. Requires both inputs to be normalized */
-static int rustsecp256k1_v0_8_1_fe_cmp_var(const rustsecp256k1_v0_8_1_fe *a, const rustsecp256k1_v0_8_1_fe *b);
+/** Determine whether a represents field element 0.
+ *
+ * On input, a must be a valid normalized field element.
+ * Returns whether a = 0 (mod p).
+ *
+ * This behaves identical to rustsecp256k1_v0_9_0_normalizes_to_zero{,_var}, but requires
+ * normalized input (and is much faster).
+ */
+static int rustsecp256k1_v0_9_0_fe_is_zero(const rustsecp256k1_v0_9_0_fe *a);
 
-/** Set a field element equal to 32-byte big endian value. If successful, the resulting field element is normalized. */
-static int rustsecp256k1_v0_8_1_fe_set_b32(rustsecp256k1_v0_8_1_fe *r, const unsigned char *a);
+/** Determine whether a (mod p) is odd.
+ *
+ * On input, a must be a valid normalized field element.
+ * Returns (int(a) mod p) & 1.
+ */
+static int rustsecp256k1_v0_9_0_fe_is_odd(const rustsecp256k1_v0_9_0_fe *a);
 
-/** Convert a field element to a 32-byte big endian value. Requires the input to be normalized */
-static void rustsecp256k1_v0_8_1_fe_get_b32(unsigned char *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Determine whether two field elements are equal.
+ *
+ * On input, a and b must be valid field elements with magnitudes not exceeding
+ * 1 and 31, respectively.
+ * Returns a = b (mod p).
+ */
+static int rustsecp256k1_v0_9_0_fe_equal(const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe *b);
 
-/** Set a field element equal to the additive inverse of another. Takes a maximum magnitude of the input
- *  as an argument. The magnitude of the output is one higher. */
-static void rustsecp256k1_v0_8_1_fe_negate(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a, int m);
+/** Compare the values represented by 2 field elements, without constant-time guarantee.
+ *
+ * On input, a and b must be valid normalized field elements.
+ * Returns 1 if a > b, -1 if a < b, and 0 if a = b (comparisons are done as integers
+ * in range 0..p-1).
+ */
+static int rustsecp256k1_v0_9_0_fe_cmp_var(const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe *b);
 
-/** Multiplies the passed field element with a small integer constant. Multiplies the magnitude by that
- *  small integer. */
-static void rustsecp256k1_v0_8_1_fe_mul_int(rustsecp256k1_v0_8_1_fe *r, int a);
+/** Set a field element equal to a provided 32-byte big endian value, reducing it.
+ *
+ * On input, r does not need to be initialized. a must be a pointer to an initialized 32-byte array.
+ * On output, r = a (mod p). It will have magnitude 1, and not be normalized.
+ */
+static void rustsecp256k1_v0_9_0_fe_set_b32_mod(rustsecp256k1_v0_9_0_fe *r, const unsigned char *a);
 
-/** Adds a field element to another. The result has the sum of the inputs' magnitudes as magnitude. */
-static void rustsecp256k1_v0_8_1_fe_add(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Set a field element equal to a provided 32-byte big endian value, checking for overflow.
+ *
+ * On input, r does not need to be initialized. a must be a pointer to an initialized 32-byte array.
+ * On output, r = a if (a < p), it will be normalized with magnitude 1, and 1 is returned.
+ * If a >= p, 0 is returned, and r will be made invalid (and must not be used without overwriting).
+ */
+static int rustsecp256k1_v0_9_0_fe_set_b32_limit(rustsecp256k1_v0_9_0_fe *r, const unsigned char *a);
 
-/** Sets a field element to be the product of two others. Requires the inputs' magnitudes to be at most 8.
- *  The output magnitude is 1 (but not guaranteed to be normalized). */
-static void rustsecp256k1_v0_8_1_fe_mul(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a, const rustsecp256k1_v0_8_1_fe * SECP256K1_RESTRICT b);
+/** Convert a field element to 32-byte big endian byte array.
+ * On input, a must be a valid normalized field element, and r a pointer to a 32-byte array.
+ * On output, r = a (mod p).
+ */
+static void rustsecp256k1_v0_9_0_fe_get_b32(unsigned char *r, const rustsecp256k1_v0_9_0_fe *a);
 
-/** Sets a field element to be the square of another. Requires the input's magnitude to be at most 8.
- *  The output magnitude is 1 (but not guaranteed to be normalized). */
-static void rustsecp256k1_v0_8_1_fe_sqr(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Negate a field element.
+ *
+ * On input, r does not need to be initialized. a must be a valid field element with
+ * magnitude not exceeding m. m must be an integer constant expression in [0,31].
+ * Performs {r = -a}.
+ * On output, r will not be normalized, and will have magnitude m+1.
+ */
+#define rustsecp256k1_v0_9_0_fe_negate(r, a, m) ASSERT_INT_CONST_AND_DO(m, rustsecp256k1_v0_9_0_fe_negate_unchecked(r, a, m))
 
-/** If a has a square root, it is computed in r and 1 is returned. If a does not
- *  have a square root, the root of its negation is computed and 0 is returned.
- *  The input's magnitude can be at most 8. The output magnitude is 1 (but not
- *  guaranteed to be normalized). The result in r will always be a square
- *  itself. */
-static int rustsecp256k1_v0_8_1_fe_sqrt(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Like rustsecp256k1_v0_9_0_fe_negate_unchecked but m is not checked to be an integer constant expression.
+ *
+ * Should not be called directly outside of tests.
+ */
+static void rustsecp256k1_v0_9_0_fe_negate_unchecked(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int m);
 
-/** Sets a field element to be the (modular) inverse of another. Requires the input's magnitude to be
- *  at most 8. The output magnitude is 1 (but not guaranteed to be normalized). */
-static void rustsecp256k1_v0_8_1_fe_inv(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Add a small integer to a field element.
+ *
+ * Performs {r += a}. The magnitude of r increases by 1, and normalized is cleared.
+ * a must be in range [0,0x7FFF].
+ */
+static void rustsecp256k1_v0_9_0_fe_add_int(rustsecp256k1_v0_9_0_fe *r, int a);
 
-/** Potentially faster version of rustsecp256k1_v0_8_1_fe_inv, without constant-time guarantee. */
-static void rustsecp256k1_v0_8_1_fe_inv_var(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Multiply a field element with a small integer.
+ *
+ * On input, r must be a valid field element. a must be an integer constant expression in [0,32].
+ * The magnitude of r times a must not exceed 32.
+ * Performs {r *= a}.
+ * On output, r's magnitude is multiplied by a, and r will not be normalized.
+ */
+#define rustsecp256k1_v0_9_0_fe_mul_int(r, a) ASSERT_INT_CONST_AND_DO(a, rustsecp256k1_v0_9_0_fe_mul_int_unchecked(r, a))
 
-/** Convert a field element to the storage type. */
-static void rustsecp256k1_v0_8_1_fe_to_storage(rustsecp256k1_v0_8_1_fe_storage *r, const rustsecp256k1_v0_8_1_fe *a);
+/** Like rustsecp256k1_v0_9_0_fe_mul_int but a is not checked to be an integer constant expression.
+ * 
+ * Should not be called directly outside of tests.
+ */
+static void rustsecp256k1_v0_9_0_fe_mul_int_unchecked(rustsecp256k1_v0_9_0_fe *r, int a);
 
-/** Convert a field element back from the storage type. */
-static void rustsecp256k1_v0_8_1_fe_from_storage(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe_storage *a);
+/** Increment a field element by another.
+ *
+ * On input, r and a must be valid field elements, not necessarily normalized.
+ * The sum of their magnitudes must not exceed 32.
+ * Performs {r += a}.
+ * On output, r will not be normalized, and will have magnitude incremented by a's.
+ */
+static void rustsecp256k1_v0_9_0_fe_add(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a);
+
+/** Multiply two field elements.
+ *
+ * On input, a and b must be valid field elements; r does not need to be initialized.
+ * r and a may point to the same object, but neither can be equal to b. The magnitudes
+ * of a and b must not exceed 8.
+ * Performs {r = a * b}
+ * On output, r will have magnitude 1, but won't be normalized.
+ */
+static void rustsecp256k1_v0_9_0_fe_mul(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, const rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT b);
+
+/** Square a field element.
+ *
+ * On input, a must be a valid field element; r does not need to be initialized. The magnitude
+ * of a must not exceed 8.
+ * Performs {r = a**2}
+ * On output, r will have magnitude 1, but won't be normalized.
+ */
+static void rustsecp256k1_v0_9_0_fe_sqr(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a);
+
+/** Compute a square root of a field element.
+ *
+ * On input, a must be a valid field element with magnitude<=8; r need not be initialized.
+ * If sqrt(a) exists, performs {r = sqrt(a)} and returns 1.
+ * Otherwise, sqrt(-a) exists. The function performs {r = sqrt(-a)} and returns 0.
+ * The resulting value represented by r will be a square itself.
+ * Variables r and a must not point to the same object.
+ * On output, r will have magnitude 1 but will not be normalized.
+ */
+static int rustsecp256k1_v0_9_0_fe_sqrt(rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT r, const rustsecp256k1_v0_9_0_fe * SECP256K1_RESTRICT a);
+
+/** Compute the modular inverse of a field element.
+ *
+ * On input, a must be a valid field element; r need not be initialized.
+ * Performs {r = a**(p-2)} (which maps 0 to 0, and every other element to its
+ * inverse).
+ * On output, r will have magnitude (a.magnitude != 0) and be normalized.
+ */
+static void rustsecp256k1_v0_9_0_fe_inv(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a);
+
+/** Compute the modular inverse of a field element, without constant-time guarantee.
+ *
+ * Behaves identically to rustsecp256k1_v0_9_0_fe_inv, but is not constant-time in a.
+ */
+static void rustsecp256k1_v0_9_0_fe_inv_var(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a);
+
+/** Convert a field element to rustsecp256k1_v0_9_0_fe_storage.
+ *
+ * On input, a must be a valid normalized field element.
+ * Performs {r = a}.
+ */
+static void rustsecp256k1_v0_9_0_fe_to_storage(rustsecp256k1_v0_9_0_fe_storage *r, const rustsecp256k1_v0_9_0_fe *a);
+
+/** Convert a field element back from rustsecp256k1_v0_9_0_fe_storage.
+ *
+ * On input, r need not be initialized.
+ * Performs {r = a}.
+ * On output, r will be normalized and will have magnitude 1.
+ */
+static void rustsecp256k1_v0_9_0_fe_from_storage(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe_storage *a);
 
 /** If flag is true, set *r equal to *a; otherwise leave it. Constant-time.  Both *r and *a must be initialized.*/
-static void rustsecp256k1_v0_8_1_fe_storage_cmov(rustsecp256k1_v0_8_1_fe_storage *r, const rustsecp256k1_v0_8_1_fe_storage *a, int flag);
+static void rustsecp256k1_v0_9_0_fe_storage_cmov(rustsecp256k1_v0_9_0_fe_storage *r, const rustsecp256k1_v0_9_0_fe_storage *a, int flag);
 
-/** If flag is true, set *r equal to *a; otherwise leave it. Constant-time.  Both *r and *a must be initialized.*/
-static void rustsecp256k1_v0_8_1_fe_cmov(rustsecp256k1_v0_8_1_fe *r, const rustsecp256k1_v0_8_1_fe *a, int flag);
+/** Conditionally move a field element in constant time.
+ *
+ * On input, both r and a must be valid field elements. Flag must be 0 or 1.
+ * Performs {r = flag ? a : r}.
+ *
+ * On output, r's magnitude will be the maximum of both input magnitudes.
+ * It will be normalized if and only if both inputs were normalized.
+ */
+static void rustsecp256k1_v0_9_0_fe_cmov(rustsecp256k1_v0_9_0_fe *r, const rustsecp256k1_v0_9_0_fe *a, int flag);
 
-/** Halves the value of a field element modulo the field prime. Constant-time.
- *  For an input magnitude 'm', the output magnitude is set to 'floor(m/2) + 1'.
- *  The output is not guaranteed to be normalized, regardless of the input. */
-static void rustsecp256k1_v0_8_1_fe_half(rustsecp256k1_v0_8_1_fe *r);
+/** Halve the value of a field element modulo the field prime in constant-time.
+ *
+ * On input, r must be a valid field element.
+ * On output, r will be normalized and have magnitude floor(m/2) + 1 where m is
+ * the magnitude of r on input.
+ */
+static void rustsecp256k1_v0_9_0_fe_half(rustsecp256k1_v0_9_0_fe *r);
 
-/** Sets each limb of 'r' to its upper bound at magnitude 'm'. The output will also have its
- *  magnitude set to 'm' and is normalized if (and only if) 'm' is zero. */
-static void rustsecp256k1_v0_8_1_fe_get_bounds(rustsecp256k1_v0_8_1_fe *r, int m);
+/** Sets r to a field element with magnitude m, normalized if (and only if) m==0.
+ *  The value is chosen so that it is likely to trigger edge cases related to
+ *  internal overflows. */
+static void rustsecp256k1_v0_9_0_fe_get_bounds(rustsecp256k1_v0_9_0_fe *r, int m);
+
+/** Determine whether a is a square (modulo p).
+ *
+ * On input, a must be a valid field element.
+ */
+static int rustsecp256k1_v0_9_0_fe_is_square_var(const rustsecp256k1_v0_9_0_fe *a);
+
+/** Check invariants on a field element (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_9_0_fe_verify(const rustsecp256k1_v0_9_0_fe *a);
+
+/** Check that magnitude of a is at most m (no-op unless VERIFY is enabled). */
+static void rustsecp256k1_v0_9_0_fe_verify_magnitude(const rustsecp256k1_v0_9_0_fe *a, int m);
 
 #endif /* SECP256K1_FIELD_H */

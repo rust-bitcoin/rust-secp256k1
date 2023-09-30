@@ -1,0 +1,5 @@
+include_HEADERS += include/rustsecp256k1_v0_9_0_ellswift.h
+noinst_HEADERS += src/modules/ellswift/bench_impl.h
+noinst_HEADERS += src/modules/ellswift/main_impl.h
+noinst_HEADERS += src/modules/ellswift/tests_impl.h
+noinst_HEADERS += src/modules/ellswift/tests_exhaustive_impl.h

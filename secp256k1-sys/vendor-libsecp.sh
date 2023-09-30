@@ -99,6 +99,9 @@ patch "$DIR/src/secp256k1.c" "./secp256k1.c.patch"
 patch "$DIR/src/scratch_impl.h" "./scratch_impl.h.patch"
 patch "$DIR/src/util.h" "./util.h.patch"
 
+# Fix a linking error while cross-compiling to windowns with mingw
+patch "$DIR/contrib/lax_der_parsing.c" "./lax_der_parsing.c.patch"
+
 # Prefix all methods with rustsecp and a version prefix
 find "$DIR" \
     -not -path '*/\.*' \
