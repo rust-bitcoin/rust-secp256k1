@@ -82,6 +82,15 @@ pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
     data: *mut c_void,
 ) -> c_int>;
 
+/// A hash function used by `ellswift_ecdh` to hash the final ECDH shared secret.
+pub type EllswiftEcdhHashFn = Option<unsafe extern "C" fn(
+    output: *mut c_uchar,
+    x32: *const c_uchar,
+    ell_a64: *const c_uchar,
+    ell_b64: *const c_uchar,
+    data: *mut c_void,
+) -> c_int>;
+
 /// Data structure that contains additional arguments for schnorrsig_sign_custom.
 #[repr(C)]
 pub struct SchnorrSigExtraParams {
@@ -517,10 +526,31 @@ impl core::hash::Hash for Keypair {
     }
 }
 
+/// Library-internal representation of a ElligatorSwift encoded group element.
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ElligatorSwift([u8; 64]);
+
+impl ElligatorSwift {
+    pub fn from_array(arr: [u8; 64]) -> Self {
+        ElligatorSwift(arr)
+    }
+    pub fn to_array(self) -> [u8; 64] {
+        self.0
+    }
+}
+
+impl_array_newtype!(ElligatorSwift, u8, 64);
+impl_raw_debug!(ElligatorSwift);
+
 extern "C" {
     /// Default ECDH hash function
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ecdh_hash_function_default")]
     pub static secp256k1_ecdh_hash_function_default: EcdhHashFn;
+
+    /// Default ECDH hash function for BIP324 key establishment
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ellswift_xdh_hash_function_bip324")]
+    pub static secp256k1_ellswift_xdh_hash_function_bip324: EllswiftEcdhHashFn;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_nonce_function_rfc6979")]
     pub static secp256k1_nonce_function_rfc6979: NonceFn;
@@ -600,6 +630,34 @@ extern "C" {
                                  output_pubkey: *mut PublicKey,
                                  keypair: *const Keypair)
                                  -> c_int;
+    // Elligator Swift
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ellswift_encode")]
+    pub fn secp256k1_ellswift_encode(ctx: *const Context,
+                                     ell64: *mut c_uchar,
+                                     pubkey: *const PublicKey,
+                                     rnd32: *const c_uchar)
+                                     -> c_int;
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ellswift_decode")]
+    pub fn secp256k1_ellswift_decode(ctx: *const Context,
+                                     pubkey: *mut u8,
+                                     ell64: *const c_uchar)
+                                     -> c_int;
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ellswift_create")]
+    pub fn secp256k1_ellswift_create(ctx: *const Context,
+                                     ell64: *mut c_uchar,
+                                     seckey32: *const c_uchar,
+                                     aux_rand32: *const c_uchar)
+                                     -> c_int;
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_0_ellswift_xdh")]
+    pub fn secp256k1_ellswift_xdh(ctx: *const Context,
+                                  output: *mut c_uchar,
+                                  ell_a64: *const c_uchar,
+                                  ell_b64: *const c_uchar,
+                                  seckey32: *const c_uchar,
+                                  party: c_int,
+                                  hashfp: EllswiftEcdhHashFn,
+                                  data: *mut c_void)
+                                  -> c_int;
 }
 
 #[cfg(not(secp256k1_fuzz))]
@@ -975,6 +1033,53 @@ impl<T> CPtr for [T] {
             ptr::null_mut::<Self::Target>()
         } else {
             self.as_mut_ptr()
+        }
+    }
+}
+
+impl<T> CPtr for &[T] {
+    type Target = T;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        if self.is_empty() {
+            ptr::null()
+        } else {
+            self.as_ptr()
+        }
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        if self.is_empty() {
+            ptr::null_mut()
+        } else {
+            self.as_ptr() as *mut Self::Target
+        }
+    }
+    
+}
+
+impl CPtr for [u8; 32] {
+    type Target = u8;
+    fn as_c_ptr(&self) -> *const Self::Target {
+        self.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        self.as_mut_ptr()
+    }
+}
+
+impl <T: CPtr> CPtr for Option<T> {
+    type Target = T::Target;
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        match self {
+            Some(contents) => contents.as_mut_c_ptr(),
+            None => ptr::null_mut(),
+        }
+    }
+    fn as_c_ptr(&self) -> *const Self::Target {
+        match self {
+            Some(content) => content.as_c_ptr(),
+            None => ptr::null(),
         }
     }
 }
