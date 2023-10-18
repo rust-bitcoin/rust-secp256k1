@@ -13,14 +13,77 @@ extern crate cc;
 
 use std::env;
 
-fn main() {
-    // Actual build
+fn gen_max_align() {
+    configured_cc()
+        .file("depend/max_align.c")
+        .cargo_metadata(false)
+        .compile("max_align.o");
+    let out_dir = std::path::PathBuf::from(std::env::var_os("OUT_DIR").expect("missing OUT_DIR"));
+    let target_endian = std::env::var("CARGO_CFG_TARGET_ENDIAN")
+        .expect("missing CARGO_CFG_TARGET_ENDIAN");
+    let target_pointer_width_bytes = std::env::var("CARGO_CFG_TARGET_POINTER_WIDTH")
+        .expect("missing CARGO_CFG_TARGET_POINTER_WIDTH")
+        .parse::<usize>()
+        .expect("malformed CARGO_CFG_TARGET_POINTER_WIDTH")
+        // CARGO_CFG_TARGET_POINTER_WIDTH is in bits, we want bytes
+        / 8;
+    let max_align_bin = out_dir.join("max_align.bin");
+    // Note that this copies *whole* sections to a binary file.
+    // It's a bit brittle because some other symbol could theoretically end up there.
+    // Currently it only has one on my machine and we guard against unexpected changes by checking
+    // the size - it must match the target pointer width.
+    let objcopy = std::process::Command::new("objcopy")
+        .args(&["-O", "binary"])
+        // cc inserts depend - WTF
+        .arg(out_dir.join("depend/max_align.o"))
+        .arg(&max_align_bin)
+        .spawn()
+        .expect("failed to run objcopy")
+        .wait()
+        .expect("failed to wait for objcopy");
+    assert!(objcopy.success(), "objcopy failed");
+    let mut max_align_bytes = std::fs::read(max_align_bin).expect("failed to read max_align.bin");
+    // The `usize` of target and host may not match so we need to do conversion.
+    // Sensible alignments should be very small anyway but we don't want crappy `unsafe` code.
+    // Little endian happens to be a bit easier to process so we convert into that.
+    // If the type is smaller than `u64` we zero-pad it.
+    // If the type is larger than `u6` but the number fits into `u64` it'll have
+    // unused tail which is easy to cut-off.
+    // If the number is larger than `u64::MAX` then bytes beyond `u64` size will
+    // be non-zero.
+    //
+    // So as long as the max alignment fits into `u64` this can decode alignment
+    // for any architecture on any architecture.
+    assert_eq!(max_align_bytes.len(), target_pointer_width_bytes);
+    if target_endian != "little" {
+        max_align_bytes.reverse()
+    }
+    // copying like this auto-pads the number with zeroes
+    let mut buf = [0; std::mem::size_of::<u64>()];
+    let to_copy = buf.len().min(max_align_bytes.len());
+    // Overflow check
+    if max_align_bytes[to_copy..].iter().any(|b| *b != 0) {
+        panic!("max alignment overflowed u64");
+    }
+    buf[..to_copy].copy_from_slice(&max_align_bytes[..to_copy]);
+    let max_align = u64::from_le_bytes(buf);
+    let src = format!(r#"
+/// A type that is as aligned as the biggest alignment for fundamental types in C.
+///
+/// Since C11 that means as aligned as `max_align_t` is.
+/// The exact size/alignment is unspecified.
+#[repr(align({}))]
+#[derive(Default, Copy, Clone)]
+pub struct AlignedType([u8; {}]);"#, max_align, max_align);
+    std::fs::write(out_dir.join("aligned_type.rs"), src.as_bytes()).expect("failed to write aligned_type.rs");
+}
+
+/// Returns CC builder configured with all defines but no C files.
+fn configured_cc() -> cc::Build {
+    // While none of these currently affect max alignment we prefer to keep the "hygiene" so that
+    // new code will be correct.
     let mut base_config = cc::Build::new();
-    base_config.include("depend/secp256k1/")
-               .include("depend/secp256k1/include")
-               .include("depend/secp256k1/src")
-               .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
-               .define("SECP256K1_API", Some(""))
+    base_config.define("SECP256K1_API", Some(""))
                .define("ENABLE_MODULE_ECDH", Some("1"))
                .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
                .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
@@ -36,6 +99,17 @@ fn main() {
     base_config.define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
     #[cfg(feature = "recovery")]
     base_config.define("ENABLE_MODULE_RECOVERY", Some("1"));
+
+    base_config
+}
+
+fn build_secp256k1() {
+    let mut base_config = configured_cc();
+    base_config.include("depend/secp256k1/")
+               .include("depend/secp256k1/include")
+               .include("depend/secp256k1/src")
+               .flag_if_supported("-Wno-unused-function"); // some ecmult stuff is defined but not used upstream
+
 
     // WASM headers and size/align defines.
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "wasm32" {
@@ -58,3 +132,7 @@ fn main() {
     }
 }
 
+fn main() {
+    gen_max_align();
+    build_secp256k1();
+}
