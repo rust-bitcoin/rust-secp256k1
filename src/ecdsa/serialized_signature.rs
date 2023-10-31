@@ -8,6 +8,7 @@
 //! serialized signatures and since it's a bit more complicated it has its own module.
 
 use core::borrow::Borrow;
+use core::convert::TryFrom;
 use core::{fmt, ops};
 
 pub use into_iter::IntoIter;
@@ -89,6 +90,28 @@ impl<'a> IntoIterator for &'a SerializedSignature {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter { self.iter() }
+}
+
+impl From<Signature> for SerializedSignature {
+    fn from(value: Signature) -> Self { Self::from_signature(&value) }
+}
+
+impl<'a> From<&'a Signature> for SerializedSignature {
+    fn from(value: &'a Signature) -> Self { Self::from_signature(value) }
+}
+
+impl TryFrom<SerializedSignature> for Signature {
+    type Error = Error;
+
+    fn try_from(value: SerializedSignature) -> Result<Self, Self::Error> { value.to_signature() }
+}
+
+impl<'a> TryFrom<&'a SerializedSignature> for Signature {
+    type Error = Error;
+
+    fn try_from(value: &'a SerializedSignature) -> Result<Self, Self::Error> {
+        value.to_signature()
+    }
 }
 
 impl SerializedSignature {
