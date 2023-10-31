@@ -19,7 +19,7 @@ fn main() {
     base_config.include("depend/secp256k1/")
                .include("depend/secp256k1/include")
                .include("depend/secp256k1/src")
-               .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
+               .flag("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
                .define("SECP256K1_API", Some(""))
                .define("ENABLE_MODULE_ECDH", Some("1"))
                .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
