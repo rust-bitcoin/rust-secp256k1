@@ -84,6 +84,7 @@ impl SerializedSignature {
     }
 
     /// Get the capacity of the underlying data buffer.
+    #[deprecated = "This always returns 72"]
     #[inline]
     pub fn capacity(&self) -> usize { self.data.len() }
 
@@ -106,6 +107,7 @@ impl SerializedSignature {
     pub fn from_signature(sig: &Signature) -> SerializedSignature { sig.serialize_der() }
 
     /// Check if the space is zero.
+    #[deprecated = "This always returns false"]
     #[inline]
     pub fn is_empty(&self) -> bool { self.len() == 0 }
 }
