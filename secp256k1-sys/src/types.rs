@@ -37,9 +37,12 @@ pub(crate) const ALIGN_TO: usize = core::mem::align_of::<AlignedType>();
 mod tests {
     extern crate libc;
     use std::any::TypeId;
+    #[cfg(not(target_arch = "wasm32"))]
     use std::mem;
     use std::os::raw;
-    use crate::{types, AlignedType};
+    #[cfg(not(target_arch = "wasm32"))]
+    use crate::AlignedType;
+    use crate::types;
 
     #[test]
     fn verify_types() {
@@ -48,6 +51,7 @@ mod tests {
         assert_eq!(TypeId::of::<types::c_uint>(), TypeId::of::<raw::c_uint>());
         assert_eq!(TypeId::of::<types::c_char>(), TypeId::of::<raw::c_char>());
 
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(mem::align_of::<AlignedType>() >= mem::align_of::<self::libc::max_align_t>());
     }
 }
