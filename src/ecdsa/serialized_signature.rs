@@ -7,6 +7,7 @@
 //! unable to run on platforms without allocator. We implement a special type to encapsulate
 //! serialized signatures and since it's a bit more complicated it has its own module.
 
+use core::borrow::Borrow;
 use core::{fmt, ops};
 
 pub use into_iter::IntoIter;
@@ -41,9 +42,28 @@ impl PartialEq for SerializedSignature {
     fn eq(&self, other: &SerializedSignature) -> bool { **self == **other }
 }
 
+impl PartialEq<[u8]> for SerializedSignature {
+    #[inline]
+    fn eq(&self, other: &[u8]) -> bool { **self == *other }
+}
+
+impl PartialEq<SerializedSignature> for [u8] {
+    #[inline]
+    fn eq(&self, other: &SerializedSignature) -> bool { *self == **other }
+}
+
+impl core::hash::Hash for SerializedSignature {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) { (**self).hash(state) }
+}
+
 impl AsRef<[u8]> for SerializedSignature {
     #[inline]
     fn as_ref(&self) -> &[u8] { self }
+}
+
+impl Borrow<[u8]> for SerializedSignature {
+    #[inline]
+    fn borrow(&self) -> &[u8] { self }
 }
 
 impl ops::Deref for SerializedSignature {
