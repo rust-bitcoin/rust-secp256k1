@@ -53,6 +53,28 @@ impl PartialEq<SerializedSignature> for [u8] {
     fn eq(&self, other: &SerializedSignature) -> bool { *self == **other }
 }
 
+impl PartialOrd for SerializedSignature {
+    fn partial_cmp(&self, other: &SerializedSignature) -> Option<core::cmp::Ordering> {
+        Some((**self).cmp(&**other))
+    }
+}
+
+impl Ord for SerializedSignature {
+    fn cmp(&self, other: &SerializedSignature) -> core::cmp::Ordering { (**self).cmp(&**other) }
+}
+
+impl PartialOrd<[u8]> for SerializedSignature {
+    fn partial_cmp(&self, other: &[u8]) -> Option<core::cmp::Ordering> {
+        (**self).partial_cmp(other)
+    }
+}
+
+impl PartialOrd<SerializedSignature> for [u8] {
+    fn partial_cmp(&self, other: &SerializedSignature) -> Option<core::cmp::Ordering> {
+        self.partial_cmp(&**other)
+    }
+}
+
 impl core::hash::Hash for SerializedSignature {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) { (**self).hash(state) }
 }
