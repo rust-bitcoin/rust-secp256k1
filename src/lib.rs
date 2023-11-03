@@ -546,11 +546,7 @@ mod tests {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    #[allow(unused_imports)] // When building with no default features.
     use super::*;
-    use crate::{constants, ecdsa, from_hex, Error, Message};
-    #[cfg(feature = "alloc")]
-    use crate::{ffi, PublicKey, Secp256k1, SecretKey};
 
     macro_rules! hex {
         ($hex:expr) => {{
