@@ -10,12 +10,14 @@ pub mod serialized_signature;
 use core::{fmt, ptr, str};
 
 #[cfg(feature = "recovery")]
-pub use self::recovery::{RecoverableSignature, RecoveryId};
+pub use self::recovery::{InvalidRecoveryIdError, RecoverableSignature, RecoveryId};
 pub use self::serialized_signature::SerializedSignature;
+use crate::error::{write_err, InvalidSliceLengthError, SysError};
 use crate::ffi::CPtr;
+use crate::hex::{self, FromHexError};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{ffi, hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
+use crate::{ffi, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -34,22 +36,21 @@ impl fmt::Display for Signature {
 }
 
 impl str::FromStr for Signature {
-    type Err = Error;
+    type Err = SignatureParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; 72];
-        match hex::from_hex(s, &mut res) {
-            Ok(x) => Signature::from_der(&res[0..x]),
-            _ => Err(Error::InvalidSignature),
-        }
+        let len = hex::from_hex(s, &mut res)?;
+        let sig = Signature::from_der(&res[0..len])?;
+        Ok(sig)
     }
 }
 
 impl Signature {
     #[inline]
     /// Converts a DER-encoded byte slice to a signature
-    pub fn from_der(data: &[u8]) -> Result<Signature, Error> {
+    pub fn from_der(data: &[u8]) -> Result<Signature, SignatureError> {
         if data.is_empty() {
-            return Err(Error::InvalidSignature);
+            return Err(SignatureError::EmptySlice);
         }
 
         unsafe {
@@ -63,15 +64,15 @@ impl Signature {
             {
                 Ok(Signature(ret))
             } else {
-                Err(Error::InvalidSignature)
+                Err(SignatureError::Sys(SysError {}))
             }
         }
     }
 
     /// Converts a 64-byte compact-encoded byte slice to a signature
-    pub fn from_compact(data: &[u8]) -> Result<Signature, Error> {
+    pub fn from_compact(data: &[u8]) -> Result<Signature, SignatureError> {
         if data.len() != 64 {
-            return Err(Error::InvalidSignature);
+            return Err(SignatureError::invalid_length(data.len()));
         }
 
         unsafe {
@@ -84,7 +85,7 @@ impl Signature {
             {
                 Ok(Signature(ret))
             } else {
-                Err(Error::InvalidSignature)
+                Err(SignatureError::Sys(SysError {}))
             }
         }
     }
@@ -93,9 +94,9 @@ impl Signature {
     /// only useful for validating signatures in the Bitcoin blockchain from before
     /// 2016. It should never be used in new applications. This library does not
     /// support serializing to this "format"
-    pub fn from_der_lax(data: &[u8]) -> Result<Signature, Error> {
+    pub fn from_der_lax(data: &[u8]) -> Result<Signature, SignatureError> {
         if data.is_empty() {
-            return Err(Error::InvalidSignature);
+            return Err(SignatureError::EmptySlice);
         }
 
         unsafe {
@@ -109,7 +110,7 @@ impl Signature {
             {
                 Ok(Signature(ret))
             } else {
-                Err(Error::InvalidSignature)
+                Err(SignatureError::Sys(SysError {}))
             }
         }
     }
@@ -192,7 +193,7 @@ impl Signature {
     /// The signature must be normalized or verification will fail (see [`Signature::normalize_s`]).
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), Error> {
+    pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), SysError> {
         SECP256K1.verify_ecdsa(msg, self, pk)
     }
 }
@@ -364,7 +365,7 @@ impl<C: Verification> Secp256k1<C> {
     ///
     /// ```rust
     /// # #[cfg(feature = "rand-std")] {
-    /// # use secp256k1::{rand, Secp256k1, Message, Error};
+    /// # use secp256k1::{ecdsa, rand, Secp256k1, Message, SysError};
     /// #
     /// # let secp = Secp256k1::new();
     /// # let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
@@ -374,7 +375,7 @@ impl<C: Verification> Secp256k1<C> {
     /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Ok(()));
     ///
     /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature));
+    /// assert!(matches!(secp.verify_ecdsa(&message, &sig, &public_key), Err(SysError)));
     /// # }
     /// ```
     #[inline]
@@ -383,7 +384,7 @@ impl<C: Verification> Secp256k1<C> {
         msg: &Message,
         sig: &Signature,
         pk: &PublicKey,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SysError> {
         unsafe {
             if ffi::secp256k1_ecdsa_verify(
                 self.ctx.as_ptr(),
@@ -392,7 +393,7 @@ impl<C: Verification> Secp256k1<C> {
                 pk.as_c_ptr(),
             ) == 0
             {
-                Err(Error::IncorrectSignature)
+                Err(SysError {})
             } else {
                 Ok(())
             }
@@ -426,4 +427,92 @@ pub(crate) fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
         debug_assert!(err == 1);
     }
     len <= max_len
+}
+
+/// Signature is invalid.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SignatureError {
+    /// Tried to create signature from an empty slice.
+    EmptySlice,
+    /// Tried to create signature from an invalid length slice.
+    InvalidSliceLength(InvalidSliceLengthError),
+    /// FFI call failed.
+    Sys(SysError),
+}
+
+impl SignatureError {
+    fn invalid_length(len: usize) -> Self {
+        InvalidSliceLengthError { got: len, expected: 64 }.into()
+    }
+}
+
+impl fmt::Display for SignatureError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use SignatureError::*;
+
+        match *self {
+            EmptySlice => write!(f, "tried to create signature from an empty slice"),
+            InvalidSliceLength(ref e) =>
+                write_err!(f, "tried to create signature from an invalid length slice"; e),
+            Sys(ref e) => write_err!(f, "sys error"; e),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for SignatureError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        use SignatureError::*;
+
+        match *self {
+            EmptySlice => None,
+            InvalidSliceLength(ref e) => Some(e),
+            Sys(ref e) => Some(e),
+        }
+    }
+}
+
+impl From<InvalidSliceLengthError> for SignatureError {
+    fn from(e: InvalidSliceLengthError) -> Self { Self::InvalidSliceLength(e) }
+}
+
+/// Signature string is invalid.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SignatureParseError {
+    /// Invalid hex string.
+    Hex(FromHexError),
+    /// Invalid signature.
+    Sig(SignatureError),
+}
+
+impl fmt::Display for SignatureParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use SignatureParseError::*;
+
+        match *self {
+            Hex(ref e) => write_err!(f, "error decoding hex"; e),
+            Sig(ref e) => write_err!(f, "invalid signature"; e),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for SignatureParseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        use SignatureParseError::*;
+
+        match *self {
+            Hex(ref e) => Some(e),
+            Sig(ref e) => Some(e),
+        }
+    }
+}
+
+impl From<FromHexError> for SignatureParseError {
+    fn from(e: FromHexError) -> Self { Self::Hex(e) }
+}
+
+impl From<SignatureError> for SignatureParseError {
+    fn from(e: SignatureError) -> Self { Self::Sig(e) }
 }

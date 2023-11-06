@@ -3,6 +3,14 @@
 //! Public and secret keys.
 //!
 
+pub mod error;
+
+#[rustfmt::skip]
+pub use self::error::{
+    ParityValueError, PublicKeyError, PublicKeySumError, SecretKeyError, TweakError,
+    XOnlyTweakError,
+};
+
 use core::convert::TryFrom;
 use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
@@ -11,9 +19,9 @@ use core::{fmt, ptr, str};
 use serde::ser::SerializeTuple;
 
 use crate::ellswift::ElligatorSwift;
+use crate::error::SysError;
 use crate::ffi::types::c_uint;
 use crate::ffi::{self, CPtr};
-use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
 use crate::{constants, ecdsa, hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification};
@@ -109,12 +117,12 @@ impl ffi::CPtr for SecretKey {
 }
 
 impl str::FromStr for SecretKey {
-    type Err = Error;
+    type Err = SecretKeyError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match hex::from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_slice(&res),
-            _ => Err(Error::InvalidSecretKey),
+            _ => Err(SecretKeyError),
         }
     }
 }
@@ -162,14 +170,14 @@ impl fmt::Display for PublicKey {
 }
 
 impl str::FromStr for PublicKey {
-    type Err = Error;
+    type Err = PublicKeyError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
         match hex::from_hex(s, &mut res) {
             Ok(constants::PUBLIC_KEY_SIZE) =>
                 PublicKey::from_slice(&res[0..constants::PUBLIC_KEY_SIZE]),
             Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) => PublicKey::from_slice(&res),
-            _ => Err(Error::InvalidPublicKey),
+            _ => Err(PublicKeyError),
         }
     }
 }
@@ -210,7 +218,7 @@ impl SecretKey {
     /// let sk = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
     /// ```
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
+    pub fn from_slice(data: &[u8]) -> Result<SecretKey, SecretKeyError> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
             Ok(data) => {
                 unsafe {
@@ -219,12 +227,12 @@ impl SecretKey {
                         data.as_c_ptr(),
                     ) == 0
                     {
-                        return Err(InvalidSecretKey);
+                        return Err(SecretKeyError);
                     }
                 }
                 Ok(SecretKey(data))
             }
-            Err(_) => Err(InvalidSecretKey),
+            Err(_) => Err(SecretKeyError),
         }
     }
 
@@ -303,7 +311,7 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    pub fn add_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
+    pub fn add_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, TweakError> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_add(
                 ffi::secp256k1_context_no_precomp,
@@ -311,7 +319,7 @@ impl SecretKey {
                 tweak.as_c_ptr(),
             ) != 1
             {
-                Err(Error::InvalidTweak)
+                Err(TweakError)
             } else {
                 Ok(self)
             }
@@ -324,7 +332,7 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
+    pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, TweakError> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_mul(
                 ffi::secp256k1_context_no_precomp,
@@ -332,7 +340,7 @@ impl SecretKey {
                 tweak.as_c_ptr(),
             ) != 1
             {
-                Err(Error::InvalidTweak)
+                Err(TweakError)
             } else {
                 Ok(self)
             }
@@ -462,9 +470,9 @@ impl PublicKey {
 
     /// Creates a public key directly from a slice.
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
+    pub fn from_slice(data: &[u8]) -> Result<PublicKey, PublicKeyError> {
         if data.is_empty() {
-            return Err(Error::InvalidPublicKey);
+            return Err(PublicKeyError);
         }
 
         unsafe {
@@ -478,7 +486,7 @@ impl PublicKey {
             {
                 Ok(PublicKey(pk))
             } else {
-                Err(InvalidPublicKey)
+                Err(PublicKeyError)
             }
         }
     }
@@ -578,14 +586,14 @@ impl PublicKey {
         mut self,
         secp: &Secp256k1<C>,
         tweak: &Scalar,
-    ) -> Result<PublicKey, Error> {
+    ) -> Result<PublicKey, TweakError> {
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_add(secp.ctx.as_ptr(), &mut self.0, tweak.as_c_ptr())
                 == 1
             {
                 Ok(self)
             } else {
-                Err(Error::InvalidTweak)
+                Err(TweakError)
             }
         }
     }
@@ -600,14 +608,14 @@ impl PublicKey {
         mut self,
         secp: &Secp256k1<C>,
         other: &Scalar,
-    ) -> Result<PublicKey, Error> {
+    ) -> Result<PublicKey, TweakError> {
         unsafe {
             if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx.as_ptr(), &mut self.0, other.as_c_ptr())
                 == 1
             {
                 Ok(self)
             } else {
-                Err(Error::InvalidTweak)
+                Err(TweakError)
             }
         }
     }
@@ -631,7 +639,7 @@ impl PublicKey {
     /// let sum = pk1.combine(&pk2).expect("It's improbable to fail for 2 random public keys");
     /// # }
     /// ```
-    pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
+    pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, PublicKeySumError> {
         PublicKey::combine_keys(&[self, other])
     }
 
@@ -658,12 +666,12 @@ impl PublicKey {
     /// let sum = PublicKey::combine_keys(&[&pk1, &pk2, &pk3]).expect("It's improbable to fail for 3 random public keys");
     /// # }
     /// ```
-    pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, Error> {
+    pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, PublicKeySumError> {
         use core::i32::MAX;
         use core::mem::transmute;
 
         if keys.is_empty() || keys.len() > MAX as usize {
-            return Err(InvalidPublicKeySum);
+            return Err(PublicKeySumError);
         }
 
         unsafe {
@@ -679,7 +687,7 @@ impl PublicKey {
             {
                 Ok(PublicKey(ret))
             } else {
-                Err(InvalidPublicKeySum)
+                Err(PublicKeySumError)
             }
         }
     }
@@ -710,7 +718,7 @@ impl PublicKey {
         secp: &Secp256k1<C>,
         msg: &Message,
         sig: &ecdsa::Signature,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SysError> {
         secp.verify_ecdsa(msg, sig, self)
     }
 }
@@ -828,15 +836,15 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if the provided data has an incorrect length, exceeds Secp256k1
+    /// [`SecretKeyError`] if the provided data has an incorrect length, exceeds Secp256k1
     /// field `p` value or the corresponding public key is not even.
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
         data: &[u8],
-    ) -> Result<Keypair, Error> {
+    ) -> Result<Keypair, SecretKeyError> {
         if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
-            return Err(Error::InvalidSecretKey);
+            return Err(SecretKeyError);
         }
 
         unsafe {
@@ -844,7 +852,7 @@ impl Keypair {
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
                 Ok(Keypair(kp))
             } else {
-                Err(Error::InvalidSecretKey)
+                Err(SecretKeyError)
             }
         }
     }
@@ -853,14 +861,17 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    /// [`SecretKeyError`] if corresponding public key for the provided secret key is not even.
     #[inline]
-    pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
+    pub fn from_seckey_str<C: Signing>(
+        secp: &Secp256k1<C>,
+        s: &str,
+    ) -> Result<Keypair, SecretKeyError> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match hex::from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) =>
-                Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
-            _ => Err(Error::InvalidPublicKey),
+                Ok(Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE])?),
+            _ => Err(SecretKeyError),
         }
     }
 
@@ -868,10 +879,10 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    /// [`SecretKeyError`] if corresponding public key for the provided secret key is not even.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
+    pub fn from_seckey_str_global(s: &str) -> Result<Keypair, SecretKeyError> {
         Keypair::from_seckey_str(SECP256K1, s)
     }
 
@@ -942,7 +953,7 @@ impl Keypair {
         mut self,
         secp: &Secp256k1<C>,
         tweak: &Scalar,
-    ) -> Result<Keypair, Error> {
+    ) -> Result<Keypair, TweakError> {
         unsafe {
             let err = ffi::secp256k1_keypair_xonly_tweak_add(
                 secp.ctx.as_ptr(),
@@ -950,7 +961,7 @@ impl Keypair {
                 tweak.as_c_ptr(),
             );
             if err != 1 {
-                return Err(Error::InvalidTweak);
+                return Err(TweakError);
             }
 
             Ok(self)
@@ -1015,7 +1026,7 @@ impl<'a> From<&'a Keypair> for PublicKey {
 }
 
 impl str::FromStr for Keypair {
-    type Err = Error;
+    type Err = SecretKeyError;
 
     #[allow(unused_variables, unreachable_code)] // When built with no default features.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -1128,13 +1139,13 @@ impl fmt::Display for XOnlyPublicKey {
 }
 
 impl str::FromStr for XOnlyPublicKey {
-    type Err = Error;
+    type Err = PublicKeyError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match hex::from_hex(s, &mut res) {
             Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) =>
                 XOnlyPublicKey::from_slice(&res[0..constants::SCHNORR_PUBLIC_KEY_SIZE]),
-            _ => Err(Error::InvalidPublicKey),
+            _ => Err(PublicKeyError),
         }
     }
 }
@@ -1177,12 +1188,12 @@ impl XOnlyPublicKey {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::InvalidPublicKey`] if the length of the data slice is not 32 bytes or the
+    /// Returns [`PublicKeyError`] if the length of the data slice is not 32 bytes or the
     /// slice does not represent a valid Secp256k1 point x coordinate.
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
+    pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, PublicKeyError> {
         if data.is_empty() || data.len() != constants::SCHNORR_PUBLIC_KEY_SIZE {
-            return Err(Error::InvalidPublicKey);
+            return Err(PublicKeyError);
         }
 
         unsafe {
@@ -1195,7 +1206,7 @@ impl XOnlyPublicKey {
             {
                 Ok(XOnlyPublicKey(pk))
             } else {
-                Err(Error::InvalidPublicKey)
+                Err(PublicKeyError)
             }
         }
     }
@@ -1246,7 +1257,7 @@ impl XOnlyPublicKey {
         mut self,
         secp: &Secp256k1<V>,
         tweak: &Scalar,
-    ) -> Result<(XOnlyPublicKey, Parity), Error> {
+    ) -> Result<(XOnlyPublicKey, Parity), XOnlyTweakError> {
         let mut pk_parity = 0;
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
@@ -1257,7 +1268,7 @@ impl XOnlyPublicKey {
                 tweak.as_c_ptr(),
             );
             if err != 1 {
-                return Err(Error::InvalidTweak);
+                return Err(TweakError)?;
             }
 
             err = ffi::secp256k1_xonly_pubkey_from_pubkey(
@@ -1267,7 +1278,7 @@ impl XOnlyPublicKey {
                 &pubkey,
             );
             if err == 0 {
-                return Err(Error::InvalidPublicKey);
+                return Err(PublicKeyError)?;
             }
 
             let parity = Parity::from_i32(pk_parity)?;
@@ -1339,7 +1350,7 @@ impl XOnlyPublicKey {
         secp: &Secp256k1<C>,
         msg: &Message,
         sig: &schnorr::Signature,
-    ) -> Result<(), Error> {
+    ) -> Result<(), schnorr::SignatureError> {
         secp.verify_schnorr(sig, msg, self)
     }
 }
@@ -1368,7 +1379,7 @@ impl Parity {
     ///
     /// The only allowed values are `0` meaning even parity and `1` meaning odd.
     /// Other values result in error being returned.
-    pub fn from_u8(parity: u8) -> Result<Parity, InvalidParityValue> {
+    pub fn from_u8(parity: u8) -> Result<Parity, ParityValueError> {
         Parity::from_i32(parity.into())
     }
 
@@ -1376,25 +1387,25 @@ impl Parity {
     ///
     /// The only allowed values are `0` meaning even parity and `1` meaning odd.
     /// Other values result in error being returned.
-    pub fn from_i32(parity: i32) -> Result<Parity, InvalidParityValue> {
+    pub fn from_i32(parity: i32) -> Result<Parity, ParityValueError> {
         match parity {
             0 => Ok(Parity::Even),
             1 => Ok(Parity::Odd),
-            _ => Err(InvalidParityValue(parity)),
+            _ => Err(ParityValueError(parity)),
         }
     }
 }
 
 /// `Even` for `0`, `Odd` for `1`, error for anything else
 impl TryFrom<i32> for Parity {
-    type Error = InvalidParityValue;
+    type Error = ParityValueError;
 
     fn try_from(parity: i32) -> Result<Self, Self::Error> { Self::from_i32(parity) }
 }
 
 /// `Even` for `0`, `Odd` for `1`, error for anything else
 impl TryFrom<u8> for Parity {
-    type Error = InvalidParityValue;
+    type Error = ParityValueError;
 
     fn try_from(parity: u8) -> Result<Self, Self::Error> { Self::from_u8(parity) }
 }
@@ -1421,27 +1432,6 @@ impl BitXor for Parity {
             Parity::Odd // 1^0==1 and 0^1==1
         }
     }
-}
-
-/// Error returned when conversion from an integer to `Parity` fails.
-//
-// Note that we don't allow inspecting the value because we may change the type.
-// Yes, this comment is intentionally NOT doc comment.
-// Too many derives for compatibility with current Error type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct InvalidParityValue(i32);
-
-impl fmt::Display for InvalidParityValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid value {} for Parity - must be 0 or 1", self.0)
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for InvalidParityValue {}
-
-impl From<InvalidParityValue> for Error {
-    fn from(error: InvalidParityValue) -> Self { Error::InvalidParityValue(error) }
 }
 
 /// The parity is serialized as `u8` - `0` for even, `1` for odd.
@@ -1554,8 +1544,7 @@ mod test {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
-    use crate::Error::{InvalidPublicKey, InvalidSecretKey};
+    use super::*;
     use crate::{constants, hex, Scalar};
 
     #[cfg(not(secp256k1_fuzz))]
@@ -1570,7 +1559,7 @@ mod test {
     #[test]
     fn skey_from_slice() {
         let sk = SecretKey::from_slice(&[1; 31]);
-        assert_eq!(sk, Err(InvalidSecretKey));
+        assert_eq!(sk, Err(SecretKeyError));
 
         let sk = SecretKey::from_slice(&[1; 32]);
         assert!(sk.is_ok());
@@ -1578,8 +1567,8 @@ mod test {
 
     #[test]
     fn pubkey_from_slice() {
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+        assert_eq!(PublicKey::from_slice(&[]), Err(PublicKeyError));
+        assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(PublicKeyError));
 
         let uncompressed = PublicKey::from_slice(&[
             4, 54, 57, 149, 239, 162, 148, 175, 246, 254, 239, 75, 154, 152, 10, 82, 234, 224, 85,
@@ -1622,13 +1611,13 @@ mod test {
     #[rustfmt::skip]
     fn invalid_secret_key() {
         // Zero
-        assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_slice(&[0; 32]), Err(SecretKeyError));
         assert_eq!(
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
-            Err(InvalidSecretKey)
+            Err(SecretKeyError)
         );
         // -1
-        assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_slice(&[0xff; 32]), Err(SecretKeyError));
         // Top of range
         assert!(SecretKey::from_slice(&[
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -1682,31 +1671,28 @@ mod test {
         // Bad sizes
         assert_eq!(
             PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE - 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
         assert_eq!(
             PublicKey::from_slice(&[0; constants::PUBLIC_KEY_SIZE + 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
         assert_eq!(
             PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE - 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
         assert_eq!(
             PublicKey::from_slice(&[0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE + 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
 
         // Bad parse
         assert_eq!(
             PublicKey::from_slice(&[0xff; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
-        assert_eq!(
-            PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
-        );
-        assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        assert_eq!(PublicKey::from_slice(&[0x55; constants::PUBLIC_KEY_SIZE]), Err(PublicKeyError));
+        assert_eq!(PublicKey::from_slice(&[]), Err(PublicKeyError));
     }
 
     #[test]
@@ -1714,22 +1700,16 @@ mod test {
         // Bad sizes
         assert_eq!(
             SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
-            Err(InvalidSecretKey)
+            Err(SecretKeyError)
         );
         assert_eq!(
             SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
-            Err(InvalidSecretKey)
+            Err(SecretKeyError)
         );
         // Bad parse
-        assert_eq!(
-            SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(
-            SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]), Err(SecretKeyError));
+        assert_eq!(SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]), Err(SecretKeyError));
+        assert_eq!(SecretKey::from_slice(&[]), Err(SecretKeyError));
     }
 
     #[test]

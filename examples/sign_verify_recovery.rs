@@ -4,6 +4,8 @@ extern crate secp256k1;
 use hashes::{sha256, Hash};
 use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
+// Notice that we provide a general error type for this crate and conversion
+// functions to it from all the other error types so `?` works as expected.
 fn recover<C: Verification>(
     secp: &Secp256k1<C>,
     msg: &[u8],
@@ -15,7 +17,8 @@ fn recover<C: Verification>(
     let id = ecdsa::RecoveryId::from_i32(recovery_id as i32)?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
-    secp.recover_ecdsa(&msg, &sig)
+    let pk = secp.recover_ecdsa(&msg, &sig)?;
+    Ok(pk)
 }
 
 fn sign_recovery<C: Signing>(

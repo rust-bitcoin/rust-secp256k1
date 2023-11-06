@@ -123,12 +123,10 @@ impl From<crate::SecretKey> for Scalar {
 }
 
 /// Error returned when the value of scalar is invalid - larger than the curve order.
-// Intentionally doesn't implement `Copy` to improve forward compatibility.
-// Same reason for `non_exhaustive`.
-#[allow(missing_copy_implementations)]
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
-pub struct OutOfRangeError {}
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct OutOfRangeError;
 
 impl fmt::Display for OutOfRangeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -137,4 +135,6 @@ impl fmt::Display for OutOfRangeError {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for OutOfRangeError {}
+impl std::error::Error for OutOfRangeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
+}

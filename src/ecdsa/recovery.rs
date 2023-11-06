@@ -4,13 +4,14 @@
 //! signature.
 //!
 
-use core::ptr;
+use core::{fmt, ptr};
 
 use self::super_ffi::CPtr;
-use super::ffi as super_ffi;
+use super::{ffi as super_ffi, SignatureError};
 use crate::ecdsa::Signature;
+use crate::error::SysError;
 use crate::ffi::recovery as ffi;
-use crate::{key, Error, Message, Secp256k1, Signing, Verification};
+use crate::{key, Message, Secp256k1, Signing, Verification};
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -23,10 +24,10 @@ pub struct RecoverableSignature(ffi::RecoverableSignature);
 impl RecoveryId {
     #[inline]
     /// Allows library users to create valid recovery IDs from i32.
-    pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
+    pub fn from_i32(id: i32) -> Result<RecoveryId, InvalidRecoveryIdError> {
         match id {
             0..=3 => Ok(RecoveryId(id)),
-            _ => Err(Error::InvalidRecoveryId),
+            other => Err(InvalidRecoveryIdError(other)),
         }
     }
 
@@ -39,16 +40,19 @@ impl RecoverableSignature {
     #[inline]
     /// Converts a compact-encoded byte slice to a signature. This
     /// representation is nonstandard and defined by the libsecp256k1 library.
-    pub fn from_compact(data: &[u8], recid: RecoveryId) -> Result<RecoverableSignature, Error> {
+    pub fn from_compact(
+        data: &[u8],
+        recid: RecoveryId,
+    ) -> Result<RecoverableSignature, SignatureError> {
         if data.is_empty() {
-            return Err(Error::InvalidSignature);
+            return Err(SignatureError::EmptySlice);
         }
 
         let mut ret = ffi::RecoverableSignature::new();
 
         unsafe {
             if data.len() != 64 {
-                Err(Error::InvalidSignature)
+                Err(SignatureError::invalid_length(data.len()))
             } else if ffi::secp256k1_ecdsa_recoverable_signature_parse_compact(
                 super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
@@ -58,7 +62,7 @@ impl RecoverableSignature {
             {
                 Ok(RecoverableSignature(ret))
             } else {
-                Err(Error::InvalidSignature)
+                Err(SignatureError::Sys(SysError {}))
             }
         }
     }
@@ -113,7 +117,7 @@ impl RecoverableSignature {
     /// verify-capable context.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
+    pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, SignatureError> {
         crate::SECP256K1.recover_ecdsa(msg, self)
     }
 }
@@ -191,7 +195,7 @@ impl<C: Verification> Secp256k1<C> {
         &self,
         msg: &Message,
         sig: &RecoverableSignature,
-    ) -> Result<key::PublicKey, Error> {
+    ) -> Result<key::PublicKey, SignatureError> {
         unsafe {
             let mut pk = super_ffi::PublicKey::new();
             if ffi::secp256k1_ecdsa_recover(
@@ -201,11 +205,28 @@ impl<C: Verification> Secp256k1<C> {
                 msg.as_c_ptr(),
             ) != 1
             {
-                return Err(Error::InvalidSignature);
+                return Err(SignatureError::Sys(SysError {}));
             }
             Ok(key::PublicKey::from(pk))
         }
     }
+}
+
+/// Recovery ID is invalid.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct InvalidRecoveryIdError(pub i32);
+
+impl fmt::Display for InvalidRecoveryIdError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "recovery ID is invalid: {}", self.0)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidRecoveryIdError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
 }
 
 #[cfg(test)]
@@ -214,9 +235,9 @@ mod tests {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{RecoverableSignature, RecoveryId};
+    use super::*;
     use crate::constants::ONE;
-    use crate::{Error, Message, Secp256k1, SecretKey};
+    use crate::{Message, Secp256k1, SecretKey};
 
     #[test]
     #[cfg(feature = "rand-std")]
@@ -316,7 +337,7 @@ mod tests {
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(SysError {}));
 
         let recovered_key = s.recover_ecdsa(&msg, &sigr).unwrap();
         assert!(recovered_key != pk);
@@ -366,7 +387,7 @@ mod tests {
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature));
+        assert_eq!(s.recover_ecdsa(&msg, &sig), Err(SignatureError::Sys(SysError {})));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId(0)).unwrap();
         assert!(s.recover_ecdsa(&msg, &sig).is_ok());

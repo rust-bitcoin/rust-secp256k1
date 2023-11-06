@@ -42,7 +42,7 @@ use core::str::FromStr;
 use ffi::CPtr;
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
-use crate::{constants, ffi, hex, Error, PublicKey, Secp256k1, SecretKey, Verification};
+use crate::{constants, ffi, hex, PublicKey, Secp256k1, SecretKey, Verification};
 
 unsafe extern "C" fn hash_callback<F>(
     output: *mut c_uchar,
@@ -288,14 +288,14 @@ impl ElligatorSwiftParty {
 }
 
 impl FromStr for ElligatorSwift {
-    type Err = Error;
+    type Err = ParseError;
 
     fn from_str(hex: &str) -> Result<Self, Self::Err> {
         let mut ser = [0u8; 64];
         let parsed = hex::from_hex(hex, &mut ser);
         match parsed {
             Ok(64) => Ok(ElligatorSwift::from_array(ser)),
-            _ => Err(Error::InvalidEllSwift),
+            _ => Err(ParseError),
         }
     }
 }
@@ -318,6 +318,23 @@ impl ffi::CPtr for ElligatorSwift {
     type Target = u8;
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.0.as_mut_c_ptr() }
     fn as_c_ptr(&self) -> *const Self::Target { self.0.as_c_ptr() }
+}
+
+/// Error converting from a hex string.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct ParseError;
+
+impl core::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        write!(f, "error converting hex to ellswift")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
 }
 
 #[cfg(test)]

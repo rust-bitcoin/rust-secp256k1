@@ -11,7 +11,13 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
 use crate::ffi::{self, CPtr};
 use crate::key::{PublicKey, SecretKey};
-use crate::{constants, hex, Error};
+use crate::{constants, hex};
+
+#[rustfmt::skip]                // Keep public re-exports separate.
+pub use crate::{
+    error::InvalidSliceLengthError,
+    hex::FromHexError,
+};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -66,22 +72,20 @@ impl SharedSecret {
 
     /// Creates a shared secret from `bytes` slice.
     #[inline]
-    pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
+    pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, InvalidSliceLengthError> {
         match <[u8; SHARED_SECRET_SIZE]>::try_from(bytes) {
             Ok(bytes) => Ok(SharedSecret(bytes)),
-            Err(_) => Err(Error::InvalidSharedSecret),
+            Err(_) =>
+                Err(InvalidSliceLengthError { got: bytes.len(), expected: SHARED_SECRET_SIZE }),
         }
     }
 }
 
 impl str::FromStr for SharedSecret {
-    type Err = Error;
+    type Err = FromHexError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; SHARED_SECRET_SIZE];
-        match hex::from_hex(s, &mut res) {
-            Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),
-            _ => Err(Error::InvalidSharedSecret),
-        }
+        hex::from_hex(s, &mut res).map(|_| SharedSecret::from_bytes(res))
     }
 }
 
