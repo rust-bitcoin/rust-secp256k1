@@ -288,6 +288,8 @@ impl ElligatorSwiftParty {
 }
 
 impl FromStr for ElligatorSwift {
+    type Err = Error;
+
     fn from_str(hex: &str) -> Result<Self, Self::Err> {
         let mut ser = [0u8; 64];
         let parsed = from_hex(hex, &mut ser);
@@ -296,7 +298,6 @@ impl FromStr for ElligatorSwift {
             _ => Err(Error::InvalidEllSwift),
         }
     }
-    type Err = Error;
 }
 
 impl fmt::LowerHex for ElligatorSwift {
