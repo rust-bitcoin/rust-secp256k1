@@ -1,0 +1,10 @@
+148,152c148,150
+<     void *ret = malloc(size);
+<     if (ret == NULL) {
+<         secp256k1_callback_call(cb, "Out of memory");
+<     }
+<     return ret;
+---
+>     (void) cb;
+>     (void) size;
+>     return NULL;

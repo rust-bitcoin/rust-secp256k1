@@ -145,11 +145,9 @@ static const rustsecp256k1_v0_9_0_callback default_error_callback = {
 #endif
 
 static SECP256K1_INLINE void *checked_malloc(const rustsecp256k1_v0_9_0_callback* cb, size_t size) {
-    void *ret = malloc(size);
-    if (ret == NULL) {
-        rustsecp256k1_v0_9_0_callback_call(cb, "Out of memory");
-    }
-    return ret;
+    (void) cb;
+    (void) size;
+    return NULL;
 }
 
 #if defined(__BIGGEST_ALIGNMENT__)

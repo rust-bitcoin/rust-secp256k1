@@ -97,6 +97,7 @@ echo "$SOURCE_REV" >> ./secp256k1-HEAD-revision.txt
 patch "$DIR/include/secp256k1.h" "./secp256k1.h.patch"
 patch "$DIR/src/secp256k1.c" "./secp256k1.c.patch"
 patch "$DIR/src/scratch_impl.h" "./scratch_impl.h.patch"
+patch "$DIR/src/util.h" "./util.h.patch"
 
 # Fix a linking error while cross-compiling to windowns with mingw
 patch "$DIR/contrib/lax_der_parsing.c" "./lax_der_parsing.c.patch"
