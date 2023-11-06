@@ -6,8 +6,8 @@ use core::fmt;
 
 use crate::constants::SECRET_KEY_SIZE;
 use crate::ecdh::SharedSecret;
+use crate::hex;
 use crate::key::{Keypair, SecretKey};
-use crate::to_hex;
 macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
@@ -79,7 +79,7 @@ impl fmt::Debug for DisplaySecret {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut slice = [0u8; SECRET_KEY_SIZE * 2];
-        let hex = to_hex(&self.secret, &mut slice).expect("fixed-size hex serializer failed");
+        let hex = hex::to_hex(&self.secret, &mut slice).expect("fixed-size hex serializer failed");
         f.debug_tuple("DisplaySecret").field(&hex).finish()
     }
 }

@@ -16,9 +16,7 @@ use crate::ffi::{self, CPtr};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{
-    constants, ecdsa, from_hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification,
-};
+use crate::{constants, ecdsa, hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification};
 #[cfg(feature = "hashes")]
 use crate::{hashes, ThirtyTwoByteHash};
 
@@ -114,7 +112,7 @@ impl str::FromStr for SecretKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_slice(&res),
             _ => Err(Error::InvalidSecretKey),
         }
@@ -167,7 +165,7 @@ impl str::FromStr for PublicKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::PUBLIC_KEY_SIZE) =>
                 PublicKey::from_slice(&res[0..constants::PUBLIC_KEY_SIZE]),
             Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) => PublicKey::from_slice(&res),
@@ -385,7 +383,7 @@ impl serde::Serialize for SecretKey {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
-            s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+            s.serialize_str(hex::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
             let mut tuple = s.serialize_tuple(constants::SECRET_KEY_SIZE)?;
             for byte in self.0.iter() {
@@ -859,7 +857,7 @@ impl Keypair {
     #[inline]
     pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) =>
                 Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
             _ => Err(Error::InvalidPublicKey),
@@ -1041,8 +1039,7 @@ impl serde::Serialize for Keypair {
         if s.is_human_readable() {
             let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
             s.serialize_str(
-                crate::to_hex(&self.secret_bytes(), &mut buf)
-                    .expect("fixed-size hex serialization"),
+                hex::to_hex(&self.secret_bytes(), &mut buf).expect("fixed-size hex serialization"),
             )
         } else {
             let mut tuple = s.serialize_tuple(constants::SECRET_KEY_SIZE)?;
@@ -1134,7 +1131,7 @@ impl str::FromStr for XOnlyPublicKey {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) =>
                 XOnlyPublicKey::from_slice(&res[0..constants::SCHNORR_PUBLIC_KEY_SIZE]),
             _ => Err(Error::InvalidPublicKey),
@@ -1559,13 +1556,13 @@ mod test {
 
     use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
-    use crate::{constants, from_hex, to_hex, Scalar};
+    use crate::{constants, hex, Scalar};
 
     #[cfg(not(secp256k1_fuzz))]
     macro_rules! hex {
         ($hex:expr) => {{
             let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
+            hex::from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
     }
@@ -1745,7 +1742,7 @@ mod test {
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
-            to_hex(&sk[..], &mut buf).unwrap(),
+            hex::to_hex(&sk[..], &mut buf).unwrap(),
             "0100000000000000020000000000000003000000000000000400000000000000"
         );
     }
@@ -2422,7 +2419,7 @@ mod test {
         let ctx = crate::Secp256k1::new();
         let keypair = Keypair::new(&ctx, &mut rand::thread_rng());
         let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
-        let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
+        let s = hex::to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
         let parsed_key = Keypair::from_str(s).unwrap();
         assert_eq!(parsed_key, keypair);
     }

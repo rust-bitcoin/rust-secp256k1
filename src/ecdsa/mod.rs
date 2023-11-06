@@ -15,9 +15,7 @@ pub use self::serialized_signature::SerializedSignature;
 use crate::ffi::CPtr;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{
-    ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
-};
+use crate::{ffi, hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -39,7 +37,7 @@ impl str::FromStr for Signature {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; 72];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(x) => Signature::from_der(&res[0..x]),
             _ => Err(Error::InvalidSignature),
         }

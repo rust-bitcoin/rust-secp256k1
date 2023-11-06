@@ -12,9 +12,7 @@ use crate::ffi::{self, CPtr};
 use crate::key::{Keypair, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{
-    constants, from_hex, impl_array_newtype, Error, Message, Secp256k1, Signing, Verification,
-};
+use crate::{constants, hex, impl_array_newtype, Error, Message, Secp256k1, Signing, Verification};
 
 /// Represents a schnorr signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,7 +64,7 @@ impl str::FromStr for Signature {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::SCHNORR_SIGNATURE_SIZE) =>
                 Signature::from_slice(&res[0..constants::SCHNORR_SIGNATURE_SIZE]),
             _ => Err(Error::InvalidSignature),
@@ -200,13 +198,13 @@ mod tests {
     use super::*;
     use crate::schnorr::{Keypair, Signature, XOnlyPublicKey};
     use crate::Error::InvalidPublicKey;
-    use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
+    use crate::{constants, hex, Message, Secp256k1, SecretKey};
 
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0u8; 32];
-            from_hex($hex, &mut result).expect("valid hex string");
+            hex::from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
     }

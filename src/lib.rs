@@ -159,6 +159,7 @@ mod macros;
 #[macro_use]
 mod secret;
 mod context;
+mod hex;
 mod key;
 
 pub mod constants;
@@ -172,7 +173,7 @@ mod serde_util;
 
 use core::marker::PhantomData;
 use core::ptr::NonNull;
-use core::{fmt, mem, str};
+use core::{fmt, mem};
 
 #[cfg(feature = "global-context")]
 pub use context::global::SECP256K1;
@@ -483,55 +484,6 @@ pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, 
     SECP256K1.generate_keypair(rng)
 }
 
-/// Utility function used to parse hex into a target u8 buffer. Returns
-/// the number of bytes converted or an error if it encounters an invalid
-/// character or unexpected end of string.
-fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
-    if hex.len() % 2 == 1 || hex.len() > target.len() * 2 {
-        return Err(());
-    }
-
-    let mut b = 0;
-    let mut idx = 0;
-    for c in hex.bytes() {
-        b <<= 4;
-        match c {
-            b'A'..=b'F' => b |= c - b'A' + 10,
-            b'a'..=b'f' => b |= c - b'a' + 10,
-            b'0'..=b'9' => b |= c - b'0',
-            _ => return Err(()),
-        }
-        if (idx & 1) == 1 {
-            target[idx / 2] = b;
-            b = 0;
-        }
-        idx += 1;
-    }
-    Ok(idx / 2)
-}
-
-/// Utility function used to encode hex into a target u8 buffer. Returns
-/// a reference to the target buffer as an str. Returns an error if the target
-/// buffer isn't big enough.
-#[inline]
-fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
-    let hex_len = src.len() * 2;
-    if target.len() < hex_len {
-        return Err(());
-    }
-    const HEX_TABLE: [u8; 16] = *b"0123456789abcdef";
-
-    let mut i = 0;
-    for &b in src {
-        target[i] = HEX_TABLE[usize::from(b >> 4)];
-        target[i + 1] = HEX_TABLE[usize::from(b & 0b00001111)];
-        i += 2;
-    }
-    let result = &target[..hex_len];
-    debug_assert!(str::from_utf8(result).is_ok());
-    return unsafe { Ok(str::from_utf8_unchecked(result)) };
-}
-
 #[cfg(feature = "rand")]
 pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
@@ -551,7 +503,7 @@ mod tests {
     macro_rules! hex {
         ($hex:expr) => {{
             let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
+            hex::from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
     }
@@ -888,8 +840,6 @@ mod tests {
     fn test_hex() {
         use rand::RngCore;
 
-        use super::to_hex;
-
         let mut rng = rand::thread_rng();
         const AMOUNT: usize = 1024;
         for i in 0..AMOUNT {
@@ -900,17 +850,17 @@ mod tests {
             let src = &mut src_buf[0..i];
             rng.fill_bytes(src);
 
-            let hex = to_hex(src, &mut hex_buf).unwrap();
-            assert_eq!(from_hex(hex, &mut result_buf).unwrap(), i);
+            let hex = hex::to_hex(src, &mut hex_buf).unwrap();
+            assert_eq!(hex::from_hex(hex, &mut result_buf).unwrap(), i);
             assert_eq!(src, &result_buf[..i]);
         }
 
-        assert!(to_hex(&[1; 2], &mut [0u8; 3]).is_err());
-        assert!(to_hex(&[1; 2], &mut [0u8; 4]).is_ok());
-        assert!(from_hex("deadbeaf", &mut [0u8; 3]).is_err());
-        assert!(from_hex("deadbeaf", &mut [0u8; 4]).is_ok());
-        assert!(from_hex("a", &mut [0u8; 4]).is_err());
-        assert!(from_hex("ag", &mut [0u8; 4]).is_err());
+        assert!(hex::to_hex(&[1; 2], &mut [0u8; 3]).is_err());
+        assert!(hex::to_hex(&[1; 2], &mut [0u8; 4]).is_ok());
+        assert!(hex::from_hex("deadbeaf", &mut [0u8; 3]).is_err());
+        assert!(hex::from_hex("deadbeaf", &mut [0u8; 4]).is_ok());
+        assert!(hex::from_hex("a", &mut [0u8; 4]).is_err());
+        assert!(hex::from_hex("ag", &mut [0u8; 4]).is_err());
     }
 
     #[test]
