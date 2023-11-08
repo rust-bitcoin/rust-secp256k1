@@ -586,12 +586,17 @@ mod tests {
         use crate::ffi::types::AlignedType;
 
         let mut buf_ful = vec![AlignedType::zeroed(); Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
-        let mut buf_vfy = vec![AlignedType::zeroed(); Secp256k1::preallocate_verification_size()];
+        let mut buf_ful = Secp256k1::<AllPreallocated>::buffer(&mut buf_ful).unwrap();
 
-        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
-        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
-        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();
+        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
+        let mut buf_sign = Secp256k1::<SignOnlyPreallocated>::buffer(&mut buf_sign).unwrap();
+
+        let mut buf_vfy = vec![AlignedType::zeroed(); Secp256k1::preallocate_verification_size()];
+        let mut buf_vfy = Secp256k1::<VerifyOnlyPreallocated>::buffer(&mut buf_vfy).unwrap();
+
+        let full = Secp256k1::preallocated_new(&mut buf_ful);
+        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign);
+        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy);
 
         //        drop(buf_vfy); // The buffer can't get dropped before the context.
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
