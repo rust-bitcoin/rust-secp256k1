@@ -4,6 +4,7 @@
 //!
 
 use core::borrow::Borrow;
+use core::convert::TryFrom;
 use core::{ptr, str};
 
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
@@ -66,13 +67,9 @@ impl SharedSecret {
     /// Creates a shared secret from `bytes` slice.
     #[inline]
     pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
-        match bytes.len() {
-            SHARED_SECRET_SIZE => {
-                let mut ret = [0u8; SHARED_SECRET_SIZE];
-                ret[..].copy_from_slice(bytes);
-                Ok(SharedSecret(ret))
-            }
-            _ => Err(Error::InvalidSharedSecret),
+        match <[u8; SHARED_SECRET_SIZE]>::try_from(bytes) {
+            Ok(bytes) => Ok(SharedSecret(bytes)),
+            Err(_) => Err(Error::InvalidSharedSecret),
         }
     }
 }
