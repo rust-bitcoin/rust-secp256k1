@@ -8,9 +8,7 @@
 #define SECP256K1_UTIL_H
 
 #include "../include/secp256k1.h"
-extern int rustsecp256k1_v0_9_0_ecdsa_signature_parse_compact(
-        const rustsecp256k1_v0_9_0_context *ctx,
-        rustsecp256k1_v0_9_0_ecdsa_signature *sig, const unsigned char *input64);
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -147,11 +145,9 @@ static const rustsecp256k1_v0_9_0_callback default_error_callback = {
 #endif
 
 static SECP256K1_INLINE void *checked_malloc(const rustsecp256k1_v0_9_0_callback* cb, size_t size) {
-    void *ret = malloc(size);
-    if (ret == NULL) {
-        rustsecp256k1_v0_9_0_callback_call(cb, "Out of memory");
-    }
-    return ret;
+    (void) cb;
+    (void) size;
+    return NULL;
 }
 
 #if defined(__BIGGEST_ALIGNMENT__)
