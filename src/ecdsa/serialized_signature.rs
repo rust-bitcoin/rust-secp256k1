@@ -272,10 +272,8 @@ mod tests {
     #[test]
     fn iterator_ops_are_homomorphic() {
         let mut fake_signature_data = [0; MAX_LEN];
-        // fill it with numbers 0 - 71
         for (i, byte) in fake_signature_data.iter_mut().enumerate() {
-            // up to MAX_LEN
-            *byte = i as u8;
+            *byte = i as u8; // cast ok because MAX_LEN fits in  u8.
         }
 
         let fake_signature = SerializedSignature { data: fake_signature_data, len: MAX_LEN };
