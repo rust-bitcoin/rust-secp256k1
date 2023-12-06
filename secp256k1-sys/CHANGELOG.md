@@ -1,3 +1,7 @@
+# 0.9.1 - 2023-12-07
+
+* Patch out any instances of printf in upstream [#663](https://github.com/rust-bitcoin/rust-secp256k1/pull/663)
+
 # 0.9.0 - 2023-10-23
 
 * Add bindings to the ElligatorSwift implementation [#627](https://github.com/rust-bitcoin/rust-secp256k1/pull/627)
