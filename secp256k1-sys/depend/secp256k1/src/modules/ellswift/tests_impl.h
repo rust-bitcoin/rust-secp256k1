@@ -10,14 +10,14 @@
 
 struct ellswift_xswiftec_inv_test {
     int enc_bitmap;
-    rustsecp256k1_v0_9_0_fe u;
-    rustsecp256k1_v0_9_0_fe x;
-    rustsecp256k1_v0_9_0_fe encs[8];
+    rustsecp256k1_v0_9_1_fe u;
+    rustsecp256k1_v0_9_1_fe x;
+    rustsecp256k1_v0_9_1_fe encs[8];
 };
 
 struct ellswift_decode_test {
     unsigned char enc[64];
-    rustsecp256k1_v0_9_0_fe x;
+    rustsecp256k1_v0_9_1_fe x;
     int odd_y;
 };
 
@@ -183,28 +183,28 @@ void run_ellswift_tests(void) {
         const struct ellswift_xswiftec_inv_test *testcase = &ellswift_xswiftec_inv_tests[i];
         int c;
         for (c = 0; c < 8; ++c) {
-            rustsecp256k1_v0_9_0_fe t;
-            int ret = rustsecp256k1_v0_9_0_ellswift_xswiftec_inv_var(&t, &testcase->x, &testcase->u, c);
+            rustsecp256k1_v0_9_1_fe t;
+            int ret = rustsecp256k1_v0_9_1_ellswift_xswiftec_inv_var(&t, &testcase->x, &testcase->u, c);
             CHECK(ret == ((testcase->enc_bitmap >> c) & 1));
             if (ret) {
-                rustsecp256k1_v0_9_0_fe x2;
+                rustsecp256k1_v0_9_1_fe x2;
                 CHECK(check_fe_equal(&t, &testcase->encs[c]));
-                rustsecp256k1_v0_9_0_ellswift_xswiftec_var(&x2, &testcase->u, &testcase->encs[c]);
+                rustsecp256k1_v0_9_1_ellswift_xswiftec_var(&x2, &testcase->u, &testcase->encs[c]);
                 CHECK(check_fe_equal(&testcase->x, &x2));
             }
         }
     }
     for (i = 0; (unsigned)i < sizeof(ellswift_decode_tests) / sizeof(ellswift_decode_tests[0]); ++i) {
         const struct ellswift_decode_test *testcase = &ellswift_decode_tests[i];
-        rustsecp256k1_v0_9_0_pubkey pubkey;
-        rustsecp256k1_v0_9_0_ge ge;
+        rustsecp256k1_v0_9_1_pubkey pubkey;
+        rustsecp256k1_v0_9_1_ge ge;
         int ret;
-        ret = rustsecp256k1_v0_9_0_ellswift_decode(CTX, &pubkey, testcase->enc);
+        ret = rustsecp256k1_v0_9_1_ellswift_decode(CTX, &pubkey, testcase->enc);
         CHECK(ret);
-        ret = rustsecp256k1_v0_9_0_pubkey_load(CTX, &ge, &pubkey);
+        ret = rustsecp256k1_v0_9_1_pubkey_load(CTX, &ge, &pubkey);
         CHECK(ret);
         CHECK(check_fe_equal(&testcase->x, &ge.x));
-        CHECK(rustsecp256k1_v0_9_0_fe_is_odd(&ge.y) == testcase->odd_y);
+        CHECK(rustsecp256k1_v0_9_1_fe_is_odd(&ge.y) == testcase->odd_y);
     }
     for (i = 0; (unsigned)i < sizeof(ellswift_xdh_tests_bip324) / sizeof(ellswift_xdh_tests_bip324[0]); ++i) {
         const struct ellswift_xdh_test *test = &ellswift_xdh_tests_bip324[i];
@@ -213,94 +213,94 @@ void run_ellswift_tests(void) {
         int party = !test->initiating;
         const unsigned char* ell_a64 = party ? test->ellswift_theirs : test->ellswift_ours;
         const unsigned char* ell_b64 = party ? test->ellswift_ours   : test->ellswift_theirs;
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, shared_secret,
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, shared_secret,
                                      ell_a64, ell_b64,
                                      test->priv_ours,
                                      party,
-                                     rustsecp256k1_v0_9_0_ellswift_xdh_hash_function_bip324,
+                                     rustsecp256k1_v0_9_1_ellswift_xdh_hash_function_bip324,
                                      NULL);
         CHECK(ret);
-        CHECK(rustsecp256k1_v0_9_0_memcmp_var(shared_secret, test->shared_secret, 32) == 0);
+        CHECK(rustsecp256k1_v0_9_1_memcmp_var(shared_secret, test->shared_secret, 32) == 0);
     }
-    /* Verify that rustsecp256k1_v0_9_0_ellswift_encode + decode roundtrips. */
+    /* Verify that rustsecp256k1_v0_9_1_ellswift_encode + decode roundtrips. */
     for (i = 0; i < 1000 * COUNT; i++) {
         unsigned char rnd32[32];
         unsigned char ell64[64];
-        rustsecp256k1_v0_9_0_ge g, g2;
-        rustsecp256k1_v0_9_0_pubkey pubkey, pubkey2;
+        rustsecp256k1_v0_9_1_ge g, g2;
+        rustsecp256k1_v0_9_1_pubkey pubkey, pubkey2;
         /* Generate random public key and random randomizer. */
         random_group_element_test(&g);
-        rustsecp256k1_v0_9_0_pubkey_save(&pubkey, &g);
-        rustsecp256k1_v0_9_0_testrand256(rnd32);
+        rustsecp256k1_v0_9_1_pubkey_save(&pubkey, &g);
+        rustsecp256k1_v0_9_1_testrand256(rnd32);
         /* Convert the public key to ElligatorSwift and back. */
-        rustsecp256k1_v0_9_0_ellswift_encode(CTX, ell64, &pubkey, rnd32);
-        rustsecp256k1_v0_9_0_ellswift_decode(CTX, &pubkey2, ell64);
-        rustsecp256k1_v0_9_0_pubkey_load(CTX, &g2, &pubkey2);
+        rustsecp256k1_v0_9_1_ellswift_encode(CTX, ell64, &pubkey, rnd32);
+        rustsecp256k1_v0_9_1_ellswift_decode(CTX, &pubkey2, ell64);
+        rustsecp256k1_v0_9_1_pubkey_load(CTX, &g2, &pubkey2);
         /* Compare with original. */
         ge_equals_ge(&g, &g2);
     }
-    /* Verify the behavior of rustsecp256k1_v0_9_0_ellswift_create */
+    /* Verify the behavior of rustsecp256k1_v0_9_1_ellswift_create */
     for (i = 0; i < 400 * COUNT; i++) {
         unsigned char auxrnd32[32], sec32[32];
-        rustsecp256k1_v0_9_0_scalar sec;
-        rustsecp256k1_v0_9_0_gej res;
-        rustsecp256k1_v0_9_0_ge dec;
-        rustsecp256k1_v0_9_0_pubkey pub;
+        rustsecp256k1_v0_9_1_scalar sec;
+        rustsecp256k1_v0_9_1_gej res;
+        rustsecp256k1_v0_9_1_ge dec;
+        rustsecp256k1_v0_9_1_pubkey pub;
         unsigned char ell64[64];
         int ret;
         /* Generate random secret key and random randomizer. */
-        if (i & 1) rustsecp256k1_v0_9_0_testrand256_test(auxrnd32);
+        if (i & 1) rustsecp256k1_v0_9_1_testrand256_test(auxrnd32);
         random_scalar_order_test(&sec);
-        rustsecp256k1_v0_9_0_scalar_get_b32(sec32, &sec);
+        rustsecp256k1_v0_9_1_scalar_get_b32(sec32, &sec);
         /* Construct ElligatorSwift-encoded public keys for that key. */
-        ret = rustsecp256k1_v0_9_0_ellswift_create(CTX, ell64, sec32, (i & 1) ? auxrnd32 : NULL);
+        ret = rustsecp256k1_v0_9_1_ellswift_create(CTX, ell64, sec32, (i & 1) ? auxrnd32 : NULL);
         CHECK(ret);
         /* Decode it, and compare with traditionally-computed public key. */
-        rustsecp256k1_v0_9_0_ellswift_decode(CTX, &pub, ell64);
-        rustsecp256k1_v0_9_0_pubkey_load(CTX, &dec, &pub);
-        rustsecp256k1_v0_9_0_ecmult(&res, NULL, &rustsecp256k1_v0_9_0_scalar_zero, &sec);
+        rustsecp256k1_v0_9_1_ellswift_decode(CTX, &pub, ell64);
+        rustsecp256k1_v0_9_1_pubkey_load(CTX, &dec, &pub);
+        rustsecp256k1_v0_9_1_ecmult(&res, NULL, &rustsecp256k1_v0_9_1_scalar_zero, &sec);
         ge_equals_gej(&dec, &res);
     }
-    /* Verify that rustsecp256k1_v0_9_0_ellswift_xdh computes the right shared X coordinate. */
+    /* Verify that rustsecp256k1_v0_9_1_ellswift_xdh computes the right shared X coordinate. */
     for (i = 0; i < 800 * COUNT; i++) {
         unsigned char ell64[64], sec32[32], share32[32];
-        rustsecp256k1_v0_9_0_scalar sec;
-        rustsecp256k1_v0_9_0_ge dec, res;
-        rustsecp256k1_v0_9_0_fe share_x;
-        rustsecp256k1_v0_9_0_gej decj, resj;
-        rustsecp256k1_v0_9_0_pubkey pub;
+        rustsecp256k1_v0_9_1_scalar sec;
+        rustsecp256k1_v0_9_1_ge dec, res;
+        rustsecp256k1_v0_9_1_fe share_x;
+        rustsecp256k1_v0_9_1_gej decj, resj;
+        rustsecp256k1_v0_9_1_pubkey pub;
         int ret;
         /* Generate random secret key. */
         random_scalar_order_test(&sec);
-        rustsecp256k1_v0_9_0_scalar_get_b32(sec32, &sec);
+        rustsecp256k1_v0_9_1_scalar_get_b32(sec32, &sec);
         /* Generate random ElligatorSwift encoding for the remote key and decode it. */
-        rustsecp256k1_v0_9_0_testrand256_test(ell64);
-        rustsecp256k1_v0_9_0_testrand256_test(ell64 + 32);
-        rustsecp256k1_v0_9_0_ellswift_decode(CTX, &pub, ell64);
-        rustsecp256k1_v0_9_0_pubkey_load(CTX, &dec, &pub);
-        rustsecp256k1_v0_9_0_gej_set_ge(&decj, &dec);
+        rustsecp256k1_v0_9_1_testrand256_test(ell64);
+        rustsecp256k1_v0_9_1_testrand256_test(ell64 + 32);
+        rustsecp256k1_v0_9_1_ellswift_decode(CTX, &pub, ell64);
+        rustsecp256k1_v0_9_1_pubkey_load(CTX, &dec, &pub);
+        rustsecp256k1_v0_9_1_gej_set_ge(&decj, &dec);
         /* Compute the X coordinate of seckey*pubkey using ellswift_xdh. Note that we
          * pass ell64 as claimed (but incorrect) encoding for sec32 here; this works
          * because the "hasher" function we use here ignores the ell64 arguments. */
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32, ell64, ell64, sec32, i & 1, &ellswift_xdh_hash_x32, NULL);
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32, ell64, ell64, sec32, i & 1, &ellswift_xdh_hash_x32, NULL);
         CHECK(ret);
-        (void)rustsecp256k1_v0_9_0_fe_set_b32_limit(&share_x, share32); /* no overflow is possible */
-        rustsecp256k1_v0_9_0_fe_verify(&share_x);
+        (void)rustsecp256k1_v0_9_1_fe_set_b32_limit(&share_x, share32); /* no overflow is possible */
+        rustsecp256k1_v0_9_1_fe_verify(&share_x);
         /* Compute seckey*pubkey directly. */
-        rustsecp256k1_v0_9_0_ecmult(&resj, &decj, &sec, NULL);
-        rustsecp256k1_v0_9_0_ge_set_gej(&res, &resj);
+        rustsecp256k1_v0_9_1_ecmult(&resj, &decj, &sec, NULL);
+        rustsecp256k1_v0_9_1_ge_set_gej(&res, &resj);
         /* Compare. */
         CHECK(check_fe_equal(&res.x, &share_x));
     }
-    /* Verify the joint behavior of rustsecp256k1_v0_9_0_ellswift_xdh */
+    /* Verify the joint behavior of rustsecp256k1_v0_9_1_ellswift_xdh */
     for (i = 0; i < 200 * COUNT; i++) {
         unsigned char auxrnd32a[32], auxrnd32b[32], auxrnd32a_bad[32], auxrnd32b_bad[32];
         unsigned char sec32a[32], sec32b[32], sec32a_bad[32], sec32b_bad[32];
-        rustsecp256k1_v0_9_0_scalar seca, secb;
+        rustsecp256k1_v0_9_1_scalar seca, secb;
         unsigned char ell64a[64], ell64b[64], ell64a_bad[64], ell64b_bad[64];
         unsigned char share32a[32], share32b[32], share32_bad[32];
         unsigned char prefix64[64];
-        rustsecp256k1_v0_9_0_ellswift_xdh_hash_function hash_function;
+        rustsecp256k1_v0_9_1_ellswift_xdh_hash_function hash_function;
         void* data;
         int ret;
 
@@ -309,126 +309,126 @@ void run_ellswift_tests(void) {
             hash_function = ellswift_xdh_hash_x32;
             data = NULL;
         } else if ((i % 3) == 1) {
-            hash_function = rustsecp256k1_v0_9_0_ellswift_xdh_hash_function_bip324;
+            hash_function = rustsecp256k1_v0_9_1_ellswift_xdh_hash_function_bip324;
             data = NULL;
         } else {
-            hash_function = rustsecp256k1_v0_9_0_ellswift_xdh_hash_function_prefix;
-            rustsecp256k1_v0_9_0_testrand256_test(prefix64);
-            rustsecp256k1_v0_9_0_testrand256_test(prefix64 + 32);
+            hash_function = rustsecp256k1_v0_9_1_ellswift_xdh_hash_function_prefix;
+            rustsecp256k1_v0_9_1_testrand256_test(prefix64);
+            rustsecp256k1_v0_9_1_testrand256_test(prefix64 + 32);
             data = prefix64;
         }
 
         /* Generate random secret keys and random randomizers. */
-        rustsecp256k1_v0_9_0_testrand256_test(auxrnd32a);
-        rustsecp256k1_v0_9_0_testrand256_test(auxrnd32b);
+        rustsecp256k1_v0_9_1_testrand256_test(auxrnd32a);
+        rustsecp256k1_v0_9_1_testrand256_test(auxrnd32b);
         random_scalar_order_test(&seca);
         /* Draw secb uniformly at random to make sure that the secret keys
          * differ */
         random_scalar_order(&secb);
-        rustsecp256k1_v0_9_0_scalar_get_b32(sec32a, &seca);
-        rustsecp256k1_v0_9_0_scalar_get_b32(sec32b, &secb);
+        rustsecp256k1_v0_9_1_scalar_get_b32(sec32a, &seca);
+        rustsecp256k1_v0_9_1_scalar_get_b32(sec32b, &secb);
 
         /* Construct ElligatorSwift-encoded public keys for those keys. */
         /* For A: */
-        ret = rustsecp256k1_v0_9_0_ellswift_create(CTX, ell64a, sec32a, auxrnd32a);
+        ret = rustsecp256k1_v0_9_1_ellswift_create(CTX, ell64a, sec32a, auxrnd32a);
         CHECK(ret);
         /* For B: */
-        ret = rustsecp256k1_v0_9_0_ellswift_create(CTX, ell64b, sec32b, auxrnd32b);
+        ret = rustsecp256k1_v0_9_1_ellswift_create(CTX, ell64b, sec32b, auxrnd32b);
         CHECK(ret);
 
         /* Compute the shared secret both ways and compare with each other. */
         /* For A: */
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32a, ell64a, ell64b, sec32a, 0, hash_function, data);
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32a, ell64a, ell64b, sec32a, 0, hash_function, data);
         CHECK(ret);
         /* For B: */
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32b, ell64a, ell64b, sec32b, 1, hash_function, data);
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32b, ell64a, ell64b, sec32b, 1, hash_function, data);
         CHECK(ret);
         /* And compare: */
-        CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32a, share32b, 32) == 0);
+        CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32a, share32b, 32) == 0);
 
         /* Verify that the shared secret doesn't match if other side's public key is incorrect. */
         /* For A (using a bad public key for B): */
         memcpy(ell64b_bad, ell64b, sizeof(ell64a_bad));
-        rustsecp256k1_v0_9_0_testrand_flip(ell64b_bad, sizeof(ell64b_bad));
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
-        CHECK(ret); /* Mismatching encodings don't get detected by rustsecp256k1_v0_9_0_ellswift_xdh. */
-        CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32a, 32) != 0);
+        rustsecp256k1_v0_9_1_testrand_flip(ell64b_bad, sizeof(ell64b_bad));
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
+        CHECK(ret); /* Mismatching encodings don't get detected by rustsecp256k1_v0_9_1_ellswift_xdh. */
+        CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32a, 32) != 0);
         /* For B (using a bad public key for A): */
         memcpy(ell64a_bad, ell64a, sizeof(ell64a_bad));
-        rustsecp256k1_v0_9_0_testrand_flip(ell64a_bad, sizeof(ell64a_bad));
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);
+        rustsecp256k1_v0_9_1_testrand_flip(ell64a_bad, sizeof(ell64a_bad));
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);
         CHECK(ret);
-        CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32b, 32) != 0);
+        CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32b, 32) != 0);
 
         /* Verify that the shared secret doesn't match if the private key is incorrect. */
         /* For A: */
         memcpy(sec32a_bad, sec32a, sizeof(sec32a_bad));
-        rustsecp256k1_v0_9_0_testrand_flip(sec32a_bad, sizeof(sec32a_bad));
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32a_bad, 0, hash_function, data);
-        CHECK(!ret || rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32a, 32) != 0);
+        rustsecp256k1_v0_9_1_testrand_flip(sec32a_bad, sizeof(sec32a_bad));
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32a_bad, 0, hash_function, data);
+        CHECK(!ret || rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32a, 32) != 0);
         /* For B: */
         memcpy(sec32b_bad, sec32b, sizeof(sec32b_bad));
-        rustsecp256k1_v0_9_0_testrand_flip(sec32b_bad, sizeof(sec32b_bad));
-        ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32b_bad, 1, hash_function, data);
-        CHECK(!ret || rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32b, 32) != 0);
+        rustsecp256k1_v0_9_1_testrand_flip(sec32b_bad, sizeof(sec32b_bad));
+        ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32b_bad, 1, hash_function, data);
+        CHECK(!ret || rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32b, 32) != 0);
 
         if (hash_function != ellswift_xdh_hash_x32) {
             /* Verify that the shared secret doesn't match when a different encoding of the same public key is used. */
             /* For A (changing B's public key): */
             memcpy(auxrnd32b_bad, auxrnd32b, sizeof(auxrnd32b_bad));
-            rustsecp256k1_v0_9_0_testrand_flip(auxrnd32b_bad, sizeof(auxrnd32b_bad));
-            ret = rustsecp256k1_v0_9_0_ellswift_create(CTX, ell64b_bad, sec32b, auxrnd32b_bad);
+            rustsecp256k1_v0_9_1_testrand_flip(auxrnd32b_bad, sizeof(auxrnd32b_bad));
+            ret = rustsecp256k1_v0_9_1_ellswift_create(CTX, ell64b_bad, sec32b, auxrnd32b_bad);
             CHECK(ret);
-            ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
+            ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
             CHECK(ret);
-            CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32a, 32) != 0);
+            CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32a, 32) != 0);
             /* For B (changing A's public key): */
             memcpy(auxrnd32a_bad, auxrnd32a, sizeof(auxrnd32a_bad));
-            rustsecp256k1_v0_9_0_testrand_flip(auxrnd32a_bad, sizeof(auxrnd32a_bad));
-            ret = rustsecp256k1_v0_9_0_ellswift_create(CTX, ell64a_bad, sec32a, auxrnd32a_bad);
+            rustsecp256k1_v0_9_1_testrand_flip(auxrnd32a_bad, sizeof(auxrnd32a_bad));
+            ret = rustsecp256k1_v0_9_1_ellswift_create(CTX, ell64a_bad, sec32a, auxrnd32a_bad);
             CHECK(ret);
-            ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);
+            ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);
             CHECK(ret);
-            CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32b, 32) != 0);
+            CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32b, 32) != 0);
 
             /* Verify that swapping sides changes the shared secret. */
             /* For A (claiming to be B): */
-            ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32a, 1, hash_function, data);
+            ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32a, 1, hash_function, data);
             CHECK(ret);
-            CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32a, 32) != 0);
+            CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32a, 32) != 0);
             /* For B (claiming to be A): */
-            ret = rustsecp256k1_v0_9_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32b, 0, hash_function, data);
+            ret = rustsecp256k1_v0_9_1_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32b, 0, hash_function, data);
             CHECK(ret);
-            CHECK(rustsecp256k1_v0_9_0_memcmp_var(share32_bad, share32b, 32) != 0);
+            CHECK(rustsecp256k1_v0_9_1_memcmp_var(share32_bad, share32b, 32) != 0);
         }
     }
 
     /* Test hash initializers. */
     {
-        rustsecp256k1_v0_9_0_sha256 sha, sha_optimized;
-        static const unsigned char encode_tag[25] = "rustsecp256k1_v0_9_0_ellswift_encode";
-        static const unsigned char create_tag[25] = "rustsecp256k1_v0_9_0_ellswift_create";
+        rustsecp256k1_v0_9_1_sha256 sha, sha_optimized;
+        static const unsigned char encode_tag[25] = "rustsecp256k1_v0_9_1_ellswift_encode";
+        static const unsigned char create_tag[25] = "rustsecp256k1_v0_9_1_ellswift_create";
         static const unsigned char bip324_tag[26] = "bip324_ellswift_xonly_ecdh";
 
         /* Check that hash initialized by
-         * rustsecp256k1_v0_9_0_ellswift_sha256_init_encode has the expected
+         * rustsecp256k1_v0_9_1_ellswift_sha256_init_encode has the expected
          * state. */
-        rustsecp256k1_v0_9_0_sha256_initialize_tagged(&sha, encode_tag, sizeof(encode_tag));
-        rustsecp256k1_v0_9_0_ellswift_sha256_init_encode(&sha_optimized);
+        rustsecp256k1_v0_9_1_sha256_initialize_tagged(&sha, encode_tag, sizeof(encode_tag));
+        rustsecp256k1_v0_9_1_ellswift_sha256_init_encode(&sha_optimized);
         test_sha256_eq(&sha, &sha_optimized);
 
         /* Check that hash initialized by
-         * rustsecp256k1_v0_9_0_ellswift_sha256_init_create has the expected
+         * rustsecp256k1_v0_9_1_ellswift_sha256_init_create has the expected
          * state. */
-        rustsecp256k1_v0_9_0_sha256_initialize_tagged(&sha, create_tag, sizeof(create_tag));
-        rustsecp256k1_v0_9_0_ellswift_sha256_init_create(&sha_optimized);
+        rustsecp256k1_v0_9_1_sha256_initialize_tagged(&sha, create_tag, sizeof(create_tag));
+        rustsecp256k1_v0_9_1_ellswift_sha256_init_create(&sha_optimized);
         test_sha256_eq(&sha, &sha_optimized);
 
         /* Check that hash initialized by
-         * rustsecp256k1_v0_9_0_ellswift_sha256_init_bip324 has the expected
+         * rustsecp256k1_v0_9_1_ellswift_sha256_init_bip324 has the expected
          * state. */
-        rustsecp256k1_v0_9_0_sha256_initialize_tagged(&sha, bip324_tag, sizeof(bip324_tag));
-        rustsecp256k1_v0_9_0_ellswift_sha256_init_bip324(&sha_optimized);
+        rustsecp256k1_v0_9_1_sha256_initialize_tagged(&sha, bip324_tag, sizeof(bip324_tag));
+        rustsecp256k1_v0_9_1_ellswift_sha256_init_bip324(&sha_optimized);
         test_sha256_eq(&sha, &sha_optimized);
     }
 }
