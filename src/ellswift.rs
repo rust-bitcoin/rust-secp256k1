@@ -42,7 +42,7 @@ use core::str::FromStr;
 use ffi::CPtr;
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
-use crate::{constants, ffi, from_hex, Error, PublicKey, Secp256k1, SecretKey, Verification};
+use crate::{constants, ffi, hex, PublicKey, Secp256k1, SecretKey, Verification};
 
 unsafe extern "C" fn hash_callback<F>(
     output: *mut c_uchar,
@@ -288,15 +288,16 @@ impl ElligatorSwiftParty {
 }
 
 impl FromStr for ElligatorSwift {
+    type Err = ParseError;
+
     fn from_str(hex: &str) -> Result<Self, Self::Err> {
         let mut ser = [0u8; 64];
-        let parsed = from_hex(hex, &mut ser);
+        let parsed = hex::from_hex(hex, &mut ser);
         match parsed {
             Ok(64) => Ok(ElligatorSwift::from_array(ser)),
-            _ => Err(Error::InvalidEllSwift),
+            _ => Err(ParseError),
         }
     }
-    type Err = Error;
 }
 
 impl fmt::LowerHex for ElligatorSwift {
@@ -319,6 +320,23 @@ impl ffi::CPtr for ElligatorSwift {
     fn as_c_ptr(&self) -> *const Self::Target { self.0.as_c_ptr() }
 }
 
+/// Error converting from a hex string.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct ParseError;
+
+impl core::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        write!(f, "error converting hex to ellswift")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
+}
+
 #[cfg(test)]
 mod tests {
     use core::str::FromStr;
@@ -328,7 +346,7 @@ mod tests {
     use crate::ellswift::{ElligatorSwiftParty, ElligatorSwiftSharedSecret};
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     use crate::SecretKey;
-    use crate::{from_hex, PublicKey, XOnlyPublicKey};
+    use crate::{hex, PublicKey, XOnlyPublicKey};
 
     #[test]
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
@@ -603,7 +621,7 @@ mod tests {
         #[inline]
         fn parse_test(ell: &str, x: &str, parity: u32) -> EllswiftDecodeTest {
             let mut enc = [0u8; 64];
-            from_hex(ell, &mut enc).unwrap();
+            hex::from_hex(ell, &mut enc).unwrap();
             let xo = XOnlyPublicKey::from_str(x).unwrap();
             let parity = if parity == 0 { crate::Parity::Even } else { crate::Parity::Odd };
             let pk = PublicKey::from_x_only_public_key(xo, parity);

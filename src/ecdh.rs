@@ -4,13 +4,20 @@
 //!
 
 use core::borrow::Borrow;
+use core::convert::TryFrom;
 use core::{ptr, str};
 
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
 use crate::ffi::{self, CPtr};
 use crate::key::{PublicKey, SecretKey};
-use crate::{constants, Error};
+use crate::{constants, hex};
+
+#[rustfmt::skip]                // Keep public re-exports separate.
+pub use crate::{
+    error::InvalidSliceLengthError,
+    hex::FromHexError,
+};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -65,26 +72,20 @@ impl SharedSecret {
 
     /// Creates a shared secret from `bytes` slice.
     #[inline]
-    pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
-        match bytes.len() {
-            SHARED_SECRET_SIZE => {
-                let mut ret = [0u8; SHARED_SECRET_SIZE];
-                ret[..].copy_from_slice(bytes);
-                Ok(SharedSecret(ret))
-            }
-            _ => Err(Error::InvalidSharedSecret),
+    pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, InvalidSliceLengthError> {
+        match <[u8; SHARED_SECRET_SIZE]>::try_from(bytes) {
+            Ok(bytes) => Ok(SharedSecret(bytes)),
+            Err(_) =>
+                Err(InvalidSliceLengthError { got: bytes.len(), expected: SHARED_SECRET_SIZE }),
         }
     }
 }
 
 impl str::FromStr for SharedSecret {
-    type Err = Error;
-    fn from_str(s: &str) -> Result<SharedSecret, Error> {
+    type Err = FromHexError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; SHARED_SECRET_SIZE];
-        match crate::from_hex(s, &mut res) {
-            Ok(SHARED_SECRET_SIZE) => Ok(SharedSecret::from_bytes(res)),
-            _ => Err(Error::InvalidSharedSecret),
-        }
+        hex::from_hex(s, &mut res).map(|_| SharedSecret::from_bytes(res))
     }
 }
 
@@ -160,7 +161,7 @@ impl ::serde::Serialize for SharedSecret {
     fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             let mut buf = [0u8; SHARED_SECRET_SIZE * 2];
-            s.serialize_str(crate::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
+            s.serialize_str(hex::to_hex(&self.0, &mut buf).expect("fixed-size hex serialization"))
         } else {
             s.serialize_bytes(self.as_ref())
         }

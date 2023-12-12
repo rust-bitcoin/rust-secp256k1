@@ -159,12 +159,14 @@ mod macros;
 #[macro_use]
 mod secret;
 mod context;
+mod hex;
 mod key;
 
 pub mod constants;
 pub mod ecdh;
 pub mod ecdsa;
 pub mod ellswift;
+pub mod error;
 pub mod scalar;
 pub mod schnorr;
 #[cfg(feature = "serde")]
@@ -172,23 +174,34 @@ mod serde_util;
 
 use core::marker::PhantomData;
 use core::ptr::NonNull;
-use core::{fmt, mem, str};
+use core::{fmt, mem};
+
+#[cfg(feature = "hashes")]
+use hashes::Hash;
+
+use crate::ffi::types::AlignedType;
+use crate::ffi::CPtr;
+
+#[rustfmt::skip]                // Keep public re-exports separate.
+pub use crate::{
+    context::*, // Includes NotEnoughMemoryError
+    hex::{FromHexError, ToHexError},
+    key::{PublicKey, SecretKey, *},
+    scalar::Scalar,
+    key::error::{
+        ParityValueError, PublicKeyError, PublicKeySumError, SecretKeyError, TweakError,
+        XOnlyTweakError,
+    },
+    error::{Error, SysError, InvalidSliceLengthError},
+};
 
 #[cfg(feature = "global-context")]
 pub use context::global::SECP256K1;
-#[cfg(feature = "hashes")]
-use hashes::Hash;
 #[cfg(feature = "rand")]
 pub use rand;
 pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
-
-pub use crate::context::*;
-use crate::ffi::types::AlignedType;
-use crate::ffi::CPtr;
-pub use crate::key::{PublicKey, SecretKey, *};
-pub use crate::scalar::Scalar;
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
 /// it has negligible probability of being zero or overflowing the group order. Such objects
@@ -228,7 +241,7 @@ impl Message {
     /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
     #[inline]
     #[deprecated(since = "0.28.0", note = "use from_digest_slice instead")]
-    pub fn from_slice(digest: &[u8]) -> Result<Message, Error> {
+    pub fn from_slice(digest: &[u8]) -> Result<Message, MessageLengthError> {
         Message::from_digest_slice(digest)
     }
 
@@ -257,14 +270,14 @@ impl Message {
     ///
     /// [secure signature]: https://twitter.com/pwuille/status/1063582706288586752
     #[inline]
-    pub fn from_digest_slice(digest: &[u8]) -> Result<Message, Error> {
+    pub fn from_digest_slice(digest: &[u8]) -> Result<Message, MessageLengthError> {
         match digest.len() {
             constants::MESSAGE_SIZE => {
                 let mut ret = [0u8; constants::MESSAGE_SIZE];
                 ret[..].copy_from_slice(digest);
                 Ok(Message(ret))
             }
-            _ => Err(Error::InvalidMessage),
+            len => Err(MessageLengthError(len)),
         }
     }
 
@@ -310,76 +323,21 @@ impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
 }
 
-/// The main error type for this library.
-#[derive(Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
-pub enum Error {
-    /// Signature failed verification.
-    IncorrectSignature,
-    /// Bad sized message ("messages" are actually fixed-sized digests [`constants::MESSAGE_SIZE`]).
-    InvalidMessage,
-    /// Bad public key.
-    InvalidPublicKey,
-    /// Bad signature.
-    InvalidSignature,
-    /// Bad secret key.
-    InvalidSecretKey,
-    /// Bad shared secret.
-    InvalidSharedSecret,
-    /// Bad recovery id.
-    InvalidRecoveryId,
-    /// Tried to add/multiply by an invalid tweak.
-    InvalidTweak,
-    /// Didn't pass enough memory to context creation with preallocated memory.
-    NotEnoughMemory,
-    /// Bad set of public keys.
-    InvalidPublicKeySum,
-    /// The only valid parity values are 0 or 1.
-    InvalidParityValue(key::InvalidParityValue),
-    /// Bad EllSwift value
-    InvalidEllSwift,
-}
+/// Messages must be 32 bytes long.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct MessageLengthError(pub usize);
 
-impl fmt::Display for Error {
+impl fmt::Display for MessageLengthError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        use Error::*;
-
-        match *self {
-            IncorrectSignature => f.write_str("signature failed verification"),
-            InvalidMessage => f.write_str("message was not 32 bytes (do you need to hash?)"),
-            InvalidPublicKey => f.write_str("malformed public key"),
-            InvalidSignature => f.write_str("malformed signature"),
-            InvalidSecretKey => f.write_str("malformed or out-of-range secret key"),
-            InvalidSharedSecret => f.write_str("malformed or out-of-range shared secret"),
-            InvalidRecoveryId => f.write_str("bad recovery id"),
-            InvalidTweak => f.write_str("bad tweak"),
-            NotEnoughMemory => f.write_str("not enough memory allocated"),
-            InvalidPublicKeySum => f.write_str(
-                "the sum of public keys was invalid or the input vector lengths was less than 1",
-            ),
-            InvalidParityValue(e) => write_err!(f, "couldn't create parity"; e),
-            InvalidEllSwift => f.write_str("malformed EllSwift value"),
-        }
+        write!(f, "messages must be 32 bytes long, got: {}", self.0)
     }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::IncorrectSignature => None,
-            Error::InvalidMessage => None,
-            Error::InvalidPublicKey => None,
-            Error::InvalidSignature => None,
-            Error::InvalidSecretKey => None,
-            Error::InvalidSharedSecret => None,
-            Error::InvalidRecoveryId => None,
-            Error::InvalidTweak => None,
-            Error::NotEnoughMemory => None,
-            Error::InvalidPublicKeySum => None,
-            Error::InvalidParityValue(error) => Some(error),
-            Error::InvalidEllSwift => None,
-        }
-    }
+impl std::error::Error for MessageLengthError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
 }
 
 /// The secp256k1 engine, used to execute all signature operations.
@@ -483,55 +441,6 @@ pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, 
     SECP256K1.generate_keypair(rng)
 }
 
-/// Utility function used to parse hex into a target u8 buffer. Returns
-/// the number of bytes converted or an error if it encounters an invalid
-/// character or unexpected end of string.
-fn from_hex(hex: &str, target: &mut [u8]) -> Result<usize, ()> {
-    if hex.len() % 2 == 1 || hex.len() > target.len() * 2 {
-        return Err(());
-    }
-
-    let mut b = 0;
-    let mut idx = 0;
-    for c in hex.bytes() {
-        b <<= 4;
-        match c {
-            b'A'..=b'F' => b |= c - b'A' + 10,
-            b'a'..=b'f' => b |= c - b'a' + 10,
-            b'0'..=b'9' => b |= c - b'0',
-            _ => return Err(()),
-        }
-        if (idx & 1) == 1 {
-            target[idx / 2] = b;
-            b = 0;
-        }
-        idx += 1;
-    }
-    Ok(idx / 2)
-}
-
-/// Utility function used to encode hex into a target u8 buffer. Returns
-/// a reference to the target buffer as an str. Returns an error if the target
-/// buffer isn't big enough.
-#[inline]
-fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
-    let hex_len = src.len() * 2;
-    if target.len() < hex_len {
-        return Err(());
-    }
-    const HEX_TABLE: [u8; 16] = *b"0123456789abcdef";
-
-    let mut i = 0;
-    for &b in src {
-        target[i] = HEX_TABLE[usize::from(b >> 4)];
-        target[i + 1] = HEX_TABLE[usize::from(b & 0b00001111)];
-        i += 2;
-    }
-    let result = &target[..hex_len];
-    debug_assert!(str::from_utf8(result).is_ok());
-    return unsafe { Ok(str::from_utf8_unchecked(result)) };
-}
-
 #[cfg(feature = "rand")]
 pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
@@ -547,11 +456,15 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     use super::*;
+    use crate::error::SysError;
+    use crate::{constants, ecdsa, hex, Message};
+    #[cfg(feature = "alloc")]
+    use crate::{ffi, PublicKey, Secp256k1, SecretKey};
 
     macro_rules! hex {
         ($hex:expr) => {{
             let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
+            hex::from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
     }
@@ -634,12 +547,17 @@ mod tests {
         use crate::ffi::types::AlignedType;
 
         let mut buf_ful = vec![AlignedType::zeroed(); Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
-        let mut buf_vfy = vec![AlignedType::zeroed(); Secp256k1::preallocate_verification_size()];
+        let mut buf_ful = Secp256k1::<AllPreallocated>::buffer(&mut buf_ful).unwrap();
 
-        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
-        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
-        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy).unwrap();
+        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
+        let mut buf_sign = Secp256k1::<SignOnlyPreallocated>::buffer(&mut buf_sign).unwrap();
+
+        let mut buf_vfy = vec![AlignedType::zeroed(); Secp256k1::preallocate_verification_size()];
+        let mut buf_vfy = Secp256k1::<VerifyOnlyPreallocated>::buffer(&mut buf_vfy).unwrap();
+
+        let full = Secp256k1::preallocated_new(&mut buf_ful);
+        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign);
+        let vrfy = Secp256k1::preallocated_verification_only(&mut buf_vfy);
 
         //        drop(buf_vfy); // The buffer can't get dropped before the context.
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
@@ -857,60 +775,30 @@ mod tests {
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(SysError {}));
     }
 
     #[test]
     fn test_bad_slice() {
         assert_eq!(
             ecdsa::Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE + 1]),
-            Err(Error::InvalidSignature)
+            Err(ecdsa::SignatureError::Sys(SysError {}))
         );
         assert_eq!(
             ecdsa::Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE]),
-            Err(Error::InvalidSignature)
+            Err(ecdsa::SignatureError::Sys(SysError {}))
         );
 
         assert_eq!(
             Message::from_digest_slice(&[0; constants::MESSAGE_SIZE - 1]),
-            Err(Error::InvalidMessage)
+            Err(MessageLengthError(31))
         );
         assert_eq!(
             Message::from_digest_slice(&[0; constants::MESSAGE_SIZE + 1]),
-            Err(Error::InvalidMessage)
+            Err(MessageLengthError(33))
         );
         assert!(Message::from_digest_slice(&[0; constants::MESSAGE_SIZE]).is_ok());
         assert!(Message::from_digest_slice(&[1; constants::MESSAGE_SIZE]).is_ok());
-    }
-
-    #[test]
-    #[cfg(feature = "rand-std")]
-    fn test_hex() {
-        use rand::RngCore;
-
-        use super::to_hex;
-
-        let mut rng = rand::thread_rng();
-        const AMOUNT: usize = 1024;
-        for i in 0..AMOUNT {
-            // 255 isn't a valid utf8 character.
-            let mut hex_buf = [255u8; AMOUNT * 2];
-            let mut src_buf = [0u8; AMOUNT];
-            let mut result_buf = [0u8; AMOUNT];
-            let src = &mut src_buf[0..i];
-            rng.fill_bytes(src);
-
-            let hex = to_hex(src, &mut hex_buf).unwrap();
-            assert_eq!(from_hex(hex, &mut result_buf).unwrap(), i);
-            assert_eq!(src, &result_buf[..i]);
-        }
-
-        assert!(to_hex(&[1; 2], &mut [0u8; 3]).is_err());
-        assert!(to_hex(&[1; 2], &mut [0u8; 4]).is_ok());
-        assert!(from_hex("deadbeaf", &mut [0u8; 3]).is_err());
-        assert!(from_hex("deadbeaf", &mut [0u8; 4]).is_ok());
-        assert!(from_hex("a", &mut [0u8; 4]).is_err());
-        assert!(from_hex("ag", &mut [0u8; 4]).is_err());
     }
 
     #[test]
@@ -949,7 +837,7 @@ mod tests {
         let msg = Message::from_digest_slice(&msg[..]).unwrap();
 
         // without normalization we expect this will fail
-        assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Err(SysError {}));
         // after normalization it should pass
         sig.normalize_s();
         assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Ok(()));

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
 
+use core::fmt;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ptr::NonNull;
@@ -8,7 +9,7 @@ use core::ptr::NonNull;
 pub use self::alloc_only::*;
 use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
-use crate::{Error, Secp256k1};
+use crate::Secp256k1;
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
@@ -320,30 +321,51 @@ unsafe impl<'buf> PreallocatedContext<'buf> for AllPreallocated<'buf> {}
 unsafe impl<'buf> PreallocatedContext<'buf> for SignOnlyPreallocated<'buf> {}
 unsafe impl<'buf> PreallocatedContext<'buf> for VerifyOnlyPreallocated<'buf> {}
 
+/// A preallocated buffer, enforces the invariant that the buffer is big enough.
+#[allow(missing_debug_implementations)]
+pub struct PreallocatedBuffer<'buf>(&'buf [AlignedType]);
+
+impl<'buf> ffi::CPtr for PreallocatedBuffer<'buf> {
+    type Target = AlignedType;
+    fn as_c_ptr(&self) -> *const Self::Target { self.0.as_c_ptr() }
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.0.as_mut_c_ptr() }
+}
+
 impl<'buf, C: Context + PreallocatedContext<'buf>> Secp256k1<C> {
+    /// Wraps `buf` in a `PreallocatedBuffer`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `NotEnoughMemoryError` if the buffer is too small.
+    pub fn buffer(
+        buf: &'buf mut [AlignedType],
+    ) -> Result<PreallocatedBuffer, NotEnoughMemoryError> {
+        if buf.len() < Self::preallocate_size_gen() {
+            return Err(NotEnoughMemoryError);
+        }
+        Ok(PreallocatedBuffer(buf))
+    }
+
     /// Lets you create a context with a preallocated buffer in a generic manner (sign/verify/all).
-    pub fn preallocated_gen_new(buf: &'buf mut [AlignedType]) -> Result<Secp256k1<C>, Error> {
+    pub fn preallocated_gen_new(buf: &'buf mut PreallocatedBuffer) -> Secp256k1<C> {
         #[cfg(target_arch = "wasm32")]
         ffi::types::sanity_checks_for_wasm();
 
-        if buf.len() < Self::preallocate_size_gen() {
-            return Err(Error::NotEnoughMemory);
-        }
         // Safe because buf is not null since it is not empty.
         let buf = unsafe { NonNull::new_unchecked(buf.as_mut_c_ptr() as *mut c_void) };
 
-        Ok(Secp256k1 {
+        Secp256k1 {
             ctx: unsafe { ffi::secp256k1_context_preallocated_create(buf, AllPreallocated::FLAGS) },
             phantom: PhantomData,
-        })
+        }
     }
 }
 
 impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// Creates a new Secp256k1 context with all capabilities.
     pub fn preallocated_new(
-        buf: &'buf mut [AlignedType],
-    ) -> Result<Secp256k1<AllPreallocated<'buf>>, Error> {
+        buf: &'buf mut PreallocatedBuffer<'buf>,
+    ) -> Secp256k1<AllPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
     /// Uses the ffi `secp256k1_context_preallocated_size` to check the memory size needed for a context.
@@ -377,8 +399,8 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
 impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for signing.
     pub fn preallocated_signing_only(
-        buf: &'buf mut [AlignedType],
-    ) -> Result<Secp256k1<SignOnlyPreallocated<'buf>>, Error> {
+        buf: &'buf mut PreallocatedBuffer<'buf>,
+    ) -> Secp256k1<SignOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -401,8 +423,8 @@ impl<'buf> Secp256k1<SignOnlyPreallocated<'buf>> {
 impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     /// Creates a new Secp256k1 context that can only be used for verification
     pub fn preallocated_verification_only(
-        buf: &'buf mut [AlignedType],
-    ) -> Result<Secp256k1<VerifyOnlyPreallocated<'buf>>, Error> {
+        buf: &'buf mut PreallocatedBuffer<'buf>,
+    ) -> Secp256k1<VerifyOnlyPreallocated<'buf>> {
         Secp256k1::preallocated_gen_new(buf)
     }
 
@@ -420,4 +442,21 @@ impl<'buf> Secp256k1<VerifyOnlyPreallocated<'buf>> {
     ) -> ManuallyDrop<Secp256k1<VerifyOnlyPreallocated<'buf>>> {
         ManuallyDrop::new(Secp256k1 { ctx: raw_ctx, phantom: PhantomData })
     }
+}
+
+/// Not enough memory for a preallocated buffer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct NotEnoughMemoryError;
+
+impl fmt::Display for NotEnoughMemoryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("not enough memory to use as a preallocated buffer")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for NotEnoughMemoryError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
 }

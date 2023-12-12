@@ -12,9 +12,7 @@ use crate::ffi::{self, CPtr};
 use crate::key::{Keypair, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{
-    constants, from_hex, impl_array_newtype, Error, Message, Secp256k1, Signing, Verification,
-};
+use crate::{constants, hex, impl_array_newtype, Message, Secp256k1, Signing, Verification};
 
 /// Represents a schnorr signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -63,13 +61,13 @@ impl fmt::Display for Signature {
 }
 
 impl str::FromStr for Signature {
-    type Err = Error;
-    fn from_str(s: &str) -> Result<Signature, Error> {
+    type Err = SignatureError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut res = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-        match from_hex(s, &mut res) {
+        match hex::from_hex(s, &mut res) {
             Ok(constants::SCHNORR_SIGNATURE_SIZE) =>
                 Signature::from_slice(&res[0..constants::SCHNORR_SIGNATURE_SIZE]),
-            _ => Err(Error::InvalidSignature),
+            _ => Err(SignatureError),
         }
     }
 }
@@ -77,14 +75,14 @@ impl str::FromStr for Signature {
 impl Signature {
     /// Creates a `Signature` directly from a slice.
     #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
+    pub fn from_slice(data: &[u8]) -> Result<Signature, SignatureError> {
         match data.len() {
             constants::SCHNORR_SIGNATURE_SIZE => {
                 let mut ret = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
                 ret[..].copy_from_slice(data);
                 Ok(Signature(ret))
             }
-            _ => Err(Error::InvalidSignature),
+            _ => Err(SignatureError),
         }
     }
 
@@ -95,7 +93,7 @@ impl Signature {
     /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), Error> {
+    pub fn verify(&self, msg: &Message, pk: &XOnlyPublicKey) -> Result<(), SignatureError> {
         SECP256K1.verify_schnorr(self, msg, pk)
     }
 }
@@ -168,7 +166,7 @@ impl<C: Verification> Secp256k1<C> {
         sig: &Signature,
         msg: &Message,
         pubkey: &XOnlyPublicKey,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SignatureError> {
         unsafe {
             let ret = ffi::secp256k1_schnorrsig_verify(
                 self.ctx.as_ptr(),
@@ -181,10 +179,25 @@ impl<C: Verification> Secp256k1<C> {
             if ret == 1 {
                 Ok(())
             } else {
-                Err(Error::InvalidSignature)
+                Err(SignatureError)
             }
         }
     }
+}
+
+/// Signature is invalid.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+#[allow(missing_copy_implementations)] // Don't implement Copy when we use non_exhaustive.
+pub struct SignatureError;
+
+impl fmt::Display for SignatureError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { f.write_str("signature is invalid") }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for SignatureError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
 }
 
 #[cfg(test)]
@@ -198,15 +211,15 @@ mod tests {
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     use super::*;
+    use crate::key::error::PublicKeyError;
     use crate::schnorr::{Keypair, Signature, XOnlyPublicKey};
-    use crate::Error::InvalidPublicKey;
-    use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
+    use crate::{constants, hex, Message, Secp256k1, SecretKey};
 
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     macro_rules! hex_32 {
         ($hex:expr) => {{
             let mut result = [0u8; 32];
-            from_hex($hex, &mut result).expect("valid hex string");
+            hex::from_hex($hex, &mut result).expect("valid hex string");
             result
         }};
     }
@@ -310,8 +323,8 @@ mod tests {
 
     #[test]
     fn test_pubkey_from_slice() {
-        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey));
-        assert_eq!(XOnlyPublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
+        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(PublicKeyError));
+        assert_eq!(XOnlyPublicKey::from_slice(&[1, 2, 3]), Err(PublicKeyError));
         let pk = XOnlyPublicKey::from_slice(&[
             0xB3, 0x3C, 0xC9, 0xED, 0xC0, 0x96, 0xD0, 0xA8, 0x34, 0x16, 0x96, 0x4B, 0xD3, 0xC6,
             0x24, 0x7B, 0x8F, 0xEC, 0xD2, 0x56, 0xE4, 0xEF, 0xA7, 0x87, 0x0D, 0x2C, 0x85, 0x4B,
@@ -351,26 +364,26 @@ mod tests {
         // Bad sizes
         assert_eq!(
             XOnlyPublicKey::from_slice(&[0; constants::SCHNORR_PUBLIC_KEY_SIZE - 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
         assert_eq!(
             XOnlyPublicKey::from_slice(&[0; constants::SCHNORR_PUBLIC_KEY_SIZE + 1]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
 
         // Bad parse
         assert_eq!(
             XOnlyPublicKey::from_slice(&[0xff; constants::SCHNORR_PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
         // In fuzzing mode restrictions on public key validity are much more
         // relaxed, thus the invalid check below is expected to fail.
         #[cfg(not(secp256k1_fuzz))]
         assert_eq!(
             XOnlyPublicKey::from_slice(&[0x55; constants::SCHNORR_PUBLIC_KEY_SIZE]),
-            Err(InvalidPublicKey)
+            Err(PublicKeyError)
         );
-        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey));
+        assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(PublicKeyError));
     }
 
     #[test]

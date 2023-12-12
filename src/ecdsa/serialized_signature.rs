@@ -13,8 +13,7 @@ use core::{fmt, ops};
 
 pub use into_iter::IntoIter;
 
-use super::Signature;
-use crate::Error;
+use super::{Signature, SignatureError};
 
 pub(crate) const MAX_LEN: usize = 72;
 
@@ -123,13 +122,13 @@ impl<'a> From<&'a Signature> for SerializedSignature {
 }
 
 impl TryFrom<SerializedSignature> for Signature {
-    type Error = Error;
+    type Error = SignatureError;
 
     fn try_from(value: SerializedSignature) -> Result<Self, Self::Error> { value.to_signature() }
 }
 
 impl<'a> TryFrom<&'a SerializedSignature> for Signature {
-    type Error = Error;
+    type Error = SignatureError;
 
     fn try_from(value: &'a SerializedSignature) -> Result<Self, Self::Error> {
         value.to_signature()
@@ -164,7 +163,7 @@ impl SerializedSignature {
     /// Convert the serialized signature into the Signature struct.
     /// (This DER deserializes it)
     #[inline]
-    pub fn to_signature(&self) -> Result<Signature, Error> { Signature::from_der(self) }
+    pub fn to_signature(&self) -> Result<Signature, SignatureError> { Signature::from_der(self) }
 
     /// Create a SerializedSignature from a Signature.
     /// (this DER serializes it)
