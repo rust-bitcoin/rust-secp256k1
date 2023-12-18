@@ -724,7 +724,7 @@ extern "C" {
     pub fn secp256k1_ec_pubkey_combine(cx: *const Context,
                                        out: *mut PublicKey,
                                        ins: *const *const PublicKey,
-                                       n: c_int)
+                                       n: size_t)
                                        -> c_int;
 
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_9_1_ecdh")]
@@ -1306,7 +1306,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ec_pubkey_combine(cx: *const Context,
                                               out: *mut PublicKey,
                                               ins: *const *const PublicKey,
-                                              n: c_int)
+                                              n: size_t)
                                               -> c_int {
         check_context_flags(cx, 0);
         assert!(n >= 1);

@@ -1,3 +1,7 @@
+# 0.9.2 - 2023-12-18
+
+* Fix incorrect FFI binding for `secp256k1_pubkey_combine`
+
 # 0.9.1 - 2023-12-07
 
 * Patch out any instances of printf in upstream [#663](https://github.com/rust-bitcoin/rust-secp256k1/pull/663)
