@@ -12,7 +12,7 @@ description = "FFI for Pieter Wuille's `libsecp256k1` library."
 keywords = [ "secp256k1", "libsecp256k1", "ffi" ]
 readme = "README.md"
 build = "build.rs"
-links = "rustsecp256k1_v0_9_1"
+links = "rustsecp256k1_v0_9_2"
 edition = "2018"
 
 [package.metadata.docs.rs]

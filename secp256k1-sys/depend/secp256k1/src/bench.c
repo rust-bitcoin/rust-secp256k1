@@ -67,7 +67,7 @@ static void help(int default_iters) {
 }
 
 typedef struct {
-    rustsecp256k1_v0_9_1_context *ctx;
+    rustsecp256k1_v0_9_2_context *ctx;
     unsigned char msg[32];
     unsigned char key[32];
     unsigned char sig[72];
@@ -81,14 +81,14 @@ static void bench_verify(void* arg, int iters) {
     bench_data* data = (bench_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_9_1_pubkey pubkey;
-        rustsecp256k1_v0_9_1_ecdsa_signature sig;
+        rustsecp256k1_v0_9_2_pubkey pubkey;
+        rustsecp256k1_v0_9_2_ecdsa_signature sig;
         data->sig[data->siglen - 1] ^= (i & 0xFF);
         data->sig[data->siglen - 2] ^= ((i >> 8) & 0xFF);
         data->sig[data->siglen - 3] ^= ((i >> 16) & 0xFF);
-        CHECK(rustsecp256k1_v0_9_1_ec_pubkey_parse(data->ctx, &pubkey, data->pubkey, data->pubkeylen) == 1);
-        CHECK(rustsecp256k1_v0_9_1_ecdsa_signature_parse_der(data->ctx, &sig, data->sig, data->siglen) == 1);
-        CHECK(rustsecp256k1_v0_9_1_ecdsa_verify(data->ctx, &sig, data->msg, &pubkey) == (i == 0));
+        CHECK(rustsecp256k1_v0_9_2_ec_pubkey_parse(data->ctx, &pubkey, data->pubkey, data->pubkeylen) == 1);
+        CHECK(rustsecp256k1_v0_9_2_ecdsa_signature_parse_der(data->ctx, &sig, data->sig, data->siglen) == 1);
+        CHECK(rustsecp256k1_v0_9_2_ecdsa_verify(data->ctx, &sig, data->msg, &pubkey) == (i == 0));
         data->sig[data->siglen - 1] ^= (i & 0xFF);
         data->sig[data->siglen - 2] ^= ((i >> 8) & 0xFF);
         data->sig[data->siglen - 3] ^= ((i >> 16) & 0xFF);
@@ -115,9 +115,9 @@ static void bench_sign_run(void* arg, int iters) {
     for (i = 0; i < iters; i++) {
         size_t siglen = 74;
         int j;
-        rustsecp256k1_v0_9_1_ecdsa_signature signature;
-        CHECK(rustsecp256k1_v0_9_1_ecdsa_sign(data->ctx, &signature, data->msg, data->key, NULL, NULL));
-        CHECK(rustsecp256k1_v0_9_1_ecdsa_signature_serialize_der(data->ctx, sig, &siglen, &signature));
+        rustsecp256k1_v0_9_2_ecdsa_signature signature;
+        CHECK(rustsecp256k1_v0_9_2_ecdsa_sign(data->ctx, &signature, data->msg, data->key, NULL, NULL));
+        CHECK(rustsecp256k1_v0_9_2_ecdsa_signature_serialize_der(data->ctx, sig, &siglen, &signature));
         for (j = 0; j < 32; j++) {
             data->msg[j] = sig[j];
             data->key[j] = sig[j + 32];
@@ -141,9 +141,9 @@ static void bench_keygen_run(void *arg, int iters) {
     for (i = 0; i < iters; i++) {
         unsigned char pub33[33];
         size_t len = 33;
-        rustsecp256k1_v0_9_1_pubkey pubkey;
-        CHECK(rustsecp256k1_v0_9_1_ec_pubkey_create(data->ctx, &pubkey, data->key));
-        CHECK(rustsecp256k1_v0_9_1_ec_pubkey_serialize(data->ctx, pub33, &len, &pubkey, SECP256K1_EC_COMPRESSED));
+        rustsecp256k1_v0_9_2_pubkey pubkey;
+        CHECK(rustsecp256k1_v0_9_2_ec_pubkey_create(data->ctx, &pubkey, data->key));
+        CHECK(rustsecp256k1_v0_9_2_ec_pubkey_serialize(data->ctx, pub33, &len, &pubkey, SECP256K1_EC_COMPRESSED));
         memcpy(data->key, pub33 + 1, 32);
     }
 }
@@ -167,8 +167,8 @@ static void bench_keygen_run(void *arg, int iters) {
 
 int main(int argc, char** argv) {
     int i;
-    rustsecp256k1_v0_9_1_pubkey pubkey;
-    rustsecp256k1_v0_9_1_ecdsa_signature sig;
+    rustsecp256k1_v0_9_2_pubkey pubkey;
+    rustsecp256k1_v0_9_2_ecdsa_signature sig;
     bench_data data;
 
     int d = argc == 1;
@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
 #endif
 
     /* ECDSA benchmark */
-    data.ctx = rustsecp256k1_v0_9_1_context_create(SECP256K1_CONTEXT_NONE);
+    data.ctx = rustsecp256k1_v0_9_2_context_create(SECP256K1_CONTEXT_NONE);
 
     for (i = 0; i < 32; i++) {
         data.msg[i] = 1 + i;
@@ -241,11 +241,11 @@ int main(int argc, char** argv) {
         data.key[i] = 33 + i;
     }
     data.siglen = 72;
-    CHECK(rustsecp256k1_v0_9_1_ecdsa_sign(data.ctx, &sig, data.msg, data.key, NULL, NULL));
-    CHECK(rustsecp256k1_v0_9_1_ecdsa_signature_serialize_der(data.ctx, data.sig, &data.siglen, &sig));
-    CHECK(rustsecp256k1_v0_9_1_ec_pubkey_create(data.ctx, &pubkey, data.key));
+    CHECK(rustsecp256k1_v0_9_2_ecdsa_sign(data.ctx, &sig, data.msg, data.key, NULL, NULL));
+    CHECK(rustsecp256k1_v0_9_2_ecdsa_signature_serialize_der(data.ctx, data.sig, &data.siglen, &sig));
+    CHECK(rustsecp256k1_v0_9_2_ec_pubkey_create(data.ctx, &pubkey, data.key));
     data.pubkeylen = 33;
-    CHECK(rustsecp256k1_v0_9_1_ec_pubkey_serialize(data.ctx, data.pubkey, &data.pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED) == 1);
+    CHECK(rustsecp256k1_v0_9_2_ec_pubkey_serialize(data.ctx, data.pubkey, &data.pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED) == 1);
 
     print_output_table_header_row();
     if (d || have_flag(argc, argv, "ecdsa") || have_flag(argc, argv, "verify") || have_flag(argc, argv, "ecdsa_verify")) run_benchmark("ecdsa_verify", bench_verify, NULL, NULL, &data, 10, iters);
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
     if (d || have_flag(argc, argv, "ecdsa") || have_flag(argc, argv, "sign") || have_flag(argc, argv, "ecdsa_sign")) run_benchmark("ecdsa_sign", bench_sign_run, bench_sign_setup, NULL, &data, 10, iters);
     if (d || have_flag(argc, argv, "ec") || have_flag(argc, argv, "keygen") || have_flag(argc, argv, "ec_keygen")) run_benchmark("ec_keygen", bench_keygen_run, bench_keygen_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_9_1_context_destroy(data.ctx);
+    rustsecp256k1_v0_9_2_context_destroy(data.ctx);
 
 #ifdef ENABLE_MODULE_ECDH
     /* ECDH benchmarks */
