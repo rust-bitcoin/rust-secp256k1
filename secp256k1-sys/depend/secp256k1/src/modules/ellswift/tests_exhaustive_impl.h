@@ -9,7 +9,7 @@
 #include "../../../include/secp256k1_ellswift.h"
 #include "main_impl.h"
 
-static void test_exhaustive_ellswift(const rustsecp256k1_v0_9_1_context *ctx, const rustsecp256k1_v0_9_1_ge *group) {
+static void test_exhaustive_ellswift(const rustsecp256k1_v0_9_2_context *ctx, const rustsecp256k1_v0_9_2_ge *group) {
     int i;
 
     /* Note that SwiftEC/ElligatorSwift are inherently curve operations, not
@@ -18,20 +18,20 @@ static void test_exhaustive_ellswift(const rustsecp256k1_v0_9_1_context *ctx, co
      * it doesn't (and for computational reasons obviously cannot) test the
      * entire domain ellswift operates under. */
     for (i = 1; i < EXHAUSTIVE_TEST_ORDER; i++) {
-        rustsecp256k1_v0_9_1_scalar scalar_i;
+        rustsecp256k1_v0_9_2_scalar scalar_i;
         unsigned char sec32[32];
         unsigned char ell64[64];
-        rustsecp256k1_v0_9_1_pubkey pub_decoded;
-        rustsecp256k1_v0_9_1_ge ge_decoded;
+        rustsecp256k1_v0_9_2_pubkey pub_decoded;
+        rustsecp256k1_v0_9_2_ge ge_decoded;
 
         /* Construct ellswift pubkey from exhaustive loop scalar i. */
-        rustsecp256k1_v0_9_1_scalar_set_int(&scalar_i, i);
-        rustsecp256k1_v0_9_1_scalar_get_b32(sec32, &scalar_i);
-        CHECK(rustsecp256k1_v0_9_1_ellswift_create(ctx, ell64, sec32, NULL));
+        rustsecp256k1_v0_9_2_scalar_set_int(&scalar_i, i);
+        rustsecp256k1_v0_9_2_scalar_get_b32(sec32, &scalar_i);
+        CHECK(rustsecp256k1_v0_9_2_ellswift_create(ctx, ell64, sec32, NULL));
 
         /* Decode ellswift pubkey and check that it matches the precomputed group element. */
-        rustsecp256k1_v0_9_1_ellswift_decode(ctx, &pub_decoded, ell64);
-        rustsecp256k1_v0_9_1_pubkey_load(ctx, &ge_decoded, &pub_decoded);
+        rustsecp256k1_v0_9_2_ellswift_decode(ctx, &pub_decoded, ell64);
+        rustsecp256k1_v0_9_2_pubkey_load(ctx, &ge_decoded, &pub_decoded);
         ge_equals_ge(&ge_decoded, &group[i]);
     }
 }

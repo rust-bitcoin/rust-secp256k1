@@ -676,7 +676,7 @@ impl PublicKey {
                 ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 ptrs.as_c_ptr(),
-                keys.len() as i32,
+                keys.len(),
             ) == 1
             {
                 Ok(PublicKey(ret))
