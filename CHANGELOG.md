@@ -1,3 +1,8 @@
+# 0.28.1 - 2024-01-03
+
+* Update secp265k1-sys to 0.9.2 (contains some fixes for WASM and [a FFI binding fix](https://github.com/rust-bitcoin/rust-secp256k1/pull/6700))
+* Various improvements to the `SerializedSignature` type [#658](https://github.com/rust-bitcoin/rust-secp256k1/pull/658) [#659](https://github.com/rust-bitcoin/rust-secp256k1/pull/659)
+
 # 0.28.0 - 2023-10-23
 
 * Add bindings to the ElligatorSwift implementation [#627](https://github.com/rust-bitcoin/rust-secp256k1/pull/627)
