@@ -266,6 +266,20 @@ impl ElligatorSwift {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElligatorSwiftSharedSecret([u8; 32]);
 
+impl ElligatorSwiftSharedSecret {
+    /// Creates shared secret from bytes.
+    ///
+    /// This is generally not needed except for unusual cases like restoring the secret from a
+    /// database.
+    pub const fn from_secret_bytes(bytes: [u8; 32]) -> Self { Self(bytes) }
+
+    /// Returns the secret bytes as an array.
+    pub const fn to_secret_bytes(self) -> [u8; 32] { self.0 }
+
+    /// Returns the secret bytes as a reference to an array.
+    pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
+}
+
 /// Represents which party we are in the ECDH, A is the initiator, B is the responder.
 /// This is important because the hash of the shared secret is different depending on which party
 /// we are. In this context, "we" means the party that is using this library, and possesses the
