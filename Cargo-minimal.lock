@@ -257,7 +257,7 @@ checksum = "ea6a9290e3c9cf0f18145ef7ffa62d68ee0bf5fcd651017e586dc7fd5da448c2"
 
 [[package]]
 name = "secp256k1"
-version = "0.28.1"
+version = "0.28.2"
 dependencies = [
  "bincode",
  "bitcoin_hashes",
