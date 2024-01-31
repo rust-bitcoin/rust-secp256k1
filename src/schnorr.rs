@@ -181,7 +181,7 @@ impl<C: Verification> Secp256k1<C> {
             if ret == 1 {
                 Ok(())
             } else {
-                Err(Error::InvalidSignature)
+                Err(Error::IncorrectSignature)
             }
         }
     }
