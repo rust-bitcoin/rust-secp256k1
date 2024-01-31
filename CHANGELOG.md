@@ -1,3 +1,9 @@
+# 0.28.2 - 2024-01-30
+
+* Implement `Hash` for `Scalar` [#674](https://github.com/rust-bitcoin/rust-secp256k1/pull/674)
+* Implement `Ord` and `PartialOrd` for `RecoverableSignature` [#611](https://github.com/rust-bitcoin/rust-secp256k1/pull/611)
+* Add byte accessors to `ElligatorSwiftSharedSecret` [#676](https://github.com/rust-bitcoin/rust-secp256k1/pull/676)
+
 # 0.28.1 - 2024-01-03
 
 * Update secp265k1-sys to 0.9.2 (contains some fixes for WASM and [a FFI binding fix](https://github.com/rust-bitcoin/rust-secp256k1/pull/6700))
