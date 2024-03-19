@@ -192,7 +192,7 @@ pub use crate::context::{
 };
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
-pub use crate::key::{PublicKey, SecretKey, *};
+pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
 pub use crate::scalar::Scalar;
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
