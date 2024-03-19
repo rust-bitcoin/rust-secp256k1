@@ -32,9 +32,9 @@ fn main() {
                .define("printf(...)", Some(""));
 
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "riscv32" {
-        base_config.compiler("/usr/local/opt/llvm/bin/clang")
-        .flag("--sysroot=/opt/riscv/riscv32-unknown-elf") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
-        .flag("--gcc-toolchain=/opt/riscv") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
+        base_config.compiler("/usr/bin/clang")
+        .flag("--sysroot=/tmp/riscv32im-osx-arm64/riscv32-unknown-elf") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
+        .flag("--gcc-toolchain=/tmp/riscv32im-osx-arm64") // https://github.com/riscv-collab/riscv-gnu-toolchain has been built and stored in /opt/riscv
         .no_default_flags(true)
         .flag("-O3")
         .flag("--target=riscv32-unknown-none-elf")
