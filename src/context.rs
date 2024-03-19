@@ -5,7 +5,7 @@ use core::mem::ManuallyDrop;
 use core::ptr::NonNull;
 
 #[cfg(feature = "alloc")]
-pub use self::alloc_only::*;
+pub use self::alloc_only::{All, SignOnly, VerifyOnly};
 use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
