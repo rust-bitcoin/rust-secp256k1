@@ -1,6 +1,7 @@
 # Unreleased
 
 * Bump MSRV to Rust `v1.56.1`
+* Upgrade `hashes` using range dependency `version = ">= 0.12, <= 0.14"`.
 
 # 0.28.2 - 2024-01-30
 
