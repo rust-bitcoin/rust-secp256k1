@@ -1,6 +1,6 @@
-# Unreleased
+# 0.29.0 - 2024-04-02
 
-* Deprecate `ThirtyTwoByteHash`
+* Deprecate `ThirtyTwoByteHash` [#686](https://github.com/rust-bitcoin/rust-secp256k1/pull/686)
 
   This trait turned out to be problematic during upgrade because we support a ranged dependency for
   `bitcoin_hashes`. Consider implementing `From<T> for Message` for your type iff your type is a 32
@@ -9,8 +9,9 @@
   introducing generics in a future version and the compiler will not be able to work out the target
   type.
 
-* Bump MSRV to Rust `v1.56.1`
-* Upgrade `hashes` using range dependency `version = ">= 0.12, <= 0.14"`.
+* Bump MSRV to Rust `v1.56.1` [#693](https://github.com/rust-bitcoin/rust-secp256k1/pull/693)
+* Upgrade `hashes` using range dependency `version = ">= 0.12, <= 0.14"` [#690](https://github.com/rust-bitcoin/rust-secp256k1/pull/690)
+* Depend on latest `secp256k1-sys` (vendors `secp256k1 v0.4.1`) [#688](https://github.com/rust-bitcoin/rust-secp256k1/pull/688)
 
 # 0.28.2 - 2024-01-30
 
