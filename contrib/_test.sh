@@ -97,9 +97,12 @@ if [ "$DO_ASAN" = true ]; then
     cargo clean
     # The -Cllvm-args=-msan-eager-checks=0 flag was added to overcome this issue:
     # https://github.com/rust-bitcoin/rust-secp256k1/pull/573#issuecomment-1399465995
-    CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                                                        \
-    RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes -Cllvm-args=-msan-eager-checks=0' \
-    cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
+    #
+    # There is currently a bug in the MemorySanitizer (MSAN) - disable the job for now.
+    #
+    # CC='clang -fsanitize=memory -fno-omit-frame-pointer'                                                                        \
+    # RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes -Cllvm-args=-msan-eager-checks=0' \
+    # cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
 
     pushd "$REPO_DIR/no_std_test" > /dev/null || exit 1
     # See https://github.com/rust-bitcoin/rust-secp256k1/pull/641#issuecomment-1671598914
