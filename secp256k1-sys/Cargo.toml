@@ -13,7 +13,8 @@ keywords = [ "secp256k1", "libsecp256k1", "ffi" ]
 readme = "README.md"
 build = "build.rs"
 links = "rustsecp256k1_v0_9_2"
-edition = "2018"
+edition = "2021"
+rust-version = "1.56.1"
 
 [package.metadata.docs.rs]
 all-features = true

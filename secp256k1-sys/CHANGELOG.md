@@ -1,3 +1,7 @@
+# Unreleased
+
+* Bump MSRV to Rust `v1.56.1`
+
 # 0.9.2 - 2023-12-18
 
 * Fix incorrect FFI binding for `secp256k1_pubkey_combine`
