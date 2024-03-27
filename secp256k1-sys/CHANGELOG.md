@@ -1,6 +1,6 @@
-# Unreleased
+# 0.10.0 - 2024-03-28
 
-* Bump MSRV to Rust `v1.56.1`
+* Bump MSRV to Rust `v1.56.1` [#693](https://github.com/rust-bitcoin/rust-secp256k1/pull/693)
 
 # 0.9.2 - 2023-12-18
 

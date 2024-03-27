@@ -1,0 +1,2710 @@
+
+contrib/lax_der_privatekey_parsing.c,69
+int ec_privkey_import_der(11,429
+int ec_privkey_export_der(55,1780
+
+contrib/lax_der_parsing.h,95
+#define SECP256K1_CONTRIB_LAX_DER_PARSING_H52,2520
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der_lax(86,3920
+
+contrib/lax_der_privatekey_parsing.h,115
+#define SECP256K1_CONTRIB_BER_PRIVATEKEY_H29,1277
+SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(63,2672
+
+contrib/lax_der_parsing.c,42
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der_lax(11,418
+
+include/secp256k1.h,1893
+#define SECP256K1_H2,20
+typedef struct rustsecp256k1_v0_10_0_context_struct rustsecp256k1_v0_10_0_context;46,1911
+typedef struct rustsecp256k1_v0_10_0_scratch_space_struct rustsecp256k1_v0_10_0_scratch_space;59,2511
+    unsigned char data[data71,3105
+} rustsecp256k1_v0_10_0_pubkey;72,3133
+    unsigned char data[data84,3669
+} rustsecp256k1_v0_10_0_ecdsa_signature;85,3697
+typedef int (*rustsecp256k1_v0_10_0_nonce_function)rustsecp256k1_v0_10_0_nonce_function103,4707
+#   define SECP256K1_GNUC_PREREQ(114,5004
+#   define SECP256K1_GNUC_PREREQ(117,5112
+#   define SECP256K1_INLINE 123,5276
+#   define SECP256K1_INLINE 125,5343
+#   define SECP256K1_INLINE127,5388
+#  define SECP256K1_INLINE 130,5432
+# define SECP256K1_NO_BUILD141,5978
+#   define SECP256K1_API 147,6082
+#   define SECP256K1_API149,6137
+#  define SECP256K1_API 152,6243
+#  define SECP256K1_API154,6315
+#  define SECP256K1_WARN_UNUSED_RESULT 162,6552
+#  define SECP256K1_WARN_UNUSED_RESULT164,6639
+#  define SECP256K1_ARG_NONNULL(167,6769
+#  define SECP256K1_ARG_NONNULL(169,6847
+#define SECP256K1_FLAGS_TYPE_MASK 173,6971
+#define SECP256K1_FLAGS_TYPE_CONTEXT 174,7020
+#define SECP256K1_FLAGS_TYPE_COMPRESSION 175,7066
+#define SECP256K1_FLAGS_BIT_CONTEXT_VERIFY 177,7185
+#define SECP256K1_FLAGS_BIT_CONTEXT_SIGN 178,7237
+#define SECP256K1_FLAGS_BIT_CONTEXT_DECLASSIFY 179,7287
+#define SECP256K1_FLAGS_BIT_COMPRESSION 180,7344
+#define SECP256K1_CONTEXT_VERIFY 184,7528
+#define SECP256K1_CONTEXT_SIGN 185,7629
+#define SECP256K1_CONTEXT_DECLASSIFY 186,7726
+#define SECP256K1_CONTEXT_NONE 187,7835
+#define SECP256K1_EC_COMPRESSED 190,7952
+#define SECP256K1_EC_UNCOMPRESSED 191,8053
+#define SECP256K1_TAG_PUBKEY_EVEN 194,8204
+#define SECP256K1_TAG_PUBKEY_ODD 195,8243
+#define SECP256K1_TAG_PUBKEY_UNCOMPRESSED 196,8281
+#define SECP256K1_TAG_PUBKEY_HYBRID_EVEN 197,8328
+#define SECP256K1_TAG_PUBKEY_HYBRID_ODD 198,8374
+SECP256K1_API rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_create(218,9258
+
+include/rustsecp256k1_v0_10_0_preallocated.h,104
+#define SECP256K1_PREALLOCATED_H2,33
+SECP256K1_API size_t rustsecp256k1_v0_10_0_context_preallocated_size(35,1403
+
+include/rustsecp256k1_v0_10_0_recovery.h,197
+#define SECP256K1_RECOVERY_H2,29
+    unsigned char data[data25,823
+} rustsecp256k1_v0_10_0_ecdsa_recoverable_signature;26,851
+SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_parse_compact(36,1232
+
+include/rustsecp256k1_v0_10_0_schnorrsig.h,455
+#define SECP256K1_SCHNORRSIG_H2,31
+typedef int (*rustsecp256k1_v0_10_0_nonce_function_hardened)rustsecp256k1_v0_10_0_nonce_function_hardened41,1678
+    unsigned char magic[magic83,3584
+    rustsecp256k1_v0_10_0_nonce_function_hardened noncefp;84,3612
+    void* ndata;85,3659
+} rustsecp256k1_v0_10_0_schnorrsig_extraparams;86,3676
+#define SECP256K1_SCHNORRSIG_EXTRAPARAMS_MAGIC 88,3713
+#define SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT 89,3787
+SECP256K1_API int rustsecp256k1_v0_10_0_schnorrsig_sign(119,5235
+
+include/rustsecp256k1_v0_10_0_extrakeys.h,255
+#define SECP256K1_EXTRAKEYS_H2,30
+    unsigned char data[data23,852
+} rustsecp256k1_v0_10_0_xonly_pubkey;24,880
+    unsigned char data[data34,1257
+} rustsecp256k1_v0_10_0_keypair;35,1285
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_xonly_pubkey_parse(47,1750
+
+include/rustsecp256k1_v0_10_0_ecdh.h,181
+#define SECP256K1_ECDH_H2,25
+typedef int (*rustsecp256k1_v0_10_0_ecdh_hash_function)rustsecp256k1_v0_10_0_ecdh_hash_function21,715
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_ecdh(50,2176
+
+src/tests.c,5706
+#define CONDITIONAL_TEST(31,849
+static int count 33,969
+static rustsecp256k1_v0_10_0_context *ctx ctx34,992
+static void counting_illegal_callback_fn(36,1031
+static void uncounting_illegal_callback_fn(44,1215
+void random_field_element_test(52,1413
+void random_field_element_magnitude(62,1638
+void random_group_element_test(78,2029
+void random_group_element_jacobian_test(90,2340
+void random_gej_test(105,2797
+void random_scalar_order_test(111,2950
+void random_scalar_order(124,3290
+void random_scalar_order_b32(137,3620
+void run_context_tests(143,3772
+void run_scratch_tests(350,14824
+void run_ctz_tests(433,18987
+void run_sha256_tests(454,19770
+void run_hmac_sha256_tests(490,22684
+void run_rfc6979_hmac_sha256_tests(534,27900
+void run_tagged_sha256_tests(575,31018
+void test_rand_bits(609,32351
+void test_rand_int(644,34129
+void run_rand_bits(660,34617
+void run_rand_int(668,34756
+uint64_t modinv2p64(682,35205
+void mulmod256(698,35854
+void uint16_to_signed30(780,38559
+void signed30_to_uint16(789,38901
+void mutate_sign_signed30(798,39225
+void test_modinv32_uint16(813,39753
+void uint16_to_signed62(851,41138
+void signed62_to_uint16(860,41480
+void mutate_sign_signed62(869,41804
+void test_modinv64_uint16(885,42375
+int coprime(924,43696
+void run_modinv_tests(954,44347
+void scalar_test(1593,88771
+void run_scalar_set_b32_seckey_tests(1758,93833
+void run_scalar_tests(1775,94399
+void random_fe(2383,130154
+void random_fe_test(2393,130353
+void random_fe_non_zero(2403,130562
+void random_fe_non_square(2416,130875
+int check_fe_equal(2424,131055
+void run_field_convert(2432,131297
+int fe_identical(2463,132596
+void run_field_misc(2474,132930
+void test_fe_mul(2554,135761
+void run_fe_mul(2597,137172
+void run_sqr(2618,137759
+void test_sqrt(2634,138078
+void run_sqrt(2648,138584
+static const rustsecp256k1_v0_10_0_scalar scalar_minus_one 2684,139513
+static const rustsecp256k1_v0_10_0_fe fe_minus_one 2689,139693
+void test_inverse_scalar(2701,140013
+void test_inverse_field(2723,141292
+void run_inverse_tests(2748,142655
+void ge_equals_ge(2996,166343
+int gej_xyz_equals_gej(3006,166683
+void ge_equals_gej(3027,167348
+void test_ge(3044,167973
+void test_intialized_inf(3244,176057
+void test_add_neg_y_diff_x(3276,177091
+void run_ge(3343,179835
+void test_gej_cmov(3352,179989
+void run_gej(3360,180231
+void test_ec_combine(3383,180712
+void run_ec_combine(3408,181591
+void test_group_decompress(3415,181705
+void run_group_decompress(3450,182812
+void test_pre_g_table(3461,183022
+void run_ecmult_pre_g(3511,185162
+void run_ecmult_chain(3535,186029
+void test_point_times_order(3599,188773
+static const rustsecp256k1_v0_10_0_scalar scalars_near_split_bounds[scalars_near_split_bounds3640,190521
+void test_ecmult_target(3663,193068
+void run_ecmult_near_split_bound(3702,194532
+void run_point_times_order(3714,194958
+void ecmult_const_random_mult(3735,195642
+void ecmult_const_commutativity(3762,196670
+void ecmult_const_mult_zero_one(3783,197352
+void ecmult_const_chain_multiply(3805,198159
+void run_ecmult_const_tests(3831,199112
+    rustsecp256k1_v0_10_0_scalar *sc;sc3839,199303
+    rustsecp256k1_v0_10_0_ge *pt;pt3840,199329
+} ecmult_multi_data;3841,199351
+static int ecmult_multi_callback(3843,199373
+static int ecmult_multi_false_callback(3850,199600
+void test_ecmult_multi(3858,199785
+int test_ecmult_multi_random(4097,208902
+void test_ecmult_multi_batch_single(4265,216276
+void test_rustsecp256k1_v0_10_0_pippenger_bucket_window_inv(4285,216976
+void test_ecmult_multi_pippenger_max_points(4305,217658
+void test_ecmult_multi_batch_size_helper(4338,219288
+void test_ecmult_multi_batching(4386,221126
+void run_ecmult_multi_tests(4453,224272
+void test_wnaf(4480,225505
+void test_constant_wnaf_negate(4514,226734
+void test_constant_wnaf(4529,227194
+void test_fixed_wnaf(4569,228464
+void test_fixed_wnaf_small_helper(4606,229625
+void test_fixed_wnaf_small(4616,229873
+void run_wnaf(4670,231531
+static int test_ecmult_accumulate_cb(4716,233050
+void test_ecmult_accumulate(4724,233310
+void test_ecmult_constants_2bit(4757,234789
+void test_ecmult_constants_sha(4801,236310
+void run_ecmult_constants(4844,237751
+void test_ecmult_gen_blind(4878,239240
+void test_ecmult_gen_blind_reset(4901,240154
+void run_ecmult_gen_blind(4913,240664
+void test_scalar_split(4922,240850
+void run_endomorphism_tests(4949,241675
+void ec_pubkey_parse_pointtest(4970,242408
+void run_ec_pubkey_parse_test(5045,246050
+#define SECP256K1_EC_PARSE_TEST_NVALID 5046,246088
+#define SECP256K1_EC_PARSE_TEST_NXVALID 5133,252249
+#define SECP256K1_EC_PARSE_TEST_NINVALID 5164,254441
+void run_eckey_edge_case_test(5373,264974
+void run_eckey_negate_test(5629,276905
+void random_sign(5664,278317
+void test_ecdsa_sign_verify(5671,278635
+void run_ecdsa_sign_verify(5698,279640
+static int precomputed_nonce_function(5706,279896
+static int nonce_function_test_fail(5714,280192
+static int nonce_function_test_retry(5722,280587
+int is_empty_signature(5752,281743
+void test_ecdsa_end_to_end(5757,281969
+void test_random_pubkeys(5902,289116
+void run_pubkey_comparison(5962,291177
+void run_random_pubkeys(6011,293300
+void run_ecdsa_end_to_end(6018,293420
+int test_ecdsa_der_parse(6025,293544
+static void assign_big_endian(6085,295947
+static void damage_array(6097,296243
+static void random_ber_signature(6124,297131
+void run_ecdsa_der_parse(6270,302668
+void test_ecdsa_edge_cases(6302,303757
+void run_ecdsa_edge_cases(6671,320324
+void run_rustsecp256k1_v0_10_0_memczero_test(6691,320708
+void int_cmov_test(6706,321249
+void fe_cmov_test(6731,321667
+void fe_storage_cmov_test(6761,322644
+void scalar_cmov_test(6791,323733
+void ge_storage_cmov_test(6821,324766
+void run_cmov_tests(6853,326031
+int main(6861,326183
+
+src/libsecp256k1-config.h,755
+#define LIBSECP256K1_CONFIG_H6,202
+#define ECMULT_GEN_PREC_BITS 12,348
+#define ECMULT_WINDOW_SIZE 15,428
+#define HAVE_DLFCN_H 30,895
+#define HAVE_INTTYPES_H 33,979
+#define HAVE_MEMORY_H 36,1064
+#define HAVE_STDINT_H 39,1147
+#define HAVE_STDLIB_H 42,1230
+#define HAVE_STRINGS_H 45,1314
+#define HAVE_STRING_H 48,1398
+#define HAVE_SYS_STAT_H 51,1483
+#define HAVE_SYS_TYPES_H 54,1571
+#define HAVE_UNISTD_H 57,1657
+#define LT_OBJDIR 64,1876
+#define PACKAGE 67,1926
+#define PACKAGE_BUGREPORT 70,2037
+#define PACKAGE_NAME 73,2162
+#define PACKAGE_STRING 76,2258
+#define PACKAGE_TARNAME 79,2366
+#define PACKAGE_URL 82,2454
+#define PACKAGE_VERSION 85,2564
+#define STDC_HEADERS 88,2656
+#define USE_ASM_X86_64 91,2745
+#define VERSION 110,3352
+
+src/scalar_8x32_impl.h,2682
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+#define SECP256K1_N_0 13,506
+#define SECP256K1_N_1 14,553
+#define SECP256K1_N_2 15,600
+#define SECP256K1_N_3 16,647
+#define SECP256K1_N_4 17,694
+#define SECP256K1_N_5 18,741
+#define SECP256K1_N_6 19,788
+#define SECP256K1_N_7 20,835
+#define SECP256K1_N_C_0 23,931
+#define SECP256K1_N_C_1 24,976
+#define SECP256K1_N_C_2 25,1017
+#define SECP256K1_N_C_3 26,1058
+#define SECP256K1_N_C_4 27,1099
+#define SECP256K1_N_H_0 30,1169
+#define SECP256K1_N_H_1 31,1218
+#define SECP256K1_N_H_2 32,1267
+#define SECP256K1_N_H_3 33,1316
+#define SECP256K1_N_H_4 34,1365
+#define SECP256K1_N_H_5 35,1414
+#define SECP256K1_N_H_6 36,1463
+#define SECP256K1_N_H_7 37,1512
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(39,1562
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(50,1776
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(61,2008
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(66,2276
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(77,2807
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_reduce(95,3536
+static int rustsecp256k1_v0_10_0_scalar_add(117,4397
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(141,5351
+static void rustsecp256k1_v0_10_0_scalar_set_b32(167,6649
+static void rustsecp256k1_v0_10_0_scalar_get_b32(183,7764
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(194,8619
+static void rustsecp256k1_v0_10_0_scalar_negate(198,8801
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(218,9638
+static int rustsecp256k1_v0_10_0_scalar_is_high(222,9825
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(240,10574
+#define muladd(268,11888
+#define muladd_fast(283,12488
+#define sumadd(297,13004
+#define sumadd_fast(306,13389
+#define extract(314,13752
+#define extract_fast(322,13956
+static void rustsecp256k1_v0_10_0_scalar_reduce_512(329,14061
+static void rustsecp256k1_v0_10_0_scalar_mul_512(471,18117
+#undef sumadd559,20607
+#undef sumadd_fast560,20621
+#undef muladd561,20640
+#undef muladd_fast562,20654
+#undef extract563,20673
+#undef extract_fast564,20688
+static void rustsecp256k1_v0_10_0_scalar_mul(566,20709
+static int rustsecp256k1_v0_10_0_scalar_shr_int(572,20920
+static void rustsecp256k1_v0_10_0_scalar_split_128(588,21513
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(607,21964
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_mul_shift_var(611,22264
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(632,23766
+static void rustsecp256k1_v0_10_0_scalar_from_signed30(647,24427
+static void rustsecp256k1_v0_10_0_scalar_to_signed30(678,25560
+static const rustsecp256k1_v0_10_0_modinv32_modinfo rustsecp256k1_v0_10_0_const_modinfo_scalar 698,26308
+static void rustsecp256k1_v0_10_0_scalar_inverse(703,26488
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(717,26906
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(731,27332
+
+src/precomputed_ecmult_gen.c,139
+#define S(13,465
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_ecmult_gen_prec_table[rustsecp256k1_v0_10_0_ecmult_gen_prec_table14,680
+#undef S9750,1430676
+
+src/hash_impl.h,1010
+#define SECP256K1_HASH_IMPL_H8,397
+#define Ch(17,526
+#define Maj(18,572
+#define Sigma0(19,627
+#define Sigma1(20,722
+#define sigma0(21,816
+#define sigma1(22,898
+#define Round(24,983
+#define BE32(32,1230
+#define BE32(34,1289
+static void rustsecp256k1_v0_10_0_sha256_initialize(37,1415
+static void rustsecp256k1_v0_10_0_sha256_transform(50,1835
+static void rustsecp256k1_v0_10_0_sha256_write(132,7370
+static void rustsecp256k1_v0_10_0_sha256_finalize(151,8042
+static void rustsecp256k1_v0_10_0_sha256_initialize_tagged(169,8909
+static void rustsecp256k1_v0_10_0_hmac_sha256_initialize(180,9307
+static void rustsecp256k1_v0_10_0_hmac_sha256_write(208,10237
+static void rustsecp256k1_v0_10_0_hmac_sha256_finalize(212,10405
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_initialize(221,10713
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_generate(251,11995
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_finalize(282,13077
+#undef BE32288,13243
+#undef Round289,13255
+#undef sigma1290,13268
+#undef sigma0291,13282
+#undef Sigma1292,13296
+#undef Sigma0293,13310
+#undef Maj294,13324
+#undef Ch295,13335
+
+src/tests_exhaustive.c,735
+#define EXHAUSTIVE_TEST_ORDER 17,566
+static int count 28,818
+void ge_equals_ge(31,868
+void ge_equals_gej(40,1119
+void random_fe(57,1744
+static uint32_t num_cores 68,1974
+static uint32_t this_core 69,2005
+SECP256K1_INLINE static int skip_section(71,2037
+int rustsecp256k1_v0_10_0_nonce_function_smallint(77,2250
+void test_exhaustive_endomorphism(97,3089
+void test_exhaustive_addition(106,3386
+void test_exhaustive_ecmult(166,5757
+    rustsecp256k1_v0_10_0_scalar sc[sc191,6688
+    rustsecp256k1_v0_10_0_ge pt[pt192,6716
+} ecmult_multi_data;193,6740
+static int ecmult_multi_callback(195,6762
+void test_exhaustive_ecmult_multi(202,6989
+void r_from_k(232,8348
+void test_exhaustive_verify(242,8657
+void test_exhaustive_sign(295,11282
+int main(356,13828
+
+src/scalar_low_impl.h,1237
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(14,484
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(18,591
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(19,676
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(21,780
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(28,1030
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(32,1226
+static int rustsecp256k1_v0_10_0_scalar_add(34,1354
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(39,1530
+static void rustsecp256k1_v0_10_0_scalar_set_b32(50,1995
+static void rustsecp256k1_v0_10_0_scalar_get_b32(64,2365
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(69,2555
+static void rustsecp256k1_v0_10_0_scalar_negate(73,2660
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(81,2844
+static int rustsecp256k1_v0_10_0_scalar_is_high(85,2948
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(89,3059
+static void rustsecp256k1_v0_10_0_scalar_mul(94,3206
+static int rustsecp256k1_v0_10_0_scalar_shr_int(98,3363
+static void rustsecp256k1_v0_10_0_scalar_split_128(107,3557
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(112,3699
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(116,3827
+static void rustsecp256k1_v0_10_0_scalar_inverse(124,4097
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(135,4511
+
+src/hash.h,372
+#define SECP256K1_HASH_H8,392
+    uint32_t s[s14,476
+    uint32_t buf[buf15,495
+    size_t bytes;16,537
+} rustsecp256k1_v0_10_0_sha256;17,555
+    rustsecp256k1_v0_10_0_sha256 inner,24,844
+    rustsecp256k1_v0_10_0_sha256 inner, outer;24,844
+} rustsecp256k1_v0_10_0_hmac_sha256;25,879
+    unsigned char v[v32,1242
+    unsigned char k[k33,1267
+    int retry;34,1292
+} rustsecp256k1_v0_10_0_rfc6979_hmac_sha256;35,1307
+
+src/scratch.h,240
+#define SECP256K1_SCRATCH_H8,395
+typedef struct rustsecp256k1_v0_10_0_scratch_space_struct 12,552
+    unsigned char magic[magic14,665
+    void *data;data16,726
+    size_t alloc_size;19,846
+    size_t max_size;21,915
+} rustsecp256k1_v0_10_0_scratch;22,936
+
+src/scalar_8x32.h,129
+#define SECP256K1_SCALAR_REPR_H8,399
+    uint32_t d[d14,533
+} rustsecp256k1_v0_10_0_scalar;15,552
+#define SECP256K1_SCALAR_CONST(17,573
+
+src/bench_ecmult.c,1438
+#define POINTS 19,603
+void help(21,625
+    rustsecp256k1_v0_10_0_context* ctx;38,1483
+    rustsecp256k1_v0_10_0_scratch_space* scratch;39,1511
+    rustsecp256k1_v0_10_0_scalar* scalars;40,1549
+    rustsecp256k1_v0_10_0_ge* pubkeys;41,1580
+    rustsecp256k1_v0_10_0_gej* pubkeys_gej;42,1607
+    rustsecp256k1_v0_10_0_scalar* seckeys;43,1639
+    rustsecp256k1_v0_10_0_gej* expected_output;44,1670
+    rustsecp256k1_v0_10_0_ecmult_multi_func ecmult_multi;45,1706
+    size_t count;48,1785
+    int includes_g;49,1803
+    size_t offset1;53,1930
+    size_t offset2;54,1950
+    rustsecp256k1_v0_10_0_gej* output;57,1999
+} bench_data;58,2026
+static void hash_into_offset(61,2124
+static void bench_ecmult_teardown_helper(68,2428
+static void bench_ecmult_setup(92,3515
+static void bench_ecmult_gen(99,3760
+static void bench_ecmult_gen_teardown(108,4029
+static void bench_ecmult_const(113,4210
+static void bench_ecmult_const_teardown(122,4504
+static void bench_ecmult_1p(127,4697
+static void bench_ecmult_1p_teardown(136,4987
+static void bench_ecmult_0p_g(141,5177
+static void bench_ecmult_0p_g_teardown(152,5495
+static void bench_ecmult_1p_g(157,5677
+static void bench_ecmult_1p_g_teardown(166,6009
+static void run_ecmult_bench(171,6213
+static int bench_ecmult_multi_callback(188,7164
+static void bench_ecmult_multi(201,7604
+static void bench_ecmult_multi_setup(216,8192
+static void bench_ecmult_multi_teardown(221,8327
+static void generate_scalar(233,8789
+static void run_ecmult_multi_bench(249,9305
+int main(281,10592
+
+src/group_impl.h,1953
+#define SECP256K1_GROUP_IMPL_H8,398
+#define SECP256K1_G_ORDER_13 13,469
+#define SECP256K1_G_ORDER_199 19,732
+#define SECP256K1_G 28,1107
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 45,1970
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 47,2042
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 52,2254
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 54,2327
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 62,2602
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 64,2665
+static void rustsecp256k1_v0_10_0_ge_set_gej_zinv(67,2766
+static void rustsecp256k1_v0_10_0_ge_set_xy(78,3135
+static int rustsecp256k1_v0_10_0_ge_is_infinity(84,3286
+static void rustsecp256k1_v0_10_0_ge_neg(88,3374
+static void rustsecp256k1_v0_10_0_ge_set_gej(94,3543
+static void rustsecp256k1_v0_10_0_ge_set_gej_var(107,3933
+static void rustsecp256k1_v0_10_0_ge_set_all_gej_var(122,4391
+static void rustsecp256k1_v0_10_0_ge_table_set_globalz(164,5484
+static void rustsecp256k1_v0_10_0_gej_set_infinity(188,6219
+static void rustsecp256k1_v0_10_0_ge_set_infinity(195,6395
+static void rustsecp256k1_v0_10_0_gej_clear(201,6538
+static void rustsecp256k1_v0_10_0_ge_clear(208,6707
+static int rustsecp256k1_v0_10_0_ge_set_xo_var(214,6843
+static void rustsecp256k1_v0_10_0_gej_set_ge(232,7325
+static int rustsecp256k1_v0_10_0_gej_eq_x_var(239,7501
+static void rustsecp256k1_v0_10_0_gej_neg(247,7798
+static int rustsecp256k1_v0_10_0_gej_is_infinity(256,8039
+static int rustsecp256k1_v0_10_0_ge_is_valid_var(260,8129
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_gej_double(273,8526
+static void rustsecp256k1_v0_10_0_gej_double_var(307,10233
+static void rustsecp256k1_v0_10_0_gej_add_var(335,11353
+static void rustsecp256k1_v0_10_0_gej_add_ge_var(388,13255
+static void rustsecp256k1_v0_10_0_gej_add_zinv_var(437,15069
+static void rustsecp256k1_v0_10_0_gej_add_ge(494,17486
+static void rustsecp256k1_v0_10_0_gej_rescale(615,24544
+static void rustsecp256k1_v0_10_0_ge_to_storage(626,25017
+static void rustsecp256k1_v0_10_0_ge_from_storage(637,25333
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_gej_cmov(643,25535
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_ge_storage_cmov(651,25825
+static void rustsecp256k1_v0_10_0_ge_mul_lambda(656,26053
+static int rustsecp256k1_v0_10_0_ge_is_in_correct_subgroup(661,26206
+
+src/basic-config.h,111
+#define SECP256K1_BASIC_CONFIG_H8,400
+#define ECMULT_WINDOW_SIZE 12,459
+#define ECMULT_GEN_PREC_BITS 13,489
+
+src/scratch_impl.h,378
+#define SECP256K1_SCRATCH_IMPL_H8,400
+static rustsecp256k1_v0_10_0_scratch* rustsecp256k1_v0_10_0_scratch_create(13,474
+static void rustsecp256k1_v0_10_0_scratch_destroy(26,999
+static size_t rustsecp256k1_v0_10_0_scratch_checkpoint(38,1494
+static void rustsecp256k1_v0_10_0_scratch_apply_checkpoint(46,1815
+static size_t rustsecp256k1_v0_10_0_scratch_max_allocation(58,2294
+static void *rustsecp256k1_v0_10_0_scratch_alloc(rustsecp256k1_v0_10_0_scratch_alloc73,2932
+
+src/precomputed_ecmult.h,285
+#define SECP256K1_PRECOMPUTED_ECMULT_H8,556
+#        define WINDOW_G 17,722
+#        define WINDOW_G 19,788
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g[rustsecp256k1_v0_10_0_pre_g23,917
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g_128[rustsecp256k1_v0_10_0_pre_g_12824,991
+#    define WINDOW_G 26,1113
+
+src/ecmult_gen_compute_table.h,51
+#define SECP256K1_ECMULT_GEN_COMPUTE_TABLE_H8,412
+
+src/ecmult.h,122
+#define SECP256K1_ECMULT_H8,394
+#define ECMULT_TABLE_SIZE(30,1198
+typedef int (rustsecp256k1_v0_10_0_ecmult_multi_callback)35,1413
+
+src/field_10x26.h,401
+#define SECP256K1_FIELD_REPR_H8,398
+    uint32_t n[n16,557
+    int magnitude;18,591
+    int normalized;19,610
+} rustsecp256k1_v0_10_0_fe;21,637
+#define SECP256K1_FE_CONST_INNER(24,723
+#define SECP256K1_FE_CONST(38,1377
+#define SECP256K1_FE_CONST(40,1523
+    uint32_t n[n44,1682
+} rustsecp256k1_v0_10_0_fe_storage;45,1701
+#define SECP256K1_FE_STORAGE_CONST(47,1726
+#define SECP256K1_FE_STORAGE_CONST_GET(48,1846
+
+src/precomputed_ecmult_gen.h,149
+#define SECP256K1_PRECOMPUTED_ECMULT_GEN_H8,460
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_ecmult_gen_prec_table[rustsecp256k1_v0_10_0_ecmult_gen_prec_table17,616
+
+src/field_5x52_int128_impl.h,225
+#define SECP256K1_FIELD_INNER5X52_IMPL_H8,408
+#define VERIFY_BITS(13,485
+#define VERIFY_BITS(15,549
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(18,599
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(156,5340
+
+src/bench.h,293
+#define SECP256K1_BENCH_H8,393
+static int64_t gettime_i64(15,502
+#define FP_EXP 21,657
+#define FP_MULT 22,676
+void print_number(25,738
+void run_benchmark(82,2120
+int have_flag(116,3076
+int have_invalid_args(132,3524
+int get_iters(154,4070
+void print_output_table_header_row(163,4258
+
+src/bench.c,551
+void help(14,479
+    rustsecp256k1_v0_10_0_context *ctx;ctx60,2074
+    unsigned char msg[msg61,2102
+    unsigned char key[key62,2129
+    unsigned char sig[sig63,2156
+    size_t siglen;64,2183
+    unsigned char pubkey[pubkey65,2202
+    size_t pubkeylen;66,2232
+} bench_verify_data;67,2254
+static void bench_verify(69,2276
+    rustsecp256k1_v0_10_0_context* ctx;89,3145
+    unsigned char msg[msg90,3173
+    unsigned char key[key91,3200
+} bench_sign_data;92,3227
+static void bench_sign_setup(94,3247
+static void bench_sign_run(106,3490
+int main(136,4305
+
+src/field_5x52.h,401
+#define SECP256K1_FIELD_REPR_H8,398
+    uint64_t n[n16,557
+    int magnitude;18,590
+    int normalized;19,609
+} rustsecp256k1_v0_10_0_fe;21,636
+#define SECP256K1_FE_CONST_INNER(24,722
+#define SECP256K1_FE_CONST(33,1172
+#define SECP256K1_FE_CONST(35,1318
+    uint64_t n[n39,1477
+} rustsecp256k1_v0_10_0_fe_storage;40,1496
+#define SECP256K1_FE_STORAGE_CONST(42,1521
+#define SECP256K1_FE_STORAGE_CONST_GET(49,1752
+
+src/ecmult_const_impl.h,246
+#define SECP256K1_ECMULT_CONST_IMPL_H8,405
+static void rustsecp256k1_v0_10_0_ecmult_odd_multiples_table_globalz_windowa(21,843
+#define ECMULT_CONST_TABLE_GET_GE(29,1258
+static int rustsecp256k1_v0_10_0_wnaf_const(69,3194
+static void rustsecp256k1_v0_10_0_ecmult_const(133,5629
+
+src/field.h,140
+#define SECP256K1_FIELD_H8,393
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_one 35,1176
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_const_beta 36,1265
+
+src/modinv32.h,217
+#define SECP256K1_MODINV32_H8,395
+    int32_t v[v20,632
+} rustsecp256k1_v0_10_0_modinv32_signed30;21,650
+    rustsecp256k1_v0_10_0_modinv32_signed30 modulus;25,774
+    uint32_t modulus_inv30;28,848
+} rustsecp256k1_v0_10_0_modinv32_modinfo;29,876
+
+src/ecmult_impl.h,2501
+#define SECP256K1_ECMULT_IMPL_H8,434
+#    define WINDOW_A 24,865
+#    define WINDOW_A 26,922
+#    define WINDOW_A 28,953
+#  define WINDOW_A 32,1040
+#define WNAF_BITS 44,1523
+#define WNAF_SIZE_BITS(45,1545
+#define WNAF_SIZE(46,1604
+#define PIPPENGER_SCRATCH_OBJECTS 49,1742
+#define STRAUSS_SCRATCH_OBJECTS 50,1778
+#define PIPPENGER_MAX_BUCKET_WINDOW 52,1813
+#define ECMULT_PIPPENGER_THRESHOLD 55,1937
+#define ECMULT_MAX_POINTS_PER_BATCH 57,1976
+static void rustsecp256k1_v0_10_0_ecmult_odd_multiples_table(73,2689
+#define SECP256K1_ECMULT_TABLE_VERIFY(117,4543
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge(122,4723
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge_lambda(132,5023
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge_storage(142,5424
+static int rustsecp256k1_v0_10_0_ecmult_wnaf(159,6270
+struct rustsecp256k1_v0_10_0_strauss_point_state 211,7444
+    int wnaf_na_1[wnaf_na_1212,7483
+    int wnaf_na_lam[wnaf_na_lam213,7507
+    int bits_na_1;214,7533
+    int bits_na_lam;215,7552
+struct rustsecp256k1_v0_10_0_strauss_state 218,7577
+    rustsecp256k1_v0_10_0_fe* aux;220,7698
+    rustsecp256k1_v0_10_0_ge* pre_a;221,7721
+    struct rustsecp256k1_v0_10_0_strauss_point_state* ps;222,7746
+static void rustsecp256k1_v0_10_0_ecmult_strauss_wnaf(225,7796
+static void rustsecp256k1_v0_10_0_ecmult(338,12726
+static size_t rustsecp256k1_v0_10_0_strauss_scratch_size(350,13178
+static int rustsecp256k1_v0_10_0_ecmult_strauss_batch(355,13489
+static int rustsecp256k1_v0_10_0_ecmult_strauss_batch_single(395,15723
+static size_t rustsecp256k1_v0_10_0_strauss_max_points(399,16058
+static int rustsecp256k1_v0_10_0_wnaf_fixed(410,16649
+struct rustsecp256k1_v0_10_0_pippenger_point_state 472,18600
+    int skew_na;473,18641
+    size_t input_pos;474,18658
+struct rustsecp256k1_v0_10_0_pippenger_state 477,18684
+    int *wnaf_na;wnaf_na478,18719
+    struct rustsecp256k1_v0_10_0_pippenger_point_state* ps;479,18737
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_wnaf(489,19156
+static int rustsecp256k1_v0_10_0_pippenger_bucket_window(570,22256
+static size_t rustsecp256k1_v0_10_0_pippenger_bucket_window_inv(599,22900
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_endo_split(618,23394
+static size_t rustsecp256k1_v0_10_0_pippenger_scratch_size(637,24030
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch(643,24441
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch_single(720,28011
+static size_t rustsecp256k1_v0_10_0_pippenger_max_points(729,28523
+static int rustsecp256k1_v0_10_0_ecmult_multi_simple_var(765,30112
+static int rustsecp256k1_v0_10_0_ecmult_multi_batch_size_helper(792,31109
+typedef int (*rustsecp256k1_v0_10_0_ecmult_multi_func)rustsecp256k1_v0_10_0_ecmult_multi_func810,31704
+static int rustsecp256k1_v0_10_0_ecmult_multi_var(811,31902
+
+src/testrand_impl.h,846
+#define SECP256K1_TESTRAND_IMPL_H8,401
+static uint64_t rustsecp256k1_v0_10_0_test_state[rustsecp256k1_v0_10_0_test_state17,537
+static uint64_t rustsecp256k1_v0_10_0_test_rng_integer;18,578
+static int rustsecp256k1_v0_10_0_test_rng_integer_bits_left 19,622
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_testrand_seed(21,676
+SECP256K1_INLINE static uint64_t rotl(41,1367
+SECP256K1_INLINE static uint64_t rustsecp256k1_v0_10_0_testrand64(45,1474
+SECP256K1_INLINE static uint64_t rustsecp256k1_v0_10_0_testrand_bits(58,2118
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_testrand32(71,2572
+static uint32_t rustsecp256k1_v0_10_0_testrand_int(75,2677
+static void rustsecp256k1_v0_10_0_testrand256(114,4134
+static void rustsecp256k1_v0_10_0_testrand_bytes_test(130,4522
+static void rustsecp256k1_v0_10_0_testrand256_test(146,4997
+static void rustsecp256k1_v0_10_0_testrand_flip(150,5105
+static void rustsecp256k1_v0_10_0_testrand_init(154,5249
+static void rustsecp256k1_v0_10_0_testrand_finish(191,6691
+
+src/ecmult_gen_impl.h,299
+#define SECP256K1_ECMULT_GEN_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_ecmult_gen_context_build(17,581
+static int rustsecp256k1_v0_10_0_ecmult_gen_context_is_built(22,731
+static void rustsecp256k1_v0_10_0_ecmult_gen_context_clear(26,849
+static void rustsecp256k1_v0_10_0_ecmult_gen(45,1951
+static void rustsecp256k1_v0_10_0_ecmult_gen_blind(84,3663
+
+src/field_10x26_impl.h,1658
+#define SECP256K1_FIELD_REPR_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_fe_verify(24,890
+static void rustsecp256k1_v0_10_0_fe_normalize(52,1817
+static void rustsecp256k1_v0_10_0_fe_normalize_weak(107,4050
+static void rustsecp256k1_v0_10_0_fe_normalize_var(138,5233
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero(194,7458
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var(223,8853
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_set_int(275,10471
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_zero(286,10806
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_odd(295,11082
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(303,11264
+static int rustsecp256k1_v0_10_0_fe_cmp_var(314,11465
+static int rustsecp256k1_v0_10_0_fe_set_b32(333,11884
+static void rustsecp256k1_v0_10_0_fe_get_b32(360,13655
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_negate(399,15111
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_int(425,16178
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_add(443,16532
+#define VERIFY_BITS(473,17272
+#define VERIFY_BITS(475,17336
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(478,17386
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(808,31830
+static void rustsecp256k1_v0_10_0_fe_mul(1083,44663
+static void rustsecp256k1_v0_10_0_fe_sqr(1100,45123
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_cmov(1113,45417
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_storage_cmov(1136,46291
+static void rustsecp256k1_v0_10_0_fe_to_storage(1151,46964
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_from_storage(1165,47473
+static void rustsecp256k1_v0_10_0_fe_from_signed30(1183,48223
+static void rustsecp256k1_v0_10_0_fe_to_signed30(1219,49548
+static const rustsecp256k1_v0_10_0_modinv32_modinfo rustsecp256k1_v0_10_0_const_modinfo_fe 1240,50325
+static void rustsecp256k1_v0_10_0_fe_inv(1245,50461
+static void rustsecp256k1_v0_10_0_fe_inv_var(1258,50873
+
+src/ecmult_gen.h,235
+#define SECP256K1_ECMULT_GEN_H8,398
+#define ECMULT_GEN_PREC_G(16,615
+#define ECMULT_GEN_PREC_N(17,659
+    int built;21,768
+    rustsecp256k1_v0_10_0_scalar blind;24,843
+    rustsecp256k1_v0_10_0_gej initial;25,880
+} rustsecp256k1_v0_10_0_ecmult_gen_context;26,917
+
+src/modules/schnorrsig/tests_exhaustive_impl.h,393
+#define SECP256K1_MODULE_SCHNORRSIG_TESTS_EXHAUSTIVE_H8,422
+static const unsigned char invalid_pubkey_bytes[invalid_pubkey_bytes13,576
+#define NUM_INVALID_KEYS 59,2332
+static int rustsecp256k1_v0_10_0_hardened_nonce_function_smallint(61,2423
+static void test_exhaustive_schnorrsig_verify(79,3132
+static void test_exhaustive_schnorrsig_sign(141,6475
+static void test_exhaustive_schnorrsig(186,8919
+
+src/modules/schnorrsig/main_impl.h,758
+#define SECP256K1_MODULE_SCHNORRSIG_MAIN_H8,410
+static void rustsecp256k1_v0_10_0_nonce_function_bip340_sha256_tagged(16,718
+static void rustsecp256k1_v0_10_0_nonce_function_bip340_sha256_tagged_aux(32,1248
+static const unsigned char bip340_algo[bip340_algo48,1779
+static const unsigned char schnorrsig_extraparams_magic[schnorrsig_extraparams_magic50,1842
+static int nonce_function_bip340(52,1944
+const rustsecp256k1_v0_10_0_nonce_function_hardened rustsecp256k1_v0_10_0_nonce_function_bip340 99,3778
+static void rustsecp256k1_v0_10_0_schnorrsig_sha256_tagged(103,4032
+static void rustsecp256k1_v0_10_0_schnorrsig_challenge(116,4406
+static int rustsecp256k1_v0_10_0_schnorrsig_sign_internal(132,5025
+int rustsecp256k1_v0_10_0_schnorrsig_sign(195,7272
+int rustsecp256k1_v0_10_0_schnorrsig_sign_custom(200,7720
+int rustsecp256k1_v0_10_0_schnorrsig_verify(215,8458
+
+src/modules/schnorrsig/tests_impl.h,749
+#define SECP256K1_MODULE_SCHNORRSIG_TESTS_H8,411
+void nonce_function_bip340_bitflip(15,623
+void test_sha256_eq(26,1306
+void run_nonce_function_bip340_tests(34,1578
+void test_schnorrsig_api(117,5045
+void test_schnorrsig_sha256_tagged(232,11029
+void test_schnorrsig_bip_vectors_check_signing(244,11484
+void test_schnorrsig_bip_vectors_check_verify(261,12398
+void test_schnorrsig_bip_vectors(270,12885
+static int nonce_function_failing(688,32491
+static int nonce_function_0(701,32917
+static int nonce_function_overflowing(715,33356
+void test_schnorrsig_sign(728,33756
+#define N_SIGS 771,35956
+void test_schnorrsig_sign_verify(775,36133
+#undef N_SIGS850,39554
+void test_schnorrsig_taproot(852,39569
+void run_schnorrsig_tests(888,41166
+
+src/modules/schnorrsig/bench_impl.h,454
+#define SECP256K1_MODULE_SCHNORRSIG_BENCH_H8,411
+#define MSGLEN 12,508
+    rustsecp256k1_v0_10_0_context *ctx;ctx15,544
+    int n;16,572
+    const rustsecp256k1_v0_10_0_keypair **keypairs;keypairs18,584
+    const unsigned char **pk;pk19,624
+    const unsigned char **sigs;sigs20,654
+    const unsigned char **msgs;msgs21,686
+} bench_schnorrsig_data;22,718
+void bench_schnorrsig_sign(24,744
+void bench_schnorrsig_verify(37,1126
+void run_schnorrsig_bench(48,1510
+
+src/modules/recovery/tests_exhaustive_impl.h,195
+#define SECP256K1_MODULE_RECOVERY_EXHAUSTIVE_TESTS_H8,420
+void test_exhaustive_recovery_sign(13,568
+void test_exhaustive_recovery_verify(82,4239
+static void test_exhaustive_recovery(144,7568
+
+src/modules/recovery/main_impl.h,500
+#define SECP256K1_MODULE_RECOVERY_MAIN_H8,408
+static void rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_load(12,500
+static void rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_save(27,1239
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_parse_compact(38,1678
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_serialize_compact(60,2375
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_convert(74,2892
+static int rustsecp256k1_v0_10_0_ecdsa_sig_recover(87,3333
+int rustsecp256k1_v0_10_0_ecdsa_sign_recoverable(123,4581
+int rustsecp256k1_v0_10_0_ecdsa_recover(137,5263
+
+src/modules/recovery/tests_impl.h,262
+#define SECP256K1_MODULE_RECOVERY_TESTS_H8,409
+static int recovery_test_nonce_function(10,452
+void test_ecdsa_recovery_api(31,1174
+void test_ecdsa_recovery_end_to_end(156,7888
+void test_ecdsa_recovery_edge_cases(215,11162
+void run_recovery_tests(388,20395
+
+src/modules/recovery/bench_impl.h,278
+#define SECP256K1_MODULE_RECOVERY_BENCH_H8,409
+    rustsecp256k1_v0_10_0_context *ctx;ctx13,513
+    unsigned char msg[msg14,541
+    unsigned char sig[sig15,568
+} bench_recover_data;16,595
+void bench_recover(18,618
+void bench_recover_setup(39,1562
+void run_recovery_bench(51,1807
+
+src/modules/extrakeys/tests_exhaustive_impl.h,106
+#define SECP256K1_MODULE_EXTRAKEYS_TESTS_EXHAUSTIVE_H8,421
+static void test_exhaustive_extrakeys(13,572
+
+src/modules/extrakeys/main_impl.h,843
+#define SECP256K1_MODULE_EXTRAKEYS_MAIN_H8,409
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_xonly_pubkey_load(13,543
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_xonly_pubkey_save(17,768
+int rustsecp256k1_v0_10_0_xonly_pubkey_parse(21,940
+int rustsecp256k1_v0_10_0_xonly_pubkey_serialize(43,1526
+int rustsecp256k1_v0_10_0_xonly_pubkey_cmp(58,1947
+static int rustsecp256k1_v0_10_0_extrakeys_ge_even_y(87,3414
+int rustsecp256k1_v0_10_0_xonly_pubkey_from_pubkey(98,3681
+int rustsecp256k1_v0_10_0_xonly_pubkey_tweak_add(117,4225
+int rustsecp256k1_v0_10_0_xonly_pubkey_tweak_add_check(134,4840
+static void rustsecp256k1_v0_10_0_keypair_save(155,5681
+static int rustsecp256k1_v0_10_0_keypair_seckey_load(161,5920
+static int rustsecp256k1_v0_10_0_keypair_load(175,6561
+int rustsecp256k1_v0_10_0_keypair_create(195,7250
+int rustsecp256k1_v0_10_0_keypair_sec(213,7892
+int rustsecp256k1_v0_10_0_keypair_pub(223,8189
+int rustsecp256k1_v0_10_0_keypair_xonly_pub(233,8522
+int rustsecp256k1_v0_10_0_keypair_xonly_tweak_add(254,9093
+
+src/modules/extrakeys/tests_impl.h,464
+#define SECP256K1_MODULE_EXTRAKEYS_TESTS_H8,410
+static rustsecp256k1_v0_10_0_context* api_test_context(12,505
+void test_xonly_pubkey(19,831
+void test_xonly_pubkey_comparison(140,6163
+void test_xonly_pubkey_tweak(177,7800
+void test_xonly_pubkey_tweak_check(249,11143
+#define N_PUBKEYS 319,14843
+void test_xonly_pubkey_tweak_recursive(320,14864
+#undef N_PUBKEYS347,16019
+void test_keypair(349,16037
+void test_keypair_add(472,21670
+void run_extrakeys_tests(582,26870
+
+src/modules/ecdh/main_impl.h,276
+#define SECP256K1_MODULE_ECDH_MAIN_H8,404
+static int ecdh_hash_function_sha256(13,525
+const rustsecp256k1_v0_10_0_ecdh_hash_function rustsecp256k1_v0_10_0_ecdh_hash_function_sha256 26,939
+const rustsecp256k1_v0_10_0_ecdh_hash_function rustsecp256k1_v0_10_0_ecdh_hash_function_default 27,1039
+int rustsecp256k1_v0_10_0_ecdh(29,1141
+
+src/modules/ecdh/tests_impl.h,254
+#define SECP256K1_MODULE_ECDH_TESTS_H8,405
+int ecdh_hash_function_test_fail(10,444
+int ecdh_hash_function_custom(18,639
+void test_ecdh_api(27,922
+void test_ecdh_generator_basepoint(56,2021
+void test_bad_scalar(97,3740
+void run_ecdh_tests(126,4855
+
+src/modules/ecdh/bench_impl.h,282
+#define SECP256K1_MODULE_ECDH_BENCH_H8,405
+    rustsecp256k1_v0_10_0_context *ctx;ctx13,501
+    rustsecp256k1_v0_10_0_pubkey point;14,529
+    unsigned char scalar[scalar15,557
+} bench_ecdh_data;16,587
+static void bench_ecdh_setup(18,607
+static void bench_ecdh(35,1155
+void run_ecdh_bench(45,1427
+
+src/precomputed_ecmult.c,214
+#define S(12,444
+#define WINDOW_G 19,943
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g[rustsecp256k1_v0_10_0_pre_g20,979
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g_128[rustsecp256k1_v0_10_0_pre_g_1288240,1205052
+#undef S16460,2409263
+
+src/modinv64_impl.h,836
+#define SECP256K1_MODINV64_IMPL_H8,400
+static int64_t rustsecp256k1_v0_10_0_modinv64_abs(24,969
+static const rustsecp256k1_v0_10_0_modinv64_signed62 SECP256K1_SIGNED62_ONE 30,1096
+static void rustsecp256k1_v0_10_0_modinv64_mul_62(33,1263
+static int rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(47,1830
+static void rustsecp256k1_v0_10_0_modinv64_normalize_62(69,2812
+    int64_t u,145,5777
+    int64_t u, v,145,5777
+    int64_t u, v, q,145,5777
+    int64_t u, v, q, r;145,5777
+} rustsecp256k1_v0_10_0_modinv64_trans2x2;146,5801
+static int64_t rustsecp256k1_v0_10_0_modinv64_divsteps_59(159,6233
+static int64_t rustsecp256k1_v0_10_0_modinv64_divsteps_62_var(226,9079
+static void rustsecp256k1_v0_10_0_modinv64_update_de_62(304,12602
+static void rustsecp256k1_v0_10_0_modinv64_update_fg_62(387,17428
+static void rustsecp256k1_v0_10_0_modinv64_update_fg_62_var(430,19574
+static void rustsecp256k1_v0_10_0_modinv64(461,20956
+static void rustsecp256k1_v0_10_0_modinv64_var(514,24051
+
+src/field_5x52_impl.h,1455
+#define SECP256K1_FIELD_REPR_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_fe_verify(40,1581
+static void rustsecp256k1_v0_10_0_fe_normalize(61,2350
+static void rustsecp256k1_v0_10_0_fe_normalize_weak(104,4018
+static void rustsecp256k1_v0_10_0_fe_normalize_var(128,4865
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero(172,6505
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var(195,7557
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_set_int(236,8809
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_zero(247,9094
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_odd(256,9335
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(264,9517
+static int rustsecp256k1_v0_10_0_fe_cmp_var(275,9717
+static int rustsecp256k1_v0_10_0_fe_set_b32(294,10136
+static void rustsecp256k1_v0_10_0_fe_get_b32(344,11933
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_negate(383,13259
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_int(403,14080
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_add(416,14344
+static void rustsecp256k1_v0_10_0_fe_mul(432,14710
+static void rustsecp256k1_v0_10_0_fe_sqr(449,15170
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_cmov(462,15464
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_storage_cmov(480,16073
+static void rustsecp256k1_v0_10_0_fe_to_storage(491,16534
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_from_storage(501,16851
+static void rustsecp256k1_v0_10_0_fe_from_signed62(514,17336
+static void rustsecp256k1_v0_10_0_fe_to_signed62(540,18239
+static const rustsecp256k1_v0_10_0_modinv64_modinfo rustsecp256k1_v0_10_0_const_modinfo_fe 555,18720
+static void rustsecp256k1_v0_10_0_fe_inv(560,18858
+static void rustsecp256k1_v0_10_0_fe_inv_var(575,19291
+
+src/scalar.h,33
+#define SECP256K1_SCALAR_H8,394
+
+src/scalar_low.h,119
+#define SECP256K1_SCALAR_REPR_H8,399
+typedef uint32_t rustsecp256k1_v0_10_0_scalar;13,516
+#define SECP256K1_SCALAR_CONST(15,552
+
+src/ecmult_compute_table.h,47
+#define SECP256K1_ECMULT_COMPUTE_TABLE_H8,558
+
+src/ecmult_compute_table_impl.h,160
+#define SECP256K1_ECMULT_COMPUTE_TABLE_IMPL_H8,563
+static void rustsecp256k1_v0_10_0_ecmult_compute_table(16,731
+static void rustsecp256k1_v0_10_0_ecmult_compute_two_tables(37,1430
+
+src/eckey.h,32
+#define SECP256K1_ECKEY_H8,393
+
+src/precompute_ecmult_gen.c,17
+int main(17,623
+
+src/ecmult_gen_compute_table_impl.h,111
+#define SECP256K1_ECMULT_GEN_COMPUTE_TABLE_IMPL_H8,417
+static void rustsecp256k1_v0_10_0_ecmult_gen_compute_table(16,597
+
+src/modinv64.h,217
+#define SECP256K1_MODINV64_H8,395
+    int64_t v[v24,736
+} rustsecp256k1_v0_10_0_modinv64_signed62;25,754
+    rustsecp256k1_v0_10_0_modinv64_signed62 modulus;29,878
+    uint64_t modulus_inv62;32,952
+} rustsecp256k1_v0_10_0_modinv64_modinfo;33,980
+
+src/eckey_impl.h,352
+#define SECP256K1_ECKEY_IMPL_H8,398
+static int rustsecp256k1_v0_10_0_eckey_pubkey_parse(17,533
+static int rustsecp256k1_v0_10_0_eckey_pubkey_serialize(37,1547
+static int rustsecp256k1_v0_10_0_eckey_privkey_tweak_add(55,2161
+static int rustsecp256k1_v0_10_0_eckey_pubkey_tweak_add(60,2351
+static int rustsecp256k1_v0_10_0_eckey_privkey_tweak_mul(74,2735
+static int rustsecp256k1_v0_10_0_eckey_pubkey_tweak_mul(82,2956
+
+src/scalar_impl.h,521
+#define SECP256K1_SCALAR_IMPL_H8,399
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_one 31,855
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_zero 32,956
+static int rustsecp256k1_v0_10_0_scalar_set_b32_seckey(34,1059
+#    define EXHAUSTIVE_TEST_LAMBDA 43,1423
+#    define EXHAUSTIVE_TEST_LAMBDA 45,1497
+static void rustsecp256k1_v0_10_0_scalar_split_lambda(56,1948
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_const_lambda 64,2322
+static void rustsecp256k1_v0_10_0_scalar_split_lambda(123,5430
+static void rustsecp256k1_v0_10_0_scalar_split_lambda_verify(263,9725
+
+src/modinv32_impl.h,789
+#define SECP256K1_MODINV32_IMPL_H8,400
+static const rustsecp256k1_v0_10_0_modinv32_signed30 SECP256K1_SIGNED30_ONE 24,858
+static void rustsecp256k1_v0_10_0_modinv32_mul_30(27,1025
+static int rustsecp256k1_v0_10_0_modinv32_mul_cmp_30(41,1597
+static void rustsecp256k1_v0_10_0_modinv32_normalize_30(63,2579
+    int32_t u,168,6588
+    int32_t u, v,168,6588
+    int32_t u, v, q,168,6588
+    int32_t u, v, q, r;168,6588
+} rustsecp256k1_v0_10_0_modinv32_trans2x2;169,6612
+static int32_t rustsecp256k1_v0_10_0_modinv32_divsteps_30(181,6948
+static int32_t rustsecp256k1_v0_10_0_modinv32_divsteps_30_var(245,9581
+static void rustsecp256k1_v0_10_0_modinv32_update_de_30(327,13505
+static void rustsecp256k1_v0_10_0_modinv32_update_fg_30(389,16816
+static void rustsecp256k1_v0_10_0_modinv32_update_fg_30_var(424,18261
+static void rustsecp256k1_v0_10_0_modinv32(455,19634
+static void rustsecp256k1_v0_10_0_modinv32_var(508,22707
+
+src/field_impl.h,189
+#define SECP256K1_FIELD_IMPL_H8,398
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_equal(24,724
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_equal_var(31,958
+static int rustsecp256k1_v0_10_0_fe_sqrt(38,1200
+
+src/field_5x52_asm_impl.h,170
+#define SECP256K1_FIELD_INNER5X52_IMPL_H15,661
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(17,703
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(287,7645
+
+src/scalar_4x64_impl.h,2357
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+#define SECP256K1_N_0 13,506
+#define SECP256K1_N_1 14,562
+#define SECP256K1_N_2 15,618
+#define SECP256K1_N_3 16,674
+#define SECP256K1_N_C_0 19,779
+#define SECP256K1_N_C_1 20,824
+#define SECP256K1_N_C_2 21,865
+#define SECP256K1_N_H_0 24,935
+#define SECP256K1_N_H_1 25,993
+#define SECP256K1_N_H_2 26,1051
+#define SECP256K1_N_H_3 27,1109
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(29,1168
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(36,1314
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(43,1478
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(48,1758
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(59,2289
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_reduce(71,2703
+static int rustsecp256k1_v0_10_0_scalar_add(85,3270
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(101,3937
+static void rustsecp256k1_v0_10_0_scalar_set_b32(119,4788
+static void rustsecp256k1_v0_10_0_scalar_get_b32(131,5879
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(138,6746
+static void rustsecp256k1_v0_10_0_scalar_negate(142,6888
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(154,7403
+static int rustsecp256k1_v0_10_0_scalar_is_high(158,7550
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(170,7965
+#define muladd(189,8876
+#define muladd_fast(204,9494
+#define sumadd(218,10028
+#define sumadd_fast(227,10421
+#define extract(235,10784
+#define extract_fast(243,10988
+static void rustsecp256k1_v0_10_0_scalar_reduce_512(250,11093
+static void rustsecp256k1_v0_10_0_scalar_mul_512(559,19219
+#undef sumadd726,23549
+#undef sumadd_fast727,23563
+#undef muladd728,23582
+#undef muladd_fast729,23596
+#undef extract730,23615
+#undef extract_fast731,23630
+static void rustsecp256k1_v0_10_0_scalar_mul(733,23651
+static int rustsecp256k1_v0_10_0_scalar_shr_int(739,23861
+static void rustsecp256k1_v0_10_0_scalar_split_128(751,24238
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(762,24521
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_mul_shift_var(766,24733
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(783,25705
+static void rustsecp256k1_v0_10_0_scalar_from_signed62(794,26154
+static void rustsecp256k1_v0_10_0_scalar_to_signed62(816,26935
+static const rustsecp256k1_v0_10_0_modinv64_modinfo rustsecp256k1_v0_10_0_const_modinfo_scalar 831,27436
+static void rustsecp256k1_v0_10_0_scalar_inverse(836,27609
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(850,28027
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(864,28453
+
+src/valgrind_ctime_test.c,41
+int main(32,882
+void run_tests(65,1947
+
+src/ecdsa.h,32
+#define SECP256K1_ECDSA_H8,393
+
+src/precompute_ecmult.c,88
+static void print_table(24,991
+static void print_two_tables(46,1979
+int main(59,2500
+
+src/util.h,2481
+#define SECP256K1_UTIL_H8,392
+    void (*fn)fn20,582
+    const void* data;21,628
+} rustsecp256k1_v0_10_0_callback;22,650
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_callback_call(24,673
+static void rustsecp256k1_v0_10_0_default_illegal_callback_fn(29,867
+static void rustsecp256k1_v0_10_0_default_error_callback_fn(34,1046
+static const rustsecp256k1_v0_10_0_callback default_illegal_callback 44,1398
+static const rustsecp256k1_v0_10_0_callback default_error_callback 49,1515
+#define TEST_FAILURE(56,1650
+#define TEST_FAILURE(61,1752
+#define EXPECT(68,1914
+#define EXPECT(70,1966
+#define CHECK(74,2019
+#define CHECK(80,2152
+#define VERIFY_CHECK(89,2388
+#define VERIFY_SETUP(90,2416
+#define VERIFY_CHECK 92,2465
+#define VERIFY_SETUP(93,2492
+#define VERIFY_CHECK(95,2547
+#define VERIFY_SETUP(96,2604
+#  define VG_UNDEF(103,2783
+#  define VG_CHECK(104,2844
+#  define VG_UNDEF(106,2914
+#  define VG_CHECK(107,2938
+#define VG_CHECK_VERIFY(113,3039
+#define VG_CHECK_VERIFY(115,3093
+static SECP256K1_INLINE void *checked_malloc(checked_malloc118,3130
+static SECP256K1_INLINE void *checked_realloc(checked_realloc126,3352
+#define ALIGNMENT 135,3627
+#define ALIGNMENT 140,3899
+#define ROUND_TO_ALIGN(143,3928
+# define SECP256K1_RESTRICT147,4127
+#   define SECP256K1_RESTRICT 151,4261
+#   define SECP256K1_RESTRICT 153,4352
+#   define SECP256K1_RESTRICT155,4401
+#  define SECP256K1_RESTRICT 158,4447
+# define I64FORMAT 163,4521
+# define I64uFORMAT 164,4547
+# define I64FORMAT 166,4580
+# define I64uFORMAT 167,4605
+# define SECP256K1_GNUC_EXT 171,4661
+# define SECP256K1_GNUC_EXT173,4709
+#  define SECP256K1_LITTLE_ENDIAN187,5622
+#  define SECP256K1_BIG_ENDIAN194,6033
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_memczero(202,6334
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_memcmp_var(221,6977
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_int_cmov(235,7408
+# define SECP256K1_WIDEMUL_INT128 257,8285
+# define SECP256K1_WIDEMUL_INT64 259,8360
+# define SECP256K1_WIDEMUL_INT128 261,8452
+# define SECP256K1_WIDEMUL_INT64 263,8494
+SECP256K1_GNUC_EXT typedef unsigned __int128 uint128_t;267,8631
+SECP256K1_GNUC_EXT typedef __int128 int128_t;268,8687
+#define UINT128_MAX 269,8733
+#define INT128_MAX 270,8771
+#define INT128_MIN 271,8821
+#define __has_builtin(277,8995
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz32_var_debruijn(283,9230
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz64_var_debruijn(295,9820
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz32_var(306,10355
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz64_var(324,11127
+
+src/secp256k1.c,2942
+#define SECP256K1_BUILD7,367
+#define ARG_CHECK(34,982
+#define ARG_CHECK_NO_RETURN(41,1151
+struct rustsecp256k1_v0_10_0_context_struct 47,1310
+    rustsecp256k1_v0_10_0_ecmult_gen_context ecmult_gen_ctx;48,1344
+    rustsecp256k1_v0_10_0_callback illegal_callback;49,1393
+    rustsecp256k1_v0_10_0_callback error_callback;50,1434
+    int declassify;51,1473
+static const rustsecp256k1_v0_10_0_context rustsecp256k1_v0_10_0_context_no_precomp_ 54,1497
+const rustsecp256k1_v0_10_0_context *rustsecp256k1_v0_10_0_context_no_precomp rustsecp256k1_v0_10_0_context_no_precomp60,1680
+size_t rustsecp256k1_v0_10_0_context_preallocated_size(62,1769
+size_t rustsecp256k1_v0_10_0_context_preallocated_clone_size(76,2270
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_preallocated_create(82,2445
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_create(107,3332
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_preallocated_clone(118,3726
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_clone(128,3999
+void rustsecp256k1_v0_10_0_context_preallocated_destroy(139,4388
+void rustsecp256k1_v0_10_0_context_destroy(146,4618
+void rustsecp256k1_v0_10_0_context_set_illegal_callback(153,4779
+void rustsecp256k1_v0_10_0_context_set_error_callback(162,5135
+rustsecp256k1_v0_10_0_scratch_space* rustsecp256k1_v0_10_0_scratch_space_create(171,5483
+void rustsecp256k1_v0_10_0_scratch_space_destroy(176,5691
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_declassify(185,6131
+static int rustsecp256k1_v0_10_0_pubkey_load(195,6391
+static void rustsecp256k1_v0_10_0_pubkey_save(214,7230
+int rustsecp256k1_v0_10_0_ec_pubkey_parse(228,7750
+int rustsecp256k1_v0_10_0_ec_pubkey_serialize(246,8282
+int rustsecp256k1_v0_10_0_ec_pubkey_cmp(269,9108
+static void rustsecp256k1_v0_10_0_ecdsa_signature_load(295,10419
+static void rustsecp256k1_v0_10_0_ecdsa_signature_save(309,11094
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der(319,11471
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_compact(335,11949
+int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_der(356,12551
+int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_compact(368,12986
+int rustsecp256k1_v0_10_0_ecdsa_signature_normalize(381,13418
+int rustsecp256k1_v0_10_0_ecdsa_verify(400,13950
+static SECP256K1_INLINE void buffer_append(416,14571
+static int nonce_function_rfc6979(421,14755
+const rustsecp256k1_v0_10_0_nonce_function rustsecp256k1_v0_10_0_nonce_function_rfc6979 455,16203
+const rustsecp256k1_v0_10_0_nonce_function rustsecp256k1_v0_10_0_nonce_function_default 456,16293
+static int rustsecp256k1_v0_10_0_ecdsa_sign_inner(458,16384
+int rustsecp256k1_v0_10_0_ecdsa_sign(514,18679
+int rustsecp256k1_v0_10_0_ec_seckey_verify(528,19309
+static int rustsecp256k1_v0_10_0_ec_pubkey_create_helper(539,19613
+int rustsecp256k1_v0_10_0_ec_pubkey_create(551,20080
+int rustsecp256k1_v0_10_0_ec_seckey_negate(569,20734
+int rustsecp256k1_v0_10_0_ec_privkey_negate(584,21185
+int rustsecp256k1_v0_10_0_ec_pubkey_negate(588,21327
+static int rustsecp256k1_v0_10_0_ec_seckey_tweak_add_helper(604,21724
+int rustsecp256k1_v0_10_0_ec_seckey_tweak_add(615,22076
+int rustsecp256k1_v0_10_0_ec_privkey_tweak_add(631,22615
+static int rustsecp256k1_v0_10_0_ec_pubkey_tweak_add_helper(635,22802
+int rustsecp256k1_v0_10_0_ec_pubkey_tweak_add(642,23076
+int rustsecp256k1_v0_10_0_ec_seckey_tweak_mul(659,23572
+int rustsecp256k1_v0_10_0_ec_privkey_tweak_mul(679,24269
+int rustsecp256k1_v0_10_0_ec_pubkey_tweak_mul(683,24456
+int rustsecp256k1_v0_10_0_context_randomize(706,25120
+int rustsecp256k1_v0_10_0_ec_pubkey_combine(714,25398
+int rustsecp256k1_v0_10_0_tagged_sha256(740,26138
+
+src/ecdsa_impl.h,608
+#define SECP256K1_ECDSA_IMPL_H9,399
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe 31,1073
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_ecdsa_const_p_minus_order 45,1662
+static int rustsecp256k1_v0_10_0_der_read_len(49,1821
+static int rustsecp256k1_v0_10_0_der_parse_integer(102,3266
+static int rustsecp256k1_v0_10_0_ecdsa_sig_parse(153,4757
+static int rustsecp256k1_v0_10_0_ecdsa_sig_serialize(183,5586
+static int rustsecp256k1_v0_10_0_ecdsa_sig_verify(207,6384
+    rustsecp256k1_v0_10_0_fe_set_b32(&xr, c)242,7469
+    rustsecp256k1_v0_10_0_fe_add(&xr, &rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe)rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe268,8783
+static int rustsecp256k1_v0_10_0_ecdsa_sig_sign(277,9012
+
+src/scalar_4x64.h,129
+#define SECP256K1_SCALAR_REPR_H8,399
+    uint64_t d[d14,533
+} rustsecp256k1_v0_10_0_scalar;15,552
+#define SECP256K1_SCALAR_CONST(17,573
+
+src/group.h,628
+#define SECP256K1_GROUP_H8,393
+    rustsecp256k1_v0_10_0_fe x;17,701
+    rustsecp256k1_v0_10_0_fe y;18,721
+    int infinity;19,741
+} rustsecp256k1_v0_10_0_ge;20,811
+#define SECP256K1_GE_CONST(22,828
+#define SECP256K1_GE_CONST_INFINITY 23,1013
+    rustsecp256k1_v0_10_0_fe x;29,1331
+    rustsecp256k1_v0_10_0_fe y;30,1373
+    rustsecp256k1_v0_10_0_fe z;31,1415
+    int infinity;32,1435
+} rustsecp256k1_v0_10_0_gej;33,1505
+#define SECP256K1_GEJ_CONST(35,1523
+#define SECP256K1_GEJ_CONST_INFINITY 36,1753
+    rustsecp256k1_v0_10_0_fe_storage x;39,1944
+    rustsecp256k1_v0_10_0_fe_storage y;40,1972
+} rustsecp256k1_v0_10_0_ge_storage;41,2000
+#define SECP256K1_GE_STORAGE_CONST(43,2025
+#define SECP256K1_GE_STORAGE_CONST_GET(45,2232
+
+src/bench_internal.c,1153
+    rustsecp256k1_v0_10_0_scalar scalar[scalar22,676
+    rustsecp256k1_v0_10_0_fe fe[fe23,708
+    rustsecp256k1_v0_10_0_ge ge[ge24,732
+    rustsecp256k1_v0_10_0_gej gej[gej25,756
+    unsigned char data[data26,782
+    int wnaf[wnaf27,810
+} bench_inv;28,829
+void bench_setup(30,843
+void bench_scalar_add(82,3213
+void bench_scalar_negate(92,3472
+void bench_scalar_mul(101,3684
+void bench_scalar_split(110,3908
+void bench_scalar_inverse(121,4262
+void bench_scalar_inverse_var(132,4595
+void bench_field_normalize(143,4936
+void bench_field_normalize_weak(152,5127
+void bench_field_mul(161,5328
+void bench_field_sqr(170,5535
+void bench_field_inverse(179,5728
+void bench_field_inverse_var(189,5979
+void bench_field_sqrt(199,6238
+void bench_group_double_var(212,6557
+void bench_group_add_var(221,6773
+void bench_group_add_affine(230,6998
+void bench_group_add_affine_var(239,7218
+void bench_group_to_affine_var(248,7452
+void bench_ecmult_wnaf(268,8402
+void bench_wnaf_const(280,8803
+void bench_sha256(293,9203
+void bench_hmac_sha256(305,9515
+void bench_rfc6979_hmac_sha256(317,9872
+void bench_context_verify(328,10202
+void bench_context_sign(336,10408
+int main(344,10610
+
+src/selftest.h,119
+#define SECP256K1_SELFTEST_H8,396
+static int rustsecp256k1_v0_10_0_selftest_sha256(14,466
+static int rustsecp256k1_v0_10_0_selftest(28,1149
+
+src/testrand.h,35
+#define SECP256K1_TESTRAND_H8,396
+
+src/assumptions.h,98
+#define SECP256K1_ASSUMPTIONS_H8,399
+struct rustsecp256k1_v0_10_0_assumption_checker 19,755
+    int 22,922
+
+src/ecmult_const.h,39
+#define SECP256K1_ECMULT_CONST_H8,400
+
+contrib/lax_der_privatekey_parsing.c,69
+int ec_privkey_import_der(11,429
+int ec_privkey_export_der(55,1780
+
+contrib/lax_der_parsing.h,95
+#define SECP256K1_CONTRIB_LAX_DER_PARSING_H52,2520
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der_lax(86,3920
+
+contrib/lax_der_privatekey_parsing.h,115
+#define SECP256K1_CONTRIB_BER_PRIVATEKEY_H29,1277
+SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(63,2672
+
+contrib/lax_der_parsing.c,42
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der_lax(11,418
+
+include/secp256k1.h,1893
+#define SECP256K1_H2,20
+typedef struct rustsecp256k1_v0_10_0_context_struct rustsecp256k1_v0_10_0_context;46,1911
+typedef struct rustsecp256k1_v0_10_0_scratch_space_struct rustsecp256k1_v0_10_0_scratch_space;59,2511
+    unsigned char data[data71,3105
+} rustsecp256k1_v0_10_0_pubkey;72,3133
+    unsigned char data[data84,3669
+} rustsecp256k1_v0_10_0_ecdsa_signature;85,3697
+typedef int (*rustsecp256k1_v0_10_0_nonce_function)rustsecp256k1_v0_10_0_nonce_function103,4707
+#   define SECP256K1_GNUC_PREREQ(114,5004
+#   define SECP256K1_GNUC_PREREQ(117,5112
+#   define SECP256K1_INLINE 123,5276
+#   define SECP256K1_INLINE 125,5343
+#   define SECP256K1_INLINE127,5388
+#  define SECP256K1_INLINE 130,5432
+# define SECP256K1_NO_BUILD141,5978
+#   define SECP256K1_API 147,6082
+#   define SECP256K1_API149,6137
+#  define SECP256K1_API 152,6243
+#  define SECP256K1_API154,6315
+#  define SECP256K1_WARN_UNUSED_RESULT 162,6552
+#  define SECP256K1_WARN_UNUSED_RESULT164,6639
+#  define SECP256K1_ARG_NONNULL(167,6769
+#  define SECP256K1_ARG_NONNULL(169,6847
+#define SECP256K1_FLAGS_TYPE_MASK 173,6971
+#define SECP256K1_FLAGS_TYPE_CONTEXT 174,7020
+#define SECP256K1_FLAGS_TYPE_COMPRESSION 175,7066
+#define SECP256K1_FLAGS_BIT_CONTEXT_VERIFY 177,7185
+#define SECP256K1_FLAGS_BIT_CONTEXT_SIGN 178,7237
+#define SECP256K1_FLAGS_BIT_CONTEXT_DECLASSIFY 179,7287
+#define SECP256K1_FLAGS_BIT_COMPRESSION 180,7344
+#define SECP256K1_CONTEXT_VERIFY 184,7528
+#define SECP256K1_CONTEXT_SIGN 185,7629
+#define SECP256K1_CONTEXT_DECLASSIFY 186,7726
+#define SECP256K1_CONTEXT_NONE 187,7835
+#define SECP256K1_EC_COMPRESSED 190,7952
+#define SECP256K1_EC_UNCOMPRESSED 191,8053
+#define SECP256K1_TAG_PUBKEY_EVEN 194,8204
+#define SECP256K1_TAG_PUBKEY_ODD 195,8243
+#define SECP256K1_TAG_PUBKEY_UNCOMPRESSED 196,8281
+#define SECP256K1_TAG_PUBKEY_HYBRID_EVEN 197,8328
+#define SECP256K1_TAG_PUBKEY_HYBRID_ODD 198,8374
+SECP256K1_API rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_create(218,9258
+
+include/rustsecp256k1_v0_10_0_preallocated.h,104
+#define SECP256K1_PREALLOCATED_H2,33
+SECP256K1_API size_t rustsecp256k1_v0_10_0_context_preallocated_size(35,1403
+
+include/rustsecp256k1_v0_10_0_recovery.h,197
+#define SECP256K1_RECOVERY_H2,29
+    unsigned char data[data25,823
+} rustsecp256k1_v0_10_0_ecdsa_recoverable_signature;26,851
+SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_parse_compact(36,1232
+
+include/rustsecp256k1_v0_10_0_schnorrsig.h,455
+#define SECP256K1_SCHNORRSIG_H2,31
+typedef int (*rustsecp256k1_v0_10_0_nonce_function_hardened)rustsecp256k1_v0_10_0_nonce_function_hardened41,1678
+    unsigned char magic[magic83,3584
+    rustsecp256k1_v0_10_0_nonce_function_hardened noncefp;84,3612
+    void* ndata;85,3659
+} rustsecp256k1_v0_10_0_schnorrsig_extraparams;86,3676
+#define SECP256K1_SCHNORRSIG_EXTRAPARAMS_MAGIC 88,3713
+#define SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT 89,3787
+SECP256K1_API int rustsecp256k1_v0_10_0_schnorrsig_sign(119,5235
+
+include/rustsecp256k1_v0_10_0_extrakeys.h,255
+#define SECP256K1_EXTRAKEYS_H2,30
+    unsigned char data[data23,852
+} rustsecp256k1_v0_10_0_xonly_pubkey;24,880
+    unsigned char data[data34,1257
+} rustsecp256k1_v0_10_0_keypair;35,1285
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_xonly_pubkey_parse(47,1750
+
+include/rustsecp256k1_v0_10_0_ecdh.h,181
+#define SECP256K1_ECDH_H2,25
+typedef int (*rustsecp256k1_v0_10_0_ecdh_hash_function)rustsecp256k1_v0_10_0_ecdh_hash_function21,715
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_ecdh(50,2176
+
+src/tests.c,5706
+#define CONDITIONAL_TEST(31,849
+static int count 33,969
+static rustsecp256k1_v0_10_0_context *ctx ctx34,992
+static void counting_illegal_callback_fn(36,1031
+static void uncounting_illegal_callback_fn(44,1215
+void random_field_element_test(52,1413
+void random_field_element_magnitude(62,1638
+void random_group_element_test(78,2029
+void random_group_element_jacobian_test(90,2340
+void random_gej_test(105,2797
+void random_scalar_order_test(111,2950
+void random_scalar_order(124,3290
+void random_scalar_order_b32(137,3620
+void run_context_tests(143,3772
+void run_scratch_tests(350,14824
+void run_ctz_tests(433,18987
+void run_sha256_tests(454,19770
+void run_hmac_sha256_tests(490,22684
+void run_rfc6979_hmac_sha256_tests(534,27900
+void run_tagged_sha256_tests(575,31018
+void test_rand_bits(609,32351
+void test_rand_int(644,34129
+void run_rand_bits(660,34617
+void run_rand_int(668,34756
+uint64_t modinv2p64(682,35205
+void mulmod256(698,35854
+void uint16_to_signed30(780,38559
+void signed30_to_uint16(789,38901
+void mutate_sign_signed30(798,39225
+void test_modinv32_uint16(813,39753
+void uint16_to_signed62(851,41138
+void signed62_to_uint16(860,41480
+void mutate_sign_signed62(869,41804
+void test_modinv64_uint16(885,42375
+int coprime(924,43696
+void run_modinv_tests(954,44347
+void scalar_test(1593,88771
+void run_scalar_set_b32_seckey_tests(1758,93833
+void run_scalar_tests(1775,94399
+void random_fe(2383,130154
+void random_fe_test(2393,130353
+void random_fe_non_zero(2403,130562
+void random_fe_non_square(2416,130875
+int check_fe_equal(2424,131055
+void run_field_convert(2432,131297
+int fe_identical(2463,132596
+void run_field_misc(2474,132930
+void test_fe_mul(2554,135761
+void run_fe_mul(2597,137172
+void run_sqr(2618,137759
+void test_sqrt(2634,138078
+void run_sqrt(2648,138584
+static const rustsecp256k1_v0_10_0_scalar scalar_minus_one 2684,139513
+static const rustsecp256k1_v0_10_0_fe fe_minus_one 2689,139693
+void test_inverse_scalar(2701,140013
+void test_inverse_field(2723,141292
+void run_inverse_tests(2748,142655
+void ge_equals_ge(2996,166343
+int gej_xyz_equals_gej(3006,166683
+void ge_equals_gej(3027,167348
+void test_ge(3044,167973
+void test_intialized_inf(3244,176057
+void test_add_neg_y_diff_x(3276,177091
+void run_ge(3343,179835
+void test_gej_cmov(3352,179989
+void run_gej(3360,180231
+void test_ec_combine(3383,180712
+void run_ec_combine(3408,181591
+void test_group_decompress(3415,181705
+void run_group_decompress(3450,182812
+void test_pre_g_table(3461,183022
+void run_ecmult_pre_g(3511,185162
+void run_ecmult_chain(3535,186029
+void test_point_times_order(3599,188773
+static const rustsecp256k1_v0_10_0_scalar scalars_near_split_bounds[scalars_near_split_bounds3640,190521
+void test_ecmult_target(3663,193068
+void run_ecmult_near_split_bound(3702,194532
+void run_point_times_order(3714,194958
+void ecmult_const_random_mult(3735,195642
+void ecmult_const_commutativity(3762,196670
+void ecmult_const_mult_zero_one(3783,197352
+void ecmult_const_chain_multiply(3805,198159
+void run_ecmult_const_tests(3831,199112
+    rustsecp256k1_v0_10_0_scalar *sc;sc3839,199303
+    rustsecp256k1_v0_10_0_ge *pt;pt3840,199329
+} ecmult_multi_data;3841,199351
+static int ecmult_multi_callback(3843,199373
+static int ecmult_multi_false_callback(3850,199600
+void test_ecmult_multi(3858,199785
+int test_ecmult_multi_random(4097,208902
+void test_ecmult_multi_batch_single(4265,216276
+void test_rustsecp256k1_v0_10_0_pippenger_bucket_window_inv(4285,216976
+void test_ecmult_multi_pippenger_max_points(4305,217658
+void test_ecmult_multi_batch_size_helper(4338,219288
+void test_ecmult_multi_batching(4386,221126
+void run_ecmult_multi_tests(4453,224272
+void test_wnaf(4480,225505
+void test_constant_wnaf_negate(4514,226734
+void test_constant_wnaf(4529,227194
+void test_fixed_wnaf(4569,228464
+void test_fixed_wnaf_small_helper(4606,229625
+void test_fixed_wnaf_small(4616,229873
+void run_wnaf(4670,231531
+static int test_ecmult_accumulate_cb(4716,233050
+void test_ecmult_accumulate(4724,233310
+void test_ecmult_constants_2bit(4757,234789
+void test_ecmult_constants_sha(4801,236310
+void run_ecmult_constants(4844,237751
+void test_ecmult_gen_blind(4878,239240
+void test_ecmult_gen_blind_reset(4901,240154
+void run_ecmult_gen_blind(4913,240664
+void test_scalar_split(4922,240850
+void run_endomorphism_tests(4949,241675
+void ec_pubkey_parse_pointtest(4970,242408
+void run_ec_pubkey_parse_test(5045,246050
+#define SECP256K1_EC_PARSE_TEST_NVALID 5046,246088
+#define SECP256K1_EC_PARSE_TEST_NXVALID 5133,252249
+#define SECP256K1_EC_PARSE_TEST_NINVALID 5164,254441
+void run_eckey_edge_case_test(5373,264974
+void run_eckey_negate_test(5629,276905
+void random_sign(5664,278317
+void test_ecdsa_sign_verify(5671,278635
+void run_ecdsa_sign_verify(5698,279640
+static int precomputed_nonce_function(5706,279896
+static int nonce_function_test_fail(5714,280192
+static int nonce_function_test_retry(5722,280587
+int is_empty_signature(5752,281743
+void test_ecdsa_end_to_end(5757,281969
+void test_random_pubkeys(5902,289116
+void run_pubkey_comparison(5962,291177
+void run_random_pubkeys(6011,293300
+void run_ecdsa_end_to_end(6018,293420
+int test_ecdsa_der_parse(6025,293544
+static void assign_big_endian(6085,295947
+static void damage_array(6097,296243
+static void random_ber_signature(6124,297131
+void run_ecdsa_der_parse(6270,302668
+void test_ecdsa_edge_cases(6302,303757
+void run_ecdsa_edge_cases(6671,320324
+void run_rustsecp256k1_v0_10_0_memczero_test(6691,320708
+void int_cmov_test(6706,321249
+void fe_cmov_test(6731,321667
+void fe_storage_cmov_test(6761,322644
+void scalar_cmov_test(6791,323733
+void ge_storage_cmov_test(6821,324766
+void run_cmov_tests(6853,326031
+int main(6861,326183
+
+src/libsecp256k1-config.h,755
+#define LIBSECP256K1_CONFIG_H6,202
+#define ECMULT_GEN_PREC_BITS 12,348
+#define ECMULT_WINDOW_SIZE 15,428
+#define HAVE_DLFCN_H 30,895
+#define HAVE_INTTYPES_H 33,979
+#define HAVE_MEMORY_H 36,1064
+#define HAVE_STDINT_H 39,1147
+#define HAVE_STDLIB_H 42,1230
+#define HAVE_STRINGS_H 45,1314
+#define HAVE_STRING_H 48,1398
+#define HAVE_SYS_STAT_H 51,1483
+#define HAVE_SYS_TYPES_H 54,1571
+#define HAVE_UNISTD_H 57,1657
+#define LT_OBJDIR 64,1876
+#define PACKAGE 67,1926
+#define PACKAGE_BUGREPORT 70,2037
+#define PACKAGE_NAME 73,2162
+#define PACKAGE_STRING 76,2258
+#define PACKAGE_TARNAME 79,2366
+#define PACKAGE_URL 82,2454
+#define PACKAGE_VERSION 85,2564
+#define STDC_HEADERS 88,2656
+#define USE_ASM_X86_64 91,2745
+#define VERSION 110,3352
+
+src/scalar_8x32_impl.h,2682
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+#define SECP256K1_N_0 13,506
+#define SECP256K1_N_1 14,553
+#define SECP256K1_N_2 15,600
+#define SECP256K1_N_3 16,647
+#define SECP256K1_N_4 17,694
+#define SECP256K1_N_5 18,741
+#define SECP256K1_N_6 19,788
+#define SECP256K1_N_7 20,835
+#define SECP256K1_N_C_0 23,931
+#define SECP256K1_N_C_1 24,976
+#define SECP256K1_N_C_2 25,1017
+#define SECP256K1_N_C_3 26,1058
+#define SECP256K1_N_C_4 27,1099
+#define SECP256K1_N_H_0 30,1169
+#define SECP256K1_N_H_1 31,1218
+#define SECP256K1_N_H_2 32,1267
+#define SECP256K1_N_H_3 33,1316
+#define SECP256K1_N_H_4 34,1365
+#define SECP256K1_N_H_5 35,1414
+#define SECP256K1_N_H_6 36,1463
+#define SECP256K1_N_H_7 37,1512
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(39,1562
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(50,1776
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(61,2008
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(66,2276
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(77,2807
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_reduce(95,3536
+static int rustsecp256k1_v0_10_0_scalar_add(117,4397
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(141,5351
+static void rustsecp256k1_v0_10_0_scalar_set_b32(167,6649
+static void rustsecp256k1_v0_10_0_scalar_get_b32(183,7764
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(194,8619
+static void rustsecp256k1_v0_10_0_scalar_negate(198,8801
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(218,9638
+static int rustsecp256k1_v0_10_0_scalar_is_high(222,9825
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(240,10574
+#define muladd(268,11888
+#define muladd_fast(283,12488
+#define sumadd(297,13004
+#define sumadd_fast(306,13389
+#define extract(314,13752
+#define extract_fast(322,13956
+static void rustsecp256k1_v0_10_0_scalar_reduce_512(329,14061
+static void rustsecp256k1_v0_10_0_scalar_mul_512(471,18117
+#undef sumadd559,20607
+#undef sumadd_fast560,20621
+#undef muladd561,20640
+#undef muladd_fast562,20654
+#undef extract563,20673
+#undef extract_fast564,20688
+static void rustsecp256k1_v0_10_0_scalar_mul(566,20709
+static int rustsecp256k1_v0_10_0_scalar_shr_int(572,20920
+static void rustsecp256k1_v0_10_0_scalar_split_128(588,21513
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(607,21964
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_mul_shift_var(611,22264
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(632,23766
+static void rustsecp256k1_v0_10_0_scalar_from_signed30(647,24427
+static void rustsecp256k1_v0_10_0_scalar_to_signed30(678,25560
+static const rustsecp256k1_v0_10_0_modinv32_modinfo rustsecp256k1_v0_10_0_const_modinfo_scalar 698,26308
+static void rustsecp256k1_v0_10_0_scalar_inverse(703,26488
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(717,26906
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(731,27332
+
+src/precomputed_ecmult_gen.c,139
+#define S(13,465
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_ecmult_gen_prec_table[rustsecp256k1_v0_10_0_ecmult_gen_prec_table14,680
+#undef S9750,1430676
+
+src/hash_impl.h,1010
+#define SECP256K1_HASH_IMPL_H8,397
+#define Ch(17,526
+#define Maj(18,572
+#define Sigma0(19,627
+#define Sigma1(20,722
+#define sigma0(21,816
+#define sigma1(22,898
+#define Round(24,983
+#define BE32(32,1230
+#define BE32(34,1289
+static void rustsecp256k1_v0_10_0_sha256_initialize(37,1415
+static void rustsecp256k1_v0_10_0_sha256_transform(50,1835
+static void rustsecp256k1_v0_10_0_sha256_write(132,7370
+static void rustsecp256k1_v0_10_0_sha256_finalize(151,8042
+static void rustsecp256k1_v0_10_0_sha256_initialize_tagged(169,8909
+static void rustsecp256k1_v0_10_0_hmac_sha256_initialize(180,9307
+static void rustsecp256k1_v0_10_0_hmac_sha256_write(208,10237
+static void rustsecp256k1_v0_10_0_hmac_sha256_finalize(212,10405
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_initialize(221,10713
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_generate(251,11995
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_finalize(282,13077
+#undef BE32288,13243
+#undef Round289,13255
+#undef sigma1290,13268
+#undef sigma0291,13282
+#undef Sigma1292,13296
+#undef Sigma0293,13310
+#undef Maj294,13324
+#undef Ch295,13335
+
+src/tests_exhaustive.c,735
+#define EXHAUSTIVE_TEST_ORDER 17,566
+static int count 28,818
+void ge_equals_ge(31,868
+void ge_equals_gej(40,1119
+void random_fe(57,1744
+static uint32_t num_cores 68,1974
+static uint32_t this_core 69,2005
+SECP256K1_INLINE static int skip_section(71,2037
+int rustsecp256k1_v0_10_0_nonce_function_smallint(77,2250
+void test_exhaustive_endomorphism(97,3089
+void test_exhaustive_addition(106,3386
+void test_exhaustive_ecmult(166,5757
+    rustsecp256k1_v0_10_0_scalar sc[sc191,6688
+    rustsecp256k1_v0_10_0_ge pt[pt192,6716
+} ecmult_multi_data;193,6740
+static int ecmult_multi_callback(195,6762
+void test_exhaustive_ecmult_multi(202,6989
+void r_from_k(232,8348
+void test_exhaustive_verify(242,8657
+void test_exhaustive_sign(295,11282
+int main(356,13828
+
+src/scalar_low_impl.h,1237
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(14,484
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(18,591
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(19,676
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(21,780
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(28,1030
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(32,1226
+static int rustsecp256k1_v0_10_0_scalar_add(34,1354
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(39,1530
+static void rustsecp256k1_v0_10_0_scalar_set_b32(50,1995
+static void rustsecp256k1_v0_10_0_scalar_get_b32(64,2365
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(69,2555
+static void rustsecp256k1_v0_10_0_scalar_negate(73,2660
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(81,2844
+static int rustsecp256k1_v0_10_0_scalar_is_high(85,2948
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(89,3059
+static void rustsecp256k1_v0_10_0_scalar_mul(94,3206
+static int rustsecp256k1_v0_10_0_scalar_shr_int(98,3363
+static void rustsecp256k1_v0_10_0_scalar_split_128(107,3557
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(112,3699
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(116,3827
+static void rustsecp256k1_v0_10_0_scalar_inverse(124,4097
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(135,4511
+
+src/hash.h,372
+#define SECP256K1_HASH_H8,392
+    uint32_t s[s14,476
+    uint32_t buf[buf15,495
+    size_t bytes;16,537
+} rustsecp256k1_v0_10_0_sha256;17,555
+    rustsecp256k1_v0_10_0_sha256 inner,24,844
+    rustsecp256k1_v0_10_0_sha256 inner, outer;24,844
+} rustsecp256k1_v0_10_0_hmac_sha256;25,879
+    unsigned char v[v32,1242
+    unsigned char k[k33,1267
+    int retry;34,1292
+} rustsecp256k1_v0_10_0_rfc6979_hmac_sha256;35,1307
+
+src/scratch.h,240
+#define SECP256K1_SCRATCH_H8,395
+typedef struct rustsecp256k1_v0_10_0_scratch_space_struct 12,552
+    unsigned char magic[magic14,665
+    void *data;data16,726
+    size_t alloc_size;19,846
+    size_t max_size;21,915
+} rustsecp256k1_v0_10_0_scratch;22,936
+
+src/scalar_8x32.h,129
+#define SECP256K1_SCALAR_REPR_H8,399
+    uint32_t d[d14,533
+} rustsecp256k1_v0_10_0_scalar;15,552
+#define SECP256K1_SCALAR_CONST(17,573
+
+src/bench_ecmult.c,1438
+#define POINTS 19,603
+void help(21,625
+    rustsecp256k1_v0_10_0_context* ctx;38,1483
+    rustsecp256k1_v0_10_0_scratch_space* scratch;39,1511
+    rustsecp256k1_v0_10_0_scalar* scalars;40,1549
+    rustsecp256k1_v0_10_0_ge* pubkeys;41,1580
+    rustsecp256k1_v0_10_0_gej* pubkeys_gej;42,1607
+    rustsecp256k1_v0_10_0_scalar* seckeys;43,1639
+    rustsecp256k1_v0_10_0_gej* expected_output;44,1670
+    rustsecp256k1_v0_10_0_ecmult_multi_func ecmult_multi;45,1706
+    size_t count;48,1785
+    int includes_g;49,1803
+    size_t offset1;53,1930
+    size_t offset2;54,1950
+    rustsecp256k1_v0_10_0_gej* output;57,1999
+} bench_data;58,2026
+static void hash_into_offset(61,2124
+static void bench_ecmult_teardown_helper(68,2428
+static void bench_ecmult_setup(92,3515
+static void bench_ecmult_gen(99,3760
+static void bench_ecmult_gen_teardown(108,4029
+static void bench_ecmult_const(113,4210
+static void bench_ecmult_const_teardown(122,4504
+static void bench_ecmult_1p(127,4697
+static void bench_ecmult_1p_teardown(136,4987
+static void bench_ecmult_0p_g(141,5177
+static void bench_ecmult_0p_g_teardown(152,5495
+static void bench_ecmult_1p_g(157,5677
+static void bench_ecmult_1p_g_teardown(166,6009
+static void run_ecmult_bench(171,6213
+static int bench_ecmult_multi_callback(188,7164
+static void bench_ecmult_multi(201,7604
+static void bench_ecmult_multi_setup(216,8192
+static void bench_ecmult_multi_teardown(221,8327
+static void generate_scalar(233,8789
+static void run_ecmult_multi_bench(249,9305
+int main(281,10592
+
+src/group_impl.h,1953
+#define SECP256K1_GROUP_IMPL_H8,398
+#define SECP256K1_G_ORDER_13 13,469
+#define SECP256K1_G_ORDER_199 19,732
+#define SECP256K1_G 28,1107
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 45,1970
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 47,2042
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 52,2254
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 54,2327
+static const rustsecp256k1_v0_10_0_ge rustsecp256k1_v0_10_0_ge_const_g 62,2602
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_const_b 64,2665
+static void rustsecp256k1_v0_10_0_ge_set_gej_zinv(67,2766
+static void rustsecp256k1_v0_10_0_ge_set_xy(78,3135
+static int rustsecp256k1_v0_10_0_ge_is_infinity(84,3286
+static void rustsecp256k1_v0_10_0_ge_neg(88,3374
+static void rustsecp256k1_v0_10_0_ge_set_gej(94,3543
+static void rustsecp256k1_v0_10_0_ge_set_gej_var(107,3933
+static void rustsecp256k1_v0_10_0_ge_set_all_gej_var(122,4391
+static void rustsecp256k1_v0_10_0_ge_table_set_globalz(164,5484
+static void rustsecp256k1_v0_10_0_gej_set_infinity(188,6219
+static void rustsecp256k1_v0_10_0_ge_set_infinity(195,6395
+static void rustsecp256k1_v0_10_0_gej_clear(201,6538
+static void rustsecp256k1_v0_10_0_ge_clear(208,6707
+static int rustsecp256k1_v0_10_0_ge_set_xo_var(214,6843
+static void rustsecp256k1_v0_10_0_gej_set_ge(232,7325
+static int rustsecp256k1_v0_10_0_gej_eq_x_var(239,7501
+static void rustsecp256k1_v0_10_0_gej_neg(247,7798
+static int rustsecp256k1_v0_10_0_gej_is_infinity(256,8039
+static int rustsecp256k1_v0_10_0_ge_is_valid_var(260,8129
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_gej_double(273,8526
+static void rustsecp256k1_v0_10_0_gej_double_var(307,10233
+static void rustsecp256k1_v0_10_0_gej_add_var(335,11353
+static void rustsecp256k1_v0_10_0_gej_add_ge_var(388,13255
+static void rustsecp256k1_v0_10_0_gej_add_zinv_var(437,15069
+static void rustsecp256k1_v0_10_0_gej_add_ge(494,17486
+static void rustsecp256k1_v0_10_0_gej_rescale(615,24544
+static void rustsecp256k1_v0_10_0_ge_to_storage(626,25017
+static void rustsecp256k1_v0_10_0_ge_from_storage(637,25333
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_gej_cmov(643,25535
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_ge_storage_cmov(651,25825
+static void rustsecp256k1_v0_10_0_ge_mul_lambda(656,26053
+static int rustsecp256k1_v0_10_0_ge_is_in_correct_subgroup(661,26206
+
+src/basic-config.h,111
+#define SECP256K1_BASIC_CONFIG_H8,400
+#define ECMULT_WINDOW_SIZE 12,459
+#define ECMULT_GEN_PREC_BITS 13,489
+
+src/scratch_impl.h,378
+#define SECP256K1_SCRATCH_IMPL_H8,400
+static rustsecp256k1_v0_10_0_scratch* rustsecp256k1_v0_10_0_scratch_create(13,474
+static void rustsecp256k1_v0_10_0_scratch_destroy(26,999
+static size_t rustsecp256k1_v0_10_0_scratch_checkpoint(38,1494
+static void rustsecp256k1_v0_10_0_scratch_apply_checkpoint(46,1815
+static size_t rustsecp256k1_v0_10_0_scratch_max_allocation(58,2294
+static void *rustsecp256k1_v0_10_0_scratch_alloc(rustsecp256k1_v0_10_0_scratch_alloc73,2932
+
+src/precomputed_ecmult.h,285
+#define SECP256K1_PRECOMPUTED_ECMULT_H8,556
+#        define WINDOW_G 17,722
+#        define WINDOW_G 19,788
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g[rustsecp256k1_v0_10_0_pre_g23,917
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g_128[rustsecp256k1_v0_10_0_pre_g_12824,991
+#    define WINDOW_G 26,1113
+
+src/ecmult_gen_compute_table.h,51
+#define SECP256K1_ECMULT_GEN_COMPUTE_TABLE_H8,412
+
+src/ecmult.h,122
+#define SECP256K1_ECMULT_H8,394
+#define ECMULT_TABLE_SIZE(30,1198
+typedef int (rustsecp256k1_v0_10_0_ecmult_multi_callback)35,1413
+
+src/field_10x26.h,401
+#define SECP256K1_FIELD_REPR_H8,398
+    uint32_t n[n16,557
+    int magnitude;18,591
+    int normalized;19,610
+} rustsecp256k1_v0_10_0_fe;21,637
+#define SECP256K1_FE_CONST_INNER(24,723
+#define SECP256K1_FE_CONST(38,1377
+#define SECP256K1_FE_CONST(40,1523
+    uint32_t n[n44,1682
+} rustsecp256k1_v0_10_0_fe_storage;45,1701
+#define SECP256K1_FE_STORAGE_CONST(47,1726
+#define SECP256K1_FE_STORAGE_CONST_GET(48,1846
+
+src/precomputed_ecmult_gen.h,149
+#define SECP256K1_PRECOMPUTED_ECMULT_GEN_H8,460
+static rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_ecmult_gen_prec_table[rustsecp256k1_v0_10_0_ecmult_gen_prec_table17,616
+
+src/field_5x52_int128_impl.h,225
+#define SECP256K1_FIELD_INNER5X52_IMPL_H8,408
+#define VERIFY_BITS(13,485
+#define VERIFY_BITS(15,549
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(18,599
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(156,5340
+
+src/bench.h,293
+#define SECP256K1_BENCH_H8,393
+static int64_t gettime_i64(15,502
+#define FP_EXP 21,657
+#define FP_MULT 22,676
+void print_number(25,738
+void run_benchmark(82,2120
+int have_flag(116,3076
+int have_invalid_args(132,3524
+int get_iters(154,4070
+void print_output_table_header_row(163,4258
+
+src/bench.c,551
+void help(14,479
+    rustsecp256k1_v0_10_0_context *ctx;ctx60,2074
+    unsigned char msg[msg61,2102
+    unsigned char key[key62,2129
+    unsigned char sig[sig63,2156
+    size_t siglen;64,2183
+    unsigned char pubkey[pubkey65,2202
+    size_t pubkeylen;66,2232
+} bench_verify_data;67,2254
+static void bench_verify(69,2276
+    rustsecp256k1_v0_10_0_context* ctx;89,3145
+    unsigned char msg[msg90,3173
+    unsigned char key[key91,3200
+} bench_sign_data;92,3227
+static void bench_sign_setup(94,3247
+static void bench_sign_run(106,3490
+int main(136,4305
+
+src/field_5x52.h,401
+#define SECP256K1_FIELD_REPR_H8,398
+    uint64_t n[n16,557
+    int magnitude;18,590
+    int normalized;19,609
+} rustsecp256k1_v0_10_0_fe;21,636
+#define SECP256K1_FE_CONST_INNER(24,722
+#define SECP256K1_FE_CONST(33,1172
+#define SECP256K1_FE_CONST(35,1318
+    uint64_t n[n39,1477
+} rustsecp256k1_v0_10_0_fe_storage;40,1496
+#define SECP256K1_FE_STORAGE_CONST(42,1521
+#define SECP256K1_FE_STORAGE_CONST_GET(49,1752
+
+src/ecmult_const_impl.h,246
+#define SECP256K1_ECMULT_CONST_IMPL_H8,405
+static void rustsecp256k1_v0_10_0_ecmult_odd_multiples_table_globalz_windowa(21,843
+#define ECMULT_CONST_TABLE_GET_GE(29,1258
+static int rustsecp256k1_v0_10_0_wnaf_const(69,3194
+static void rustsecp256k1_v0_10_0_ecmult_const(133,5629
+
+src/field.h,140
+#define SECP256K1_FIELD_H8,393
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_fe_one 35,1176
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_const_beta 36,1265
+
+src/modinv32.h,217
+#define SECP256K1_MODINV32_H8,395
+    int32_t v[v20,632
+} rustsecp256k1_v0_10_0_modinv32_signed30;21,650
+    rustsecp256k1_v0_10_0_modinv32_signed30 modulus;25,774
+    uint32_t modulus_inv30;28,848
+} rustsecp256k1_v0_10_0_modinv32_modinfo;29,876
+
+src/ecmult_impl.h,2501
+#define SECP256K1_ECMULT_IMPL_H8,434
+#    define WINDOW_A 24,865
+#    define WINDOW_A 26,922
+#    define WINDOW_A 28,953
+#  define WINDOW_A 32,1040
+#define WNAF_BITS 44,1523
+#define WNAF_SIZE_BITS(45,1545
+#define WNAF_SIZE(46,1604
+#define PIPPENGER_SCRATCH_OBJECTS 49,1742
+#define STRAUSS_SCRATCH_OBJECTS 50,1778
+#define PIPPENGER_MAX_BUCKET_WINDOW 52,1813
+#define ECMULT_PIPPENGER_THRESHOLD 55,1937
+#define ECMULT_MAX_POINTS_PER_BATCH 57,1976
+static void rustsecp256k1_v0_10_0_ecmult_odd_multiples_table(73,2689
+#define SECP256K1_ECMULT_TABLE_VERIFY(117,4543
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge(122,4723
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge_lambda(132,5023
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_table_get_ge_storage(142,5424
+static int rustsecp256k1_v0_10_0_ecmult_wnaf(159,6270
+struct rustsecp256k1_v0_10_0_strauss_point_state 211,7444
+    int wnaf_na_1[wnaf_na_1212,7483
+    int wnaf_na_lam[wnaf_na_lam213,7507
+    int bits_na_1;214,7533
+    int bits_na_lam;215,7552
+struct rustsecp256k1_v0_10_0_strauss_state 218,7577
+    rustsecp256k1_v0_10_0_fe* aux;220,7698
+    rustsecp256k1_v0_10_0_ge* pre_a;221,7721
+    struct rustsecp256k1_v0_10_0_strauss_point_state* ps;222,7746
+static void rustsecp256k1_v0_10_0_ecmult_strauss_wnaf(225,7796
+static void rustsecp256k1_v0_10_0_ecmult(338,12726
+static size_t rustsecp256k1_v0_10_0_strauss_scratch_size(350,13178
+static int rustsecp256k1_v0_10_0_ecmult_strauss_batch(355,13489
+static int rustsecp256k1_v0_10_0_ecmult_strauss_batch_single(395,15723
+static size_t rustsecp256k1_v0_10_0_strauss_max_points(399,16058
+static int rustsecp256k1_v0_10_0_wnaf_fixed(410,16649
+struct rustsecp256k1_v0_10_0_pippenger_point_state 472,18600
+    int skew_na;473,18641
+    size_t input_pos;474,18658
+struct rustsecp256k1_v0_10_0_pippenger_state 477,18684
+    int *wnaf_na;wnaf_na478,18719
+    struct rustsecp256k1_v0_10_0_pippenger_point_state* ps;479,18737
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_wnaf(489,19156
+static int rustsecp256k1_v0_10_0_pippenger_bucket_window(570,22256
+static size_t rustsecp256k1_v0_10_0_pippenger_bucket_window_inv(599,22900
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_ecmult_endo_split(618,23394
+static size_t rustsecp256k1_v0_10_0_pippenger_scratch_size(637,24030
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch(643,24441
+static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch_single(720,28011
+static size_t rustsecp256k1_v0_10_0_pippenger_max_points(729,28523
+static int rustsecp256k1_v0_10_0_ecmult_multi_simple_var(765,30112
+static int rustsecp256k1_v0_10_0_ecmult_multi_batch_size_helper(792,31109
+typedef int (*rustsecp256k1_v0_10_0_ecmult_multi_func)rustsecp256k1_v0_10_0_ecmult_multi_func810,31704
+static int rustsecp256k1_v0_10_0_ecmult_multi_var(811,31902
+
+src/testrand_impl.h,846
+#define SECP256K1_TESTRAND_IMPL_H8,401
+static uint64_t rustsecp256k1_v0_10_0_test_state[rustsecp256k1_v0_10_0_test_state17,537
+static uint64_t rustsecp256k1_v0_10_0_test_rng_integer;18,578
+static int rustsecp256k1_v0_10_0_test_rng_integer_bits_left 19,622
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_testrand_seed(21,676
+SECP256K1_INLINE static uint64_t rotl(41,1367
+SECP256K1_INLINE static uint64_t rustsecp256k1_v0_10_0_testrand64(45,1474
+SECP256K1_INLINE static uint64_t rustsecp256k1_v0_10_0_testrand_bits(58,2118
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_testrand32(71,2572
+static uint32_t rustsecp256k1_v0_10_0_testrand_int(75,2677
+static void rustsecp256k1_v0_10_0_testrand256(114,4134
+static void rustsecp256k1_v0_10_0_testrand_bytes_test(130,4522
+static void rustsecp256k1_v0_10_0_testrand256_test(146,4997
+static void rustsecp256k1_v0_10_0_testrand_flip(150,5105
+static void rustsecp256k1_v0_10_0_testrand_init(154,5249
+static void rustsecp256k1_v0_10_0_testrand_finish(191,6691
+
+src/ecmult_gen_impl.h,299
+#define SECP256K1_ECMULT_GEN_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_ecmult_gen_context_build(17,581
+static int rustsecp256k1_v0_10_0_ecmult_gen_context_is_built(22,731
+static void rustsecp256k1_v0_10_0_ecmult_gen_context_clear(26,849
+static void rustsecp256k1_v0_10_0_ecmult_gen(45,1951
+static void rustsecp256k1_v0_10_0_ecmult_gen_blind(84,3663
+
+src/field_10x26_impl.h,1658
+#define SECP256K1_FIELD_REPR_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_fe_verify(24,890
+static void rustsecp256k1_v0_10_0_fe_normalize(52,1817
+static void rustsecp256k1_v0_10_0_fe_normalize_weak(107,4050
+static void rustsecp256k1_v0_10_0_fe_normalize_var(138,5233
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero(194,7458
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var(223,8853
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_set_int(275,10471
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_zero(286,10806
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_odd(295,11082
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(303,11264
+static int rustsecp256k1_v0_10_0_fe_cmp_var(314,11465
+static int rustsecp256k1_v0_10_0_fe_set_b32(333,11884
+static void rustsecp256k1_v0_10_0_fe_get_b32(360,13655
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_negate(399,15111
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_int(425,16178
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_add(443,16532
+#define VERIFY_BITS(473,17272
+#define VERIFY_BITS(475,17336
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(478,17386
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(808,31830
+static void rustsecp256k1_v0_10_0_fe_mul(1083,44663
+static void rustsecp256k1_v0_10_0_fe_sqr(1100,45123
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_cmov(1113,45417
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_storage_cmov(1136,46291
+static void rustsecp256k1_v0_10_0_fe_to_storage(1151,46964
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_from_storage(1165,47473
+static void rustsecp256k1_v0_10_0_fe_from_signed30(1183,48223
+static void rustsecp256k1_v0_10_0_fe_to_signed30(1219,49548
+static const rustsecp256k1_v0_10_0_modinv32_modinfo rustsecp256k1_v0_10_0_const_modinfo_fe 1240,50325
+static void rustsecp256k1_v0_10_0_fe_inv(1245,50461
+static void rustsecp256k1_v0_10_0_fe_inv_var(1258,50873
+
+src/ecmult_gen.h,235
+#define SECP256K1_ECMULT_GEN_H8,398
+#define ECMULT_GEN_PREC_G(16,615
+#define ECMULT_GEN_PREC_N(17,659
+    int built;21,768
+    rustsecp256k1_v0_10_0_scalar blind;24,843
+    rustsecp256k1_v0_10_0_gej initial;25,880
+} rustsecp256k1_v0_10_0_ecmult_gen_context;26,917
+
+src/modules/schnorrsig/tests_exhaustive_impl.h,393
+#define SECP256K1_MODULE_SCHNORRSIG_TESTS_EXHAUSTIVE_H8,422
+static const unsigned char invalid_pubkey_bytes[invalid_pubkey_bytes13,576
+#define NUM_INVALID_KEYS 59,2332
+static int rustsecp256k1_v0_10_0_hardened_nonce_function_smallint(61,2423
+static void test_exhaustive_schnorrsig_verify(79,3132
+static void test_exhaustive_schnorrsig_sign(141,6475
+static void test_exhaustive_schnorrsig(186,8919
+
+src/modules/schnorrsig/main_impl.h,758
+#define SECP256K1_MODULE_SCHNORRSIG_MAIN_H8,410
+static void rustsecp256k1_v0_10_0_nonce_function_bip340_sha256_tagged(16,718
+static void rustsecp256k1_v0_10_0_nonce_function_bip340_sha256_tagged_aux(32,1248
+static const unsigned char bip340_algo[bip340_algo48,1779
+static const unsigned char schnorrsig_extraparams_magic[schnorrsig_extraparams_magic50,1842
+static int nonce_function_bip340(52,1944
+const rustsecp256k1_v0_10_0_nonce_function_hardened rustsecp256k1_v0_10_0_nonce_function_bip340 99,3778
+static void rustsecp256k1_v0_10_0_schnorrsig_sha256_tagged(103,4032
+static void rustsecp256k1_v0_10_0_schnorrsig_challenge(116,4406
+static int rustsecp256k1_v0_10_0_schnorrsig_sign_internal(132,5025
+int rustsecp256k1_v0_10_0_schnorrsig_sign(195,7272
+int rustsecp256k1_v0_10_0_schnorrsig_sign_custom(200,7720
+int rustsecp256k1_v0_10_0_schnorrsig_verify(215,8458
+
+src/modules/schnorrsig/tests_impl.h,749
+#define SECP256K1_MODULE_SCHNORRSIG_TESTS_H8,411
+void nonce_function_bip340_bitflip(15,623
+void test_sha256_eq(26,1306
+void run_nonce_function_bip340_tests(34,1578
+void test_schnorrsig_api(117,5045
+void test_schnorrsig_sha256_tagged(232,11029
+void test_schnorrsig_bip_vectors_check_signing(244,11484
+void test_schnorrsig_bip_vectors_check_verify(261,12398
+void test_schnorrsig_bip_vectors(270,12885
+static int nonce_function_failing(688,32491
+static int nonce_function_0(701,32917
+static int nonce_function_overflowing(715,33356
+void test_schnorrsig_sign(728,33756
+#define N_SIGS 771,35956
+void test_schnorrsig_sign_verify(775,36133
+#undef N_SIGS850,39554
+void test_schnorrsig_taproot(852,39569
+void run_schnorrsig_tests(888,41166
+
+src/modules/schnorrsig/bench_impl.h,454
+#define SECP256K1_MODULE_SCHNORRSIG_BENCH_H8,411
+#define MSGLEN 12,508
+    rustsecp256k1_v0_10_0_context *ctx;ctx15,544
+    int n;16,572
+    const rustsecp256k1_v0_10_0_keypair **keypairs;keypairs18,584
+    const unsigned char **pk;pk19,624
+    const unsigned char **sigs;sigs20,654
+    const unsigned char **msgs;msgs21,686
+} bench_schnorrsig_data;22,718
+void bench_schnorrsig_sign(24,744
+void bench_schnorrsig_verify(37,1126
+void run_schnorrsig_bench(48,1510
+
+src/modules/recovery/tests_exhaustive_impl.h,195
+#define SECP256K1_MODULE_RECOVERY_EXHAUSTIVE_TESTS_H8,420
+void test_exhaustive_recovery_sign(13,568
+void test_exhaustive_recovery_verify(82,4239
+static void test_exhaustive_recovery(144,7568
+
+src/modules/recovery/main_impl.h,500
+#define SECP256K1_MODULE_RECOVERY_MAIN_H8,408
+static void rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_load(12,500
+static void rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_save(27,1239
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_parse_compact(38,1678
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_serialize_compact(60,2375
+int rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_convert(74,2892
+static int rustsecp256k1_v0_10_0_ecdsa_sig_recover(87,3333
+int rustsecp256k1_v0_10_0_ecdsa_sign_recoverable(123,4581
+int rustsecp256k1_v0_10_0_ecdsa_recover(137,5263
+
+src/modules/recovery/tests_impl.h,262
+#define SECP256K1_MODULE_RECOVERY_TESTS_H8,409
+static int recovery_test_nonce_function(10,452
+void test_ecdsa_recovery_api(31,1174
+void test_ecdsa_recovery_end_to_end(156,7888
+void test_ecdsa_recovery_edge_cases(215,11162
+void run_recovery_tests(388,20395
+
+src/modules/recovery/bench_impl.h,278
+#define SECP256K1_MODULE_RECOVERY_BENCH_H8,409
+    rustsecp256k1_v0_10_0_context *ctx;ctx13,513
+    unsigned char msg[msg14,541
+    unsigned char sig[sig15,568
+} bench_recover_data;16,595
+void bench_recover(18,618
+void bench_recover_setup(39,1562
+void run_recovery_bench(51,1807
+
+src/modules/extrakeys/tests_exhaustive_impl.h,106
+#define SECP256K1_MODULE_EXTRAKEYS_TESTS_EXHAUSTIVE_H8,421
+static void test_exhaustive_extrakeys(13,572
+
+src/modules/extrakeys/main_impl.h,843
+#define SECP256K1_MODULE_EXTRAKEYS_MAIN_H8,409
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_xonly_pubkey_load(13,543
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_xonly_pubkey_save(17,768
+int rustsecp256k1_v0_10_0_xonly_pubkey_parse(21,940
+int rustsecp256k1_v0_10_0_xonly_pubkey_serialize(43,1526
+int rustsecp256k1_v0_10_0_xonly_pubkey_cmp(58,1947
+static int rustsecp256k1_v0_10_0_extrakeys_ge_even_y(87,3414
+int rustsecp256k1_v0_10_0_xonly_pubkey_from_pubkey(98,3681
+int rustsecp256k1_v0_10_0_xonly_pubkey_tweak_add(117,4225
+int rustsecp256k1_v0_10_0_xonly_pubkey_tweak_add_check(134,4840
+static void rustsecp256k1_v0_10_0_keypair_save(155,5681
+static int rustsecp256k1_v0_10_0_keypair_seckey_load(161,5920
+static int rustsecp256k1_v0_10_0_keypair_load(175,6561
+int rustsecp256k1_v0_10_0_keypair_create(195,7250
+int rustsecp256k1_v0_10_0_keypair_sec(213,7892
+int rustsecp256k1_v0_10_0_keypair_pub(223,8189
+int rustsecp256k1_v0_10_0_keypair_xonly_pub(233,8522
+int rustsecp256k1_v0_10_0_keypair_xonly_tweak_add(254,9093
+
+src/modules/extrakeys/tests_impl.h,464
+#define SECP256K1_MODULE_EXTRAKEYS_TESTS_H8,410
+static rustsecp256k1_v0_10_0_context* api_test_context(12,505
+void test_xonly_pubkey(19,831
+void test_xonly_pubkey_comparison(140,6163
+void test_xonly_pubkey_tweak(177,7800
+void test_xonly_pubkey_tweak_check(249,11143
+#define N_PUBKEYS 319,14843
+void test_xonly_pubkey_tweak_recursive(320,14864
+#undef N_PUBKEYS347,16019
+void test_keypair(349,16037
+void test_keypair_add(472,21670
+void run_extrakeys_tests(582,26870
+
+src/modules/ecdh/main_impl.h,276
+#define SECP256K1_MODULE_ECDH_MAIN_H8,404
+static int ecdh_hash_function_sha256(13,525
+const rustsecp256k1_v0_10_0_ecdh_hash_function rustsecp256k1_v0_10_0_ecdh_hash_function_sha256 26,939
+const rustsecp256k1_v0_10_0_ecdh_hash_function rustsecp256k1_v0_10_0_ecdh_hash_function_default 27,1039
+int rustsecp256k1_v0_10_0_ecdh(29,1141
+
+src/modules/ecdh/tests_impl.h,254
+#define SECP256K1_MODULE_ECDH_TESTS_H8,405
+int ecdh_hash_function_test_fail(10,444
+int ecdh_hash_function_custom(18,639
+void test_ecdh_api(27,922
+void test_ecdh_generator_basepoint(56,2021
+void test_bad_scalar(97,3740
+void run_ecdh_tests(126,4855
+
+src/modules/ecdh/bench_impl.h,282
+#define SECP256K1_MODULE_ECDH_BENCH_H8,405
+    rustsecp256k1_v0_10_0_context *ctx;ctx13,501
+    rustsecp256k1_v0_10_0_pubkey point;14,529
+    unsigned char scalar[scalar15,557
+} bench_ecdh_data;16,587
+static void bench_ecdh_setup(18,607
+static void bench_ecdh(35,1155
+void run_ecdh_bench(45,1427
+
+src/precomputed_ecmult.c,214
+#define S(12,444
+#define WINDOW_G 19,943
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g[rustsecp256k1_v0_10_0_pre_g20,979
+const rustsecp256k1_v0_10_0_ge_storage rustsecp256k1_v0_10_0_pre_g_128[rustsecp256k1_v0_10_0_pre_g_1288240,1205052
+#undef S16460,2409263
+
+src/modinv64_impl.h,836
+#define SECP256K1_MODINV64_IMPL_H8,400
+static int64_t rustsecp256k1_v0_10_0_modinv64_abs(24,969
+static const rustsecp256k1_v0_10_0_modinv64_signed62 SECP256K1_SIGNED62_ONE 30,1096
+static void rustsecp256k1_v0_10_0_modinv64_mul_62(33,1263
+static int rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(47,1830
+static void rustsecp256k1_v0_10_0_modinv64_normalize_62(69,2812
+    int64_t u,145,5777
+    int64_t u, v,145,5777
+    int64_t u, v, q,145,5777
+    int64_t u, v, q, r;145,5777
+} rustsecp256k1_v0_10_0_modinv64_trans2x2;146,5801
+static int64_t rustsecp256k1_v0_10_0_modinv64_divsteps_59(159,6233
+static int64_t rustsecp256k1_v0_10_0_modinv64_divsteps_62_var(226,9079
+static void rustsecp256k1_v0_10_0_modinv64_update_de_62(304,12602
+static void rustsecp256k1_v0_10_0_modinv64_update_fg_62(387,17428
+static void rustsecp256k1_v0_10_0_modinv64_update_fg_62_var(430,19574
+static void rustsecp256k1_v0_10_0_modinv64(461,20956
+static void rustsecp256k1_v0_10_0_modinv64_var(514,24051
+
+src/field_5x52_impl.h,1455
+#define SECP256K1_FIELD_REPR_IMPL_H8,403
+static void rustsecp256k1_v0_10_0_fe_verify(40,1581
+static void rustsecp256k1_v0_10_0_fe_normalize(61,2350
+static void rustsecp256k1_v0_10_0_fe_normalize_weak(104,4018
+static void rustsecp256k1_v0_10_0_fe_normalize_var(128,4865
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero(172,6505
+static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var(195,7557
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_set_int(236,8809
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_zero(247,9094
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_is_odd(256,9335
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(264,9517
+static int rustsecp256k1_v0_10_0_fe_cmp_var(275,9717
+static int rustsecp256k1_v0_10_0_fe_set_b32(294,10136
+static void rustsecp256k1_v0_10_0_fe_get_b32(344,11933
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_negate(383,13259
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_int(403,14080
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_add(416,14344
+static void rustsecp256k1_v0_10_0_fe_mul(432,14710
+static void rustsecp256k1_v0_10_0_fe_sqr(449,15170
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_cmov(462,15464
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_storage_cmov(480,16073
+static void rustsecp256k1_v0_10_0_fe_to_storage(491,16534
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_fe_from_storage(501,16851
+static void rustsecp256k1_v0_10_0_fe_from_signed62(514,17336
+static void rustsecp256k1_v0_10_0_fe_to_signed62(540,18239
+static const rustsecp256k1_v0_10_0_modinv64_modinfo rustsecp256k1_v0_10_0_const_modinfo_fe 555,18720
+static void rustsecp256k1_v0_10_0_fe_inv(560,18858
+static void rustsecp256k1_v0_10_0_fe_inv_var(575,19291
+
+src/scalar.h,33
+#define SECP256K1_SCALAR_H8,394
+
+src/scalar_low.h,119
+#define SECP256K1_SCALAR_REPR_H8,399
+typedef uint32_t rustsecp256k1_v0_10_0_scalar;13,516
+#define SECP256K1_SCALAR_CONST(15,552
+
+src/ecmult_compute_table.h,47
+#define SECP256K1_ECMULT_COMPUTE_TABLE_H8,558
+
+src/ecmult_compute_table_impl.h,160
+#define SECP256K1_ECMULT_COMPUTE_TABLE_IMPL_H8,563
+static void rustsecp256k1_v0_10_0_ecmult_compute_table(16,731
+static void rustsecp256k1_v0_10_0_ecmult_compute_two_tables(37,1430
+
+src/eckey.h,32
+#define SECP256K1_ECKEY_H8,393
+
+src/precompute_ecmult_gen.c,17
+int main(17,623
+
+src/ecmult_gen_compute_table_impl.h,111
+#define SECP256K1_ECMULT_GEN_COMPUTE_TABLE_IMPL_H8,417
+static void rustsecp256k1_v0_10_0_ecmult_gen_compute_table(16,597
+
+src/modinv64.h,217
+#define SECP256K1_MODINV64_H8,395
+    int64_t v[v24,736
+} rustsecp256k1_v0_10_0_modinv64_signed62;25,754
+    rustsecp256k1_v0_10_0_modinv64_signed62 modulus;29,878
+    uint64_t modulus_inv62;32,952
+} rustsecp256k1_v0_10_0_modinv64_modinfo;33,980
+
+src/eckey_impl.h,352
+#define SECP256K1_ECKEY_IMPL_H8,398
+static int rustsecp256k1_v0_10_0_eckey_pubkey_parse(17,533
+static int rustsecp256k1_v0_10_0_eckey_pubkey_serialize(37,1547
+static int rustsecp256k1_v0_10_0_eckey_privkey_tweak_add(55,2161
+static int rustsecp256k1_v0_10_0_eckey_pubkey_tweak_add(60,2351
+static int rustsecp256k1_v0_10_0_eckey_privkey_tweak_mul(74,2735
+static int rustsecp256k1_v0_10_0_eckey_pubkey_tweak_mul(82,2956
+
+src/scalar_impl.h,521
+#define SECP256K1_SCALAR_IMPL_H8,399
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_one 31,855
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_zero 32,956
+static int rustsecp256k1_v0_10_0_scalar_set_b32_seckey(34,1059
+#    define EXHAUSTIVE_TEST_LAMBDA 43,1423
+#    define EXHAUSTIVE_TEST_LAMBDA 45,1497
+static void rustsecp256k1_v0_10_0_scalar_split_lambda(56,1948
+static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_const_lambda 64,2322
+static void rustsecp256k1_v0_10_0_scalar_split_lambda(123,5430
+static void rustsecp256k1_v0_10_0_scalar_split_lambda_verify(263,9725
+
+src/modinv32_impl.h,789
+#define SECP256K1_MODINV32_IMPL_H8,400
+static const rustsecp256k1_v0_10_0_modinv32_signed30 SECP256K1_SIGNED30_ONE 24,858
+static void rustsecp256k1_v0_10_0_modinv32_mul_30(27,1025
+static int rustsecp256k1_v0_10_0_modinv32_mul_cmp_30(41,1597
+static void rustsecp256k1_v0_10_0_modinv32_normalize_30(63,2579
+    int32_t u,168,6588
+    int32_t u, v,168,6588
+    int32_t u, v, q,168,6588
+    int32_t u, v, q, r;168,6588
+} rustsecp256k1_v0_10_0_modinv32_trans2x2;169,6612
+static int32_t rustsecp256k1_v0_10_0_modinv32_divsteps_30(181,6948
+static int32_t rustsecp256k1_v0_10_0_modinv32_divsteps_30_var(245,9581
+static void rustsecp256k1_v0_10_0_modinv32_update_de_30(327,13505
+static void rustsecp256k1_v0_10_0_modinv32_update_fg_30(389,16816
+static void rustsecp256k1_v0_10_0_modinv32_update_fg_30_var(424,18261
+static void rustsecp256k1_v0_10_0_modinv32(455,19634
+static void rustsecp256k1_v0_10_0_modinv32_var(508,22707
+
+src/field_impl.h,189
+#define SECP256K1_FIELD_IMPL_H8,398
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_equal(24,724
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_equal_var(31,958
+static int rustsecp256k1_v0_10_0_fe_sqrt(38,1200
+
+src/field_5x52_asm_impl.h,170
+#define SECP256K1_FIELD_INNER5X52_IMPL_H15,661
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_mul_inner(17,703
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_sqr_inner(287,7645
+
+src/scalar_4x64_impl.h,2357
+#define SECP256K1_SCALAR_REPR_IMPL_H8,404
+#define SECP256K1_N_0 13,506
+#define SECP256K1_N_1 14,562
+#define SECP256K1_N_2 15,618
+#define SECP256K1_N_3 16,674
+#define SECP256K1_N_C_0 19,779
+#define SECP256K1_N_C_1 20,824
+#define SECP256K1_N_C_2 21,865
+#define SECP256K1_N_H_0 24,935
+#define SECP256K1_N_H_1 25,993
+#define SECP256K1_N_H_2 26,1051
+#define SECP256K1_N_H_3 27,1109
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(29,1168
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(36,1314
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(43,1478
+SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(48,1758
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(59,2289
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_reduce(71,2703
+static int rustsecp256k1_v0_10_0_scalar_add(85,3270
+static void rustsecp256k1_v0_10_0_scalar_cadd_bit(101,3937
+static void rustsecp256k1_v0_10_0_scalar_set_b32(119,4788
+static void rustsecp256k1_v0_10_0_scalar_get_b32(131,5879
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_zero(138,6746
+static void rustsecp256k1_v0_10_0_scalar_negate(142,6888
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_one(154,7403
+static int rustsecp256k1_v0_10_0_scalar_is_high(158,7550
+static int rustsecp256k1_v0_10_0_scalar_cond_negate(170,7965
+#define muladd(189,8876
+#define muladd_fast(204,9494
+#define sumadd(218,10028
+#define sumadd_fast(227,10421
+#define extract(235,10784
+#define extract_fast(243,10988
+static void rustsecp256k1_v0_10_0_scalar_reduce_512(250,11093
+static void rustsecp256k1_v0_10_0_scalar_mul_512(559,19219
+#undef sumadd726,23549
+#undef sumadd_fast727,23563
+#undef muladd728,23582
+#undef muladd_fast729,23596
+#undef extract730,23615
+#undef extract_fast731,23630
+static void rustsecp256k1_v0_10_0_scalar_mul(733,23651
+static int rustsecp256k1_v0_10_0_scalar_shr_int(739,23861
+static void rustsecp256k1_v0_10_0_scalar_split_128(751,24238
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_eq(762,24521
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_mul_shift_var(766,24733
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(783,25705
+static void rustsecp256k1_v0_10_0_scalar_from_signed62(794,26154
+static void rustsecp256k1_v0_10_0_scalar_to_signed62(816,26935
+static const rustsecp256k1_v0_10_0_modinv64_modinfo rustsecp256k1_v0_10_0_const_modinfo_scalar 831,27436
+static void rustsecp256k1_v0_10_0_scalar_inverse(836,27609
+static void rustsecp256k1_v0_10_0_scalar_inverse_var(850,28027
+SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_is_even(864,28453
+
+src/valgrind_ctime_test.c,41
+int main(32,882
+void run_tests(65,1947
+
+src/ecdsa.h,32
+#define SECP256K1_ECDSA_H8,393
+
+src/precompute_ecmult.c,88
+static void print_table(24,991
+static void print_two_tables(46,1979
+int main(59,2500
+
+src/util.h,2481
+#define SECP256K1_UTIL_H8,392
+    void (*fn)fn20,582
+    const void* data;21,628
+} rustsecp256k1_v0_10_0_callback;22,650
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_callback_call(24,673
+static void rustsecp256k1_v0_10_0_default_illegal_callback_fn(29,867
+static void rustsecp256k1_v0_10_0_default_error_callback_fn(34,1046
+static const rustsecp256k1_v0_10_0_callback default_illegal_callback 44,1398
+static const rustsecp256k1_v0_10_0_callback default_error_callback 49,1515
+#define TEST_FAILURE(56,1650
+#define TEST_FAILURE(61,1752
+#define EXPECT(68,1914
+#define EXPECT(70,1966
+#define CHECK(74,2019
+#define CHECK(80,2152
+#define VERIFY_CHECK(89,2388
+#define VERIFY_SETUP(90,2416
+#define VERIFY_CHECK 92,2465
+#define VERIFY_SETUP(93,2492
+#define VERIFY_CHECK(95,2547
+#define VERIFY_SETUP(96,2604
+#  define VG_UNDEF(103,2783
+#  define VG_CHECK(104,2844
+#  define VG_UNDEF(106,2914
+#  define VG_CHECK(107,2938
+#define VG_CHECK_VERIFY(113,3039
+#define VG_CHECK_VERIFY(115,3093
+static SECP256K1_INLINE void *checked_malloc(checked_malloc118,3130
+static SECP256K1_INLINE void *checked_realloc(checked_realloc126,3352
+#define ALIGNMENT 135,3627
+#define ALIGNMENT 140,3899
+#define ROUND_TO_ALIGN(143,3928
+# define SECP256K1_RESTRICT147,4127
+#   define SECP256K1_RESTRICT 151,4261
+#   define SECP256K1_RESTRICT 153,4352
+#   define SECP256K1_RESTRICT155,4401
+#  define SECP256K1_RESTRICT 158,4447
+# define I64FORMAT 163,4521
+# define I64uFORMAT 164,4547
+# define I64FORMAT 166,4580
+# define I64uFORMAT 167,4605
+# define SECP256K1_GNUC_EXT 171,4661
+# define SECP256K1_GNUC_EXT173,4709
+#  define SECP256K1_LITTLE_ENDIAN187,5622
+#  define SECP256K1_BIG_ENDIAN194,6033
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_memczero(202,6334
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_memcmp_var(221,6977
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_int_cmov(235,7408
+# define SECP256K1_WIDEMUL_INT128 257,8285
+# define SECP256K1_WIDEMUL_INT64 259,8360
+# define SECP256K1_WIDEMUL_INT128 261,8452
+# define SECP256K1_WIDEMUL_INT64 263,8494
+SECP256K1_GNUC_EXT typedef unsigned __int128 uint128_t;267,8631
+SECP256K1_GNUC_EXT typedef __int128 int128_t;268,8687
+#define UINT128_MAX 269,8733
+#define INT128_MAX 270,8771
+#define INT128_MIN 271,8821
+#define __has_builtin(277,8995
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz32_var_debruijn(283,9230
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz64_var_debruijn(295,9820
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz32_var(306,10355
+static SECP256K1_INLINE int rustsecp256k1_v0_10_0_ctz64_var(324,11127
+
+src/secp256k1.c,2942
+#define SECP256K1_BUILD7,367
+#define ARG_CHECK(34,982
+#define ARG_CHECK_NO_RETURN(41,1151
+struct rustsecp256k1_v0_10_0_context_struct 47,1310
+    rustsecp256k1_v0_10_0_ecmult_gen_context ecmult_gen_ctx;48,1344
+    rustsecp256k1_v0_10_0_callback illegal_callback;49,1393
+    rustsecp256k1_v0_10_0_callback error_callback;50,1434
+    int declassify;51,1473
+static const rustsecp256k1_v0_10_0_context rustsecp256k1_v0_10_0_context_no_precomp_ 54,1497
+const rustsecp256k1_v0_10_0_context *rustsecp256k1_v0_10_0_context_no_precomp rustsecp256k1_v0_10_0_context_no_precomp60,1680
+size_t rustsecp256k1_v0_10_0_context_preallocated_size(62,1769
+size_t rustsecp256k1_v0_10_0_context_preallocated_clone_size(76,2270
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_preallocated_create(82,2445
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_create(107,3332
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_preallocated_clone(118,3726
+rustsecp256k1_v0_10_0_context* rustsecp256k1_v0_10_0_context_clone(128,3999
+void rustsecp256k1_v0_10_0_context_preallocated_destroy(139,4388
+void rustsecp256k1_v0_10_0_context_destroy(146,4618
+void rustsecp256k1_v0_10_0_context_set_illegal_callback(153,4779
+void rustsecp256k1_v0_10_0_context_set_error_callback(162,5135
+rustsecp256k1_v0_10_0_scratch_space* rustsecp256k1_v0_10_0_scratch_space_create(171,5483
+void rustsecp256k1_v0_10_0_scratch_space_destroy(176,5691
+static SECP256K1_INLINE void rustsecp256k1_v0_10_0_declassify(185,6131
+static int rustsecp256k1_v0_10_0_pubkey_load(195,6391
+static void rustsecp256k1_v0_10_0_pubkey_save(214,7230
+int rustsecp256k1_v0_10_0_ec_pubkey_parse(228,7750
+int rustsecp256k1_v0_10_0_ec_pubkey_serialize(246,8282
+int rustsecp256k1_v0_10_0_ec_pubkey_cmp(269,9108
+static void rustsecp256k1_v0_10_0_ecdsa_signature_load(295,10419
+static void rustsecp256k1_v0_10_0_ecdsa_signature_save(309,11094
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der(319,11471
+int rustsecp256k1_v0_10_0_ecdsa_signature_parse_compact(335,11949
+int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_der(356,12551
+int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_compact(368,12986
+int rustsecp256k1_v0_10_0_ecdsa_signature_normalize(381,13418
+int rustsecp256k1_v0_10_0_ecdsa_verify(400,13950
+static SECP256K1_INLINE void buffer_append(416,14571
+static int nonce_function_rfc6979(421,14755
+const rustsecp256k1_v0_10_0_nonce_function rustsecp256k1_v0_10_0_nonce_function_rfc6979 455,16203
+const rustsecp256k1_v0_10_0_nonce_function rustsecp256k1_v0_10_0_nonce_function_default 456,16293
+static int rustsecp256k1_v0_10_0_ecdsa_sign_inner(458,16384
+int rustsecp256k1_v0_10_0_ecdsa_sign(514,18679
+int rustsecp256k1_v0_10_0_ec_seckey_verify(528,19309
+static int rustsecp256k1_v0_10_0_ec_pubkey_create_helper(539,19613
+int rustsecp256k1_v0_10_0_ec_pubkey_create(551,20080
+int rustsecp256k1_v0_10_0_ec_seckey_negate(569,20734
+int rustsecp256k1_v0_10_0_ec_privkey_negate(584,21185
+int rustsecp256k1_v0_10_0_ec_pubkey_negate(588,21327
+static int rustsecp256k1_v0_10_0_ec_seckey_tweak_add_helper(604,21724
+int rustsecp256k1_v0_10_0_ec_seckey_tweak_add(615,22076
+int rustsecp256k1_v0_10_0_ec_privkey_tweak_add(631,22615
+static int rustsecp256k1_v0_10_0_ec_pubkey_tweak_add_helper(635,22802
+int rustsecp256k1_v0_10_0_ec_pubkey_tweak_add(642,23076
+int rustsecp256k1_v0_10_0_ec_seckey_tweak_mul(659,23572
+int rustsecp256k1_v0_10_0_ec_privkey_tweak_mul(679,24269
+int rustsecp256k1_v0_10_0_ec_pubkey_tweak_mul(683,24456
+int rustsecp256k1_v0_10_0_context_randomize(706,25120
+int rustsecp256k1_v0_10_0_ec_pubkey_combine(714,25398
+int rustsecp256k1_v0_10_0_tagged_sha256(740,26138
+
+src/ecdsa_impl.h,608
+#define SECP256K1_ECDSA_IMPL_H9,399
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe 31,1073
+static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_ecdsa_const_p_minus_order 45,1662
+static int rustsecp256k1_v0_10_0_der_read_len(49,1821
+static int rustsecp256k1_v0_10_0_der_parse_integer(102,3266
+static int rustsecp256k1_v0_10_0_ecdsa_sig_parse(153,4757
+static int rustsecp256k1_v0_10_0_ecdsa_sig_serialize(183,5586
+static int rustsecp256k1_v0_10_0_ecdsa_sig_verify(207,6384
+    rustsecp256k1_v0_10_0_fe_set_b32(&xr, c)242,7469
+    rustsecp256k1_v0_10_0_fe_add(&xr, &rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe)rustsecp256k1_v0_10_0_ecdsa_const_order_as_fe268,8783
+static int rustsecp256k1_v0_10_0_ecdsa_sig_sign(277,9012
+
+src/scalar_4x64.h,129
+#define SECP256K1_SCALAR_REPR_H8,399
+    uint64_t d[d14,533
+} rustsecp256k1_v0_10_0_scalar;15,552
+#define SECP256K1_SCALAR_CONST(17,573
+
+src/group.h,628
+#define SECP256K1_GROUP_H8,393
+    rustsecp256k1_v0_10_0_fe x;17,701
+    rustsecp256k1_v0_10_0_fe y;18,721
+    int infinity;19,741
+} rustsecp256k1_v0_10_0_ge;20,811
+#define SECP256K1_GE_CONST(22,828
+#define SECP256K1_GE_CONST_INFINITY 23,1013
+    rustsecp256k1_v0_10_0_fe x;29,1331
+    rustsecp256k1_v0_10_0_fe y;30,1373
+    rustsecp256k1_v0_10_0_fe z;31,1415
+    int infinity;32,1435
+} rustsecp256k1_v0_10_0_gej;33,1505
+#define SECP256K1_GEJ_CONST(35,1523
+#define SECP256K1_GEJ_CONST_INFINITY 36,1753
+    rustsecp256k1_v0_10_0_fe_storage x;39,1944
+    rustsecp256k1_v0_10_0_fe_storage y;40,1972
+} rustsecp256k1_v0_10_0_ge_storage;41,2000
+#define SECP256K1_GE_STORAGE_CONST(43,2025
+#define SECP256K1_GE_STORAGE_CONST_GET(45,2232
+
+src/bench_internal.c,1153
+    rustsecp256k1_v0_10_0_scalar scalar[scalar22,676
+    rustsecp256k1_v0_10_0_fe fe[fe23,708
+    rustsecp256k1_v0_10_0_ge ge[ge24,732
+    rustsecp256k1_v0_10_0_gej gej[gej25,756
+    unsigned char data[data26,782
+    int wnaf[wnaf27,810
+} bench_inv;28,829
+void bench_setup(30,843
+void bench_scalar_add(82,3213
+void bench_scalar_negate(92,3472
+void bench_scalar_mul(101,3684
+void bench_scalar_split(110,3908
+void bench_scalar_inverse(121,4262
+void bench_scalar_inverse_var(132,4595
+void bench_field_normalize(143,4936
+void bench_field_normalize_weak(152,5127
+void bench_field_mul(161,5328
+void bench_field_sqr(170,5535
+void bench_field_inverse(179,5728
+void bench_field_inverse_var(189,5979
+void bench_field_sqrt(199,6238
+void bench_group_double_var(212,6557
+void bench_group_add_var(221,6773
+void bench_group_add_affine(230,6998
+void bench_group_add_affine_var(239,7218
+void bench_group_to_affine_var(248,7452
+void bench_ecmult_wnaf(268,8402
+void bench_wnaf_const(280,8803
+void bench_sha256(293,9203
+void bench_hmac_sha256(305,9515
+void bench_rfc6979_hmac_sha256(317,9872
+void bench_context_verify(328,10202
+void bench_context_sign(336,10408
+int main(344,10610
+
+src/selftest.h,119
+#define SECP256K1_SELFTEST_H8,396
+static int rustsecp256k1_v0_10_0_selftest_sha256(14,466
+static int rustsecp256k1_v0_10_0_selftest(28,1149
+
+src/testrand.h,35
+#define SECP256K1_TESTRAND_H8,396
+
+src/assumptions.h,98
+#define SECP256K1_ASSUMPTIONS_H8,399
+struct rustsecp256k1_v0_10_0_assumption_checker 19,755
+    int 22,922
+
+src/ecmult_const.h,39
+#define SECP256K1_ECMULT_CONST_H8,400
