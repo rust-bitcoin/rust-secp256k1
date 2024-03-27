@@ -28,3 +28,7 @@ sane: lint
 
   # Make an attempt to catch feature gate problems in doctests
   cargo test --manifest-path Cargo.toml --doc --no-default-features > /dev/null || exit 1
+
+# Check for API changes.
+check-api:
+  ./contrib/check-for-api-changes.sh
