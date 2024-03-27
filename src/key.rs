@@ -268,17 +268,19 @@ impl SecretKey {
     /// use secp256k1::hashes::{sha256, Hash};
     /// use secp256k1::SecretKey;
     ///
-    /// let sk1 = SecretKey::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
+    /// let sk1 = SecretKey::from_hashed_data("Hello world!".as_bytes());
     /// // is equivalent to
-    /// let sk2 = SecretKey::from(sha256::Hash::hash("Hello world!".as_bytes()));
+    /// let sk2 = SecretKey::from_slice(sha256::Hash::hash("Hello world!".as_bytes()).as_byte_array()).unwrap();
     ///
     /// assert_eq!(sk1, sk2);
     /// # }
     /// ```
     #[cfg(feature = "hashes")]
     #[inline]
-    pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
-        <H as hashes::Hash>::hash(data).into()
+    pub fn from_hashed_data(data: &[u8]) -> Self {
+        use hashes::{sha256, Hash};
+        let hash = sha256::Hash::hash(data);
+        SecretKey::from_slice(hash.as_byte_array()).expect("sha256 hash is 32 bytes")
     }
 
     /// Returns the secret key as a byte value.
