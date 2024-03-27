@@ -101,11 +101,6 @@ if [ "$DO_ASAN" = true ]; then
     RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes -Cllvm-args=-msan-eager-checks=0' \
     cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
 
-    pushd "$REPO_DIR/no_std_test" > /dev/null || exit 1
-    # See https://github.com/rust-bitcoin/rust-secp256k1/pull/641#issuecomment-1671598914
-    cargo update -p cc --precise 1.0.79
-    popd > /dev/null || exit 1
-
     cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
     cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
 fi
