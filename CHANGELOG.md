@@ -1,3 +1,7 @@
+# Unreleased
+
+* Bump MSRV to Rust `v1.56.1`
+
 # 0.28.2 - 2024-01-30
 
 * Implement `Hash` for `Scalar` [#674](https://github.com/rust-bitcoin/rust-secp256k1/pull/674)
