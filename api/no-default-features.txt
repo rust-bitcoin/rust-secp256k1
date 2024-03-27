@@ -1,5 +1,7 @@
+impl<'a> core::convert::From<&'a secp256k1::ecdsa::Signature> for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl<'a> core::convert::From<&'a secp256k1::Keypair> for secp256k1::PublicKey
 impl<'a> core::convert::From<&'a secp256k1::Keypair> for secp256k1::SecretKey
+impl<'a> core::convert::TryFrom<&'a secp256k1::ecdsa::serialized_signature::SerializedSignature> for secp256k1::ecdsa::Signature
 impl<'a> core::iter::traits::collect::IntoIterator for &'a secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl<'buf> core::clone::Clone for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::clone::Clone for secp256k1::SignOnlyPreallocated<'buf>
@@ -10,12 +12,12 @@ impl<'buf> core::cmp::Eq for secp256k1::VerifyOnlyPreallocated<'buf>
 impl<'buf> core::cmp::Ord for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::cmp::Ord for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> core::cmp::Ord for secp256k1::VerifyOnlyPreallocated<'buf>
-impl<'buf> core::cmp::PartialEq<secp256k1::AllPreallocated<'buf>> for secp256k1::AllPreallocated<'buf>
-impl<'buf> core::cmp::PartialEq<secp256k1::SignOnlyPreallocated<'buf>> for secp256k1::SignOnlyPreallocated<'buf>
-impl<'buf> core::cmp::PartialEq<secp256k1::VerifyOnlyPreallocated<'buf>> for secp256k1::VerifyOnlyPreallocated<'buf>
-impl<'buf> core::cmp::PartialOrd<secp256k1::AllPreallocated<'buf>> for secp256k1::AllPreallocated<'buf>
-impl<'buf> core::cmp::PartialOrd<secp256k1::SignOnlyPreallocated<'buf>> for secp256k1::SignOnlyPreallocated<'buf>
-impl<'buf> core::cmp::PartialOrd<secp256k1::VerifyOnlyPreallocated<'buf>> for secp256k1::VerifyOnlyPreallocated<'buf>
+impl<'buf> core::cmp::PartialEq for secp256k1::AllPreallocated<'buf>
+impl<'buf> core::cmp::PartialEq for secp256k1::SignOnlyPreallocated<'buf>
+impl<'buf> core::cmp::PartialEq for secp256k1::VerifyOnlyPreallocated<'buf>
+impl<'buf> core::cmp::PartialOrd for secp256k1::AllPreallocated<'buf>
+impl<'buf> core::cmp::PartialOrd for secp256k1::SignOnlyPreallocated<'buf>
+impl<'buf> core::cmp::PartialOrd for secp256k1::VerifyOnlyPreallocated<'buf>
 impl<'buf> core::fmt::Debug for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::fmt::Debug for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> core::fmt::Debug for secp256k1::VerifyOnlyPreallocated<'buf>
@@ -25,12 +27,12 @@ impl<'buf> core::hash::Hash for secp256k1::VerifyOnlyPreallocated<'buf>
 impl<'buf> core::marker::Copy for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::marker::Copy for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> core::marker::Copy for secp256k1::VerifyOnlyPreallocated<'buf>
+impl<'buf> core::marker::Freeze for secp256k1::AllPreallocated<'buf>
+impl<'buf> core::marker::Freeze for secp256k1::SignOnlyPreallocated<'buf>
+impl<'buf> core::marker::Freeze for secp256k1::VerifyOnlyPreallocated<'buf>
 impl<'buf> core::marker::Send for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::marker::Send for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> core::marker::Send for secp256k1::VerifyOnlyPreallocated<'buf>
-impl<'buf> core::marker::StructuralEq for secp256k1::AllPreallocated<'buf>
-impl<'buf> core::marker::StructuralEq for secp256k1::SignOnlyPreallocated<'buf>
-impl<'buf> core::marker::StructuralEq for secp256k1::VerifyOnlyPreallocated<'buf>
 impl<'buf> core::marker::StructuralPartialEq for secp256k1::AllPreallocated<'buf>
 impl<'buf> core::marker::StructuralPartialEq for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> core::marker::StructuralPartialEq for secp256k1::VerifyOnlyPreallocated<'buf>
@@ -60,10 +62,12 @@ impl<'buf> secp256k1::Signing for secp256k1::AllPreallocated<'buf>
 impl<'buf> secp256k1::Signing for secp256k1::SignOnlyPreallocated<'buf>
 impl<'buf> secp256k1::Verification for secp256k1::AllPreallocated<'buf>
 impl<'buf> secp256k1::Verification for secp256k1::VerifyOnlyPreallocated<'buf>
+impl<C> core::marker::Freeze for secp256k1::Secp256k1<C>
 impl<C> core::marker::Unpin for secp256k1::Secp256k1<C> where C: core::marker::Unpin
 impl<C> core::panic::unwind_safe::RefUnwindSafe for secp256k1::Secp256k1<C> where C: core::panic::unwind_safe::RefUnwindSafe
 impl<C> core::panic::unwind_safe::UnwindSafe for secp256k1::Secp256k1<C> where C: core::panic::unwind_safe::UnwindSafe
 impl core::borrow::Borrow<[u8]> for secp256k1::ecdh::SharedSecret
+impl core::borrow::Borrow<[u8]> for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::clone::Clone for secp256k1::ecdh::SharedSecret
 impl core::clone::Clone for secp256k1::ecdsa::serialized_signature::IntoIter
 impl core::clone::Clone for secp256k1::ecdsa::serialized_signature::SerializedSignature
@@ -100,6 +104,7 @@ impl core::cmp::Eq for secp256k1::schnorr::Signature
 impl core::cmp::Eq for secp256k1::SecretKey
 impl core::cmp::Eq for secp256k1::XOnlyPublicKey
 impl core::cmp::Ord for secp256k1::ecdh::SharedSecret
+impl core::cmp::Ord for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::cmp::Ord for secp256k1::ecdsa::Signature
 impl core::cmp::Ord for secp256k1::ellswift::ElligatorSwift
 impl core::cmp::Ord for secp256k1::ellswift::ElligatorSwiftParty
@@ -113,42 +118,48 @@ impl core::cmp::Ord for secp256k1::PublicKey
 impl core::cmp::Ord for secp256k1::scalar::Scalar
 impl core::cmp::Ord for secp256k1::schnorr::Signature
 impl core::cmp::Ord for secp256k1::XOnlyPublicKey
-impl core::cmp::PartialEq<secp256k1::ecdh::SharedSecret> for secp256k1::ecdh::SharedSecret
-impl core::cmp::PartialEq<secp256k1::ecdsa::serialized_signature::SerializedSignature> for secp256k1::ecdsa::serialized_signature::SerializedSignature
-impl core::cmp::PartialEq<secp256k1::ecdsa::Signature> for secp256k1::ecdsa::Signature
-impl core::cmp::PartialEq<secp256k1::ellswift::ElligatorSwift> for secp256k1::ellswift::ElligatorSwift
-impl core::cmp::PartialEq<secp256k1::ellswift::ElligatorSwiftParty> for secp256k1::ellswift::ElligatorSwiftParty
-impl core::cmp::PartialEq<secp256k1::ellswift::ElligatorSwiftSharedSecret> for secp256k1::ellswift::ElligatorSwiftSharedSecret
-impl core::cmp::PartialEq<secp256k1::Error> for secp256k1::Error
-impl core::cmp::PartialEq<secp256k1::InvalidParityValue> for secp256k1::InvalidParityValue
-impl core::cmp::PartialEq<secp256k1::Keypair> for secp256k1::Keypair
-impl core::cmp::PartialEq<secp256k1::Message> for secp256k1::Message
-impl core::cmp::PartialEq<secp256k1::Parity> for secp256k1::Parity
-impl core::cmp::PartialEq<secp256k1::PublicKey> for secp256k1::PublicKey
-impl core::cmp::PartialEq<secp256k1::scalar::OutOfRangeError> for secp256k1::scalar::OutOfRangeError
-impl core::cmp::PartialEq<secp256k1::scalar::Scalar> for secp256k1::scalar::Scalar
-impl core::cmp::PartialEq<secp256k1::schnorr::Signature> for secp256k1::schnorr::Signature
-impl core::cmp::PartialEq<secp256k1::SecretKey> for secp256k1::SecretKey
-impl core::cmp::PartialEq<secp256k1::XOnlyPublicKey> for secp256k1::XOnlyPublicKey
-impl core::cmp::PartialOrd<secp256k1::ecdh::SharedSecret> for secp256k1::ecdh::SharedSecret
-impl core::cmp::PartialOrd<secp256k1::ecdsa::Signature> for secp256k1::ecdsa::Signature
-impl core::cmp::PartialOrd<secp256k1::ellswift::ElligatorSwift> for secp256k1::ellswift::ElligatorSwift
-impl core::cmp::PartialOrd<secp256k1::ellswift::ElligatorSwiftParty> for secp256k1::ellswift::ElligatorSwiftParty
-impl core::cmp::PartialOrd<secp256k1::ellswift::ElligatorSwiftSharedSecret> for secp256k1::ellswift::ElligatorSwiftSharedSecret
-impl core::cmp::PartialOrd<secp256k1::Error> for secp256k1::Error
-impl core::cmp::PartialOrd<secp256k1::InvalidParityValue> for secp256k1::InvalidParityValue
-impl core::cmp::PartialOrd<secp256k1::Keypair> for secp256k1::Keypair
-impl core::cmp::PartialOrd<secp256k1::Message> for secp256k1::Message
-impl core::cmp::PartialOrd<secp256k1::Parity> for secp256k1::Parity
-impl core::cmp::PartialOrd<secp256k1::PublicKey> for secp256k1::PublicKey
-impl core::cmp::PartialOrd<secp256k1::scalar::Scalar> for secp256k1::scalar::Scalar
-impl core::cmp::PartialOrd<secp256k1::schnorr::Signature> for secp256k1::schnorr::Signature
-impl core::cmp::PartialOrd<secp256k1::XOnlyPublicKey> for secp256k1::XOnlyPublicKey
+impl core::cmp::PartialEq for secp256k1::ecdh::SharedSecret
+impl core::cmp::PartialEq for secp256k1::ecdsa::serialized_signature::SerializedSignature
+impl core::cmp::PartialEq for secp256k1::ecdsa::Signature
+impl core::cmp::PartialEq for secp256k1::ellswift::ElligatorSwift
+impl core::cmp::PartialEq for secp256k1::ellswift::ElligatorSwiftParty
+impl core::cmp::PartialEq for secp256k1::ellswift::ElligatorSwiftSharedSecret
+impl core::cmp::PartialEq for secp256k1::Error
+impl core::cmp::PartialEq for secp256k1::InvalidParityValue
+impl core::cmp::PartialEq for secp256k1::Keypair
+impl core::cmp::PartialEq for secp256k1::Message
+impl core::cmp::PartialEq for secp256k1::Parity
+impl core::cmp::PartialEq for secp256k1::PublicKey
+impl core::cmp::PartialEq for secp256k1::scalar::OutOfRangeError
+impl core::cmp::PartialEq for secp256k1::scalar::Scalar
+impl core::cmp::PartialEq for secp256k1::schnorr::Signature
+impl core::cmp::PartialEq for secp256k1::SecretKey
+impl core::cmp::PartialEq for secp256k1::XOnlyPublicKey
+impl core::cmp::PartialEq<secp256k1::ecdsa::serialized_signature::SerializedSignature> for [u8]
+impl core::cmp::PartialEq<[u8]> for secp256k1::ecdsa::serialized_signature::SerializedSignature
+impl core::cmp::PartialOrd for secp256k1::ecdh::SharedSecret
+impl core::cmp::PartialOrd for secp256k1::ecdsa::serialized_signature::SerializedSignature
+impl core::cmp::PartialOrd for secp256k1::ecdsa::Signature
+impl core::cmp::PartialOrd for secp256k1::ellswift::ElligatorSwift
+impl core::cmp::PartialOrd for secp256k1::ellswift::ElligatorSwiftParty
+impl core::cmp::PartialOrd for secp256k1::ellswift::ElligatorSwiftSharedSecret
+impl core::cmp::PartialOrd for secp256k1::Error
+impl core::cmp::PartialOrd for secp256k1::InvalidParityValue
+impl core::cmp::PartialOrd for secp256k1::Keypair
+impl core::cmp::PartialOrd for secp256k1::Message
+impl core::cmp::PartialOrd for secp256k1::Parity
+impl core::cmp::PartialOrd for secp256k1::PublicKey
+impl core::cmp::PartialOrd for secp256k1::scalar::Scalar
+impl core::cmp::PartialOrd for secp256k1::schnorr::Signature
+impl core::cmp::PartialOrd for secp256k1::XOnlyPublicKey
+impl core::cmp::PartialOrd<secp256k1::ecdsa::serialized_signature::SerializedSignature> for [u8]
+impl core::cmp::PartialOrd<[u8]> for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::convert::AsRef<[u8; 32]> for secp256k1::Message
 impl core::convert::AsRef<[u8; 32]> for secp256k1::SecretKey
 impl core::convert::AsRef<[u8; 64]> for secp256k1::schnorr::Signature
 impl core::convert::AsRef<[u8]> for secp256k1::ecdh::SharedSecret
 impl core::convert::AsRef<[u8]> for secp256k1::ecdsa::serialized_signature::SerializedSignature
+impl core::convert::From<secp256k1::ecdsa::Signature> for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::convert::From<secp256k1::InvalidParityValue> for secp256k1::Error
 impl core::convert::From<secp256k1::Keypair> for secp256k1::PublicKey
 impl core::convert::From<secp256k1::Keypair> for secp256k1::SecretKey
@@ -160,6 +171,7 @@ impl core::convert::From<secp256k1_sys::PublicKey> for secp256k1::PublicKey
 impl core::convert::From<secp256k1_sys::Signature> for secp256k1::ecdsa::Signature
 impl core::convert::From<secp256k1_sys::XOnlyPublicKey> for secp256k1::XOnlyPublicKey
 impl core::convert::TryFrom<i32> for secp256k1::Parity
+impl core::convert::TryFrom<secp256k1::ecdsa::serialized_signature::SerializedSignature> for secp256k1::ecdsa::Signature
 impl core::convert::TryFrom<u8> for secp256k1::Parity
 impl core::fmt::Debug for secp256k1::ecdh::SharedSecret
 impl core::fmt::Debug for secp256k1::ecdsa::serialized_signature::IntoIter
@@ -195,6 +207,7 @@ impl core::fmt::LowerHex for secp256k1::PublicKey
 impl core::fmt::LowerHex for secp256k1::schnorr::Signature
 impl core::fmt::LowerHex for secp256k1::XOnlyPublicKey
 impl core::hash::Hash for secp256k1::ecdh::SharedSecret
+impl core::hash::Hash for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::hash::Hash for secp256k1::ecdsa::Signature
 impl core::hash::Hash for secp256k1::ellswift::ElligatorSwift
 impl core::hash::Hash for secp256k1::ellswift::ElligatorSwiftParty
@@ -206,6 +219,7 @@ impl core::hash::Hash for secp256k1::Message
 impl core::hash::Hash for secp256k1::Parity
 impl core::hash::Hash for secp256k1::PublicKey
 impl core::hash::Hash for secp256k1::scalar::OutOfRangeError
+impl core::hash::Hash for secp256k1::scalar::Scalar
 impl core::hash::Hash for secp256k1::schnorr::Signature
 impl core::hash::Hash for secp256k1::XOnlyPublicKey
 impl core::iter::traits::collect::IntoIterator for secp256k1::ecdsa::serialized_signature::SerializedSignature
@@ -229,6 +243,24 @@ impl core::marker::Copy for secp256k1::scalar::Scalar
 impl core::marker::Copy for secp256k1::schnorr::Signature
 impl core::marker::Copy for secp256k1::SecretKey
 impl core::marker::Copy for secp256k1::XOnlyPublicKey
+impl core::marker::Freeze for secp256k1::ecdh::SharedSecret
+impl core::marker::Freeze for secp256k1::ecdsa::serialized_signature::IntoIter
+impl core::marker::Freeze for secp256k1::ecdsa::serialized_signature::SerializedSignature
+impl core::marker::Freeze for secp256k1::ecdsa::Signature
+impl core::marker::Freeze for secp256k1::ellswift::ElligatorSwift
+impl core::marker::Freeze for secp256k1::ellswift::ElligatorSwiftParty
+impl core::marker::Freeze for secp256k1::ellswift::ElligatorSwiftSharedSecret
+impl core::marker::Freeze for secp256k1::Error
+impl core::marker::Freeze for secp256k1::InvalidParityValue
+impl core::marker::Freeze for secp256k1::Keypair
+impl core::marker::Freeze for secp256k1::Message
+impl core::marker::Freeze for secp256k1::Parity
+impl core::marker::Freeze for secp256k1::PublicKey
+impl core::marker::Freeze for secp256k1::scalar::OutOfRangeError
+impl core::marker::Freeze for secp256k1::scalar::Scalar
+impl core::marker::Freeze for secp256k1::schnorr::Signature
+impl core::marker::Freeze for secp256k1::SecretKey
+impl core::marker::Freeze for secp256k1::XOnlyPublicKey
 impl core::marker::Send for secp256k1::ecdh::SharedSecret
 impl core::marker::Send for secp256k1::ecdsa::serialized_signature::IntoIter
 impl core::marker::Send for secp256k1::ecdsa::serialized_signature::SerializedSignature
@@ -247,21 +279,6 @@ impl core::marker::Send for secp256k1::scalar::Scalar
 impl core::marker::Send for secp256k1::schnorr::Signature
 impl core::marker::Send for secp256k1::SecretKey
 impl core::marker::Send for secp256k1::XOnlyPublicKey
-impl core::marker::StructuralEq for secp256k1::ecdh::SharedSecret
-impl core::marker::StructuralEq for secp256k1::ecdsa::Signature
-impl core::marker::StructuralEq for secp256k1::ellswift::ElligatorSwift
-impl core::marker::StructuralEq for secp256k1::ellswift::ElligatorSwiftParty
-impl core::marker::StructuralEq for secp256k1::ellswift::ElligatorSwiftSharedSecret
-impl core::marker::StructuralEq for secp256k1::Error
-impl core::marker::StructuralEq for secp256k1::InvalidParityValue
-impl core::marker::StructuralEq for secp256k1::Keypair
-impl core::marker::StructuralEq for secp256k1::Message
-impl core::marker::StructuralEq for secp256k1::Parity
-impl core::marker::StructuralEq for secp256k1::PublicKey
-impl core::marker::StructuralEq for secp256k1::scalar::OutOfRangeError
-impl core::marker::StructuralEq for secp256k1::scalar::Scalar
-impl core::marker::StructuralEq for secp256k1::schnorr::Signature
-impl core::marker::StructuralEq for secp256k1::XOnlyPublicKey
 impl core::marker::StructuralPartialEq for secp256k1::ecdh::SharedSecret
 impl core::marker::StructuralPartialEq for secp256k1::ecdsa::Signature
 impl core::marker::StructuralPartialEq for secp256k1::ellswift::ElligatorSwift
@@ -313,7 +330,7 @@ impl core::marker::Unpin for secp256k1::scalar::Scalar
 impl core::marker::Unpin for secp256k1::schnorr::Signature
 impl core::marker::Unpin for secp256k1::SecretKey
 impl core::marker::Unpin for secp256k1::XOnlyPublicKey
-impl core::ops::bit::BitXor<secp256k1::Parity> for secp256k1::Parity
+impl core::ops::bit::BitXor for secp256k1::Parity
 impl core::ops::deref::Deref for secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl core::panic::unwind_safe::RefUnwindSafe for secp256k1::ecdh::SharedSecret
 impl core::panic::unwind_safe::RefUnwindSafe for secp256k1::ecdsa::serialized_signature::IntoIter
@@ -360,7 +377,7 @@ impl core::str::traits::FromStr for secp256k1::schnorr::Signature
 impl core::str::traits::FromStr for secp256k1::SecretKey
 impl core::str::traits::FromStr for secp256k1::XOnlyPublicKey
 impl<C: secp256k1::Context> core::cmp::Eq for secp256k1::Secp256k1<C>
-impl<C: secp256k1::Context> core::cmp::PartialEq<secp256k1::Secp256k1<C>> for secp256k1::Secp256k1<C>
+impl<C: secp256k1::Context> core::cmp::PartialEq for secp256k1::Secp256k1<C>
 impl<C: secp256k1::Context> core::fmt::Debug for secp256k1::Secp256k1<C>
 impl<C: secp256k1::Context> core::marker::Send for secp256k1::Secp256k1<C>
 impl<C: secp256k1::Context> core::marker::Sync for secp256k1::Secp256k1<C>
@@ -377,6 +394,7 @@ impl secp256k1::ecdsa::serialized_signature::IntoIter
 impl secp256k1::ecdsa::serialized_signature::SerializedSignature
 impl secp256k1::ecdsa::Signature
 impl secp256k1::ellswift::ElligatorSwift
+impl secp256k1::ellswift::ElligatorSwiftSharedSecret
 impl secp256k1::Keypair
 impl secp256k1::Message
 impl secp256k1::Parity
@@ -395,6 +413,9 @@ impl secp256k1_sys::CPtr for secp256k1::XOnlyPublicKey
 impl secp256k1::XOnlyPublicKey
 impl<T: secp256k1::ThirtyTwoByteHash> core::convert::From<T> for secp256k1::Message
 #[non_exhaustive] pub struct secp256k1::scalar::OutOfRangeError
+pub const fn secp256k1::ellswift::ElligatorSwiftSharedSecret::as_secret_bytes(&self) -> &[u8; 32]
+pub const fn secp256k1::ellswift::ElligatorSwiftSharedSecret::from_secret_bytes(bytes: [u8; 32]) -> Self
+pub const fn secp256k1::ellswift::ElligatorSwiftSharedSecret::to_secret_bytes(self) -> [u8; 32]
 pub const secp256k1::AllPreallocated<'buf>::DESCRIPTION: &'static str
 pub const secp256k1::AllPreallocated<'buf>::FLAGS: secp256k1_sys::types::c_uint
 pub const secp256k1::constants::COMPACT_SIGNATURE_SIZE: usize = 64usize
@@ -457,15 +478,23 @@ pub fn secp256k1::ecdsa::serialized_signature::IntoIter::next(&mut self) -> core
 pub fn secp256k1::ecdsa::serialized_signature::IntoIter::nth(&mut self, n: usize) -> core::option::Option<Self::Item>
 pub fn secp256k1::ecdsa::serialized_signature::IntoIter::size_hint(&self) -> (usize, core::option::Option<usize>)
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::as_ref(&self) -> &[u8]
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::borrow(&self) -> &[u8]
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::capacity(&self) -> usize
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::clone(&self) -> secp256k1::ecdsa::serialized_signature::SerializedSignature
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::cmp(&self, other: &secp256k1::ecdsa::serialized_signature::SerializedSignature) -> core::cmp::Ordering
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::deref(&self) -> &[u8]
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::eq(&self, other: &secp256k1::ecdsa::serialized_signature::SerializedSignature) -> bool
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::eq(&self, other: &[u8]) -> bool
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::from_signature(sig: &secp256k1::ecdsa::Signature) -> secp256k1::ecdsa::serialized_signature::SerializedSignature
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::from(value: &'a secp256k1::ecdsa::Signature) -> Self
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::from(value: secp256k1::ecdsa::Signature) -> Self
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::hash<H: core::hash::Hasher>(&self, state: &mut H)
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::into_iter(self) -> Self::IntoIter
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::is_empty(&self) -> bool
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::len(&self) -> usize
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::partial_cmp(&self, other: &secp256k1::ecdsa::serialized_signature::SerializedSignature) -> core::option::Option<core::cmp::Ordering>
+pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::partial_cmp(&self, other: &[u8]) -> core::option::Option<core::cmp::Ordering>
 pub fn secp256k1::ecdsa::serialized_signature::SerializedSignature::to_signature(&self) -> core::result::Result<secp256k1::ecdsa::Signature, secp256k1::Error>
 pub fn secp256k1::ecdsa::Signature::as_c_ptr(&self) -> *const Self::Target
 pub fn secp256k1::ecdsa::Signature::as_mut_c_ptr(&mut self) -> *mut Self::Target
@@ -487,6 +516,8 @@ pub fn secp256k1::ecdsa::Signature::normalize_s(&mut self)
 pub fn secp256k1::ecdsa::Signature::partial_cmp(&self, other: &secp256k1::ecdsa::Signature) -> core::option::Option<core::cmp::Ordering>
 pub fn secp256k1::ecdsa::Signature::serialize_compact(&self) -> [u8; 64]
 pub fn secp256k1::ecdsa::Signature::serialize_der(&self) -> secp256k1::ecdsa::serialized_signature::SerializedSignature
+pub fn secp256k1::ecdsa::Signature::try_from(value: &'a secp256k1::ecdsa::serialized_signature::SerializedSignature) -> core::result::Result<Self, Self::Error>
+pub fn secp256k1::ecdsa::Signature::try_from(value: secp256k1::ecdsa::serialized_signature::SerializedSignature) -> core::result::Result<Self, Self::Error>
 pub fn secp256k1::ellswift::ElligatorSwift::as_c_ptr(&self) -> *const Self::Target
 pub fn secp256k1::ellswift::ElligatorSwift::as_mut_c_ptr(&mut self) -> *mut Self::Target
 pub fn secp256k1::ellswift::ElligatorSwift::clone(&self) -> secp256k1::ellswift::ElligatorSwift
@@ -620,6 +651,7 @@ pub fn secp256k1::scalar::Scalar::fmt(&self, f: &mut core::fmt::Formatter<'_>) -
 pub fn secp256k1::scalar::Scalar::from_be_bytes(value: [u8; 32]) -> core::result::Result<Self, secp256k1::scalar::OutOfRangeError>
 pub fn secp256k1::scalar::Scalar::from_le_bytes(value: [u8; 32]) -> core::result::Result<Self, secp256k1::scalar::OutOfRangeError>
 pub fn secp256k1::scalar::Scalar::from(value: secp256k1::SecretKey) -> Self
+pub fn secp256k1::scalar::Scalar::hash<__H: core::hash::Hasher>(&self, state: &mut __H)
 pub fn secp256k1::scalar::Scalar::index(&self, index: I) -> &Self::Output
 pub fn secp256k1::scalar::Scalar::non_secure_erase(&mut self)
 pub fn secp256k1::scalar::Scalar::partial_cmp(&self, other: &secp256k1::scalar::Scalar) -> core::option::Option<core::cmp::Ordering>
@@ -715,7 +747,9 @@ pub fn secp256k1::XOnlyPublicKey::public_key(&self, parity: secp256k1::Parity) -
 pub fn secp256k1::XOnlyPublicKey::serialize(&self) -> [u8; 32]
 pub fn secp256k1::XOnlyPublicKey::tweak_add_check<V: secp256k1::Verification>(&self, secp: &secp256k1::Secp256k1<V>, tweaked_key: &Self, tweaked_parity: secp256k1::Parity, tweak: secp256k1::scalar::Scalar) -> bool
 pub fn secp256k1::XOnlyPublicKey::verify<C: secp256k1::Verification>(&self, secp: &secp256k1::Secp256k1<C>, msg: &secp256k1::Message, sig: &secp256k1::schnorr::Signature) -> core::result::Result<(), secp256k1::Error>
+pub fn [u8]::eq(&self, other: &secp256k1::ecdsa::serialized_signature::SerializedSignature) -> bool
 pub fn u8::from(parity: secp256k1::Parity) -> u8
+pub fn [u8]::partial_cmp(&self, other: &secp256k1::ecdsa::serialized_signature::SerializedSignature) -> core::option::Option<core::cmp::Ordering>
 pub macro secp256k1::impl_array_newtype!
 pub mod secp256k1
 pub mod secp256k1::constants
@@ -770,6 +804,7 @@ pub type secp256k1::ecdsa::serialized_signature::IntoIter::Item = u8
 pub type secp256k1::ecdsa::serialized_signature::SerializedSignature::IntoIter = secp256k1::ecdsa::serialized_signature::IntoIter
 pub type secp256k1::ecdsa::serialized_signature::SerializedSignature::Item = u8
 pub type secp256k1::ecdsa::serialized_signature::SerializedSignature::Target = [u8]
+pub type secp256k1::ecdsa::Signature::Error = secp256k1::Error
 pub type secp256k1::ecdsa::Signature::Err = secp256k1::Error
 pub type secp256k1::ecdsa::Signature::Target = secp256k1_sys::Signature
 pub type secp256k1::ellswift::ElligatorSwift::Err = secp256k1::Error
