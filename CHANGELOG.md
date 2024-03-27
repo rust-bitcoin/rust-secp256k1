@@ -1,3 +1,7 @@
+# 0.29.0 - TODO
+
+
+
 # 0.28.2 - 2024-01-30
 
 * Implement `Hash` for `Scalar` [#674](https://github.com/rust-bitcoin/rust-secp256k1/pull/674)
