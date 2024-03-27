@@ -174,8 +174,8 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
-#[cfg(feature = "global-context")]
-pub use context::global::SECP256K1;
+#[cfg(all(feature = "global-context", feature = "std"))]
+pub use context::global::{self, SECP256K1};
 #[cfg(feature = "hashes")]
 use hashes::Hash;
 #[cfg(feature = "rand")]
@@ -184,10 +184,15 @@ pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
 
-pub use crate::context::*;
+#[cfg(feature = "alloc")]
+pub use crate::context::{All, SignOnly, VerifyOnly};
+pub use crate::context::{
+    AllPreallocated, Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
+    VerifyOnlyPreallocated,
+};
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
-pub use crate::key::{PublicKey, SecretKey, *};
+pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
 pub use crate::scalar::Scalar;
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
