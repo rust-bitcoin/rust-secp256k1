@@ -519,8 +519,6 @@ impl secp256k1_sys::CPtr for secp256k1::PublicKey
 impl secp256k1_sys::CPtr for secp256k1::schnorr::Signature
 impl secp256k1_sys::CPtr for secp256k1::SecretKey
 impl secp256k1_sys::CPtr for secp256k1::XOnlyPublicKey
-impl secp256k1::ThirtyTwoByteHash for bitcoin_hashes::sha256d::Hash
-impl secp256k1::ThirtyTwoByteHash for bitcoin_hashes::sha256::Hash
 impl secp256k1::Verification for secp256k1::All
 impl secp256k1::Verification for secp256k1::VerifyOnly
 impl secp256k1::XOnlyPublicKey
@@ -532,7 +530,6 @@ impl serde::ser::Serialize for secp256k1::PublicKey
 impl serde::ser::Serialize for secp256k1::schnorr::Signature
 impl serde::ser::Serialize for secp256k1::SecretKey
 impl serde::ser::Serialize for secp256k1::XOnlyPublicKey
-impl<T: bitcoin_hashes::sha256t::Tag> secp256k1::ThirtyTwoByteHash for bitcoin_hashes::sha256t::Hash<T>
 impl<T: secp256k1::ThirtyTwoByteHash> core::convert::From<T> for secp256k1::Message
 impl<T: secp256k1::ThirtyTwoByteHash> core::convert::From<T> for secp256k1::SecretKey
 #[non_exhaustive] pub struct secp256k1::scalar::OutOfRangeError
@@ -580,9 +577,6 @@ pub enum secp256k1::SignOnly
 pub enum secp256k1::VerifyOnly
 pub extern crate secp256k1::hashes
 pub fn &'a secp256k1::ecdsa::serialized_signature::SerializedSignature::into_iter(self) -> Self::IntoIter
-pub fn bitcoin_hashes::sha256d::Hash::into_32(self) -> [u8; 32]
-pub fn bitcoin_hashes::sha256::Hash::into_32(self) -> [u8; 32]
-pub fn bitcoin_hashes::sha256t::Hash<T>::into_32(self) -> [u8; 32]
 pub fn i32::from(parity: secp256k1::Parity) -> i32
 pub fn secp256k1::All::clone(&self) -> secp256k1::All
 pub fn secp256k1::All::cmp(&self, other: &secp256k1::All) -> core::cmp::Ordering
@@ -772,7 +766,6 @@ pub fn secp256k1::Message::eq(&self, other: &secp256k1::Message) -> bool
 pub fn secp256k1::Message::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub fn secp256k1::Message::from_digest(digest: [u8; 32]) -> secp256k1::Message
 pub fn secp256k1::Message::from_digest_slice(digest: &[u8]) -> core::result::Result<secp256k1::Message, secp256k1::Error>
-pub fn secp256k1::Message::from_hashed_data<H: secp256k1::ThirtyTwoByteHash + bitcoin_hashes::Hash>(data: &[u8]) -> Self
 pub fn secp256k1::Message::from_slice(digest: &[u8]) -> core::result::Result<secp256k1::Message, secp256k1::Error>
 pub fn secp256k1::Message::from(t: T) -> secp256k1::Message
 pub fn secp256k1::Message::hash<__H: core::hash::Hasher>(&self, state: &mut __H)
@@ -904,7 +897,6 @@ pub fn secp256k1::SecretKey::deserialize<D: serde::de::Deserializer<'de>>(d: D) 
 pub fn secp256k1::SecretKey::display_secret(&self) -> DisplaySecret
 pub fn secp256k1::SecretKey::eq(&self, other: &Self) -> bool
 pub fn secp256k1::SecretKey::fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-pub fn secp256k1::SecretKey::from_hashed_data<H: secp256k1::ThirtyTwoByteHash + bitcoin_hashes::Hash>(data: &[u8]) -> Self
 pub fn secp256k1::SecretKey::from_keypair(keypair: &secp256k1::Keypair) -> Self
 pub fn secp256k1::SecretKey::from(pair: &'a secp256k1::Keypair) -> Self
 pub fn secp256k1::SecretKey::from(pair: secp256k1::Keypair) -> Self
