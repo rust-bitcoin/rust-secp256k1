@@ -3,7 +3,6 @@
 //! Public and secret keys.
 //!
 
-use core::convert::TryFrom;
 use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
