@@ -3,7 +3,6 @@
 //! Public and secret keys.
 //!
 
-use core::convert::TryFrom;
 use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
@@ -14,13 +13,14 @@ use crate::ellswift::ElligatorSwift;
 use crate::ffi::types::c_uint;
 use crate::ffi::{self, CPtr};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
+#[cfg(feature = "hashes")]
+#[allow(deprecated)]
+use crate::ThirtyTwoByteHash;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
 use crate::{
     constants, ecdsa, from_hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification,
 };
-#[cfg(feature = "hashes")]
-use crate::{hashes, ThirtyTwoByteHash};
 
 /// Secret key - a 256-bit key used to create ECDSA and Taproot signatures.
 ///
@@ -257,30 +257,6 @@ impl SecretKey {
         SecretKey(sk)
     }
 
-    /// Constructs a [`SecretKey`] by hashing `data` with hash algorithm `H`.
-    ///
-    /// Requires the feature `hashes` to be enabled.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # #[cfg(feature="hashes")] {
-    /// use secp256k1::hashes::{sha256, Hash};
-    /// use secp256k1::SecretKey;
-    ///
-    /// let sk1 = SecretKey::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
-    /// // is equivalent to
-    /// let sk2 = SecretKey::from(sha256::Hash::hash("Hello world!".as_bytes()));
-    ///
-    /// assert_eq!(sk1, sk2);
-    /// # }
-    /// ```
-    #[cfg(feature = "hashes")]
-    #[inline]
-    pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
-        <H as hashes::Hash>::hash(data).into()
-    }
-
     /// Returns the secret key as a byte value.
     #[inline]
     pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] { self.0 }
@@ -373,6 +349,7 @@ impl SecretKey {
 }
 
 #[cfg(feature = "hashes")]
+#[allow(deprecated)]
 impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
     /// Converts a 32-byte hash directly to a secret key without error paths.
     fn from(t: T) -> SecretKey {

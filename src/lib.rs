@@ -31,11 +31,12 @@
 //! # #[cfg(all(feature = "rand-std", feature = "hashes-std"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
-//! use secp256k1::hashes::sha256;
+//! use secp256k1::hashes::{sha256, Hash};
 //!
 //! let secp = Secp256k1::new();
 //! let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
-//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
+//! let digest = sha256::Hash::hash("Hello World!".as_bytes());
+//! let message = Message::from_digest(digest.to_byte_array());
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
@@ -47,10 +48,11 @@
 //! ```rust
 //! # #[cfg(all(feature = "global-context", feature = "hashes-std", feature = "rand-std"))] {
 //! use secp256k1::{generate_keypair, Message};
-//! use secp256k1::hashes::sha256;
+//! use secp256k1::hashes::{sha256, Hash};
 //!
 //! let (secret_key, public_key) = generate_keypair(&mut rand::thread_rng());
-//! let message = Message::from_hashed_data::<sha256::Hash>("Hello World!".as_bytes());
+//! let digest = sha256::Hash::hash("Hello World!".as_bytes());
+//! let message = Message::from_digest(digest.to_byte_array());
 //!
 //! let sig = secret_key.sign_ecdsa(message);
 //! assert!(sig.verify(&message, &public_key).is_ok());
@@ -176,8 +178,6 @@ use core::{fmt, mem, str};
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 pub use context::global::{self, SECP256K1};
-#[cfg(feature = "hashes")]
-use hashes::Hash;
 #[cfg(feature = "rand")]
 pub use rand;
 pub use secp256k1_sys as ffi;
@@ -198,24 +198,13 @@ pub use crate::scalar::Scalar;
 /// Trait describing something that promises to be a 32-byte random number; in particular,
 /// it has negligible probability of being zero or overflowing the group order. Such objects
 /// may be converted to `Message`s without any error paths.
+#[deprecated(
+    since = "0.29.0",
+    note = "Please see v0.29.0 rust-secp256k1/CHANGELOG.md for suggestion"
+)]
 pub trait ThirtyTwoByteHash {
     /// Converts the object into a 32-byte array
     fn into_32(self) -> [u8; 32];
-}
-
-#[cfg(feature = "hashes")]
-impl ThirtyTwoByteHash for hashes::sha256::Hash {
-    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
-}
-
-#[cfg(feature = "hashes")]
-impl ThirtyTwoByteHash for hashes::sha256d::Hash {
-    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
-}
-
-#[cfg(feature = "hashes")]
-impl<T: hashes::sha256t::Tag> ThirtyTwoByteHash for hashes::sha256t::Hash<T> {
-    fn into_32(self) -> [u8; 32] { self.to_byte_array() }
 }
 
 /// A (hashed) message input to an ECDSA signature.
@@ -225,7 +214,7 @@ impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
 
 impl Message {
-    /// **If you just want to sign an arbitrary message use `Message::from_hashed_data` instead.**
+    /// Creates a [`Message`] from a 32 byte slice `digest`.
     ///
     /// Converts a `MESSAGE_SIZE`-byte slice to a message object. **WARNING:** the slice has to be a
     /// cryptographically secure hash of the actual message that's going to be signed. Otherwise
@@ -239,8 +228,6 @@ impl Message {
 
     /// Creates a [`Message`] from a `digest`.
     ///
-    /// **If you just want to sign an arbitrary message use `Message::from_hashed_data` instead.**
-    ///
     /// The `digest` array has to be a cryptographically secure hash of the actual message that's
     /// going to be signed. Otherwise the result of signing isn't a [secure signature].
     ///
@@ -249,8 +236,6 @@ impl Message {
     pub fn from_digest(digest: [u8; 32]) -> Message { Message(digest) }
 
     /// Creates a [`Message`] from a 32 byte slice `digest`.
-    ///
-    /// **If you just want to sign an arbitrary message use `Message::from_hashed_data` instead.**
     ///
     /// The slice has to be 32 bytes long and be a cryptographically secure hash of the actual
     /// message that's going to be signed. Otherwise the result of signing isn't a [secure
@@ -272,31 +257,9 @@ impl Message {
             _ => Err(Error::InvalidMessage),
         }
     }
-
-    /// Constructs a [`Message`] by hashing `data` with hash algorithm `H`.
-    ///
-    /// Requires the feature `hashes` to be enabled.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # #[cfg(feature = "hashes")] {
-    /// use secp256k1::hashes::{sha256, Hash};
-    /// use secp256k1::Message;
-    ///
-    /// let m1 = Message::from_hashed_data::<sha256::Hash>("Hello world!".as_bytes());
-    /// // is equivalent to
-    /// let m2 = Message::from(sha256::Hash::hash("Hello world!".as_bytes()));
-    ///
-    /// assert_eq!(m1, m2);
-    /// # }
-    /// ```
-    #[cfg(feature = "hashes")]
-    pub fn from_hashed_data<H: ThirtyTwoByteHash + hashes::Hash>(data: &[u8]) -> Self {
-        <H as hashes::Hash>::hash(data).into()
-    }
 }
 
+#[allow(deprecated)]
 impl<T: ThirtyTwoByteHash> From<T> for Message {
     /// Converts a 32-byte hash directly to a message without error paths.
     fn from(t: T) -> Message { Message(t.into_32()) }
@@ -1042,24 +1005,6 @@ mod tests {
         // Check usage as self
         let sig = SECP256K1.sign_ecdsa(&msg, &sk);
         assert!(SECP256K1.verify_ecdsa(&msg, &sig, &pk).is_ok());
-    }
-
-    #[cfg(feature = "hashes")]
-    #[test]
-    fn test_from_hash() {
-        use hashes::{sha256, sha256d, Hash};
-
-        let test_bytes = "Hello world!".as_bytes();
-
-        let hash = sha256::Hash::hash(test_bytes);
-        let msg = Message::from(hash);
-        assert_eq!(msg.0, hash.to_byte_array());
-        assert_eq!(msg, Message::from_hashed_data::<hashes::sha256::Hash>(test_bytes));
-
-        let hash = sha256d::Hash::hash(test_bytes);
-        let msg = Message::from(hash);
-        assert_eq!(msg.0, hash.to_byte_array());
-        assert_eq!(msg, Message::from_hashed_data::<hashes::sha256d::Hash>(test_bytes));
     }
 }
 

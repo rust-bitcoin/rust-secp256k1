@@ -1,5 +1,14 @@
 # Unreleased
 
+* Deprecate `ThirtyTwoByteHash`
+
+  This trait turned out to be problematic during upgrade because we support a ranged dependency for
+  `bitcoin_hashes`. Consider implementing `From<T> for Message` for your type iff your type is a 32
+  byte hash (ie, output from a hash algorithm that produces a 32 byte digest like sha256). When
+  using the impl, consider using `Message::from` instead of `hash.into()` because we will be
+  introducing generics in a future version and the compiler will not be able to work out the target
+  type.
+
 * Bump MSRV to Rust `v1.56.1`
 * Upgrade `hashes` using range dependency `version = ">= 0.12, <= 0.14"`.
 
