@@ -19,7 +19,7 @@
    reduce the odds of experiencing an unwelcome surprise.
 */
 
-struct rustsecp256k1_v0_9_2_assumption_checker {
+struct rustsecp256k1_v0_10_0_assumption_checker {
     /* This uses a trick to implement a static assertion in C89: a type with an array of negative size is not
        allowed. */
     int dummy_array[(
