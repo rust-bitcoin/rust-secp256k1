@@ -6,7 +6,7 @@ AM_CFLAGS = $(SECP_CFLAGS)
 
 lib_LTLIBRARIES = libsecp256k1.la
 include_HEADERS = include/secp256k1.h
-include_HEADERS += include/rustsecp256k1_v0_9_2_preallocated.h
+include_HEADERS += include/rustsecp256k1_v0_10_0_preallocated.h
 noinst_HEADERS =
 noinst_HEADERS += src/scalar.h
 noinst_HEADERS += src/scalar_4x64.h
@@ -37,7 +37,6 @@ noinst_HEADERS += src/field_10x26_impl.h
 noinst_HEADERS += src/field_5x52.h
 noinst_HEADERS += src/field_5x52_impl.h
 noinst_HEADERS += src/field_5x52_int128_impl.h
-noinst_HEADERS += src/field_5x52_asm_impl.h
 noinst_HEADERS += src/modinv32.h
 noinst_HEADERS += src/modinv32_impl.h
 noinst_HEADERS += src/modinv64.h
@@ -46,6 +45,7 @@ noinst_HEADERS += src/precomputed_ecmult.h
 noinst_HEADERS += src/precomputed_ecmult_gen.h
 noinst_HEADERS += src/assumptions.h
 noinst_HEADERS += src/checkmem.h
+noinst_HEADERS += src/testutil.h
 noinst_HEADERS += src/util.h
 noinst_HEADERS += src/int128.h
 noinst_HEADERS += src/int128_impl.h
@@ -63,22 +63,22 @@ noinst_HEADERS += src/hash_impl.h
 noinst_HEADERS += src/field.h
 noinst_HEADERS += src/field_impl.h
 noinst_HEADERS += src/bench.h
-noinst_HEADERS += src/wycheproof/ecdsa_rustsecp256k1_v0_9_2_sha256_bitcoin_test.h
+noinst_HEADERS += src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.h
 noinst_HEADERS += contrib/lax_der_parsing.h
 noinst_HEADERS += contrib/lax_der_parsing.c
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.c
 noinst_HEADERS += examples/examples_util.h
 
-PRECOMPUTED_LIB = librustsecp256k1_v0_9_2_precomputed.la
+PRECOMPUTED_LIB = librustsecp256k1_v0_10_0_precomputed.la
 noinst_LTLIBRARIES = $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_9_2_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
-# We need `-I$(top_srcdir)/src` in VPATH builds if librustsecp256k1_v0_9_2_precomputed_la_SOURCES have been recreated in the build tree.
+librustsecp256k1_v0_10_0_precomputed_la_SOURCES =  src/precomputed_ecmult.c src/precomputed_ecmult_gen.c
+# We need `-I$(top_srcdir)/src` in VPATH builds if librustsecp256k1_v0_10_0_precomputed_la_SOURCES have been recreated in the build tree.
 # This helps users and packagers who insist on recreating the precomputed files (e.g., Gentoo).
-librustsecp256k1_v0_9_2_precomputed_la_CPPFLAGS = -I$(top_srcdir)/src $(SECP_CONFIG_DEFINES)
+librustsecp256k1_v0_10_0_precomputed_la_CPPFLAGS = -I$(top_srcdir)/src $(SECP_CONFIG_DEFINES)
 
 if USE_EXTERNAL_ASM
-COMMON_LIB = librustsecp256k1_v0_9_2_common.la
+COMMON_LIB = librustsecp256k1_v0_10_0_common.la
 else
 COMMON_LIB =
 endif
@@ -89,14 +89,14 @@ pkgconfig_DATA = libsecp256k1.pc
 
 if USE_EXTERNAL_ASM
 if USE_ASM_ARM
-librustsecp256k1_v0_9_2_common_la_SOURCES = src/asm/field_10x26_arm.s
+librustsecp256k1_v0_10_0_common_la_SOURCES = src/asm/field_10x26_arm.s
 endif
 endif
 
-librustsecp256k1_v0_9_2_la_SOURCES = src/secp256k1.c
-librustsecp256k1_v0_9_2_la_CPPFLAGS = $(SECP_CONFIG_DEFINES)
-librustsecp256k1_v0_9_2_la_LIBADD = $(COMMON_LIB) $(PRECOMPUTED_LIB)
-librustsecp256k1_v0_9_2_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
+librustsecp256k1_v0_10_0_la_SOURCES = src/secp256k1.c
+librustsecp256k1_v0_10_0_la_CPPFLAGS = $(SECP_CONFIG_DEFINES)
+librustsecp256k1_v0_10_0_la_LIBADD = $(COMMON_LIB) $(PRECOMPUTED_LIB)
+librustsecp256k1_v0_10_0_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION_CURRENT):$(LIB_VERSION_REVISION):$(LIB_VERSION_AGE)
 
 noinst_PROGRAMS =
 if USE_BENCHMARK
@@ -223,11 +223,11 @@ maintainer-clean-local: clean-precomp
 
 ### Pregenerated test vectors
 ### (see the comments in the previous section for detailed rationale)
-TESTVECTORS = src/wycheproof/ecdsa_rustsecp256k1_v0_9_2_sha256_bitcoin_test.h
+TESTVECTORS = src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.h
 
-src/wycheproof/ecdsa_rustsecp256k1_v0_9_2_sha256_bitcoin_test.h:
+src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.h:
 	mkdir -p $(@D)
-	python3 $(top_srcdir)/tools/tests_wycheproof_generate.py $(top_srcdir)/src/wycheproof/ecdsa_rustsecp256k1_v0_9_2_sha256_bitcoin_test.json > $@
+	python3 $(top_srcdir)/tools/tests_wycheproof_generate.py $(top_srcdir)/src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.json > $@
 
 testvectors: $(TESTVECTORS)
 
@@ -246,10 +246,10 @@ EXTRA_DIST += sage/gen_exhaustive_groups.sage
 EXTRA_DIST += sage/gen_split_lambda_constants.sage
 EXTRA_DIST += sage/group_prover.sage
 EXTRA_DIST += sage/prove_group_implementations.sage
-EXTRA_DIST += sage/rustsecp256k1_v0_9_2_params.sage
+EXTRA_DIST += sage/rustsecp256k1_v0_10_0_params.sage
 EXTRA_DIST += sage/weierstrass_prover.sage
 EXTRA_DIST += src/wycheproof/WYCHEPROOF_COPYING
-EXTRA_DIST += src/wycheproof/ecdsa_rustsecp256k1_v0_9_2_sha256_bitcoin_test.json
+EXTRA_DIST += src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.json
 EXTRA_DIST += tools/tests_wycheproof_generate.py
 
 if ENABLE_MODULE_ECDH

@@ -36,7 +36,7 @@ global-context = ["std"]
 global-context-less-secure = ["global-context"]
 
 [dependencies]
-secp256k1-sys = { version = "0.9.2", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
 serde = { version = "1.0.103", default-features = false, optional = true }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
