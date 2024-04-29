@@ -112,7 +112,7 @@ impl AsRef<[u8]> for SharedSecret {
 /// ```
 /// # #[cfg(all(feature = "hashes-std", feature = "rand-std"))] {
 /// # use secp256k1::{ecdh, rand, Secp256k1, PublicKey, SecretKey};
-/// # use secp256k1::hashes::{Hash, sha512};
+/// # use secp256k1::hashes::sha512;
 ///
 /// let s = Secp256k1::new();
 /// let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
@@ -227,7 +227,7 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "hashes-std", feature = "rand-std"))]
     fn hashes_and_sys_generate_same_secret() {
-        use hashes::{sha256, Hash, HashEngine};
+        use hashes::{sha256, HashEngine};
 
         use crate::ecdh::shared_secret_point;
 

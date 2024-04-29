@@ -3,7 +3,7 @@
 set -ex
 
 REPO_DIR=$(git rev-parse --show-toplevel)
-FEATURES="hashes global-context lowmemory rand recovery serde std alloc hashes-std rand-std"
+FEATURES="chf global-context lowmemory rand recovery serde std alloc chf-std rand-std"
 
 cargo --version
 rustc --version
@@ -62,16 +62,16 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     fi
 
     # Examples
-    cargo run --locked --example sign_verify --features=hashes-std
-    cargo run --locked --example sign_verify_recovery --features=recovery,hashes-std
+    cargo run --locked --example sign_verify --features=chf-std
+    cargo run --locked --example sign_verify_recovery --features=recovery,chf-std
     cargo run --locked --example generate_keys --features=rand-std
 fi
 
 if [ "$DO_LINT" = true ]
 then
     cargo clippy --locked --all-features --all-targets -- -D warnings
-    cargo clippy --locked --example sign_verify --features=hashes-std -- -D warnings
-    cargo clippy --locked --example sign_verify_recovery --features=recovery,hashes-std -- -D warnings
+    cargo clippy --locked --example sign_verify --features=chf-std -- -D warnings
+    cargo clippy --locked --example sign_verify_recovery --features=recovery,chf-std -- -D warnings
     cargo clippy --locked --example generate_keys --features=rand-std -- -D warnings
 fi
 
