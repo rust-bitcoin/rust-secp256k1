@@ -80,7 +80,7 @@ esac
     --enable-examples="$EXAMPLES" \
     --enable-ctime-tests="$CTIMETESTS" \
     --with-valgrind="$WITH_VALGRIND" \
-    --host="$HOST" $EXTRAFLAGS
+    --host="$HOST" "$EXTRAFLAGS"
 
 # We have set "-j<n>" in MAKEFLAGS.
 build_exit_code=0
@@ -100,7 +100,7 @@ if [ $build_exit_code -ne 0 ]; then
 fi
 
 # Print information about binaries so that we can see that the architecture is correct
-file *tests* || true
+file ./*tests* || true
 file bench* || true
 file .libs/* || true
 
