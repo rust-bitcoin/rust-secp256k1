@@ -22,7 +22,7 @@ fi
 for dep in $DEPS
 do
     cp "Cargo-$dep.lock" Cargo.lock
-    $REPO_DIR/contrib/_test.sh
+    "$REPO_DIR"/contrib/_test.sh
 
     if [ "$dep" = recent ];
     then
