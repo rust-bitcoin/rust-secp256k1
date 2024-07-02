@@ -6,7 +6,9 @@ use core::fmt;
 
 use crate::constants::SECRET_KEY_SIZE;
 use crate::ecdh::SharedSecret;
-use crate::key::{Keypair, SecretKey};
+#[cfg(feature = "secp256k1-sys")]
+use crate::key::Keypair;
+use crate::key::SecretKey;
 use crate::to_hex;
 macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
@@ -127,6 +129,7 @@ impl SecretKey {
     pub fn display_secret(&self) -> DisplaySecret { DisplaySecret { secret: self.secret_bytes() } }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl Keypair {
     /// Formats the explicit byte value of the secret key kept inside the type as a
     /// little-endian hexadecimal string using the provided formatter.
@@ -171,7 +174,7 @@ impl SharedSecret {
     ///
     /// ```
     /// # #[cfg(not(secp256k1_fuzz))]
-    /// # #[cfg(feature = "std")] {
+    /// # #[cfg(all(feature = "std", feature = "secp256k1-sys"))] {
     /// # use std::str::FromStr;
     /// use secp256k1::{SecretKey, PublicKey};
     /// use secp256k1::ecdh::SharedSecret;
