@@ -3,7 +3,7 @@
 set -ex
 
 REPO_DIR=$(git rev-parse --show-toplevel)
-FEATURES="hashes global-context lowmemory rand recovery serde std alloc hashes-std rand-std"
+FEATURES="hashes global-context lowmemory rand recovery serde std alloc hashes-std rand-std secp256k1-sys"
 
 cargo --version
 rustc --version
