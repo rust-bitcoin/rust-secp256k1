@@ -99,8 +99,10 @@ impl Scalar {
 
     // returns a reference to internal bytes
     // non-public to not leak the internal representation
+    #[cfg(feature = "secp256k1-sys")]
     pub(crate) fn as_be_bytes(&self) -> &[u8; 32] { &self.0 }
 
+    #[cfg(feature = "secp256k1-sys")]
     pub(crate) fn as_c_ptr(&self) -> *const u8 {
         use secp256k1_sys::CPtr;
 

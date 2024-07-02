@@ -64,7 +64,7 @@
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
-//! # #[cfg(feature = "alloc")] {
+//! # #[cfg(all(feature =  "alloc", feature = "secp256k1-sys"))] {
 //! use secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
 //!
 //! let secp = Secp256k1::new();
@@ -82,7 +82,7 @@
 //! Users who only want to verify signatures can use a cheaper context, like so:
 //!
 //! ```rust
-//! # #[cfg(feature = "alloc")] {
+//! # #[cfg(all(feature =  "alloc", feature = "secp256k1-sys"))] {
 //! use secp256k1::{Secp256k1, Message, ecdsa, PublicKey};
 //!
 //! let secp = Secp256k1::verification_only();
@@ -165,34 +165,46 @@ mod key;
 
 pub mod constants;
 pub mod ecdh;
+#[cfg(feature = "secp256k1-sys")]
 pub mod ecdsa;
+#[cfg(feature = "secp256k1-sys")]
 pub mod ellswift;
 pub mod scalar;
+#[cfg(feature = "secp256k1-sys")]
 pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
 
 use core::marker::PhantomData;
+#[cfg(feature = "secp256k1-sys")]
 use core::ptr::NonNull;
-use core::{fmt, mem, str};
+use core::{fmt, str};
+#[cfg(feature = "secp256k1-sys")]
+use core::mem;
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 pub use context::global::{self, SECP256K1};
 #[cfg(feature = "rand")]
 pub use rand;
+#[cfg(feature = "secp256k1-sys")]
 pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
 
-#[cfg(feature = "alloc")]
+pub use crate::context::{Context, Signing, Verification};
+#[cfg(all(feature = "alloc", feature = "secp256k1-sys"))]
 pub use crate::context::{All, SignOnly, VerifyOnly};
+#[cfg(feature = "secp256k1-sys")]
 pub use crate::context::{
-    AllPreallocated, Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
-    VerifyOnlyPreallocated,
+    AllPreallocated, PreallocatedContext, SignOnlyPreallocated, VerifyOnlyPreallocated,
 };
+#[cfg(feature = "secp256k1-sys")]
 use crate::ffi::types::AlignedType;
+#[cfg(feature = "secp256k1-sys")]
 use crate::ffi::CPtr;
-pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
+pub use crate::key::{InvalidParityValue, Parity, PublicKey, SecretKey, XOnlyPublicKey};
+#[cfg(feature = "secp256k1-sys")]
+pub use crate::key::Keypair;
 pub use crate::scalar::Scalar;
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
@@ -352,21 +364,27 @@ impl std::error::Error for Error {
 
 /// The secp256k1 engine, used to execute all signature operations.
 pub struct Secp256k1<C: Context> {
+    #[cfg(feature = "secp256k1-sys")]
     ctx: NonNull<ffi::Context>,
     phantom: PhantomData<C>,
 }
 
 // The underlying secp context does not contain any references to memory it does not own.
+#[cfg(feature = "secp256k1-sys")]
 unsafe impl<C: Context> Send for Secp256k1<C> {}
 // The API does not permit any mutation of `Secp256k1` objects except through `&mut` references.
+#[cfg(feature = "secp256k1-sys")]
 unsafe impl<C: Context> Sync for Secp256k1<C> {}
 
+#[cfg(feature = "secp256k1-sys")]
 impl<C: Context> PartialEq for Secp256k1<C> {
     fn eq(&self, _other: &Secp256k1<C>) -> bool { true }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl<C: Context> Eq for Secp256k1<C> {}
 
+#[cfg(feature = "secp256k1-sys")]
 impl<C: Context> Drop for Secp256k1<C> {
     fn drop(&mut self) {
         unsafe {
@@ -379,11 +397,17 @@ impl<C: Context> Drop for Secp256k1<C> {
 }
 
 impl<C: Context> fmt::Debug for Secp256k1<C> {
+    #[cfg(feature = "secp256k1-sys")]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<secp256k1 context {:?}, {}>", self.ctx, C::DESCRIPTION)
     }
+    #[cfg(not(feature = "secp256k1-sys"))]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<secp256k1 context (trivial), {}>", C::DESCRIPTION)
+    }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl<C: Context> Secp256k1<C> {
     /// Getter for the raw pointer to the underlying secp256k1 context. This
     /// shouldn't be needed with normal usage of the library. It enables
@@ -429,6 +453,7 @@ impl<C: Context> Secp256k1<C> {
     }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl<C: Signing> Secp256k1<C> {
     /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
     /// [`PublicKey::from_secret_key`].
@@ -508,6 +533,7 @@ pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
 }
 
 #[cfg(test)]
+#[cfg(feature = "secp256k1-sys")]
 mod tests {
     use std::str::FromStr;
 
