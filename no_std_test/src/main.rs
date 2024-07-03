@@ -29,7 +29,6 @@
 
 #![feature(start)]
 #![feature(core_intrinsics)]
-#![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 #![no_std]
 extern crate libc;
@@ -48,7 +47,7 @@ extern crate wee_alloc;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-use core::fmt::{self, write, Write};
+use core::fmt::{self, Write};
 use core::intrinsics;
 use core::panic::PanicInfo;
 
@@ -170,9 +169,9 @@ impl Write for Print {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     unsafe { libc::printf("shi1\n\0".as_ptr() as _) };
-    let msg = info.message().unwrap();
+    let msg = info.message();
     let mut buf = Print::new();
-    write(&mut buf, *msg).unwrap();
+    write!(&mut buf, "{}", msg).unwrap();
     buf.print();
     intrinsics::abort()
 }
