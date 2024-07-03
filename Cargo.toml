@@ -54,6 +54,8 @@ bincode = "1.3.3"
 wasm-bindgen-test = "0.3"
 getrandom = { version = "0.2", features = ["js"] }
 
+[lints.rust]
+unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fuzz)', 'cfg(rust_secp_no_symbol_renaming)'] }
 
 [[example]]
 name = "sign_verify_recovery"
