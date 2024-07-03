@@ -28,7 +28,6 @@
 //!
 
 #![feature(start)]
-#![feature(core_intrinsics)]
 #![feature(alloc_error_handler)]
 #![no_std]
 extern crate libc;
@@ -48,7 +47,6 @@ extern crate wee_alloc;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use core::fmt::{self, Write};
-use core::intrinsics;
 use core::panic::PanicInfo;
 
 use secp256k1::ecdh::{self, SharedSecret};
@@ -60,6 +58,10 @@ use secp256k1::*;
 use serde_cbor::de;
 use serde_cbor::ser::SliceWrite;
 use serde_cbor::Serializer;
+
+fn abort() -> ! {
+    unsafe { libc::abort() }
+}
 
 struct FakeRng;
 impl RngCore for FakeRng {
@@ -157,7 +159,7 @@ impl Write for Print {
         if curr + s.len() > MAX_PRINT {
             unsafe {
                 libc::printf("overflow\n\0".as_ptr() as _);
-                intrinsics::abort();
+                abort();
             }
         }
         self.loc += s.len();
@@ -173,11 +175,11 @@ fn panic(info: &PanicInfo) -> ! {
     let mut buf = Print::new();
     write!(&mut buf, "{}", msg).unwrap();
     buf.print();
-    intrinsics::abort()
+    abort()
 }
 
 #[alloc_error_handler]
 fn alloc_error(_layout: Layout) -> ! {
     unsafe { libc::printf("alloc shi1\n\0".as_ptr() as _) };
-    intrinsics::abort()
+    abort()
 }
