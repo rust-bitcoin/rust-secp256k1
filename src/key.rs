@@ -638,10 +638,9 @@ impl PublicKey {
     /// # }
     /// ```
     pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, Error> {
-        use core::i32::MAX;
         use core::mem::transmute;
 
-        if keys.is_empty() || keys.len() > MAX as usize {
+        if keys.is_empty() || keys.len() > i32::MAX as usize {
             return Err(InvalidPublicKeySum);
         }
 
