@@ -2,6 +2,7 @@
 name = "no_std_test"
 version = "0.1.0"
 authors = ["Elichai Turkel <elichai.turkel@gmail.com>"]
+edition = "2021"
 
 [features]
 alloc = ["secp256k1/alloc", "wee_alloc"]
