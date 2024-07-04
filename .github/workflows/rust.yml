@@ -46,6 +46,8 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
       - name: Install src
         run: rustup component add rust-src
+      - name: Install xargo
+        run: cargo install xargo
       - name: Running test script
         env:
           DO_FMT: true
