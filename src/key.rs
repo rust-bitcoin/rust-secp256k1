@@ -958,8 +958,8 @@ impl Keypair {
     /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand-std"))]
-    pub fn sign_schnorr(&self, msg: Message) -> schnorr::Signature {
-        SECP256K1.sign_schnorr(&msg, self)
+    pub fn sign_schnorr(&self, msg: &[u8]) -> schnorr::Signature {
+        SECP256K1.sign_schnorr(msg, self)
     }
 
     /// Attempts to erase the secret within the underlying array.
@@ -1316,7 +1316,7 @@ impl XOnlyPublicKey {
     pub fn verify<C: Verification>(
         &self,
         secp: &Secp256k1<C>,
-        msg: &Message,
+        msg: &[u8],
         sig: &schnorr::Signature,
     ) -> Result<(), Error> {
         secp.verify_schnorr(sig, msg, self)
