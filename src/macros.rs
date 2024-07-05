@@ -23,6 +23,7 @@ macro_rules! impl_array_newtype {
             fn index(&self, index: I) -> &Self::Output { &self.0[index] }
         }
 
+        #[cfg(feature = "secp256k1-sys")]
         impl $crate::ffi::CPtr for $thing {
             type Target = $ty;
 
@@ -63,6 +64,7 @@ macro_rules! impl_non_secure_erase {
             /// is very subtle. For more discussion on this, please see the documentation
             /// of the [`zeroize`](https://docs.rs/zeroize) crate.
             #[inline]
+            #[cfg(feature = "secp256k1-sys")]
             pub fn non_secure_erase(&mut self) {
                 secp256k1_sys::non_secure_erase_impl(&mut self.$target, $value);
             }
@@ -99,7 +101,14 @@ macro_rules! impl_fast_comparisons {
             /// serializes `self` and `other` before comparing them. This function provides a faster
             /// comparison if you know that your types come from the same library version.
             pub fn cmp_fast_unstable(&self, other: &Self) -> core::cmp::Ordering {
-                self.0.cmp_fast_unstable(&other.0)
+                #[cfg(feature = "secp256k1-sys")]
+                {
+                    self.0.cmp_fast_unstable(&other.0)
+                }
+                #[cfg(not(feature = "secp256k1-sys"))]
+                {
+                    self.0.cmp(&other.0)
+                }
             }
 
             /// Like `cmp::Eq` but faster and with no guarantees across library versions.
@@ -108,7 +117,14 @@ macro_rules! impl_fast_comparisons {
             /// `self` and `other` before comparing them. This function provides a faster equality
             /// check if you know that your types come from the same library version.
             pub fn eq_fast_unstable(&self, other: &Self) -> bool {
-                self.0.eq_fast_unstable(&other.0)
+                #[cfg(feature = "secp256k1-sys")]
+                {
+                    self.0.eq_fast_unstable(&other.0)
+                }
+                #[cfg(not(feature = "secp256k1-sys"))]
+                {
+                    self.0 == other.0
+                }
             }
         }
     };

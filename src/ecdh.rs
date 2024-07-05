@@ -4,11 +4,16 @@
 //!
 
 use core::borrow::Borrow;
-use core::{ptr, str};
+#[cfg(feature = "secp256k1-sys")]
+use core::ptr;
+use core::str;
 
+#[cfg(feature = "secp256k1-sys")]
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
+#[cfg(feature = "secp256k1-sys")]
 use crate::ffi::{self, CPtr};
+#[cfg(feature = "secp256k1-sys")]
 use crate::key::{PublicKey, SecretKey};
 use crate::{constants, Error};
 
@@ -20,7 +25,7 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 /// # Examples
 ///
 /// ```
-/// # #[cfg(feature = "rand-std")] {
+/// # #[cfg(all(feature = "rand-std", feature = "secp256k1-sys"))] {
 /// # use secp256k1::{rand, Secp256k1};
 /// # use secp256k1::ecdh::SharedSecret;
 /// let s = Secp256k1::new();
@@ -39,6 +44,7 @@ impl_non_secure_erase!(SharedSecret, 0, [0u8; SHARED_SECRET_SIZE]);
 impl SharedSecret {
     /// Creates a new shared secret from a pubkey and secret key.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         let mut buf = [0u8; SHARED_SECRET_SIZE];
         let res = unsafe {
@@ -125,6 +131,7 @@ impl AsRef<[u8]> for SharedSecret {
 /// assert_eq!(secret1, secret2)
 /// # }
 /// ```
+#[cfg(feature = "secp256k1-sys")]
 pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
     let mut xy = [0u8; 64];
 
@@ -144,6 +151,7 @@ pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
     xy
 }
 
+#[cfg(feature = "secp256k1-sys")]
 unsafe extern "C" fn c_callback(
     output: *mut c_uchar,
     x: *const c_uchar,
@@ -184,6 +192,7 @@ impl<'de> ::serde::Deserialize<'de> for SharedSecret {
 }
 
 #[cfg(test)]
+#[cfg(feature = "secp256k1-sys")]
 #[allow(unused_imports)]
 mod tests {
     #[cfg(target_arch = "wasm32")]
@@ -194,6 +203,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "rand-std")]
+    #[cfg(feature = "secp256k1-sys")]
     fn ecdh() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
@@ -207,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "secp256k1-sys")]
     fn test_c_callback() {
         let x = [5u8; 32];
         let y = [7u8; 32];
@@ -226,6 +237,7 @@ mod tests {
     #[test]
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "hashes-std", feature = "rand-std"))]
+    #[cfg(feature = "secp256k1-sys")]
     fn hashes_and_sys_generate_same_secret() {
         use hashes::{sha256, Hash, HashEngine};
 
@@ -248,7 +260,10 @@ mod tests {
 
         assert_eq!(secret_bh.as_byte_array(), secret_sys.as_ref());
     }
+}
 
+#[cfg(test)]
+mod non_crypto_tests {
     #[test]
     #[cfg(all(feature = "serde", feature = "alloc"))]
     fn serde() {
@@ -262,7 +277,7 @@ mod tests {
         ];
         static STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let secret = SharedSecret::from_slice(&BYTES).unwrap();
+        let secret = super::SharedSecret::from_slice(&BYTES).unwrap();
 
         assert_tokens(&secret.compact(), &[Token::BorrowedBytes(&BYTES[..])]);
         assert_tokens(&secret.compact(), &[Token::Bytes(&BYTES)]);
@@ -283,6 +298,7 @@ mod benches {
     use crate::Secp256k1;
 
     #[bench]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn bench_ecdh(bh: &mut Bencher) {
         let s = Secp256k1::signing_only();
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());

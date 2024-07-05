@@ -4,23 +4,31 @@
 //!
 
 use core::ops::{self, BitXor};
-use core::{fmt, ptr, str};
+use core::{fmt, str};
+
+#[cfg(not(feature = "secp256k1-sys"))]
+mod non_c;
 
 #[cfg(feature = "serde")]
 use serde::ser::SerializeTuple;
 
+#[cfg(feature = "secp256k1-sys")]
 use crate::ellswift::ElligatorSwift;
+#[cfg(feature = "secp256k1-sys")]
 use crate::ffi::types::c_uint;
+#[cfg(feature = "secp256k1-sys")]
 use crate::ffi::{self, CPtr};
-use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
+#[cfg(feature = "secp256k1-sys")]
+use crate::Error::InvalidPublicKeySum;
+use crate::Error::{self, InvalidPublicKey, InvalidSecretKey};
 #[cfg(feature = "hashes")]
 #[allow(deprecated)]
 use crate::ThirtyTwoByteHash;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
-use crate::{
-    constants, ecdsa, from_hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification,
-};
+use crate::{constants, from_hex, Secp256k1, Signing};
+#[cfg(feature = "secp256k1-sys")]
+use crate::{ecdsa, schnorr, Message, Scalar, Verification};
 
 /// Secret key - a 256-bit key used to create ECDSA and Taproot signatures.
 ///
@@ -44,7 +52,7 @@ use crate::{
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature =  "rand-std", feature = "secp256k1-sys"))] {
 /// use secp256k1::{rand, Secp256k1, SecretKey};
 ///
 /// let secp = Secp256k1::new();
@@ -96,6 +104,7 @@ where
     fn index(&self, index: I) -> &Self::Output { &self.0[index] }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl ffi::CPtr for SecretKey {
     type Target = u8;
 
@@ -121,6 +130,12 @@ impl str::FromStr for SecretKey {
     }
 }
 
+#[cfg(feature = "secp256k1-sys")]
+type PublicKeyRepr = ffi::PublicKey;
+
+#[cfg(not(feature = "secp256k1-sys"))]
+type PublicKeyRepr = non_c::PublicKey;
+
 /// Public key - used to verify ECDSA signatures and to do Taproot tweaks.
 ///
 /// # Serde support
@@ -134,7 +149,7 @@ impl str::FromStr for SecretKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "alloc")] {
+/// # #[cfg(all(feature =  "alloc", feature = "secp256k1-sys"))] {
 /// use secp256k1::{SecretKey, Secp256k1, PublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -145,8 +160,8 @@ impl str::FromStr for SecretKey {
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
-#[repr(transparent)]
-pub struct PublicKey(ffi::PublicKey);
+#[cfg_attr(feature = "secp256k1-sys", repr(transparent))]
+pub struct PublicKey(PublicKeyRepr);
 impl_fast_comparisons!(PublicKey);
 
 impl fmt::LowerHex for PublicKey {
@@ -188,7 +203,7 @@ impl SecretKey {
     /// # }
     /// ```
     #[inline]
-    #[cfg(feature = "rand")]
+    #[cfg(all(feature = "rand", feature = "secp256k1-sys"))]
     pub fn new<R: rand::Rng + ?Sized>(rng: &mut R) -> SecretKey {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
@@ -214,6 +229,7 @@ impl SecretKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
+            #[cfg(feature = "secp256k1-sys")]
             Ok(data) => {
                 unsafe {
                     if ffi::secp256k1_ec_seckey_verify(
@@ -226,7 +242,9 @@ impl SecretKey {
                 }
                 Ok(SecretKey(data))
             }
-            Err(_) => Err(InvalidSecretKey),
+            #[cfg(not(feature = "secp256k1-sys"))]
+            Ok(data) if non_c::is_seckey_valid(&data) => Ok(SecretKey(data)),
+            _ => Err(InvalidSecretKey),
         }
     }
 
@@ -235,7 +253,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature =  "rand-std", feature = "secp256k1-sys"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
@@ -245,16 +263,23 @@ impl SecretKey {
     /// ```
     #[inline]
     pub fn from_keypair(keypair: &Keypair) -> Self {
-        let mut sk = [0u8; constants::SECRET_KEY_SIZE];
-        unsafe {
-            let ret = ffi::secp256k1_keypair_sec(
-                ffi::secp256k1_context_no_precomp,
-                sk.as_mut_c_ptr(),
-                keypair.as_c_ptr(),
-            );
-            debug_assert_eq!(ret, 1);
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            let mut sk = [0u8; constants::SECRET_KEY_SIZE];
+            unsafe {
+                let ret = ffi::secp256k1_keypair_sec(
+                    ffi::secp256k1_context_no_precomp,
+                    sk.as_mut_c_ptr(),
+                    keypair.as_c_ptr(),
+                );
+                debug_assert_eq!(ret, 1);
+            }
+            SecretKey(sk)
         }
-        SecretKey(sk)
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            keypair.0
+        }
     }
 
     /// Returns the secret key as a byte value.
@@ -263,6 +288,7 @@ impl SecretKey {
 
     /// Negates the secret key.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     #[must_use = "you forgot to use the negated secret key"]
     pub fn negate(mut self) -> SecretKey {
         unsafe {
@@ -281,6 +307,7 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn add_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_add(
@@ -302,6 +329,7 @@ impl SecretKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_tweak_mul(
@@ -319,6 +347,7 @@ impl SecretKey {
 
     /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     #[cfg(feature = "global-context")]
     pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature { SECP256K1.sign_ecdsa(&msg, self) }
 
@@ -326,6 +355,7 @@ impl SecretKey {
     ///
     /// This is equivalent to using [`Keypair::from_secret_key`].
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> Keypair {
         Keypair::from_secret_key(secp, self)
     }
@@ -334,6 +364,7 @@ impl SecretKey {
     ///
     /// This is equivalent to using [`PublicKey::from_secret_key`].
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> PublicKey {
         PublicKey::from_secret_key(secp, self)
     }
@@ -342,6 +373,7 @@ impl SecretKey {
     ///
     /// This is equivalent to `XOnlyPublicKey::from_keypair(self.keypair(secp))`.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
         let kp = self.keypair(secp);
         XOnlyPublicKey::from_keypair(&kp)
@@ -374,6 +406,7 @@ impl serde::Serialize for SecretKey {
 }
 
 #[cfg(feature = "serde")]
+#[cfg(feature = "secp256k1-sys")]
 impl<'de> serde::Deserialize<'de> for SecretKey {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -394,6 +427,7 @@ impl PublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_ptr(&self) -> *const ffi::PublicKey { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
@@ -402,6 +436,7 @@ impl PublicKey {
         since = "0.25.0",
         note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
     )]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey { self.as_mut_c_ptr() }
 
     /// Creates a new public key from a [`SecretKey`].
@@ -418,6 +453,7 @@ impl PublicKey {
     /// # }
     /// ```
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> PublicKey {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -430,11 +466,12 @@ impl PublicKey {
     }
     /// Creates a new public key from an [`ElligatorSwift`].
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn from_ellswift(ellswift: ElligatorSwift) -> PublicKey { ElligatorSwift::decode(ellswift) }
 
     /// Creates a new public key from a [`SecretKey`] and the global [`SECP256K1`] context.
     #[inline]
-    #[cfg(feature = "global-context")]
+    #[cfg(all(feature = "global-context", feature = "secp256k1-sys"))]
     pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
         PublicKey::from_secret_key(SECP256K1, sk)
     }
@@ -442,23 +479,30 @@ impl PublicKey {
     /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
-        if data.is_empty() {
-            return Err(Error::InvalidPublicKey);
-        }
-
-        unsafe {
-            let mut pk = ffi::PublicKey::new();
-            if ffi::secp256k1_ec_pubkey_parse(
-                ffi::secp256k1_context_no_precomp,
-                &mut pk,
-                data.as_c_ptr(),
-                data.len(),
-            ) == 1
-            {
-                Ok(PublicKey(pk))
-            } else {
-                Err(InvalidPublicKey)
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            if data.is_empty() {
+                return Err(Error::InvalidPublicKey);
             }
+
+            unsafe {
+                let mut pk = ffi::PublicKey::new();
+                if ffi::secp256k1_ec_pubkey_parse(
+                    ffi::secp256k1_context_no_precomp,
+                    &mut pk,
+                    data.as_c_ptr(),
+                    data.len(),
+                ) == 1
+                {
+                    Ok(PublicKey(pk))
+                } else {
+                    Err(InvalidPublicKey)
+                }
+            }
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            Ok(PublicKey(PublicKeyRepr::decode(data).ok_or(InvalidPublicKey)?))
         }
     }
 
@@ -476,6 +520,7 @@ impl PublicKey {
     /// # }
     /// ```
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn from_keypair(keypair: &Keypair) -> Self {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -507,20 +552,35 @@ impl PublicKey {
     /// Serializes the key as a byte-encoded pair of values. In compressed form the y-coordinate is
     /// represented by only a single bit, as x determines it up to one bit.
     pub fn serialize(&self) -> [u8; constants::PUBLIC_KEY_SIZE] {
-        let mut ret = [0u8; constants::PUBLIC_KEY_SIZE];
-        self.serialize_internal(&mut ret, ffi::SECP256K1_SER_COMPRESSED);
-        ret
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            let mut ret = [0u8; constants::PUBLIC_KEY_SIZE];
+            self.serialize_internal(&mut ret, ffi::SECP256K1_SER_COMPRESSED);
+            ret
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            self.0.serialize_compressed()
+        }
     }
 
     #[inline]
     /// Serializes the key as a byte-encoded pair of values, in uncompressed form.
     pub fn serialize_uncompressed(&self) -> [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE] {
-        let mut ret = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
-        self.serialize_internal(&mut ret, ffi::SECP256K1_SER_UNCOMPRESSED);
-        ret
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            let mut ret = [0u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+            self.serialize_internal(&mut ret, ffi::SECP256K1_SER_UNCOMPRESSED);
+            ret
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            self.0.serialize_uncompressed()
+        }
     }
 
     #[inline(always)]
+    #[cfg(feature = "secp256k1-sys")]
     fn serialize_internal(&self, ret: &mut [u8], flag: c_uint) {
         let mut ret_len = ret.len();
         let res = unsafe {
@@ -539,6 +599,7 @@ impl PublicKey {
     /// Negates the public key.
     #[inline]
     #[must_use = "you forgot to use the negated public key"]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn negate<C: Verification>(mut self, secp: &Secp256k1<C>) -> PublicKey {
         unsafe {
             let res = ffi::secp256k1_ec_pubkey_negate(secp.ctx.as_ptr(), &mut self.0);
@@ -553,6 +614,7 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn add_exp_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -575,6 +637,7 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn mul_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -610,6 +673,7 @@ impl PublicKey {
     /// let sum = pk1.combine(&pk2).expect("It's improbable to fail for 2 random public keys");
     /// # }
     /// ```
+    #[cfg(feature = "secp256k1-sys")]
     pub fn combine(&self, other: &PublicKey) -> Result<PublicKey, Error> {
         PublicKey::combine_keys(&[self, other])
     }
@@ -637,6 +701,7 @@ impl PublicKey {
     /// let sum = PublicKey::combine_keys(&[&pk1, &pk2, &pk3]).expect("It's improbable to fail for 3 random public keys");
     /// # }
     /// ```
+    #[cfg(feature = "secp256k1-sys")]
     pub fn combine_keys(keys: &[&PublicKey]) -> Result<PublicKey, Error> {
         use core::mem::transmute;
 
@@ -665,24 +730,33 @@ impl PublicKey {
     /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`PublicKey`].
     #[inline]
     pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
-        let mut pk_parity = 0;
-        unsafe {
-            let mut xonly_pk = ffi::XOnlyPublicKey::new();
-            let ret = ffi::secp256k1_xonly_pubkey_from_pubkey(
-                ffi::secp256k1_context_no_precomp,
-                &mut xonly_pk,
-                &mut pk_parity,
-                self.as_c_ptr(),
-            );
-            debug_assert_eq!(ret, 1);
-            let parity =
-                Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            let mut pk_parity = 0;
+            unsafe {
+                let mut xonly_pk = ffi::XOnlyPublicKey::new();
+                let ret = ffi::secp256k1_xonly_pubkey_from_pubkey(
+                    ffi::secp256k1_context_no_precomp,
+                    &mut xonly_pk,
+                    &mut pk_parity,
+                    self.as_c_ptr(),
+                );
+                debug_assert_eq!(ret, 1);
+                let parity =
+                    Parity::from_i32(pk_parity).expect("should not panic, pk_parity is 0 or 1");
 
-            (XOnlyPublicKey(xonly_pk), parity)
+                (XOnlyPublicKey(xonly_pk), parity)
+            }
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            let (key, parity) = self.0.to_xonly();
+            (XOnlyPublicKey(key), parity)
         }
     }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using this public key.
+    #[cfg(feature = "secp256k1-sys")]
     pub fn verify<C: Verification>(
         &self,
         secp: &Secp256k1<C>,
@@ -695,6 +769,7 @@ impl PublicKey {
 
 /// This trait enables interaction with the FFI layer and even though it is part of the public API
 /// normal users should never need to directly interact with FFI types.
+#[cfg(feature = "secp256k1-sys")]
 impl CPtr for PublicKey {
     type Target = ffi::PublicKey;
 
@@ -708,6 +783,7 @@ impl CPtr for PublicKey {
 /// Creates a new public key from a FFI public key.
 ///
 /// Note, normal users should never need to interact directly with FFI types.
+#[cfg(feature = "secp256k1-sys")]
 impl From<ffi::PublicKey> for PublicKey {
     #[inline]
     fn from(pk: ffi::PublicKey) -> PublicKey { PublicKey(pk) }
@@ -746,6 +822,11 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
     }
 }
 
+#[cfg(feature = "secp256k1-sys")]
+type KeypairRepr = ffi::Keypair;
+#[cfg(not(feature = "secp256k1-sys"))]
+type KeypairRepr = SecretKey;
+
 /// Opaque data structure that holds a keypair consisting of a secret and a public key.
 ///
 /// # Serde support
@@ -760,7 +841,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature =  "rand-std", feature = "secp256k1-sys"))] {
 /// use secp256k1::{rand, Keypair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
@@ -770,15 +851,18 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct Keypair(ffi::Keypair);
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "secp256k1-sys", derive(PartialOrd, Ord, PartialEq, Eq, Hash))]
+pub struct Keypair(KeypairRepr);
 impl_display_secret!(Keypair);
+#[cfg(feature = "secp256k1-sys")]
 impl_fast_comparisons!(Keypair);
 
 impl Keypair {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_ptr(&self) -> *const ffi::Keypair { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
@@ -787,11 +871,13 @@ impl Keypair {
         since = "0.25.0",
         note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
     )]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::Keypair { self.as_mut_c_ptr() }
 
     /// Creates a [`Keypair`] directly from a Secp256k1 secret key.
     #[inline]
     pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> Keypair {
+        #[cfg(feature = "secp256k1-sys")]
         unsafe {
             let mut kp = ffi::Keypair::new();
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, sk.as_c_ptr()) == 1 {
@@ -799,6 +885,11 @@ impl Keypair {
             } else {
                 panic!("the provided secret key is invalid: it is corrupted or was not produced by Secp256k1 library")
             }
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            let _ = secp;
+            Keypair(*sk)
         }
     }
 
@@ -813,17 +904,24 @@ impl Keypair {
         secp: &Secp256k1<C>,
         data: &[u8],
     ) -> Result<Keypair, Error> {
-        if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
-            return Err(Error::InvalidSecretKey);
-        }
-
-        unsafe {
-            let mut kp = ffi::Keypair::new();
-            if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
-                Ok(Keypair(kp))
-            } else {
-                Err(Error::InvalidSecretKey)
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
+                return Err(Error::InvalidSecretKey);
             }
+
+            unsafe {
+                let mut kp = ffi::Keypair::new();
+                if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
+                    Ok(Keypair(kp))
+                } else {
+                    Err(Error::InvalidSecretKey)
+                }
+            }
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            Ok(Keypair::from_secret_key(secp, &SecretKey::from_slice(data)?))
         }
     }
 
@@ -848,7 +946,7 @@ impl Keypair {
     ///
     /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
     #[inline]
-    #[cfg(feature = "global-context")]
+    #[cfg(all(feature = "global-context", feature = "secp256k1-sys"))]
     pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
         Keypair::from_seckey_str(SECP256K1, s)
     }
@@ -865,7 +963,7 @@ impl Keypair {
     /// # }
     /// ```
     #[inline]
-    #[cfg(feature = "rand")]
+    #[cfg(all(feature = "rand", feature = "secp256k1-sys"))]
     pub fn new<R: rand::Rng + ?Sized, C: Signing>(secp: &Secp256k1<C>, rng: &mut R) -> Keypair {
         let mut data = crate::random_32_bytes(rng);
         unsafe {
@@ -881,7 +979,7 @@ impl Keypair {
 
     /// Generates a new random secret key using the global [`SECP256K1`] context.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand"))]
+    #[cfg(all(feature = "global-context", feature = "rand", feature = "secp256k1-sys"))]
     pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> Keypair {
         Keypair::new(SECP256K1, rng)
     }
@@ -916,6 +1014,7 @@ impl Keypair {
     /// ```
     // TODO: Add checked implementation
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn add_xonly_tweak<C: Verification>(
         mut self,
         secp: &Secp256k1<C>,
@@ -945,12 +1044,14 @@ impl Keypair {
     ///
     /// This is equivalent to using [`PublicKey::from_keypair`].
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn public_key(&self) -> PublicKey { PublicKey::from_keypair(self) }
 
     /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`Keypair`].
     ///
     /// This is equivalent to using [`XOnlyPublicKey::from_keypair`].
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
         XOnlyPublicKey::from_keypair(self)
     }
@@ -958,6 +1059,7 @@ impl Keypair {
     /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand-std"))]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn sign_schnorr(&self, msg: Message) -> schnorr::Signature {
         SECP256K1.sign_schnorr(&msg, self)
     }
@@ -969,6 +1071,7 @@ impl Keypair {
     /// For more discussion on this, please see the documentation of the
     /// [`zeroize`](https://docs.rs/zeroize) crate.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
 }
 
@@ -982,29 +1085,29 @@ impl<'a> From<&'a Keypair> for SecretKey {
     fn from(pair: &'a Keypair) -> Self { SecretKey::from_keypair(pair) }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl From<Keypair> for PublicKey {
     #[inline]
     fn from(pair: Keypair) -> Self { PublicKey::from_keypair(&pair) }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl<'a> From<&'a Keypair> for PublicKey {
     #[inline]
     fn from(pair: &'a Keypair) -> Self { PublicKey::from_keypair(pair) }
 }
 
+#[cfg(any(feature = "global-context", feature = "alloc"))]
 impl str::FromStr for Keypair {
     type Err = Error;
 
     #[allow(unused_variables, unreachable_code)] // When built with no default features.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         #[cfg(feature = "global-context")]
-        let ctx = SECP256K1;
+        let ctx = &**SECP256K1;
 
         #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
         let ctx = Secp256k1::signing_only();
-
-        #[cfg(not(any(feature = "global-context", feature = "alloc")))]
-        let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
 
         #[allow(clippy::needless_borrow)]
         Keypair::from_seckey_str(&ctx, s)
@@ -1030,7 +1133,7 @@ impl serde::Serialize for Keypair {
     }
 }
 
-#[cfg(feature = "serde")]
+#[cfg(all(feature = "serde", any(feature = "global-context", feature = "alloc")))]
 #[allow(unused_variables)] // For `data` under some feature combinations (the unconditional panic below).
 #[allow(unreachable_code)] // For `Keypair::from_seckey_slice` after unconditional panic.
 impl<'de> serde::Deserialize<'de> for Keypair {
@@ -1047,9 +1150,6 @@ impl<'de> serde::Deserialize<'de> for Keypair {
                 #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
                 let ctx = Secp256k1::signing_only();
 
-                #[cfg(not(any(feature = "global-context", feature = "alloc")))]
-                let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("cannot deserialize key pair without a context (please enable either the global-context or alloc feature)");
-
                 #[allow(clippy::needless_borrow)]
                 Keypair::from_seckey_slice(&ctx, data)
             });
@@ -1058,12 +1158,19 @@ impl<'de> serde::Deserialize<'de> for Keypair {
     }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl CPtr for Keypair {
     type Target = ffi::Keypair;
     fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
 }
+
+#[cfg(feature = "secp256k1-sys")]
+type XOnlyPublicKeyRepr = ffi::XOnlyPublicKey;
+
+#[cfg(not(feature = "secp256k1-sys"))]
+type XOnlyPublicKeyRepr = non_c::XOnlyPublicKey;
 
 /// An x-only public key, used for verification of Taproot signatures and serialized according to BIP-340.
 ///
@@ -1078,7 +1185,7 @@ impl CPtr for Keypair {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature =  "rand-std", feature = "secp256k1-sys"))] {
 /// use secp256k1::{rand, Secp256k1, Keypair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -1089,7 +1196,7 @@ impl CPtr for Keypair {
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
+pub struct XOnlyPublicKey(XOnlyPublicKeyRepr);
 impl_fast_comparisons!(XOnlyPublicKey);
 
 impl fmt::LowerHex for XOnlyPublicKey {
@@ -1122,6 +1229,7 @@ impl XOnlyPublicKey {
     /// Obtains a raw const pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey { self.as_c_ptr() }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
@@ -1130,10 +1238,12 @@ impl XOnlyPublicKey {
         since = "0.25.0",
         note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
     )]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey { self.as_mut_c_ptr() }
 
     /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for `keypair`.
     #[inline]
+    #[cfg(feature = "secp256k1-sys")]
     pub fn from_keypair(keypair: &Keypair) -> (XOnlyPublicKey, Parity) {
         let mut pk_parity = 0;
         unsafe {
@@ -1160,39 +1270,54 @@ impl XOnlyPublicKey {
     /// slice does not represent a valid Secp256k1 point x coordinate.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
-        if data.is_empty() || data.len() != constants::SCHNORR_PUBLIC_KEY_SIZE {
-            return Err(Error::InvalidPublicKey);
-        }
+        let data: &[u8; constants::SCHNORR_PUBLIC_KEY_SIZE] =
+            data.try_into().map_err(|_| Error::InvalidPublicKey)?;
 
-        unsafe {
-            let mut pk = ffi::XOnlyPublicKey::new();
-            if ffi::secp256k1_xonly_pubkey_parse(
-                ffi::secp256k1_context_no_precomp,
-                &mut pk,
-                data.as_c_ptr(),
-            ) == 1
-            {
-                Ok(XOnlyPublicKey(pk))
-            } else {
-                Err(Error::InvalidPublicKey)
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            unsafe {
+                let mut pk = ffi::XOnlyPublicKey::new();
+                if ffi::secp256k1_xonly_pubkey_parse(
+                    ffi::secp256k1_context_no_precomp,
+                    &mut pk,
+                    data.as_c_ptr(),
+                ) == 1
+                {
+                    Ok(XOnlyPublicKey(pk))
+                } else {
+                    Err(Error::InvalidPublicKey)
+                }
             }
+        }
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            Ok(XOnlyPublicKey(
+                XOnlyPublicKeyRepr::from_bytes(&data).ok_or(Error::InvalidPublicKey)?,
+            ))
         }
     }
 
     #[inline]
     /// Serializes the key as a byte-encoded x coordinate value (32 bytes).
     pub fn serialize(&self) -> [u8; constants::SCHNORR_PUBLIC_KEY_SIZE] {
-        let mut ret = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
+        #[cfg(feature = "secp256k1-sys")]
+        {
+            let mut ret = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
 
-        unsafe {
-            let err = ffi::secp256k1_xonly_pubkey_serialize(
-                ffi::secp256k1_context_no_precomp,
-                ret.as_mut_c_ptr(),
-                self.as_c_ptr(),
-            );
-            debug_assert_eq!(err, 1);
+            unsafe {
+                let err = ffi::secp256k1_xonly_pubkey_serialize(
+                    ffi::secp256k1_context_no_precomp,
+                    ret.as_mut_c_ptr(),
+                    self.as_c_ptr(),
+                );
+                debug_assert_eq!(err, 1);
+            }
+            ret
         }
-        ret
+        #[cfg(not(feature = "secp256k1-sys"))]
+        {
+            self.0.serialize()
+        }
     }
 
     /// Tweaks an [`XOnlyPublicKey`] by adding the generator multiplied with the given tweak to it.
@@ -1221,6 +1346,7 @@ impl XOnlyPublicKey {
     /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
+    #[cfg(feature = "secp256k1-sys")]
     pub fn add_tweak<V: Verification>(
         mut self,
         secp: &Secp256k1<V>,
@@ -1283,6 +1409,7 @@ impl XOnlyPublicKey {
     /// assert!(original.tweak_add_check(&secp, &tweaked, parity, tweak));
     /// # }
     /// ```
+    #[cfg(feature = "secp256k1-sys")]
     pub fn tweak_add_check<V: Verification>(
         &self,
         secp: &Secp256k1<V>,
@@ -1313,6 +1440,7 @@ impl XOnlyPublicKey {
     }
 
     /// Checks that `sig` is a valid schnorr signature for `msg` using this public key.
+    #[cfg(feature = "secp256k1-sys")]
     pub fn verify<C: Verification>(
         &self,
         secp: &Secp256k1<C>,
@@ -1362,6 +1490,12 @@ impl Parity {
             _ => Err(InvalidParityValue(parity)),
         }
     }
+
+    /// Returns true if `self` is `Parity::Even.
+    pub fn is_even(self) -> bool { self == Parity::Even }
+
+    /// Returns true if `self` is `Parity::Odd.
+    pub fn is_odd(self) -> bool { self == Parity::Odd }
 }
 
 /// `Even` for `0`, `Odd` for `1`, error for anything else
@@ -1459,6 +1593,7 @@ impl<'de> serde::Deserialize<'de> for Parity {
     }
 }
 
+#[cfg(feature = "secp256k1-sys")]
 impl CPtr for XOnlyPublicKey {
     type Target = ffi::XOnlyPublicKey;
     fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
@@ -1467,27 +1602,14 @@ impl CPtr for XOnlyPublicKey {
 }
 
 /// Creates a new schnorr public key from a FFI x-only public key.
+#[cfg(feature = "secp256k1-sys")]
 impl From<ffi::XOnlyPublicKey> for XOnlyPublicKey {
     #[inline]
     fn from(pk: ffi::XOnlyPublicKey) -> XOnlyPublicKey { XOnlyPublicKey(pk) }
 }
 
 impl From<PublicKey> for XOnlyPublicKey {
-    fn from(src: PublicKey) -> XOnlyPublicKey {
-        unsafe {
-            let mut pk = ffi::XOnlyPublicKey::new();
-            assert_eq!(
-                1,
-                ffi::secp256k1_xonly_pubkey_from_pubkey(
-                    ffi::secp256k1_context_no_precomp,
-                    &mut pk,
-                    ptr::null_mut(),
-                    src.as_c_ptr(),
-                )
-            );
-            XOnlyPublicKey(pk)
-        }
-    }
+    fn from(src: PublicKey) -> XOnlyPublicKey { src.x_only_public_key().0 }
 }
 
 #[cfg(feature = "serde")]
@@ -1524,27 +1646,10 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 
 #[cfg(test)]
 #[allow(unused_imports)]
-mod test {
-    use core::str::FromStr;
-
-    #[cfg(feature = "rand")]
-    use rand::{self, rngs::mock::StepRng, RngCore};
-    use serde_test::{Configure, Token};
-    #[cfg(target_arch = "wasm32")]
-    use wasm_bindgen_test::wasm_bindgen_test as test;
-
-    use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
+mod non_crypto_test {
+    use super::{Parity, PublicKey, SecretKey, XOnlyPublicKey};
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
-
-    #[cfg(not(secp256k1_fuzz))]
-    macro_rules! hex {
-        ($hex:expr) => {{
-            let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
-            result
-        }};
-    }
 
     #[test]
     fn skey_from_slice() {
@@ -1557,6 +1662,7 @@ mod test {
 
     #[test]
     fn pubkey_from_slice() {
+        "0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8".parse::<PublicKey>().unwrap();
         assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
         assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
 
@@ -1576,34 +1682,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
-    fn keypair_slice_round_trip() {
-        let s = Secp256k1::new();
-
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
-        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
-    }
-
-    #[test]
-    #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
-    fn erased_keypair_is_valid() {
-        let s = Secp256k1::new();
-        let kp = Keypair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
-            .expect("valid secret key");
-        let mut kp2 = kp;
-        kp2.non_secure_erase();
-        assert!(kp.eq_fast_unstable(&kp2));
-    }
-
-    #[test]
     #[rustfmt::skip]
     fn invalid_secret_key() {
         // Zero
         assert_eq!(SecretKey::from_slice(&[0; 32]), Err(InvalidSecretKey));
         assert_eq!(
-            SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
+            "0000000000000000000000000000000000000000000000000000000000000000".parse::<SecretKey>(),
             Err(InvalidSecretKey)
         );
         // -1
@@ -1622,38 +1706,6 @@ mod test {
             0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
             0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x41,
         ]).is_err());
-    }
-
-    #[test]
-    #[cfg(all(feature = "rand", feature = "alloc"))]
-    fn test_out_of_range() {
-        struct BadRng(u8);
-        impl RngCore for BadRng {
-            fn next_u32(&mut self) -> u32 { unimplemented!() }
-            fn next_u64(&mut self) -> u64 { unimplemented!() }
-            // This will set a secret key to a little over the
-            // group order, then decrement with repeated calls
-            // until it returns a valid key
-            fn fill_bytes(&mut self, data: &mut [u8]) {
-                #[rustfmt::skip]
-                let group_order: [u8; 32] = [
-                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
-                    0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
-                    0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41];
-                assert_eq!(data.len(), 32);
-                data.copy_from_slice(&group_order[..]);
-                data[31] = self.0;
-                self.0 -= 1;
-            }
-            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-                self.fill_bytes(dest);
-                Ok(())
-            }
-        }
-
-        let s = Secp256k1::new();
-        s.generate_keypair(&mut BadRng(0xff));
     }
 
     #[test]
@@ -1709,6 +1761,86 @@ mod test {
             Err(InvalidSecretKey)
         );
         assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
+    }
+}
+
+#[cfg(test)]
+#[allow(unused_imports)]
+#[cfg(feature = "secp256k1-sys")]
+mod test {
+    use core::str::FromStr;
+
+    #[cfg(feature = "rand")]
+    use rand::{self, rngs::mock::StepRng, RngCore};
+    use serde_test::{Configure, Token};
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
+    use crate::Error::{InvalidPublicKey, InvalidSecretKey};
+    use crate::{constants, from_hex, to_hex, Scalar};
+
+    #[cfg(not(secp256k1_fuzz))]
+    macro_rules! hex {
+        ($hex:expr) => {{
+            let mut result = vec![0; $hex.len() / 2];
+            from_hex($hex, &mut result).expect("valid hex string");
+            result
+        }};
+    }
+
+    #[test]
+    #[cfg(feature = "rand-std")]
+    fn keypair_slice_round_trip() {
+        let s = Secp256k1::new();
+
+        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+        assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
+        assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
+        assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
+    }
+
+    #[test]
+    #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
+    fn erased_keypair_is_valid() {
+        let s = Secp256k1::new();
+        let kp = Keypair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+            .expect("valid secret key");
+        let mut kp2 = kp;
+        kp2.non_secure_erase();
+        assert!(kp.eq_fast_unstable(&kp2));
+    }
+
+    #[test]
+    #[cfg(all(feature = "rand", feature = "alloc"))]
+    fn test_out_of_range() {
+        struct BadRng(u8);
+        impl RngCore for BadRng {
+            fn next_u32(&mut self) -> u32 { unimplemented!() }
+            fn next_u64(&mut self) -> u64 { unimplemented!() }
+            // This will set a secret key to a little over the
+            // group order, then decrement with repeated calls
+            // until it returns a valid key
+            fn fill_bytes(&mut self, data: &mut [u8]) {
+                #[rustfmt::skip]
+                let group_order: [u8; 32] = [
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+                    0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+                    0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41];
+                assert_eq!(data.len(), 32);
+                data.copy_from_slice(&group_order[..]);
+                data[31] = self.0;
+                self.0 -= 1;
+            }
+            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+                self.fill_bytes(dest);
+                Ok(())
+            }
+        }
+
+        let s = Secp256k1::new();
+        s.generate_keypair(&mut BadRng(0xff));
     }
 
     #[test]
@@ -2418,14 +2550,6 @@ mod test {
             .chain(std::iter::once(Token::TupleEnd))
             .collect::<Vec<_>>();
         serde_test::assert_tokens(&keypair.compact(), &tokens);
-    }
-
-    #[test]
-    #[should_panic(expected = "The previous implementation was panicking too")]
-    #[cfg(not(any(feature = "alloc", feature = "global-context")))]
-    fn test_parse_keypair_no_alloc_panic() {
-        let key_hex = "4242424242424242424242424242424242424242424242424242424242424242";
-        let _: Keypair = key_hex.parse().expect("We shouldn't even get this far");
     }
 }
 

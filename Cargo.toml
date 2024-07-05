@@ -18,10 +18,12 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["std"]
-std = ["alloc", "secp256k1-sys/std"]
+default = ["sys-std"]
+std = ["alloc"]
+alloc = []
+sys-std = ["std", "sys-alloc", "secp256k1-sys/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
-alloc = ["secp256k1-sys/alloc"]
+sys-alloc = ["secp256k1-sys/alloc"]
 hashes-std = ["std", "hashes/std"]
 rand-std = ["std", "rand", "rand/std", "rand/std_rng"]
 recovery = ["secp256k1-sys/recovery"]
@@ -36,7 +38,7 @@ global-context = ["std"]
 global-context-less-secure = ["global-context"]
 
 [dependencies]
-secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys", optional = true }
 serde = { version = "1.0.103", default-features = false, optional = true }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
@@ -59,15 +61,15 @@ unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fu
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["recovery", "hashes-std"]
+required-features = ["recovery", "hashes-std", "secp256k1-sys"]
 
 [[example]]
 name = "sign_verify"
-required-features = ["hashes-std"]
+required-features = ["hashes-std", "secp256k1-sys"]
 
 [[example]]
 name = "generate_keys"
-required-features = ["rand-std"]
+required-features = ["rand-std", "secp256k1-sys"]
 
 [workspace]
 members = ["secp256k1-sys"]
