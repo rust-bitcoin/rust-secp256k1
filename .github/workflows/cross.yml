@@ -53,4 +53,4 @@ jobs:
       - name: install cross
         run: cargo install cross
       - name: run cross test
-        run: cross test --target ${{ matrix.arch }}
+        run: cross test --target ${{ matrix.arch }} --verbose

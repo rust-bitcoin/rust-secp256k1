@@ -101,8 +101,10 @@ if [ "$DO_ASAN" = true ]; then
     RUSTFLAGS='-Zsanitizer=memory -Zsanitizer-memory-track-origins -Cforce-frame-pointers=yes -Cllvm-args=-msan-eager-checks=0' \
     cargo test --lib --all --features="$FEATURES" -Zbuild-std --target x86_64-unknown-linux-gnu
 
-    cargo run --release --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified Successfully"
-    cargo run --release --features=alloc --manifest-path=./no_std_test/Cargo.toml | grep -q "Verified alloc Successfully"
+    cd no_std_test
+    xargo run --release --target=x86_64-unknown-linux-gnu | grep -q "Verified Successfully"
+    xargo run --release --target=x86_64-unknown-linux-gnu --features=alloc | grep -q "Verified alloc Successfully"
+    cd -
 fi
 
 # Run formatter if told to.
