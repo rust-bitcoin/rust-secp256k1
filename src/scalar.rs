@@ -14,7 +14,7 @@ use crate::constants;
 
 /// Positive 256-bit integer guaranteed to be less than the secp256k1 curve order.
 ///
-/// The difference between `PrivateKey` and `Scalar` is that `Scalar` doesn't guarantee being
+/// The difference between `SecretKey` and `Scalar` is that `Scalar` doesn't guarantee being
 /// securely usable as a private key.
 ///
 /// **Warning: the operations on this type are NOT constant time!**
