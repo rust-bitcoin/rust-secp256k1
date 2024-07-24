@@ -66,12 +66,14 @@
 //! ```rust
 //! # #[cfg(feature = "alloc")] {
 //! use secp256k1::{Secp256k1, Message, SecretKey, PublicKey};
+//! # fn compute_hash(_: &[u8]) -> [u8; 32] { [0xab; 32] }
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-//! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
-//! let message = Message::from_digest([0xab; 32]);
+//! // If the supplied byte slice was *not* the output of a cryptographic hash function this would
+//! // be cryptographically broken. It has been trivially used in the past to execute attacks.
+//! let message = Message::from_digest(compute_hash(b"CSW is not Satoshi"));
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
