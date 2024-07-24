@@ -41,7 +41,7 @@ impl Scalar {
     pub const MAX: Scalar = Scalar(MAX_RAW);
 
     /// Generates a random scalar
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     pub fn random() -> Self { Self::random_custom(rand::thread_rng()) }
 
     /// Generates a random scalar using supplied RNG

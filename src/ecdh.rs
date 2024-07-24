@@ -20,7 +20,7 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 /// # Examples
 ///
 /// ```
-/// # #[cfg(feature = "rand-std")] {
+/// # #[cfg(all(feature = "rand", feature = "std"))] {
 /// # use secp256k1::{rand, Secp256k1};
 /// # use secp256k1::ecdh::SharedSecret;
 /// let s = Secp256k1::new();
@@ -110,7 +110,7 @@ impl AsRef<[u8]> for SharedSecret {
 ///
 /// # Examples
 /// ```
-/// # #[cfg(all(feature = "hashes-std", feature = "rand-std"))] {
+/// # #[cfg(all(feature = "hashes", feature = "rand", feature = "std"))] {
 /// # use secp256k1::{ecdh, rand, Secp256k1, PublicKey, SecretKey};
 /// # use secp256k1::hashes::{Hash, sha512};
 ///
@@ -193,7 +193,7 @@ mod tests {
     use crate::Secp256k1;
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn ecdh() {
         let s = Secp256k1::signing_only();
         let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]
-    #[cfg(all(feature = "hashes-std", feature = "rand-std"))]
+    #[cfg(all(feature = "hashes", feature = "rand", feature = "std"))]
     fn hashes_and_sys_generate_same_secret() {
         use hashes::{sha256, Hash, HashEngine};
 
@@ -275,7 +275,7 @@ mod tests {
 }
 
 #[cfg(bench)]
-#[cfg(feature = "rand-std")] // Currently only a single bench that requires "rand-std".
+#[cfg(all(feature = "rand", feature = "std"))] // Currently only a single bench that requires "rand" + "std".
 mod benches {
     use test::{black_box, Bencher};
 

@@ -127,7 +127,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Creates a schnorr signature internally using the [`rand::rngs::ThreadRng`] random number
     /// generator to generate the auxiliary random data.
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     pub fn sign_schnorr(&self, msg: &[u8], keypair: &Keypair) -> Signature {
         self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
     }
@@ -193,7 +193,7 @@ impl<C: Verification> Secp256k1<C> {
 mod tests {
     use core::str::FromStr;
 
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     use rand::rngs::ThreadRng;
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -213,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn schnorr_sign_with_aux_rand_verify() {
         sign_helper(|secp, msg, seckey, rng| {
             let aux_rand = crate::random_32_bytes(rng);
@@ -222,22 +222,22 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn schnor_sign_with_rng_verify() {
         sign_helper(|secp, msg, seckey, rng| secp.sign_schnorr_with_rng(msg, seckey, rng))
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn schnorr_sign_verify() { sign_helper(|secp, msg, seckey, _| secp.sign_schnorr(msg, seckey)) }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn schnorr_sign_no_aux_rand_verify() {
         sign_helper(|secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
     }
 
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_helper(sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut ThreadRng) -> Signature) {
         let secp = Secp256k1::new();
 
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
         let kp = Keypair::new(&secp, &mut rand::thread_rng());

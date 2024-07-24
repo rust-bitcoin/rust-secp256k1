@@ -44,7 +44,7 @@ use crate::{
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature = "rand", feature = "std"))] {
 /// use secp256k1::{rand, Secp256k1, SecretKey};
 ///
 /// let secp = Secp256k1::new();
@@ -182,7 +182,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(all(feature = "std", feature =  "rand-std"))] {
+    /// # #[cfg(all(feature = "std", feature =  "rand"))] {
     /// use secp256k1::{rand, SecretKey};
     /// let secret_key = SecretKey::new(&mut rand::thread_rng());
     /// # }
@@ -235,7 +235,7 @@ impl SecretKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
@@ -409,7 +409,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -467,7 +467,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1, PublicKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
@@ -600,7 +600,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature = "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1};
     ///
     /// let secp = Secp256k1::new();
@@ -626,7 +626,7 @@ impl PublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1, PublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -760,7 +760,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature = "rand", feature = "std"))] {
 /// use secp256k1::{rand, Keypair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
@@ -857,7 +857,7 @@ impl Keypair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
@@ -904,7 +904,7 @@ impl Keypair {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{Secp256k1, Keypair, Scalar};
     ///
     /// let secp = Secp256k1::new();
@@ -957,7 +957,7 @@ impl Keypair {
 
     /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand-std"))]
+    #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
     pub fn sign_schnorr(&self, msg: &[u8]) -> schnorr::Signature {
         SECP256K1.sign_schnorr(msg, self)
     }
@@ -1078,7 +1078,7 @@ impl CPtr for Keypair {
 /// Basic usage:
 ///
 /// ```
-/// # #[cfg(feature =  "rand-std")] {
+/// # #[cfg(all(feature = "rand", feature = "std"))] {
 /// use secp256k1::{rand, Secp256k1, Keypair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
@@ -1210,7 +1210,7 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{Secp256k1, Keypair, Scalar, XOnlyPublicKey};
     ///
     /// let secp = Secp256k1::new();
@@ -1270,7 +1270,7 @@ impl XOnlyPublicKey {
     /// # Examples
     ///
     /// ```
-    /// # #[cfg(feature =  "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// use secp256k1::{Secp256k1, Keypair, Scalar};
     ///
     /// let secp = Secp256k1::new();
@@ -1576,7 +1576,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
@@ -1856,7 +1856,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_add_arbitrary_data() {
         let s = Secp256k1::new();
 
@@ -1875,7 +1875,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_add_zero() {
         let s = Secp256k1::new();
 
@@ -1890,7 +1890,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_mul_arbitrary_data() {
         let s = Secp256k1::new();
 
@@ -1909,7 +1909,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_mul_zero() {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
@@ -1919,7 +1919,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_negation() {
         let s = Secp256k1::new();
 
@@ -1941,7 +1941,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn pubkey_hash() {
         use std::collections::hash_map::DefaultHasher;
         use std::collections::HashSet;
@@ -2024,7 +2024,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn create_pubkey_combine() {
         let s = Secp256k1::new();
 
@@ -2134,7 +2134,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_tweak_add_then_tweak_add_check() {
         let s = Secp256k1::new();
 
@@ -2393,7 +2393,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_keypair_from_str() {
         let ctx = crate::Secp256k1::new();
         let keypair = Keypair::new(&ctx, &mut rand::thread_rng());
