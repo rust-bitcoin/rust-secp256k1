@@ -1527,6 +1527,8 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 mod test {
     use core::str::FromStr;
 
+    #[cfg(not(secp256k1_fuzz))]
+    use hex_lit::hex;
     #[cfg(feature = "rand")]
     use rand::{self, rngs::mock::StepRng, RngCore};
     use serde_test::{Configure, Token};
@@ -1536,15 +1538,6 @@ mod test {
     use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
-
-    #[cfg(not(secp256k1_fuzz))]
-    macro_rules! hex {
-        ($hex:expr) => {{
-            let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
-            result
-        }};
-    }
 
     #[test]
     fn skey_from_slice() {

@@ -508,18 +508,11 @@ pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
 mod tests {
     use std::str::FromStr;
 
+    use hex_lit::hex;
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     use super::*;
-
-    macro_rules! hex {
-        ($hex:expr) => {{
-            let mut result = vec![0; $hex.len() / 2];
-            from_hex($hex, &mut result).expect("valid hex string");
-            result
-        }};
-    }
 
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
@@ -678,17 +671,17 @@ mod tests {
 
     #[test]
     fn signature_display() {
-        let hex_str = "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45";
-        let byte_str = hex!(hex_str);
+        const HEX_STR: &str = "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a72022100e89bd46bb3a5a62adc679f659b7ce876d83ee297c7a5587b2011c4fcc72eab45";
+        let byte_str = hex!(HEX_STR);
 
         assert_eq!(
             ecdsa::Signature::from_der(&byte_str).expect("byte str decode"),
-            ecdsa::Signature::from_str(hex_str).expect("byte str decode")
+            ecdsa::Signature::from_str(HEX_STR).expect("byte str decode")
         );
 
-        let sig = ecdsa::Signature::from_str(hex_str).expect("byte str decode");
-        assert_eq!(&sig.to_string(), hex_str);
-        assert_eq!(&format!("{:?}", sig), hex_str);
+        let sig = ecdsa::Signature::from_str(HEX_STR).expect("byte str decode");
+        assert_eq!(&sig.to_string(), HEX_STR);
+        assert_eq!(&format!("{:?}", sig), HEX_STR);
 
         assert!(ecdsa::Signature::from_str(
             "3046022100839c1fbc5304de944f697c9f4b1d01d1faeba32d751c0f7acb21ac8a0f436a\
