@@ -71,7 +71,7 @@
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 //! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
-//! let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
+//! let message = Message::from_digest([0xab; 32]);
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
 //! assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
@@ -94,12 +94,12 @@
 //!     0x3a, 0x17, 0x10, 0xc9, 0x62, 0x67, 0x90, 0x63,
 //! ]).expect("public keys must be 33 or 65 bytes, serialized according to SEC 2");
 //!
-//! let message = Message::from_digest_slice(&[
+//! let message = Message::from_digest([
 //!     0xaa, 0xdf, 0x7d, 0xe7, 0x82, 0x03, 0x4f, 0xbe,
 //!     0x3d, 0x3d, 0xb2, 0xcb, 0x13, 0xc0, 0xcd, 0x91,
 //!     0xbf, 0x41, 0xcb, 0x08, 0xfa, 0xc7, 0xbd, 0x61,
 //!     0xd5, 0x44, 0x53, 0xcf, 0x6e, 0x82, 0xb4, 0x50,
-//! ]).expect("messages must be 32 bytes and are expected to be hashes");
+//! ]);
 //!
 //! let sig = ecdsa::Signature::from_compact(&[
 //!     0xdc, 0x4d, 0xc2, 0x64, 0xa9, 0xfe, 0xf1, 0x7a,
@@ -218,8 +218,9 @@ impl Message {
     /// the result of signing isn't a
     /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
     #[inline]
-    #[deprecated(since = "0.28.0", note = "use from_digest_slice instead")]
+    #[deprecated(since = "0.28.0", note = "use from_digest instead")]
     pub fn from_slice(digest: &[u8]) -> Result<Message, Error> {
+        #[allow(deprecated)]
         Message::from_digest_slice(digest)
     }
 
@@ -238,21 +239,19 @@ impl Message {
     /// message that's going to be signed. Otherwise the result of signing isn't a [secure
     /// signature].
     ///
+    /// This method is deprecated. It's best to use [`Message::from_digest`] directly with an
+    /// array. If your hash engine doesn't return an array for some reason use `.try_into()` on its
+    /// output.
+    ///
     /// # Errors
     ///
     /// If `digest` is not exactly 32 bytes long.
     ///
     /// [secure signature]: https://twitter.com/pwuille/status/1063582706288586752
     #[inline]
+    #[deprecated(since = "TBD", note = "use from_digest instead")]
     pub fn from_digest_slice(digest: &[u8]) -> Result<Message, Error> {
-        match digest.len() {
-            constants::MESSAGE_SIZE => {
-                let mut ret = [0u8; constants::MESSAGE_SIZE];
-                ret[..].copy_from_slice(digest);
-                Ok(Message(ret))
-            }
-            _ => Err(Error::InvalidMessage),
-        }
+        Ok(Message::from_digest(digest.try_into().map_err(|_| Error::InvalidMessage)?))
     }
 }
 
@@ -536,7 +535,7 @@ mod tests {
         let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
         let sig = full.sign_ecdsa(&msg, &sk);
@@ -603,7 +602,7 @@ mod tests {
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&[2u8; 32]).unwrap();
+        let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(&msg, &sk), full.sign_ecdsa(&msg, &sk));
         let sig = full.sign_ecdsa(&msg, &sk);
@@ -621,7 +620,7 @@ mod tests {
         let full = Secp256k1::new();
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
 
         // Try key generation
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
@@ -650,7 +649,7 @@ mod tests {
 
         for _ in 0..100 {
             let msg = crate::random_32_bytes(&mut rand::thread_rng());
-            let msg = Message::from_digest_slice(&msg).unwrap();
+            let msg = Message::from_digest(msg);
 
             let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
             let sig1 = s.sign_ecdsa(&msg, &sk);
@@ -741,7 +740,7 @@ mod tests {
         let noncedata = [42u8; 32];
         for _ in 0..100 {
             let msg = crate::random_32_bytes(&mut rand::thread_rng());
-            let msg = Message::from_digest_slice(&msg).unwrap();
+            let msg = Message::from_digest(msg);
 
             let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
             let sig = s.sign_ecdsa(&msg, &sk);
@@ -788,7 +787,7 @@ mod tests {
         wild_msgs[1][0] -= 1;
 
         for key in wild_keys.iter().map(|k| SecretKey::from_slice(&k[..]).unwrap()) {
-            for msg in wild_msgs.iter().map(|m| Message::from_digest_slice(&m[..]).unwrap()) {
+            for msg in wild_msgs.into_iter().map(Message::from_digest) {
                 let sig = s.sign_ecdsa(&msg, &key);
                 let low_r_sig = s.sign_ecdsa_low_r(&msg, &key);
                 let grind_r_sig = s.sign_ecdsa_grind_r(&msg, &key, 1);
@@ -807,18 +806,19 @@ mod tests {
         s.randomize(&mut rand::thread_rng());
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
 
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
         let sig = s.sign_ecdsa(&msg, &sk);
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_bad_slice() {
         assert_eq!(
             ecdsa::Signature::from_der(&[0; constants::MAX_SIGNATURE_SIZE + 1]),
@@ -877,7 +877,7 @@ mod tests {
     fn test_noncedata() {
         let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         let noncedata = [42u8; 32];
         let sk =
             SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead")
@@ -904,7 +904,7 @@ mod tests {
         let secp = Secp256k1::new();
         let mut sig = ecdsa::Signature::from_der(&sig[..]).unwrap();
         let pk = PublicKey::from_slice(&pk[..]).unwrap();
-        let msg = Message::from_digest_slice(&msg[..]).unwrap();
+        let msg = Message::from_digest(msg);
 
         // without normalization we expect this will fail
         assert_eq!(secp.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
@@ -919,7 +919,7 @@ mod tests {
     fn test_low_r() {
         let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         let sk =
             SecretKey::from_str("57f0148f94d13095cfda539d0da0d1541304b678d8b36e243980aab4e1b7cead")
                 .unwrap();
@@ -937,7 +937,7 @@ mod tests {
     fn test_grind_r() {
         let secp = Secp256k1::new();
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         let sk =
             SecretKey::from_str("848355d75fe1c354cf05539bb29b2015f1863065bcb6766b44d399ab95c3fa0b")
                 .unwrap();
@@ -957,7 +957,7 @@ mod tests {
 
         let s = Secp256k1::new();
 
-        let msg = Message::from_digest_slice(&[1; 32]).unwrap();
+        let msg = Message::from_digest([1; 32]);
         let sk = SecretKey::from_slice(&[2; 32]).unwrap();
         let sig = s.sign_ecdsa(&msg, &sk);
         static SIG_BYTES: [u8; 71] = [
@@ -987,7 +987,7 @@ mod tests {
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_slice(&sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
-        let msg = Message::from_digest_slice(&msg_data).unwrap();
+        let msg = Message::from_digest(msg_data);
 
         // Check usage as explicit parameter
         let pk = PublicKey::from_secret_key(SECP256K1, &sk);
@@ -1021,7 +1021,7 @@ mod benches {
     pub fn bench_sign_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
 
         bh.iter(|| {
@@ -1034,7 +1034,7 @@ mod benches {
     pub fn bench_verify_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
-        let msg = Message::from_digest_slice(&msg).unwrap();
+        let msg = Message::from_digest(msg);
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
         let sig = s.sign_ecdsa(&msg, &sk);
 
