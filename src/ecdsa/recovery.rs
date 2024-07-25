@@ -221,8 +221,8 @@ impl<C: Verification> Secp256k1<C> {
         let mut sig_bytes = [0u8; 65];
         sig_bytes[..64].copy_from_slice(&compact_sig);
         sig_bytes[64] = recid.0 as u8;
-        let pubkey = sp1_lib::secp256k1::ecrecover(&sig_bytes, &msg);
-        Ok(key::PublicKey::from(pubkey))
+        let pubkey = sp1_lib::secp256k1::ecrecover(&sig_bytes, &msg.0).expect("Failed to recover public key.");
+        Ok(key::PublicKey::from_slice(&pubkey))
     }
 }
 
