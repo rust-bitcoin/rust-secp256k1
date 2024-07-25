@@ -32,7 +32,9 @@ impl RecoveryId {
 
     #[inline]
     /// Allows library users to convert recovery IDs to i32.
-    pub fn to_i32(self) -> i32 { self.0 }
+    pub fn to_i32(self) -> i32 {
+        self.0
+    }
 }
 
 impl RecoverableSignature {
@@ -66,7 +68,9 @@ impl RecoverableSignature {
     /// Obtains a raw pointer suitable for use with FFI functions.
     #[inline]
     #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::RecoverableSignature { self.as_c_ptr() }
+    pub fn as_ptr(&self) -> *const ffi::RecoverableSignature {
+        self.as_c_ptr()
+    }
 
     /// Obtains a raw mutable pointer suitable for use with FFI functions.
     #[inline]
@@ -74,7 +78,9 @@ impl RecoverableSignature {
         since = "0.25.0",
         note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
     )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature { self.as_mut_c_ptr() }
+    pub fn as_mut_ptr(&mut self) -> *mut ffi::RecoverableSignature {
+        self.as_mut_c_ptr()
+    }
 
     #[inline]
     /// Serializes the recoverable signature in compact format.
@@ -120,15 +126,21 @@ impl RecoverableSignature {
 
 impl CPtr for RecoverableSignature {
     type Target = ffi::RecoverableSignature;
-    fn as_c_ptr(&self) -> *const Self::Target { &self.0 }
+    fn as_c_ptr(&self) -> *const Self::Target {
+        &self.0
+    }
 
-    fn as_mut_c_ptr(&mut self) -> *mut Self::Target { &mut self.0 }
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        &mut self.0
+    }
 }
 
 /// Creates a new recoverable signature from a FFI one.
 impl From<ffi::RecoverableSignature> for RecoverableSignature {
     #[inline]
-    fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature { RecoverableSignature(sig) }
+    fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature {
+        RecoverableSignature(sig)
+    }
 }
 
 impl<C: Signing> Secp256k1<C> {
@@ -185,6 +197,7 @@ impl<C: Signing> Secp256k1<C> {
 }
 
 impl<C: Verification> Secp256k1<C> {
+    #[cfg(not(all(target_os = "zkvm", target_vendor = "succinct")))]
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
     pub fn recover_ecdsa(
@@ -205,6 +218,23 @@ impl<C: Verification> Secp256k1<C> {
             }
             Ok(key::PublicKey::from(pk))
         }
+    }
+
+    #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+    /// Determines the public key for which `sig` is a valid signature for
+    /// `msg`. Requires a verify-capable context. Uses SP1's ecrecover precompile
+    /// for accelerated recovery.
+    pub fn recover_ecdsa(
+        &self,
+        msg: &Message,
+        sig: &RecoverableSignature,
+    ) -> Result<key::PublicKey, Error> {
+        let (recid, compact_sig) = sig.serialize_compact();
+        let mut sig_bytes = [0u8; 65];
+        sig_bytes[..64].copy_from_slice(&compact_sig);
+        sig_bytes[64] = recid.0 as u8;
+        let pubkey = sp1_lib::secp256k1::ecrecover(&sig_bytes, &msg);
+        Ok(key::PublicKey::from(pubkey))
     }
 }
 

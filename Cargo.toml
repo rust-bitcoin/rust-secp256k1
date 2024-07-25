@@ -1,14 +1,16 @@
 [package]
 name = "secp256k1"
 version = "0.29.0"
-authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
-            "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
+authors = [
+    "Dawid Ciężarkiewicz <dpc@ucore.info>",
+    "Andrew Poelstra <apoelstra@wpsoftware.net>",
+]
 license = "CC0-1.0"
 homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
 repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
 documentation = "https://docs.rs/secp256k1/"
 description = "Rust wrapper library for Pieter Wuille's `libsecp256k1`. Implements ECDSA and BIP 340 signatures for the SECG elliptic curve group secp256k1 and related utilities."
-keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
+keywords = ["crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin"]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.56.1"
@@ -36,8 +38,12 @@ global-context = ["std"]
 global-context-less-secure = ["global-context"]
 
 [dependencies]
+getrandom = "0.2.14"
+
 secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
 serde = { version = "1.0.103", default-features = false, optional = true }
+[target.'cfg(all(target_os = "zkvm", target_vendor = "succinct"))'.dependencies]
+sp1-lib = { version = "1.0.1", features = ["secp256k1"] }
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
 # the respective -std feature e.g., hashes-std
