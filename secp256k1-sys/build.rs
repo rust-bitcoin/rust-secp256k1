@@ -48,6 +48,8 @@ fn main() {
                    .file("wasm/wasm.c");
     }
 
+    // On riscv32, we need to build C libraries using the riscv-gnu-toolchain and
+    // clang for compiling C code.
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "riscv32" {
         const DEFAULT_RISCV_GNU_TOOLCHAIN: &str = "/opt/riscv";
         println!("cargo:rerun-if-env-changed=RISCV_GNU_TOOLCHAIN");
@@ -82,9 +84,9 @@ fn main() {
 
     // secp256k1
     base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
-                .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
-                .file("depend/secp256k1/src/precomputed_ecmult.c")
-                .file("depend/secp256k1/src/secp256k1.c");
+               .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
+               .file("depend/secp256k1/src/precomputed_ecmult.c")
+               .file("depend/secp256k1/src/secp256k1.c");
 
     if base_config.try_compile("libsecp256k1.a").is_err() {
         // Some embedded platforms may not have, eg, string.h available, so if the build fails
