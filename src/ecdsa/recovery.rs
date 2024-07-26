@@ -219,7 +219,7 @@ mod tests {
     use crate::{Error, Message, Secp256k1, SecretKey};
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -251,7 +251,7 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     #[rustfmt::skip]
     fn sign() {
         let mut s = Secp256k1::new();
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     #[rustfmt::skip]
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
@@ -301,7 +301,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -323,7 +323,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_with_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -339,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_with_recovery_and_noncedata() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -357,7 +357,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn bad_recovery() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -423,7 +423,7 @@ mod tests {
 }
 
 #[cfg(bench)]
-#[cfg(feature = "rand-std")] // Currently only a single bench that requires "rand-std".
+#[cfg(all(feature = "rand", feature = "std"))] // Currently only a single bench that requires "rand" + "std".
 mod benches {
     use test::{black_box, Bencher};
 

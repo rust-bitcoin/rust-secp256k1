@@ -14,7 +14,7 @@ readme = "README.md"
 build = "build.rs"
 links = "rustsecp256k1_v0_10_0"
 edition = "2021"
-rust-version = "1.56.1"
+rust-version = "1.63.0"
 
 [package.metadata.docs.rs]
 all-features = true

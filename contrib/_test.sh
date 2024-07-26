@@ -3,7 +3,7 @@
 set -ex
 
 REPO_DIR=$(git rev-parse --show-toplevel)
-FEATURES="hashes global-context lowmemory rand recovery serde std alloc hashes-std rand-std"
+FEATURES="hashes global-context lowmemory rand recovery serde std alloc"
 
 cargo --version
 rustc --version
@@ -62,17 +62,17 @@ if [ "$DO_FEATURE_MATRIX" = true ]; then
     fi
 
     # Examples
-    cargo run --locked --example sign_verify --features=hashes-std
-    cargo run --locked --example sign_verify_recovery --features=recovery,hashes-std
-    cargo run --locked --example generate_keys --features=rand-std
+    cargo run --locked --example sign_verify --features=hashes,std
+    cargo run --locked --example sign_verify_recovery --features=recovery,hashes,std
+    cargo run --locked --example generate_keys --features=rand,std
 fi
 
 if [ "$DO_LINT" = true ]
 then
     cargo clippy --locked --all-features --all-targets -- -D warnings
-    cargo clippy --locked --example sign_verify --features=hashes-std -- -D warnings
-    cargo clippy --locked --example sign_verify_recovery --features=recovery,hashes-std -- -D warnings
-    cargo clippy --locked --example generate_keys --features=rand-std -- -D warnings
+    cargo clippy --locked --example sign_verify --features=hashes,std -- -D warnings
+    cargo clippy --locked --example sign_verify_recovery --features=recovery,hashes,std -- -D warnings
+    cargo clippy --locked --example generate_keys --features=rand,std -- -D warnings
 fi
 
 # Build the docs if told to (this only works with the nightly toolchain)
@@ -120,7 +120,7 @@ fi
 # Bench if told to, only works with non-stable toolchain (nightly, beta).
 if [ "$DO_BENCH" = true ]
 then
-    RUSTFLAGS='--cfg=bench' cargo bench --features=recovery,rand-std
+    RUSTFLAGS='--cfg=bench' cargo bench --features=recovery,rand,std
 fi
 
 exit 0

@@ -365,7 +365,7 @@ impl<C: Verification> Secp256k1<C> {
     /// verify-capable context.
     ///
     /// ```rust
-    /// # #[cfg(feature = "rand-std")] {
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
     /// # use secp256k1::{rand, Secp256k1, Message, Error};
     /// #
     /// # let secp = Secp256k1::new();

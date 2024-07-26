@@ -11,7 +11,7 @@ description = "Rust wrapper library for Pieter Wuille's `libsecp256k1`. Implemen
 keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.56.1"
+rust-version = "1.63.0"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -19,18 +19,16 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["std"]
-std = ["alloc", "secp256k1-sys/std"]
+std = ["alloc", "secp256k1-sys/std", "rand?/std", "rand?/std_rng", "hashes?/std"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
-hashes-std = ["std", "hashes/std"]
-rand-std = ["std", "rand", "rand/std", "rand/std_rng"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
 # disable re-randomization of the global context, which provides some
 # defense-in-depth against sidechannel attacks. You should only use
 # this feature if you expect the `rand` crate's thread_rng to panic.
-# (If you are sure the `rand-std` feature will not be enabled, e.g.
+# (If you are sure the `rand` and `std` features will not be enabled, e.g.
 # if you are doing a no-std build, then this feature does nothing
 # and is not necessary.)
 global-context-less-secure = ["global-context"]
@@ -39,8 +37,6 @@ global-context-less-secure = ["global-context"]
 secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
 serde = { version = "1.0.103", default-features = false, optional = true }
 
-# You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
-# the respective -std feature e.g., hashes-std
 hashes = { package = "bitcoin_hashes", version = ">= 0.12, <= 0.14", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 
@@ -59,15 +55,15 @@ unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fu
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["recovery", "hashes-std"]
+required-features = ["recovery", "hashes", "std"]
 
 [[example]]
 name = "sign_verify"
-required-features = ["hashes-std"]
+required-features = ["hashes", "std"]
 
 [[example]]
 name = "generate_keys"
-required-features = ["rand-std"]
+required-features = ["rand", "std"]
 
 [workspace]
 members = ["secp256k1-sys"]

@@ -7,7 +7,7 @@
 //!
 //! To minimize dependencies, some functions are feature-gated. To generate
 //! random keys or to re-randomize a context object, compile with the
-//! `rand-std` feature. If you are willing to use the `rand-std` feature, we
+//! `rand` and `std` features. If you are willing to use these features, we
 //! have enabled an additional defense-in-depth sidechannel protection for
 //! our context objects, which re-blinds certain operations on secret key
 //! data. To de/serialize objects with serde, compile with "serde".
@@ -28,7 +28,7 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "rand-std", feature = "hashes-std"))] {
+//! # #[cfg(all(feature = "rand", feature = "hashes", feature = "std"))] {
 //! use secp256k1::rand::rngs::OsRng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::{sha256, Hash};
@@ -46,7 +46,7 @@
 //! If the "global-context" feature is enabled you have access to an alternate API.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "global-context", feature = "hashes-std", feature = "rand-std"))] {
+//! # #[cfg(all(feature = "global-context", feature = "hashes", feature = "rand", feature = "std"))] {
 //! use secp256k1::{generate_keypair, Message};
 //! use secp256k1::hashes::{sha256, Hash};
 //!
@@ -59,7 +59,7 @@
 //! # }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand-std` and `hashes-std`
+//! The above code requires `rust-secp256k1` to be compiled with the `rand`, `hashes`, and `std`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
 //!
@@ -71,7 +71,6 @@
 //! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 //! // This is unsafe unless the supplied byte slice is the output of a cryptographic hash function.
-//! // See the above example for how to use this library together with `hashes-std`.
 //! let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 //!
 //! let sig = secp.sign_ecdsa(&message, &secret_key);
@@ -128,9 +127,7 @@
 //! * `std` - use standard Rust library, enabled by default.
 //! * `alloc` - use the `alloc` standard Rust library to provide heap allocations.
 //! * `rand` - use `rand` library to provide random generator (e.g. to generate keys).
-//! * `rand-std` - use `rand` library with its `std` feature enabled. (Implies `rand`.)
 //! * `hashes` - use the `hashes` library.
-//! * `hashes-std` - use the `hashes` library with its `std` feature enabled (implies `hashes`).
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
 //! * `global-context` - enable use of global secp256k1 context (implies `std`).
@@ -525,7 +522,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     // In rustc 1.72 this Clippy lint was pulled out of clippy and into rustc, and
     // was made deny-by-default, breaking compilation of this test. Aside from this
     // breaking change, which there is no point in bugging, the rename was done so
@@ -597,7 +594,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_preallocation() {
         use crate::ffi::types::AlignedType;
 
@@ -624,7 +621,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn capabilities() {
         let sign = Secp256k1::signing_only();
         let vrfy = Secp256k1::verification_only();
@@ -653,7 +650,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn signature_serialize_roundtrip() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -743,7 +740,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_ecdsa() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -777,7 +774,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_extreme() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -811,7 +808,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
         s.randomize(&mut rand::thread_rng());
@@ -852,7 +849,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "rand-std")]
+    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_hex() {
         use rand::RngCore;
 
@@ -1009,7 +1006,7 @@ mod tests {
 }
 
 #[cfg(bench)]
-#[cfg(feature = "rand-std")]
+#[cfg(all(feature = "rand", feature = "std"))]
 mod benches {
     use rand::rngs::mock::StepRng;
     use test::{black_box, Bencher};
