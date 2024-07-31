@@ -192,6 +192,19 @@ impl<C: Verification> Secp256k1<C> {
         msg: &Message,
         sig: &RecoverableSignature,
     ) -> Result<key::PublicKey, Error> {
+        cfg_if::cfg_if! {
+            if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
+                let prehash: &[u8] = &msg.0;
+                let mut rev_sig = sig.0[..32].iter().rev().chain(sig.0[32..64].iter().rev()).cloned().collect::<Vec<u8>>();
+                let signature = sp1_ecdsa::Signature::<k256::Secp256k1>::from_slice(&rev_sig).unwrap();
+                let recovery_id = sp1_ecdsa::RecoveryId::from_byte(sig.0[64]).unwrap();
+
+                let verifying_key = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256k1(prehash, &signature, recovery_id).unwrap().to_sec1_bytes();
+
+                return key::PublicKey::from_slice(&verifying_key);
+            }
+        }
+
         unsafe {
             let mut pk = super_ffi::PublicKey::new();
             if ffi::secp256k1_ecdsa_recover(

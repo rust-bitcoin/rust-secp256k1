@@ -38,6 +38,7 @@ global-context-less-secure = ["global-context"]
 [dependencies]
 secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
 serde = { version = "1.0.103", default-features = false, optional = true }
+cfg-if = "1.0"
 
 # You likely only want to enable these if you explicitly do not want to use "std", otherwise enable
 # the respective -std feature e.g., hashes-std
@@ -53,6 +54,11 @@ bincode = "1.3.3"
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
 getrandom = { version = "0.2", features = ["js"] }
+
+[target.'cfg(all(target_os = "zkvm", target_vendor = "succinct"))'.dependencies]
+sp1-ecdsa = { path = "/home/adityabisht64/signatures/ecdsa", package = "ecdsa", features = ["verifying", "alloc"] }
+k256 = { version = "0.13.3", features = ["ecdsa"] }
+elliptic-curve = { version = "0.13.6", default-features = false, features = ["digest", "sec1"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fuzz)', 'cfg(rust_secp_no_symbol_renaming)'] }
