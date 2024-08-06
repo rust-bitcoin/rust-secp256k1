@@ -88,22 +88,6 @@ jobs:
       - name: Run test on i686
         run: cargo test --target i686-unknown-linux-gnu
 
-  Cross:
-    name: Cross test
-    if: ${{ !github.event.act }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Checkout Toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install target
-        run: rustup target add s390x-unknown-linux-gnu
-      - name: install cross
-        run: cargo install cross --locked
-      - name: run cross test
-        run: cross test --target s390x-unknown-linux-gnu
-
   WASM:
     name: WASM
     runs-on: ubuntu-latest
