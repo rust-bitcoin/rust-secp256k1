@@ -1,104 +1,292 @@
-on: [push, pull_request]
+---   # rust-bitcoin CI: If you edit this file please update README.md
+on:   # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - master
+      - 'test-ci/**'
+  pull_request:
 
 name: Continuous integration
 
 jobs:
-  Stable:
+  Prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      nightly_version: ${{ steps.read_toolchain.outputs.nightly_version }}
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Read nightly version"
+        id: read_toolchain
+        run: echo "nightly_version=$(cat nightly-version)" >> $GITHUB_OUTPUT
+
+  Stable:                       # 2 jobs, one per lock file.
     name: Test - stable toolchain
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        dep: [minimal, recent]
     steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Checkout Toolchain
-        # https://github.com/dtolnay/rust-toolchain
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
         uses: dtolnay/rust-toolchain@stable
-      - name: Running test script
-        env:
-          DO_LINT: true
-          DO_DOCS: true
-          DO_FEATURE_MATRIX: true
-        run: ./contrib/test.sh
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh stable
 
-  Beta:
-    name: Test - beta toolchain
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Checkout Toolchain
-        uses: dtolnay/rust-toolchain@beta
-      - name: Running test script
-        run: ./contrib/test.sh
-
-  Nightly:
+  Nightly:                      # 2 jobs, one per lock file.
     name: Test - nightly toolchain
+    needs: Prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        dep: [minimal, recent]
     steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Checkout Toolchain
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Install src
-        run: rustup component add rust-src
-      - name: Install xargo
-        run: cargo install xargo
-      - name: Running test script
-        env:
-          DO_FMT: true
-          DO_BENCH: true
-          DO_DOCSRS: true
-          DO_ASAN: true
-        run: ./contrib/test.sh
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh nightly
 
-  MSRV:
-    name: Test - MSRV toolchain
+  MSRV:                         # 2 jobs, one per lock file.
+    name: Test - 1.63.0 toolchain
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [minimal, recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.63.0"
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh msrv
+
+  Lint:
+    name: Lint - nightly toolchain
+    needs: Prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: Install clippy
+        run: rustup component add clippy
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh lint
+
+  Docs:
+    name: Docs - stable toolchain
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@stable
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh docs
+
+  Docsrs:
+    name: Docs - nightly toolchain
+    needs: Prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh docsrs
+
+  Bench:
+    name: Bench - nightly toolchain
+    needs: Prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Checkout maintainer tools"
+        uses: actions/checkout@v4
+        with:
+          repository: rust-bitcoin/rust-bitcoin-maintainer-tools
+          ref: f92b2766865ce5327eca5cf72f86ceaa6be58ca4
+          path: maintainer-tools
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run test script"
+        run: ./maintainer-tools/ci/run_task.sh bench
+
+  Format:
+    name: Format - nightly toolchain
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Checkout Toolchain
-        uses: dtolnay/rust-toolchain@1.63.0
-      - name: Running test script
-        env:
-          DO_FEATURE_MATRIX: true
-        run: ./contrib/test.sh
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@nightly
+      - name: "Install rustfmt"
+        run: rustup component add rustfmt
+      - name: "Check formatting"
+        run: cargo +nightly fmt --all -- --check
+
+  ASAN:                       # 1 job, run sanitizer from script.
+    name: ASAN - nightly toolchain
+    needs: Prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: "Install rust-src"
+        run: rustup component add rust-src
+      - name: "Install xargo"
+        run: cargo install xargo
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run sanitizer script"
+        run: ./contrib/sanitizer.sh
 
   Arch32bit:
     name: Test 32-bit version
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Crate
+      - name: "Checkout repo"
         uses: actions/checkout@v3
-      - name: Checkout Toolchain
+      - name: "Checkout toolchain"
         uses: dtolnay/rust-toolchain@stable
-      - name: Add architecture i386
+      - name: "Add architecture i386"
         run: sudo dpkg --add-architecture i386
-      - name: Install i686 gcc
+      - name: "Install i686 gcc"
         run: sudo apt-get update -y && sudo apt-get install -y gcc-multilib
-      - name: Install target
+      - name: "Install target"
         run: rustup target add i686-unknown-linux-gnu
-      - name: Run test on i686
+      - name: "Run test on i686"
         run: cargo test --target i686-unknown-linux-gnu
 
   WASM:
-    name: WASM
+    name: WASM - stable toolchain
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # Note we do not use the recent lock file for wasm testing.
     steps:
-      - name: Checkout Crate
-        uses: actions/checkout@v3
-      - name: Install clang
-        run: sudo apt-get install -y clang
-      - name: Checkout Toolchain
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Select toolchain"
         uses: dtolnay/rust-toolchain@stable
-      - name: Running WASM tests
-        env:
-          DO_WASM: true
-        run: ./contrib/test.sh
+      - name: "Run wasm script"
+        run: ./contrib/wasm.sh
+
+  NoStd:                      # 1 job, run no-std test from script.
+    name: no-std - nightly toolchain
+    needs: Prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dep: [recent]
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+      - name: "Select toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ needs.Prepare.outputs.nightly_version }}
+      - name: "Install src"
+        run: rustup component add rust-src
+      - name: "Install xargo"
+        run: cargo install xargo
+      - name: "Set dependencies"
+        run: cp Cargo-${{ matrix.dep }}.lock Cargo.lock
+      - name: "Run no-std-test script"
+        run: ./contrib/no-std.sh
