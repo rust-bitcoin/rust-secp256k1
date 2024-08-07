@@ -166,10 +166,14 @@ pub mod constants;
 pub mod ecdh;
 pub mod ecdsa;
 pub mod ellswift;
+pub mod silentpayments;
 pub mod scalar;
 pub mod schnorr;
 #[cfg(feature = "serde")]
 mod serde_util;
+
+// expose ffi::SilentpaymentsLabelLookupFunction
+pub use ffi::SilentpaymentsLabelLookupFunction;
 
 use core::marker::PhantomData;
 use core::ptr::NonNull;
