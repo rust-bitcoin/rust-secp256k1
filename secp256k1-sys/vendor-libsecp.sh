@@ -80,7 +80,13 @@ fi
 # Check out specified revision
 pushd "$DIR" > /dev/null
 if [ -n "$SECP_REV" ]; then
-    git checkout "$SECP_REV"
+    if [[ "$SECP_REV" == pull/* ]]; then
+        PR_NUM=$(echo $SECP_REV | sed 's/pull\/\([0-9]*\)\/.*/\1/')
+        git fetch origin pull/$PR_NUM/head:pr-$PR_NUM
+        git checkout pr-$PR_NUM
+    else
+        git checkout "$SECP_REV"
+    fi
 fi
 SOURCE_REV=$(git rev-parse HEAD || echo "[unknown revision from $SECP_VENDOR_SECP_REPO]")
 rm -rf .git/ || true
