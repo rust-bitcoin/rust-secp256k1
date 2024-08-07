@@ -32,6 +32,7 @@ global-context = ["std"]
 # if you are doing a no-std build, then this feature does nothing
 # and is not necessary.)
 global-context-less-secure = ["global-context"]
+silentpayments-example = ["rand", "std", "libc", "cc"]
 
 [dependencies]
 secp256k1-sys = { version = "0.10.0", default-features = false, path = "./secp256k1-sys" }
@@ -39,6 +40,9 @@ serde = { version = "1.0.103", default-features = false, optional = true }
 
 hashes = { package = "bitcoin_hashes", version = ">= 0.12, <= 0.14", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
+
+libc = { version = "0.2", optional = true }
+cc = { version = "1.0", optional = true }
 
 [dev-dependencies]
 rand_core = "0.6"
@@ -64,6 +68,10 @@ required-features = ["hashes", "std"]
 
 [[example]]
 name = "generate_keys"
+required-features = ["rand", "std"]
+
+[[example]]
+name = "silentpayments"
 required-features = ["rand", "std"]
 
 [workspace]

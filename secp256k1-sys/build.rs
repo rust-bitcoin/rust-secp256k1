@@ -26,6 +26,7 @@ fn main() {
                .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
                .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
                .define("ENABLE_MODULE_ELLSWIFT", Some("1"))
+               .define("ENABLE_MODULE_SILENTPAYMENTS", Some("1"))
                // upstream sometimes introduces calls to printf, which we cannot compile
                // with WASM due to its lack of libc. printf is never necessary and we can
                // just #define it away.
