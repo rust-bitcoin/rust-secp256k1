@@ -64,6 +64,8 @@ noinst_HEADERS += src/field.h
 noinst_HEADERS += src/field_impl.h
 noinst_HEADERS += src/bench.h
 noinst_HEADERS += src/wycheproof/ecdsa_rustsecp256k1_v0_10_0_sha256_bitcoin_test.h
+noinst_HEADERS += src/hsort.h
+noinst_HEADERS += src/hsort_impl.h
 noinst_HEADERS += contrib/lax_der_parsing.h
 noinst_HEADERS += contrib/lax_der_parsing.c
 noinst_HEADERS += contrib/lax_der_privatekey_parsing.h
@@ -182,6 +184,28 @@ schnorr_example_LDFLAGS += -lbcrypt
 endif
 TESTS += schnorr_example
 endif
+if ENABLE_MODULE_ELLSWIFT
+noinst_PROGRAMS += ellswift_example
+ellswift_example_SOURCES = examples/ellswift.c
+ellswift_example_CPPFLAGS = -I$(top_srcdir)/include -DSECP256K1_STATIC
+ellswift_example_LDADD = libsecp256k1.la
+ellswift_example_LDFLAGS = -static
+if BUILD_WINDOWS
+ellswift_example_LDFLAGS += -lbcrypt
+endif
+TESTS += ellswift_example
+endif
+if ENABLE_MODULE_MUSIG
+noinst_PROGRAMS += musig_example
+musig_example_SOURCES = examples/musig.c
+musig_example_CPPFLAGS = -I$(top_srcdir)/include -DSECP256K1_STATIC
+musig_example_LDADD = libsecp256k1.la
+musig_example_LDFLAGS = -static
+if BUILD_WINDOWS
+musig_example_LDFLAGS += -lbcrypt
+endif
+TESTS += musig_example
+endif
 endif
 
 ### Precomputed tables
@@ -266,6 +290,10 @@ endif
 
 if ENABLE_MODULE_SCHNORRSIG
 include src/modules/schnorrsig/Makefile.am.include
+endif
+
+if ENABLE_MODULE_MUSIG
+include src/modules/musig/Makefile.am.include
 endif
 
 if ENABLE_MODULE_ELLSWIFT

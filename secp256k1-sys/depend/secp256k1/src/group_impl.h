@@ -7,6 +7,8 @@
 #ifndef SECP256K1_GROUP_IMPL_H
 #define SECP256K1_GROUP_IMPL_H
 
+#include <string.h>
+
 #include "field.h"
 #include "group.h"
 #include "util.h"
@@ -939,6 +941,43 @@ static int rustsecp256k1_v0_10_0_ge_x_frac_on_curve_var(const rustsecp256k1_v0_1
      rustsecp256k1_v0_10_0_fe_mul_int(&t, SECP256K1_B); /* t = 7*xd^4 */
      rustsecp256k1_v0_10_0_fe_add(&r, &t); /* r = xd*xn^3 + 7*xd^4 */
      return rustsecp256k1_v0_10_0_fe_is_square_var(&r);
+}
+
+static void rustsecp256k1_v0_10_0_ge_to_bytes(unsigned char *buf, const rustsecp256k1_v0_10_0_ge *a) {
+    rustsecp256k1_v0_10_0_ge_storage s;
+
+    /* We require that the rustsecp256k1_v0_10_0_ge_storage type is exactly 64 bytes.
+     * This is formally not guaranteed by the C standard, but should hold on any
+     * sane compiler in the real world. */
+    STATIC_ASSERT(sizeof(rustsecp256k1_v0_10_0_ge_storage) == 64);
+    VERIFY_CHECK(!rustsecp256k1_v0_10_0_ge_is_infinity(a));
+    rustsecp256k1_v0_10_0_ge_to_storage(&s, a);
+    memcpy(buf, &s, 64);
+}
+
+static void rustsecp256k1_v0_10_0_ge_from_bytes(rustsecp256k1_v0_10_0_ge *r, const unsigned char *buf) {
+    rustsecp256k1_v0_10_0_ge_storage s;
+
+    STATIC_ASSERT(sizeof(rustsecp256k1_v0_10_0_ge_storage) == 64);
+    memcpy(&s, buf, 64);
+    rustsecp256k1_v0_10_0_ge_from_storage(r, &s);
+}
+
+static void rustsecp256k1_v0_10_0_ge_to_bytes_ext(unsigned char *data, const rustsecp256k1_v0_10_0_ge *ge) {
+    if (rustsecp256k1_v0_10_0_ge_is_infinity(ge)) {
+        memset(data, 0, 64);
+    } else {
+        rustsecp256k1_v0_10_0_ge_to_bytes(data, ge);
+    }
+}
+
+static void rustsecp256k1_v0_10_0_ge_from_bytes_ext(rustsecp256k1_v0_10_0_ge *ge, const unsigned char *data) {
+    unsigned char zeros[64] = { 0 };
+    if (rustsecp256k1_v0_10_0_memcmp_var(data, zeros, sizeof(zeros)) == 0) {
+        rustsecp256k1_v0_10_0_ge_set_infinity(ge);
+    } else {
+        rustsecp256k1_v0_10_0_ge_from_bytes(ge, data);
+    }
 }
 
 #endif /* SECP256K1_GROUP_IMPL_H */

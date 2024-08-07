@@ -56,7 +56,7 @@ static void test_ecdh_generator_basepoint(void) {
         size_t point_ser_len = sizeof(point_ser);
         rustsecp256k1_v0_10_0_scalar s;
 
-        random_scalar_order(&s);
+        testutil_random_scalar_order(&s);
         rustsecp256k1_v0_10_0_scalar_get_b32(s_b32, &s);
 
         CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &point[0], s_one) == 1);
@@ -95,7 +95,7 @@ static void test_bad_scalar(void) {
     rustsecp256k1_v0_10_0_pubkey point;
 
     /* Create random point */
-    random_scalar_order(&rand);
+    testutil_random_scalar_order(&rand);
     rustsecp256k1_v0_10_0_scalar_get_b32(s_rand, &rand);
     CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &point, s_rand) == 1);
 
@@ -127,7 +127,7 @@ static void test_result_basepoint(void) {
     CHECK(rustsecp256k1_v0_10_0_ecdh(CTX, out_base, &point, s_one, NULL, NULL) == 1);
 
     for (i = 0; i < 2 * COUNT; i++) {
-        random_scalar_order(&rand);
+        testutil_random_scalar_order(&rand);
         rustsecp256k1_v0_10_0_scalar_get_b32(s, &rand);
         rustsecp256k1_v0_10_0_scalar_inverse(&rand, &rand);
         rustsecp256k1_v0_10_0_scalar_get_b32(s_inv, &rand);

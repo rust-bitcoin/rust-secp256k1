@@ -171,7 +171,7 @@ static void test_exhaustive_ecmult(const rustsecp256k1_v0_10_0_ge *group, const 
                 CHECK(rustsecp256k1_v0_10_0_fe_equal(&tmpf, &group[(i * j) % EXHAUSTIVE_TEST_ORDER].x));
 
                 /* Test rustsecp256k1_v0_10_0_ecmult_const_xonly with all curve X coordinates, with random xd. */
-                random_fe_non_zero(&xd);
+                testutil_random_fe_non_zero(&xd);
                 rustsecp256k1_v0_10_0_fe_mul(&xn, &xd, &group[i].x);
                 ret = rustsecp256k1_v0_10_0_ecmult_const_xonly(&tmpf, &xn, &xd, &ng, 0);
                 CHECK(ret);
@@ -375,7 +375,7 @@ int main(int argc, char** argv) {
     printf("test count = %i\n", count);
 
     /* find random seed */
-    rustsecp256k1_v0_10_0_testrand_init(argc > 2 ? argv[2] : NULL);
+    testrand_init(argc > 2 ? argv[2] : NULL);
 
     /* set up split processing */
     if (argc > 4) {
@@ -389,13 +389,13 @@ int main(int argc, char** argv) {
     }
 
     /* Recreate the ecmult{,_gen} tables using the right generator (as selected via EXHAUSTIVE_TEST_ORDER) */
-    rustsecp256k1_v0_10_0_ecmult_gen_compute_table(&rustsecp256k1_v0_10_0_ecmult_gen_prec_table[0][0], &rustsecp256k1_v0_10_0_ge_const_g, ECMULT_GEN_PREC_BITS);
+    rustsecp256k1_v0_10_0_ecmult_gen_compute_table(&rustsecp256k1_v0_10_0_ecmult_gen_prec_table[0][0], &rustsecp256k1_v0_10_0_ge_const_g, COMB_BLOCKS, COMB_TEETH, COMB_SPACING);
     rustsecp256k1_v0_10_0_ecmult_compute_two_tables(rustsecp256k1_v0_10_0_pre_g, rustsecp256k1_v0_10_0_pre_g_128, WINDOW_G, &rustsecp256k1_v0_10_0_ge_const_g);
 
     while (count--) {
         /* Build context */
         ctx = rustsecp256k1_v0_10_0_context_create(SECP256K1_CONTEXT_NONE);
-        rustsecp256k1_v0_10_0_testrand256(rand32);
+        testrand256(rand32);
         CHECK(rustsecp256k1_v0_10_0_context_randomize(ctx, rand32));
 
         /* Generate the entire group */
@@ -408,7 +408,7 @@ int main(int argc, char** argv) {
                 /* Set a different random z-value for each Jacobian point, except z=1
                    is used in the last iteration. */
                 rustsecp256k1_v0_10_0_fe z;
-                random_fe(&z);
+                testutil_random_fe(&z);
                 rustsecp256k1_v0_10_0_gej_rescale(&groupj[i], &z);
             }
 
@@ -459,7 +459,7 @@ int main(int argc, char** argv) {
         rustsecp256k1_v0_10_0_context_destroy(ctx);
     }
 
-    rustsecp256k1_v0_10_0_testrand_finish();
+    testrand_finish();
 
     printf("no problems found\n");
     return 0;
