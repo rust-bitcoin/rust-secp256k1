@@ -46,6 +46,9 @@ serde_cbor = "0.10.0"
 serde_test = "1.0.19"
 bincode = "1.3.3"
 hex_lit = "0.1.1"
+# only used in the example of silent payments
+libc = { version = "0.2" }
+cc = { version = "1.0" }
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
@@ -64,6 +67,10 @@ required-features = ["hashes", "std"]
 
 [[example]]
 name = "generate_keys"
+required-features = ["rand", "std"]
+
+[[example]]
+name = "silentpayments"
 required-features = ["rand", "std"]
 
 [workspace]
