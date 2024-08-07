@@ -22,11 +22,11 @@
 /** Clear a scalar to prevent the leak of sensitive data. */
 static void rustsecp256k1_v0_10_0_scalar_clear(rustsecp256k1_v0_10_0_scalar *r);
 
-/** Access bits from a scalar. All requested bits must belong to the same 32-bit limb. */
-static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count);
+/** Access bits (1 < count <= 32) from a scalar. All requested bits must belong to the same 32-bit limb. */
+static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_limb32(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count);
 
-/** Access bits from a scalar. Not constant time in offset and count. */
-static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count);
+/** Access bits (1 < count <= 32) from a scalar. offset + count must be < 256. Not constant time in offset and count. */
+static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count);
 
 /** Set a scalar from a big endian byte array. The scalar will be reduced modulo group order `n`.
  * In:      bin:        pointer to a 32-byte array.

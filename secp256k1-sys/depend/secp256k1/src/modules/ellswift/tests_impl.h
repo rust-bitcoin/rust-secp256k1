@@ -188,9 +188,9 @@ void run_ellswift_tests(void) {
             CHECK(ret == ((testcase->enc_bitmap >> c) & 1));
             if (ret) {
                 rustsecp256k1_v0_10_0_fe x2;
-                CHECK(check_fe_equal(&t, &testcase->encs[c]));
+                CHECK(fe_equal(&t, &testcase->encs[c]));
                 rustsecp256k1_v0_10_0_ellswift_xswiftec_var(&x2, &testcase->u, &testcase->encs[c]);
-                CHECK(check_fe_equal(&testcase->x, &x2));
+                CHECK(fe_equal(&testcase->x, &x2));
             }
         }
     }
@@ -203,7 +203,7 @@ void run_ellswift_tests(void) {
         CHECK(ret);
         ret = rustsecp256k1_v0_10_0_pubkey_load(CTX, &ge, &pubkey);
         CHECK(ret);
-        CHECK(check_fe_equal(&testcase->x, &ge.x));
+        CHECK(fe_equal(&testcase->x, &ge.x));
         CHECK(rustsecp256k1_v0_10_0_fe_is_odd(&ge.y) == testcase->odd_y);
     }
     for (i = 0; (unsigned)i < sizeof(ellswift_xdh_tests_bip324) / sizeof(ellswift_xdh_tests_bip324[0]); ++i) {
@@ -229,9 +229,9 @@ void run_ellswift_tests(void) {
         rustsecp256k1_v0_10_0_ge g, g2;
         rustsecp256k1_v0_10_0_pubkey pubkey, pubkey2;
         /* Generate random public key and random randomizer. */
-        random_group_element_test(&g);
+        testutil_random_ge_test(&g);
         rustsecp256k1_v0_10_0_pubkey_save(&pubkey, &g);
-        rustsecp256k1_v0_10_0_testrand256(rnd32);
+        testrand256(rnd32);
         /* Convert the public key to ElligatorSwift and back. */
         rustsecp256k1_v0_10_0_ellswift_encode(CTX, ell64, &pubkey, rnd32);
         rustsecp256k1_v0_10_0_ellswift_decode(CTX, &pubkey2, ell64);
@@ -249,8 +249,8 @@ void run_ellswift_tests(void) {
         unsigned char ell64[64];
         int ret;
         /* Generate random secret key and random randomizer. */
-        if (i & 1) rustsecp256k1_v0_10_0_testrand256_test(auxrnd32);
-        random_scalar_order_test(&sec);
+        if (i & 1) testrand256_test(auxrnd32);
+        testutil_random_scalar_order_test(&sec);
         rustsecp256k1_v0_10_0_scalar_get_b32(sec32, &sec);
         /* Construct ElligatorSwift-encoded public keys for that key. */
         ret = rustsecp256k1_v0_10_0_ellswift_create(CTX, ell64, sec32, (i & 1) ? auxrnd32 : NULL);
@@ -271,11 +271,11 @@ void run_ellswift_tests(void) {
         rustsecp256k1_v0_10_0_pubkey pub;
         int ret;
         /* Generate random secret key. */
-        random_scalar_order_test(&sec);
+        testutil_random_scalar_order_test(&sec);
         rustsecp256k1_v0_10_0_scalar_get_b32(sec32, &sec);
         /* Generate random ElligatorSwift encoding for the remote key and decode it. */
-        rustsecp256k1_v0_10_0_testrand256_test(ell64);
-        rustsecp256k1_v0_10_0_testrand256_test(ell64 + 32);
+        testrand256_test(ell64);
+        testrand256_test(ell64 + 32);
         rustsecp256k1_v0_10_0_ellswift_decode(CTX, &pub, ell64);
         rustsecp256k1_v0_10_0_pubkey_load(CTX, &dec, &pub);
         rustsecp256k1_v0_10_0_gej_set_ge(&decj, &dec);
@@ -290,7 +290,7 @@ void run_ellswift_tests(void) {
         rustsecp256k1_v0_10_0_ecmult(&resj, &decj, &sec, NULL);
         rustsecp256k1_v0_10_0_ge_set_gej(&res, &resj);
         /* Compare. */
-        CHECK(check_fe_equal(&res.x, &share_x));
+        CHECK(fe_equal(&res.x, &share_x));
     }
     /* Verify the joint behavior of rustsecp256k1_v0_10_0_ellswift_xdh */
     for (i = 0; i < 200 * COUNT; i++) {
@@ -313,18 +313,18 @@ void run_ellswift_tests(void) {
             data = NULL;
         } else {
             hash_function = rustsecp256k1_v0_10_0_ellswift_xdh_hash_function_prefix;
-            rustsecp256k1_v0_10_0_testrand256_test(prefix64);
-            rustsecp256k1_v0_10_0_testrand256_test(prefix64 + 32);
+            testrand256_test(prefix64);
+            testrand256_test(prefix64 + 32);
             data = prefix64;
         }
 
         /* Generate random secret keys and random randomizers. */
-        rustsecp256k1_v0_10_0_testrand256_test(auxrnd32a);
-        rustsecp256k1_v0_10_0_testrand256_test(auxrnd32b);
-        random_scalar_order_test(&seca);
+        testrand256_test(auxrnd32a);
+        testrand256_test(auxrnd32b);
+        testutil_random_scalar_order_test(&seca);
         /* Draw secb uniformly at random to make sure that the secret keys
          * differ */
-        random_scalar_order(&secb);
+        testutil_random_scalar_order(&secb);
         rustsecp256k1_v0_10_0_scalar_get_b32(sec32a, &seca);
         rustsecp256k1_v0_10_0_scalar_get_b32(sec32b, &secb);
 
@@ -349,13 +349,13 @@ void run_ellswift_tests(void) {
         /* Verify that the shared secret doesn't match if other side's public key is incorrect. */
         /* For A (using a bad public key for B): */
         memcpy(ell64b_bad, ell64b, sizeof(ell64a_bad));
-        rustsecp256k1_v0_10_0_testrand_flip(ell64b_bad, sizeof(ell64b_bad));
+        testrand_flip(ell64b_bad, sizeof(ell64b_bad));
         ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
         CHECK(ret); /* Mismatching encodings don't get detected by rustsecp256k1_v0_10_0_ellswift_xdh. */
         CHECK(rustsecp256k1_v0_10_0_memcmp_var(share32_bad, share32a, 32) != 0);
         /* For B (using a bad public key for A): */
         memcpy(ell64a_bad, ell64a, sizeof(ell64a_bad));
-        rustsecp256k1_v0_10_0_testrand_flip(ell64a_bad, sizeof(ell64a_bad));
+        testrand_flip(ell64a_bad, sizeof(ell64a_bad));
         ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);
         CHECK(ret);
         CHECK(rustsecp256k1_v0_10_0_memcmp_var(share32_bad, share32b, 32) != 0);
@@ -363,12 +363,12 @@ void run_ellswift_tests(void) {
         /* Verify that the shared secret doesn't match if the private key is incorrect. */
         /* For A: */
         memcpy(sec32a_bad, sec32a, sizeof(sec32a_bad));
-        rustsecp256k1_v0_10_0_testrand_flip(sec32a_bad, sizeof(sec32a_bad));
+        testrand_flip(sec32a_bad, sizeof(sec32a_bad));
         ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32a_bad, 0, hash_function, data);
         CHECK(!ret || rustsecp256k1_v0_10_0_memcmp_var(share32_bad, share32a, 32) != 0);
         /* For B: */
         memcpy(sec32b_bad, sec32b, sizeof(sec32b_bad));
-        rustsecp256k1_v0_10_0_testrand_flip(sec32b_bad, sizeof(sec32b_bad));
+        testrand_flip(sec32b_bad, sizeof(sec32b_bad));
         ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b, sec32b_bad, 1, hash_function, data);
         CHECK(!ret || rustsecp256k1_v0_10_0_memcmp_var(share32_bad, share32b, 32) != 0);
 
@@ -376,7 +376,7 @@ void run_ellswift_tests(void) {
             /* Verify that the shared secret doesn't match when a different encoding of the same public key is used. */
             /* For A (changing B's public key): */
             memcpy(auxrnd32b_bad, auxrnd32b, sizeof(auxrnd32b_bad));
-            rustsecp256k1_v0_10_0_testrand_flip(auxrnd32b_bad, sizeof(auxrnd32b_bad));
+            testrand_flip(auxrnd32b_bad, sizeof(auxrnd32b_bad));
             ret = rustsecp256k1_v0_10_0_ellswift_create(CTX, ell64b_bad, sec32b, auxrnd32b_bad);
             CHECK(ret);
             ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a, ell64b_bad, sec32a, 0, hash_function, data);
@@ -384,7 +384,7 @@ void run_ellswift_tests(void) {
             CHECK(rustsecp256k1_v0_10_0_memcmp_var(share32_bad, share32a, 32) != 0);
             /* For B (changing A's public key): */
             memcpy(auxrnd32a_bad, auxrnd32a, sizeof(auxrnd32a_bad));
-            rustsecp256k1_v0_10_0_testrand_flip(auxrnd32a_bad, sizeof(auxrnd32a_bad));
+            testrand_flip(auxrnd32a_bad, sizeof(auxrnd32a_bad));
             ret = rustsecp256k1_v0_10_0_ellswift_create(CTX, ell64a_bad, sec32a, auxrnd32a_bad);
             CHECK(ret);
             ret = rustsecp256k1_v0_10_0_ellswift_xdh(CTX, share32_bad, ell64a_bad, ell64b, sec32b, 1, hash_function, data);

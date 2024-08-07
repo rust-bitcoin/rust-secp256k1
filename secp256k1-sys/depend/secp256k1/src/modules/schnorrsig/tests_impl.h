@@ -15,7 +15,7 @@
 static void nonce_function_bip340_bitflip(unsigned char **args, size_t n_flip, size_t n_bytes, size_t msglen, size_t algolen) {
     unsigned char nonces[2][32];
     CHECK(nonce_function_bip340(nonces[0], args[0], msglen, args[1], args[2], args[3], algolen, args[4]) == 1);
-    rustsecp256k1_v0_10_0_testrand_flip(args[n_flip], n_bytes);
+    testrand_flip(args[n_flip], n_bytes);
     CHECK(nonce_function_bip340(nonces[1], args[0], msglen, args[1], args[2], args[3], algolen, args[4]) == 1);
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(nonces[0], nonces[1], 32) != 0);
 }
@@ -50,10 +50,10 @@ static void run_nonce_function_bip340_tests(void) {
     rustsecp256k1_v0_10_0_nonce_function_bip340_sha256_tagged_aux(&sha_optimized);
     test_sha256_eq(&sha, &sha_optimized);
 
-    rustsecp256k1_v0_10_0_testrand256(msg);
-    rustsecp256k1_v0_10_0_testrand256(key);
-    rustsecp256k1_v0_10_0_testrand256(pk);
-    rustsecp256k1_v0_10_0_testrand256(aux_rand);
+    testrand256(msg);
+    testrand256(key);
+    testrand256(pk);
+    testrand256(aux_rand);
 
     /* Check that a bitflip in an argument results in different nonces. */
     args[0] = msg;
@@ -76,12 +76,12 @@ static void run_nonce_function_bip340_tests(void) {
     CHECK(nonce_function_bip340(nonce, msg, msglen, key, pk, NULL, 0, NULL) == 0);
     CHECK(nonce_function_bip340(nonce, msg, msglen, key, pk, algo, algolen, NULL) == 1);
     /* Other algo is fine */
-    rustsecp256k1_v0_10_0_testrand_bytes_test(algo, algolen);
+    testrand_bytes_test(algo, algolen);
     CHECK(nonce_function_bip340(nonce, msg, msglen, key, pk, algo, algolen, NULL) == 1);
 
     for (i = 0; i < COUNT; i++) {
         unsigned char nonce2[32];
-        uint32_t offset = rustsecp256k1_v0_10_0_testrand_int(msglen - 1);
+        uint32_t offset = testrand_int(msglen - 1);
         size_t msglen_tmp = (msglen + offset) % msglen;
         size_t algolen_tmp;
 
@@ -90,7 +90,7 @@ static void run_nonce_function_bip340_tests(void) {
         CHECK(rustsecp256k1_v0_10_0_memcmp_var(nonce, nonce2, 32) != 0);
 
         /* Different algolen gives different nonce */
-        offset = rustsecp256k1_v0_10_0_testrand_int(algolen - 1);
+        offset = testrand_int(algolen - 1);
         algolen_tmp = (algolen + offset) % algolen;
         CHECK(nonce_function_bip340(nonce2, msg, msglen, key, pk, algo, algolen_tmp, NULL) == 1);
         CHECK(rustsecp256k1_v0_10_0_memcmp_var(nonce, nonce2, 32) != 0);
@@ -116,10 +116,10 @@ static void test_schnorrsig_api(void) {
     rustsecp256k1_v0_10_0_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
     rustsecp256k1_v0_10_0_schnorrsig_extraparams invalid_extraparams = {{ 0 }, NULL, NULL};
 
-    rustsecp256k1_v0_10_0_testrand256(sk1);
-    rustsecp256k1_v0_10_0_testrand256(sk2);
-    rustsecp256k1_v0_10_0_testrand256(sk3);
-    rustsecp256k1_v0_10_0_testrand256(msg);
+    testrand256(sk1);
+    testrand256(sk2);
+    testrand256(sk3);
+    testrand256(msg);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypairs[0], sk1) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypairs[1], sk2) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypairs[2], sk3) == 1);
@@ -813,8 +813,8 @@ static void test_schnorrsig_sign(void) {
     rustsecp256k1_v0_10_0_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
     unsigned char aux_rand[32];
 
-    rustsecp256k1_v0_10_0_testrand256(sk);
-    rustsecp256k1_v0_10_0_testrand256(aux_rand);
+    testrand256(sk);
+    testrand256(aux_rand);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk));
     CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &pk, NULL, &keypair));
     CHECK(rustsecp256k1_v0_10_0_schnorrsig_sign32(CTX, sig, msg, &keypair, NULL) == 1);
@@ -861,12 +861,12 @@ static void test_schnorrsig_sign_verify(void) {
     rustsecp256k1_v0_10_0_xonly_pubkey pk;
     rustsecp256k1_v0_10_0_scalar s;
 
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk));
     CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &pk, NULL, &keypair));
 
     for (i = 0; i < N_SIGS; i++) {
-        rustsecp256k1_v0_10_0_testrand256(msg[i]);
+        testrand256(msg[i]);
         CHECK(rustsecp256k1_v0_10_0_schnorrsig_sign32(CTX, sig[i], msg[i], &keypair, NULL));
         CHECK(rustsecp256k1_v0_10_0_schnorrsig_verify(CTX, sig[i], msg[i], sizeof(msg[i]), &pk));
     }
@@ -874,19 +874,19 @@ static void test_schnorrsig_sign_verify(void) {
     {
         /* Flip a few bits in the signature and in the message and check that
          * verify and verify_batch (TODO) fail */
-        size_t sig_idx = rustsecp256k1_v0_10_0_testrand_int(N_SIGS);
-        size_t byte_idx = rustsecp256k1_v0_10_0_testrand_bits(5);
-        unsigned char xorbyte = rustsecp256k1_v0_10_0_testrand_int(254)+1;
+        size_t sig_idx = testrand_int(N_SIGS);
+        size_t byte_idx = testrand_bits(5);
+        unsigned char xorbyte = testrand_int(254)+1;
         sig[sig_idx][byte_idx] ^= xorbyte;
         CHECK(!rustsecp256k1_v0_10_0_schnorrsig_verify(CTX, sig[sig_idx], msg[sig_idx], sizeof(msg[sig_idx]), &pk));
         sig[sig_idx][byte_idx] ^= xorbyte;
 
-        byte_idx = rustsecp256k1_v0_10_0_testrand_bits(5);
+        byte_idx = testrand_bits(5);
         sig[sig_idx][32+byte_idx] ^= xorbyte;
         CHECK(!rustsecp256k1_v0_10_0_schnorrsig_verify(CTX, sig[sig_idx], msg[sig_idx], sizeof(msg[sig_idx]), &pk));
         sig[sig_idx][32+byte_idx] ^= xorbyte;
 
-        byte_idx = rustsecp256k1_v0_10_0_testrand_bits(5);
+        byte_idx = testrand_bits(5);
         msg[sig_idx][byte_idx] ^= xorbyte;
         CHECK(!rustsecp256k1_v0_10_0_schnorrsig_verify(CTX, sig[sig_idx], msg[sig_idx], sizeof(msg[sig_idx]), &pk));
         msg[sig_idx][byte_idx] ^= xorbyte;
@@ -916,9 +916,9 @@ static void test_schnorrsig_sign_verify(void) {
     {
         /* Test varying message lengths */
         unsigned char msg_large[32 * 8];
-        uint32_t msglen  = rustsecp256k1_v0_10_0_testrand_int(sizeof(msg_large));
+        uint32_t msglen  = testrand_int(sizeof(msg_large));
         for (i = 0; i < sizeof(msg_large); i += 32) {
-            rustsecp256k1_v0_10_0_testrand256(&msg_large[i]);
+            testrand256(&msg_large[i]);
         }
         CHECK(rustsecp256k1_v0_10_0_schnorrsig_sign_custom(CTX, sig[0], msg_large, msglen, &keypair, NULL) == 1);
         CHECK(rustsecp256k1_v0_10_0_schnorrsig_verify(CTX, sig[0], msg_large, msglen, &pk) == 1);
@@ -942,7 +942,7 @@ static void test_schnorrsig_taproot(void) {
     unsigned char sig[64];
 
     /* Create output key */
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &internal_pk, NULL, &keypair) == 1);
     /* In actual taproot the tweak would be hash of internal_pk */
@@ -952,7 +952,7 @@ static void test_schnorrsig_taproot(void) {
     CHECK(rustsecp256k1_v0_10_0_xonly_pubkey_serialize(CTX, output_pk_bytes, &output_pk) == 1);
 
     /* Key spend */
-    rustsecp256k1_v0_10_0_testrand256(msg);
+    testrand256(msg);
     CHECK(rustsecp256k1_v0_10_0_schnorrsig_sign32(CTX, sig, msg, &keypair, NULL) == 1);
     /* Verify key spend */
     CHECK(rustsecp256k1_v0_10_0_xonly_pubkey_parse(CTX, &output_pk, output_pk_bytes) == 1);

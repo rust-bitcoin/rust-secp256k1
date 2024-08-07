@@ -23,9 +23,9 @@ static void test_xonly_pubkey(void) {
     int pk_parity;
     int i;
 
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     memset(ones32, 0xFF, 32);
-    rustsecp256k1_v0_10_0_testrand256(xy_sk);
+    testrand256(xy_sk);
     CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &pk, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_xonly_pubkey_from_pubkey(CTX, &xonly_pk, &pk_parity, &pk) == 1);
 
@@ -95,7 +95,7 @@ static void test_xonly_pubkey(void) {
      * the curve) then xonly_pubkey_parse should fail as well. */
     for (i = 0; i < COUNT; i++) {
         unsigned char rand33[33];
-        rustsecp256k1_v0_10_0_testrand256(&rand33[1]);
+        testrand256(&rand33[1]);
         rand33[0] = SECP256K1_TAG_PUBKEY_EVEN;
         if (!rustsecp256k1_v0_10_0_ec_pubkey_parse(CTX, &pk, rand33, 33)) {
             memset(&xonly_pk, 1, sizeof(xonly_pk));
@@ -152,8 +152,8 @@ static void test_xonly_pubkey_tweak(void) {
     int i;
 
     memset(overflows, 0xff, sizeof(overflows));
-    rustsecp256k1_v0_10_0_testrand256(tweak);
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(tweak);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &internal_pk, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_xonly_pubkey_from_pubkey(CTX, &internal_xonly_pk, &pk_parity, &internal_pk) == 1);
 
@@ -190,7 +190,7 @@ static void test_xonly_pubkey_tweak(void) {
 
     /* Invalid pk with a valid tweak */
     memset(&internal_xonly_pk, 0, sizeof(internal_xonly_pk));
-    rustsecp256k1_v0_10_0_testrand256(tweak);
+    testrand256(tweak);
     CHECK_ILLEGAL(CTX, rustsecp256k1_v0_10_0_xonly_pubkey_tweak_add(CTX, &output_pk, &internal_xonly_pk, tweak));
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(&output_pk, zeros64, sizeof(output_pk))  == 0);
 }
@@ -209,8 +209,8 @@ static void test_xonly_pubkey_tweak_check(void) {
     unsigned char tweak[32];
 
     memset(overflows, 0xff, sizeof(overflows));
-    rustsecp256k1_v0_10_0_testrand256(tweak);
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(tweak);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &internal_pk, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_xonly_pubkey_from_pubkey(CTX, &internal_xonly_pk, &pk_parity, &internal_pk) == 1);
 
@@ -256,7 +256,7 @@ static void test_xonly_pubkey_tweak_recursive(void) {
     unsigned char tweak[N_PUBKEYS - 1][32];
     int i;
 
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_ec_pubkey_create(CTX, &pk[0], sk) == 1);
     /* Add tweaks */
     for (i = 0; i < N_PUBKEYS - 1; i++) {
@@ -292,7 +292,7 @@ static void test_keypair(void) {
     memset(overflows, 0xFF, sizeof(overflows));
 
     /* Test keypair_create */
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(zeros96, &keypair, sizeof(keypair)) != 0);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
@@ -311,7 +311,7 @@ static void test_keypair(void) {
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(zeros96, &keypair, sizeof(keypair)) == 0);
 
     /* Test keypair_pub */
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_pub(CTX, &pk, &keypair) == 1);
     CHECK_ILLEGAL(CTX, rustsecp256k1_v0_10_0_keypair_pub(CTX, NULL, &keypair));
@@ -330,7 +330,7 @@ static void test_keypair(void) {
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(&pk, &pk_tmp, sizeof(pk)) == 0);
 
     /** Test keypair_xonly_pub **/
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &xonly_pk, &pk_parity, &keypair) == 1);
     CHECK_ILLEGAL(CTX, rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, NULL, &pk_parity, &keypair));
@@ -353,7 +353,7 @@ static void test_keypair(void) {
     CHECK(pk_parity == pk_parity_tmp);
 
     /* Test keypair_seckey */
-    rustsecp256k1_v0_10_0_testrand256(sk);
+    testrand256(sk);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
     CHECK(rustsecp256k1_v0_10_0_keypair_sec(CTX, sk_tmp, &keypair) == 1);
     CHECK_ILLEGAL(CTX, rustsecp256k1_v0_10_0_keypair_sec(CTX, NULL, &keypair));
@@ -381,8 +381,8 @@ static void test_keypair_add(void) {
     int i;
 
     CHECK(sizeof(zeros96) == sizeof(keypair));
-    rustsecp256k1_v0_10_0_testrand256(sk);
-    rustsecp256k1_v0_10_0_testrand256(tweak);
+    testrand256(sk);
+    testrand256(tweak);
     memset(overflows, 0xFF, 32);
     CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
 
@@ -407,7 +407,7 @@ static void test_keypair_add(void) {
     for (i = 0; i < COUNT; i++) {
         rustsecp256k1_v0_10_0_scalar scalar_tweak;
         rustsecp256k1_v0_10_0_keypair keypair_tmp;
-        rustsecp256k1_v0_10_0_testrand256(sk);
+        testrand256(sk);
         CHECK(rustsecp256k1_v0_10_0_keypair_create(CTX, &keypair, sk) == 1);
         memcpy(&keypair_tmp, &keypair, sizeof(keypair));
         /* Because sk may be negated before adding, we need to try with tweak =
@@ -423,7 +423,7 @@ static void test_keypair_add(void) {
 
     /* Invalid keypair with a valid tweak */
     memset(&keypair, 0, sizeof(keypair));
-    rustsecp256k1_v0_10_0_testrand256(tweak);
+    testrand256(tweak);
     CHECK_ILLEGAL(CTX, rustsecp256k1_v0_10_0_keypair_xonly_tweak_add(CTX, &keypair, tweak));
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(&keypair, zeros96, sizeof(keypair))  == 0);
     /* Only seckey part of keypair invalid */
@@ -446,7 +446,7 @@ static void test_keypair_add(void) {
         unsigned char sk32[32];
         int pk_parity;
 
-        rustsecp256k1_v0_10_0_testrand256(tweak);
+        testrand256(tweak);
         CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &internal_pk, NULL, &keypair) == 1);
         CHECK(rustsecp256k1_v0_10_0_keypair_xonly_tweak_add(CTX, &keypair, tweak) == 1);
         CHECK(rustsecp256k1_v0_10_0_keypair_xonly_pub(CTX, &output_pk, &pk_parity, &keypair) == 1);

@@ -214,8 +214,8 @@ static void rustsecp256k1_v0_10_0_ecmult_const(rustsecp256k1_v0_10_0_gej *r, con
 #ifdef VERIFY
     /* Verify that v1 and v2 are in range [0, 2^129-1]. */
     for (i = 129; i < 256; ++i) {
-        VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits(&v1, i, 1) == 0);
-        VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits(&v2, i, 1) == 0);
+        VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits_limb32(&v1, i, 1) == 0);
+        VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits_limb32(&v2, i, 1) == 0);
     }
 #endif
 

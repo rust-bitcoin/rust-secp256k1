@@ -27,19 +27,21 @@ SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(rustsecp256k1_
     SECP256K1_SCALAR_VERIFY(r);
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_limb32(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
     SECP256K1_SCALAR_VERIFY(a);
 
-    if (offset < 32)
-        return ((*a >> offset) & ((((uint32_t)1) << count) - 1));
-    else
+    VERIFY_CHECK(count > 0 && count <= 32);
+    if (offset < 32) {
+        return (*a >> offset) & (0xFFFFFFFF >> (32 - count));
+    } else {
         return 0;
+    }
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
     SECP256K1_SCALAR_VERIFY(a);
 
-    return rustsecp256k1_v0_10_0_scalar_get_bits(a, offset, count);
+    return rustsecp256k1_v0_10_0_scalar_get_bits_limb32(a, offset, count);
 }
 
 SECP256K1_INLINE static int rustsecp256k1_v0_10_0_scalar_check_overflow(const rustsecp256k1_v0_10_0_scalar *a) { return *a >= EXHAUSTIVE_TEST_ORDER; }
@@ -169,17 +171,22 @@ static SECP256K1_INLINE void rustsecp256k1_v0_10_0_scalar_cmov(rustsecp256k1_v0_
 
 static void rustsecp256k1_v0_10_0_scalar_inverse(rustsecp256k1_v0_10_0_scalar *r, const rustsecp256k1_v0_10_0_scalar *x) {
     int i;
-    *r = 0;
+    uint32_t res = 0;
     SECP256K1_SCALAR_VERIFY(x);
 
-    for (i = 0; i < EXHAUSTIVE_TEST_ORDER; i++)
-        if ((i * *x) % EXHAUSTIVE_TEST_ORDER == 1)
-            *r = i;
+    for (i = 0; i < EXHAUSTIVE_TEST_ORDER; i++) {
+        if ((i * *x) % EXHAUSTIVE_TEST_ORDER == 1) {
+            res = i;
+            break;
+        }
+    }
 
-    SECP256K1_SCALAR_VERIFY(r);
     /* If this VERIFY_CHECK triggers we were given a noninvertible scalar (and thus
      * have a composite group order; fix it in exhaustive_tests.c). */
-    VERIFY_CHECK(*r != 0);
+    VERIFY_CHECK(res != 0);
+    *r = res;
+
+    SECP256K1_SCALAR_VERIFY(r);
 }
 
 static void rustsecp256k1_v0_10_0_scalar_inverse_var(rustsecp256k1_v0_10_0_scalar *r, const rustsecp256k1_v0_10_0_scalar *x) {
