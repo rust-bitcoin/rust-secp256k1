@@ -2,7 +2,6 @@
 
 set -ex
 
-REPO_DIR=$(git rev-parse --show-toplevel)
 FEATURES="hashes global-context lowmemory rand recovery serde std alloc"
 
 cargo --version
