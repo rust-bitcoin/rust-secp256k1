@@ -46,7 +46,7 @@ macro_rules! impl_display_secret {
                 engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 
-                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:016x}", hash)).finish()
+                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:.16}", hash)).finish()
             }
         }
 
