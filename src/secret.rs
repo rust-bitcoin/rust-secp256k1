@@ -11,28 +11,7 @@ use crate::to_hex;
 macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
-        #[cfg(feature = "std")]
-        impl core::fmt::Debug for $thing {
-            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-                use core::hash::Hasher;
-                const DEBUG_HASH_TAG: &[u8] = &[
-                    0x66, 0xa6, 0x77, 0x1b, 0x9b, 0x6d, 0xae, 0xa1, 0xb2, 0xee, 0x4e, 0x07, 0x49,
-                    0x4a, 0xac, 0x87, 0xa9, 0xb8, 0x5b, 0x4b, 0x35, 0x02, 0xaa, 0x6d, 0x0f, 0x79,
-                    0xcb, 0x63, 0xe6, 0xf8, 0x66, 0x22,
-                ]; // =SHA256(b"rust-secp256k1DEBUG");
-
-                let mut hasher = std::collections::hash_map::DefaultHasher::new();
-
-                hasher.write(DEBUG_HASH_TAG);
-                hasher.write(DEBUG_HASH_TAG);
-                hasher.write(&self.secret_bytes());
-                let hash = hasher.finish();
-
-                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:016x}", hash)).finish()
-            }
-        }
-
-        #[cfg(all(not(feature = "std"), feature = "hashes"))]
+        #[cfg(feature = "hashes")]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 use hashes::{sha256, Hash, HashEngine};
@@ -50,10 +29,13 @@ macro_rules! impl_display_secret {
             }
         }
 
-        #[cfg(all(not(feature = "std"), not(feature = "hashes")))]
+        #[cfg(not(feature = "hashes"))]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(f, "<secret requires std or hashes feature to display>")
+                write!(
+                    f,
+                    "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
+                )
             }
         }
     };

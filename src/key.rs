@@ -1705,12 +1705,15 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "alloc"))]
+    #[cfg(all(feature = "rand", feature = "alloc", not(feature = "hashes")))]
     fn test_debug_output() {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
 
-        assert_eq!(&format!("{:?}", sk), "SecretKey(#d3e0c51a23169bb5)");
+        assert_eq!(
+            &format!("{:?}", sk),
+            "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
+        );
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
