@@ -772,7 +772,6 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Keypair(ffi::Keypair);
-impl_display_secret!(Keypair);
 impl_fast_comparisons!(Keypair);
 
 impl Keypair {
@@ -970,6 +969,15 @@ impl Keypair {
     /// [`zeroize`](https://docs.rs/zeroize) crate.
     #[inline]
     pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
+}
+
+impl fmt::Debug for Keypair {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        f.debug_struct("Keypair")
+            .field("pubkey", &self.public_key())
+            .field("secret", &"<hidden>")
+            .finish()
+    }
 }
 
 impl From<Keypair> for SecretKey {
