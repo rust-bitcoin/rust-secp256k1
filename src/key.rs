@@ -772,7 +772,6 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Keypair(ffi::Keypair);
-impl_display_secret!(Keypair);
 impl_fast_comparisons!(Keypair);
 
 impl Keypair {
@@ -970,6 +969,15 @@ impl Keypair {
     /// [`zeroize`](https://docs.rs/zeroize) crate.
     #[inline]
     pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
+}
+
+impl fmt::Debug for Keypair {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        f.debug_struct("Keypair")
+            .field("pubkey", &self.public_key())
+            .field("secret", &"<hidden>")
+            .finish()
+    }
 }
 
 impl From<Keypair> for SecretKey {
@@ -1705,12 +1713,15 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "alloc"))]
+    #[cfg(all(feature = "rand", feature = "alloc", not(feature = "hashes")))]
     fn test_debug_output() {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
 
-        assert_eq!(&format!("{:?}", sk), "SecretKey(#d3e0c51a23169bb5)");
+        assert_eq!(
+            &format!("{:?}", sk),
+            "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
+        );
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
