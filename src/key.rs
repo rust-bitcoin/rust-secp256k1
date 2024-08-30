@@ -1000,6 +1000,7 @@ impl<'a> From<&'a Keypair> for PublicKey {
     fn from(pair: &'a Keypair) -> Self { PublicKey::from_keypair(pair) }
 }
 
+#[cfg(any(feature = "global-context", feature = "alloc"))]
 impl str::FromStr for Keypair {
     type Err = Error;
 
@@ -1010,9 +1011,6 @@ impl str::FromStr for Keypair {
 
         #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
         let ctx = Secp256k1::signing_only();
-
-        #[cfg(not(any(feature = "global-context", feature = "alloc")))]
-        let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("The previous implementation was panicking too, please enable the global-context feature of rust-secp256k1");
 
         #[allow(clippy::needless_borrow)]
         Keypair::from_seckey_str(&ctx, s)
@@ -1040,7 +1038,7 @@ impl serde::Serialize for Keypair {
 
 #[cfg(feature = "serde")]
 #[allow(unused_variables)] // For `data` under some feature combinations (the unconditional panic below).
-#[allow(unreachable_code)] // For `Keypair::from_seckey_slice` after unconditional panic.
+#[cfg(all(feature = "serde", any(feature = "global-context", feature = "alloc")))]
 impl<'de> serde::Deserialize<'de> for Keypair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -1054,9 +1052,6 @@ impl<'de> serde::Deserialize<'de> for Keypair {
 
                 #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
                 let ctx = Secp256k1::signing_only();
-
-                #[cfg(not(any(feature = "global-context", feature = "alloc")))]
-                let ctx: Secp256k1<crate::SignOnlyPreallocated> = panic!("cannot deserialize key pair without a context (please enable either the global-context or alloc feature)");
 
                 #[allow(clippy::needless_borrow)]
                 Keypair::from_seckey_slice(&ctx, data)
@@ -2422,14 +2417,6 @@ mod test {
             .chain(std::iter::once(Token::TupleEnd))
             .collect::<Vec<_>>();
         serde_test::assert_tokens(&keypair.compact(), &tokens);
-    }
-
-    #[test]
-    #[should_panic(expected = "The previous implementation was panicking too")]
-    #[cfg(not(any(feature = "alloc", feature = "global-context")))]
-    fn test_parse_keypair_no_alloc_panic() {
-        let key_hex = "4242424242424242424242424242424242424242424242424242424242424242";
-        let _: Keypair = key_hex.parse().expect("We shouldn't even get this far");
     }
 }
 
