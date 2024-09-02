@@ -66,14 +66,17 @@ impl str::FromStr for Signature {
     fn from_str(s: &str) -> Result<Signature, Error> {
         let mut res = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORR_SIGNATURE_SIZE) =>
-                Signature::from_slice(&res[0..constants::SCHNORR_SIGNATURE_SIZE]),
+            Ok(constants::SCHNORR_SIGNATURE_SIZE) => Ok(Signature::from_byte_array(res)),
             _ => Err(Error::InvalidSignature),
         }
     }
 }
 
 impl Signature {
+    /// Construct a `Signature` from a 64 bytes array.
+    #[inline]
+    pub fn from_byte_array(sig: [u8; constants::SCHNORR_SIGNATURE_SIZE]) -> Self { Self(sig) }
+
     /// Creates a `Signature` directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
@@ -88,8 +91,16 @@ impl Signature {
     }
 
     /// Returns a signature as a byte array.
-    #[inline]
+    #[deprecated(since = "0.30.0", note = "Use `to_byte_array` instead.")]
     pub fn serialize(&self) -> [u8; constants::SCHNORR_SIGNATURE_SIZE] { self.0 }
+
+    /// Returns a signature as a byte array.
+    #[inline]
+    pub fn to_byte_array(self) -> [u8; constants::SCHNORR_SIGNATURE_SIZE] { self.0 }
+
+    /// Returns a signature as a byte array.
+    #[inline]
+    pub fn as_byte_array(&self) -> &[u8; constants::SCHNORR_SIGNATURE_SIZE] { &self.0 }
 
     /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
     #[inline]
@@ -294,7 +305,7 @@ mod tests {
     #[test]
     fn test_serialize() {
         let sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
-        let sig_bytes = sig.serialize();
+        let sig_bytes = sig.to_byte_array();
         let bytes = [
             100, 112, 253, 19, 3, 221, 164, 253, 167, 23, 185, 131, 113, 83, 194, 74, 110, 171, 55,
             113, 131, 252, 67, 143, 147, 158, 14, 210, 182, 32, 233, 238, 80, 119, 196, 168, 184,
@@ -697,9 +708,9 @@ mod tests {
                 let keypair = Keypair::from_seckey_slice(&secp, &secret_key).unwrap();
                 assert_eq!(keypair.x_only_public_key().0.serialize(), public_key);
                 let sig = secp.sign_schnorr_with_aux_rand(&message, &keypair, &aux_rand);
-                assert_eq!(sig.serialize(), signature);
+                assert_eq!(sig.to_byte_array(), signature);
             }
-            let sig = Signature::from_slice(&signature).unwrap();
+            let sig = Signature::from_byte_array(signature);
             let is_verified = if let Ok(pubkey) = XOnlyPublicKey::from_slice(&public_key) {
                 secp.verify_schnorr(&sig, &message, &pubkey).is_ok()
             } else {
