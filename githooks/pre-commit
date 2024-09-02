@@ -26,8 +26,8 @@ if [ "$allownonascii" != "true" ] &&
 	# Note that the use of brackets around a tr range is ok here, (it's
 	# even required, for portability to Solaris 10's /usr/bin/tr), since
 	# the square bracket bytes happen to fall in the designated range.
-	test $(git diff --cached --name-only --diff-filter=A -z $against |
-	  LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+	test "$(git diff --cached --name-only --diff-filter=A -z "$against" |
+	  LC_ALL=C tr -d '[ -~]\0' | wc -c)" != 0
 then
 	cat <<\EOF
 Error: Attempt to add a non-ASCII file name.
@@ -44,7 +44,7 @@ EOF
 fi
 
 # If there are whitespace errors, print the offending file names and fail.
-git diff-index --check --cached $against -- || exit 1
+git diff-index --check --cached "$against" -- || exit 1
 
 # Check that code lints cleanly.
 cargo clippy --features=rand,std,recovery,lowmemory,global-context --all-targets -- -D warnings || exit 1

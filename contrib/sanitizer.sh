@@ -48,10 +48,6 @@ say() {
     echo "extra_tests: $1"
 }
 
-say_err() {
-    say "$1" >&2
-}
-
 verbose_say() {
     if [ "$flag_verbose" = true ]; then
 	say "$1"
