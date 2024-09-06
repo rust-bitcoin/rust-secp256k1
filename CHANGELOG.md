@@ -1,3 +1,12 @@
+# 0.29.1 - 2024-09-06
+
+* Deprecate `hashes` reexport
+
+  Because the reexport can have any of the *incompatible* versions using it is prone to breakage.
+  The `bitcoin_hashes` crate is not used in our API anyway, so you should just depend on it yourself
+  using a version range that's appropriate for your crate.
+* Fix version range of the `bitcoin_hashes` crate.
+
 # 0.29.0 - 2024-04-02
 
 * Deprecate `ThirtyTwoByteHash` [#686](https://github.com/rust-bitcoin/rust-secp256k1/pull/686)

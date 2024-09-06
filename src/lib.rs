@@ -155,7 +155,7 @@ extern crate test;
 
 /// Deprecated reexport of the `bitcoin-hashes` crate.
 #[cfg(feature = "hashes")]
-#[deprecated(since = "TBD", note = "Depend on `hashes` in your own crate.")]
+#[deprecated(since = "0.29.1", note = "Depend on `hashes` in your own crate.")]
 pub mod hashes {
     pub use ::hashes::*;
 }
