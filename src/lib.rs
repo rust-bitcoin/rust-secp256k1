@@ -153,8 +153,12 @@ extern crate core;
 #[cfg(bench)]
 extern crate test;
 
+/// Deprecated reexport of the `bitcoin-hashes` crate.
 #[cfg(feature = "hashes")]
-pub extern crate hashes;
+#[deprecated(since = "0.29.1", note = "Depend on `hashes` in your own crate.")]
+pub mod hashes {
+    pub use ::hashes::*;
+}
 
 #[macro_use]
 mod macros;
