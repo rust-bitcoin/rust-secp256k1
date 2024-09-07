@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CC0-1.0
 
 //! Rust bindings for Pieter Wuille's secp256k1 library, which is used for
-//! fast and accurate manipulation of ECDSA signatures on the secp256k1
+//! fast and accurate manipulation of ECDSA and Schnorr signatures on the secp256k1
 //! curve. Such signatures are used extensively by the Bitcoin network
 //! and its derivatives.
 //!
