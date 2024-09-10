@@ -1,3 +1,7 @@
+# 0.10.1 - 2024-09-10
+
+* Minor build changes to eliminate references to stdio.h [#736](https://github.com/rust-bitcoin/rust-secp256k1/pull/736)
+
 # 0.10.0 - 2024-03-28
 
 * Bump MSRV to Rust `v1.56.1` [#693](https://github.com/rust-bitcoin/rust-secp256k1/pull/693)
