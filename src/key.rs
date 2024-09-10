@@ -203,7 +203,7 @@ impl SecretKey {
         SecretKey(data)
     }
 
-    /// Converts a `SECRET_KEY_SIZE`-byte slice to a secret key.
+    /// Converts a 32-byte slice to a secret key.
     ///
     /// # Examples
     ///
@@ -214,20 +214,29 @@ impl SecretKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
-            Ok(data) => {
-                unsafe {
-                    if ffi::secp256k1_ec_seckey_verify(
-                        ffi::secp256k1_context_no_precomp,
-                        data.as_c_ptr(),
-                    ) == 0
-                    {
-                        return Err(InvalidSecretKey);
-                    }
-                }
-                Ok(SecretKey(data))
-            }
+            Ok(data) => Self::from_byte_array(&data),
             Err(_) => Err(InvalidSecretKey),
         }
+    }
+
+    /// Converts a 32-byte array to a secret key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use secp256k1::SecretKey;
+    /// let sk = SecretKey::from_byte_array(&[0xcd; 32]).expect("32 bytes, within curve order");
+    /// ```
+    #[inline]
+    pub fn from_byte_array(data: &[u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
+        unsafe {
+            if ffi::secp256k1_ec_seckey_verify(ffi::secp256k1_context_no_precomp, data.as_c_ptr())
+                == 0
+            {
+                return Err(InvalidSecretKey);
+            }
+        }
+        Ok(SecretKey(*data))
     }
 
     /// Creates a new secret key using data from BIP-340 [`Keypair`].
@@ -442,17 +451,50 @@ impl PublicKey {
     /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
-        if data.is_empty() {
-            return Err(Error::InvalidPublicKey);
+        match data.len() {
+            constants::PUBLIC_KEY_SIZE => PublicKey::from_byte_array_compressed(
+                &<[u8; constants::PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+            ),
+            constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => PublicKey::from_byte_array_uncompressed(
+                &<[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+            ),
+            _ => Err(InvalidPublicKey),
         }
+    }
 
+    /// Creates a public key from a serialized array in compressed format.
+    #[inline]
+    pub fn from_byte_array_compressed(
+        data: &[u8; constants::PUBLIC_KEY_SIZE],
+    ) -> Result<PublicKey, Error> {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             if ffi::secp256k1_ec_pubkey_parse(
                 ffi::secp256k1_context_no_precomp,
                 &mut pk,
                 data.as_c_ptr(),
-                data.len(),
+                constants::PUBLIC_KEY_SIZE,
+            ) == 1
+            {
+                Ok(PublicKey(pk))
+            } else {
+                Err(InvalidPublicKey)
+            }
+        }
+    }
+
+    /// Creates a public key from a serialized array in uncompressed format.
+    #[inline]
+    pub fn from_byte_array_uncompressed(
+        data: &[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE],
+    ) -> Result<PublicKey, Error> {
+        unsafe {
+            let mut pk = ffi::PublicKey::new();
+            if ffi::secp256k1_ec_pubkey_parse(
+                ffi::secp256k1_context_no_precomp,
+                &mut pk,
+                data.as_c_ptr(),
+                constants::UNCOMPRESSED_PUBLIC_KEY_SIZE,
             ) == 1
             {
                 Ok(PublicKey(pk))
@@ -1163,10 +1205,22 @@ impl XOnlyPublicKey {
     /// slice does not represent a valid Secp256k1 point x coordinate.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
-        if data.is_empty() || data.len() != constants::SCHNORR_PUBLIC_KEY_SIZE {
-            return Err(Error::InvalidPublicKey);
+        match <[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]>::try_from(data) {
+            Ok(data) => Self::from_byte_array(&data),
+            Err(_) => Err(InvalidPublicKey),
         }
+    }
 
+    /// Creates a schnorr public key directly from a byte array.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidPublicKey`] if the array does not represent a valid Secp256k1 point
+    /// x coordinate.
+    #[inline]
+    pub fn from_byte_array(
+        data: &[u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
+    ) -> Result<XOnlyPublicKey, Error> {
         unsafe {
             let mut pk = ffi::XOnlyPublicKey::new();
             if ffi::secp256k1_xonly_pubkey_parse(
