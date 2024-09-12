@@ -41,13 +41,14 @@ pub const SECP256K1_SER_UNCOMPRESSED: c_uint = (1 << 1);
 /// Flag for keys to indicate compressed serialization format
 pub const SECP256K1_SER_COMPRESSED: c_uint = (1 << 1) | (1 << 8);
 
-/// A nonce generation function. Ordinary users of the library
-/// never need to see this type; only if you need to control
-/// nonce generation do you need to use it. I have deliberately
-/// made this hard to do: you have to write your own wrapper
-/// around the FFI functions to use it. And it's an unsafe type.
-/// Nonces are generated deterministically by RFC6979 by
-/// default; there should be no need to ever change this.
+/// A nonce generation function.
+///
+/// Ordinary users of the library never need to see this type; the default
+/// nonce generation function should be sufficient for almost all usecases.
+///
+/// To use this type, you must write your own (unsafe) wrapper. It is unsafe
+/// because any secure implementation must dereference the passed-in raw
+/// pointers and/or call FFI functions.
 pub type NonceFn = Option<unsafe extern "C" fn(
     nonce32: *mut c_uchar,
     msg32: *const c_uchar,
@@ -66,11 +67,15 @@ pub type EcdhHashFn = Option<unsafe extern "C" fn(
     data: *mut c_void,
 ) -> c_int>;
 
-///  Same as secp256k1_nonce function with the exception of accepting an
-///  additional pubkey argument and not requiring an attempt argument. The pubkey
-///  argument can protect signature schemes with key-prefixed challenge hash
-///  inputs against reusing the nonce when signing with the wrong precomputed
-///  pubkey.
+/// Same as [`NonceFn`], but accepts an additional pubkey argument and does not
+/// accept an attempt argument.
+///
+/// The pubkey argument will protect signature schemes with tweaked keys from
+/// reusing the nonce when signing with a different precomputed pubkey, which
+/// for BIP 340 signatures is just as bad as reusing a nonce across different
+/// messages.
+///
+/// As with [`NonceFn`] ordinary users should never need to touch this type.
 pub type SchnorrNonceFn = Option<unsafe extern "C" fn(
     nonce32: *mut c_uchar,
     msg32: *const c_uchar,
@@ -119,10 +124,19 @@ impl SchnorrSigExtraParams {
     }
 }
 
-/// A Secp256k1 context, containing various precomputed values and such
-/// needed to do elliptic curve computations. If you create one of these
-/// with `secp256k1_context_create` you MUST destroy it with
-/// `secp256k1_context_destroy`, or else you will have a memory leak.
+/// An opaque Secp256k1 context.
+///
+/// Currently this object contains a blinding factor used internally to
+/// randomize computations to protect against sidechannel attacks. In the
+/// past it has contained precomputation tables to speed up crypto operations.
+///
+/// It should be assumed to be expensive to create and therefore should be
+/// reused when possible.
+///
+/// If you create one of these with `secp256k1_context_create` you must
+/// destroy it with `secp256k1_context_destroy`. (Failure to destroy it is
+/// a memory leak; destroying it using any other allocator is undefined
+/// behavior.)
 #[derive(Clone, Debug)]
 #[repr(C)] pub struct Context(c_int);
 

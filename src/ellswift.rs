@@ -71,8 +71,9 @@ where
     1
 }
 
-/// `ElligatorSwift` is an encoding of a uniformly chosen point on the curve
-/// as a 64-byte array that is indistinguishable from a uniformly random array.
+/// An encoding of an elliptic curvepoint such that a uniformly random on-curve
+/// point will be encoded as uniformly random bits.
+///
 /// This object holds two field elements u and t, which are the inputs to
 /// the `ElligatorSwift` encoding function.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -280,10 +281,15 @@ impl ElligatorSwiftSharedSecret {
     pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
 }
 
-/// Represents which party we are in the ECDH, A is the initiator, B is the responder.
-/// This is important because the hash of the shared secret is different depending on which party
-/// we are. In this context, "we" means the party that is using this library, and possesses the
-/// secret key passed to `ElligatorSwift::shared_secret`.
+/// Represents which party we are in the ECDH.
+///
+/// Here `A` is the initiator and `B` is the responder.
+///
+/// this context, "we" means the party that possesses the secret key passed to
+/// [`ElligatorSwift::shared_secret`].
+///
+/// This distinction is important because the different parties compute different
+/// hashes of the shared secret.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ElligatorSwiftParty {
     /// We are the initiator of the ECDH
