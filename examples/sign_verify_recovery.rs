@@ -12,7 +12,7 @@ fn recover<C: Verification>(
 ) -> Result<PublicKey, Error> {
     let msg = sha256::Hash::hash(msg);
     let msg = Message::from_digest_slice(msg.as_ref())?;
-    let id = ecdsa::RecoveryId::from_i32(recovery_id as i32)?;
+    let id = ecdsa::RecoveryId::try_from(i32::from(recovery_id))?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
     secp.recover_ecdsa(&msg, &sig)
@@ -47,5 +47,8 @@ fn main() {
 
     let (recovery_id, serialize_sig) = signature.serialize_compact();
 
-    assert_eq!(recover(&secp, msg, serialize_sig, recovery_id.to_i32() as u8), Ok(pubkey));
+    assert_eq!(
+        recover(&secp, msg, serialize_sig, Into::<i32>::into(recovery_id) as u8),
+        Ok(pubkey)
+    );
 }
