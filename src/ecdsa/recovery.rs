@@ -13,27 +13,47 @@ use crate::ffi::recovery as ffi;
 use crate::{key, Error, Message, Secp256k1, Signing, Verification};
 
 /// A tag used for recovering the public key from a compact signature.
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Ord, PartialOrd)]
-pub struct RecoveryId(i32);
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum RecoveryId {
+    /// Signature recovery ID 0
+    Zero,
+    /// Signature recovery ID 1
+    One,
+    /// Signature recovery ID 2
+    Two,
+    /// Signature recovery ID 3
+    Three,
+}
+
+impl TryFrom<i32> for RecoveryId {
+    type Error = Error;
+    #[inline]
+    fn try_from(id: i32) -> Result<RecoveryId, Error> {
+        match id {
+            0 => Ok(RecoveryId::Zero),
+            1 => Ok(RecoveryId::One),
+            2 => Ok(RecoveryId::Two),
+            3 => Ok(RecoveryId::Three),
+            _ => Err(Error::InvalidRecoveryId),
+        }
+    }
+}
+
+impl From<RecoveryId> for i32 {
+    #[inline]
+    fn from(val: RecoveryId) -> Self {
+        match val {
+            RecoveryId::Zero => 0,
+            RecoveryId::One => 1,
+            RecoveryId::Two => 2,
+            RecoveryId::Three => 3,
+        }
+    }
+}
 
 /// An ECDSA signature with a recovery ID for pubkey recovery.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
-
-impl RecoveryId {
-    #[inline]
-    /// Allows library users to create valid recovery IDs from i32.
-    pub fn from_i32(id: i32) -> Result<RecoveryId, Error> {
-        match id {
-            0..=3 => Ok(RecoveryId(id)),
-            _ => Err(Error::InvalidRecoveryId),
-        }
-    }
-
-    #[inline]
-    /// Allows library users to convert recovery IDs to i32.
-    pub fn to_i32(self) -> i32 { self.0 }
-}
 
 impl RecoverableSignature {
     #[inline]
@@ -53,7 +73,7 @@ impl RecoverableSignature {
                 super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_c_ptr(),
-                recid.0,
+                recid.into(),
             ) == 1
             {
                 Ok(RecoverableSignature(ret))
@@ -80,7 +100,7 @@ impl RecoverableSignature {
     /// Serializes the recoverable signature in compact format.
     pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
         let mut ret = [0u8; 64];
-        let mut recid = 0i32;
+        let mut recid = RecoveryId::Zero.into();
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
                 super_ffi::secp256k1_context_no_precomp,
@@ -90,7 +110,7 @@ impl RecoverableSignature {
             );
             assert!(err == 1);
         }
-        (RecoveryId(recid), ret)
+        (recid.try_into().expect("ffi returned invalid RecoveryId!"), ret)
     }
 
     /// Converts a recoverable signature to a non-recoverable one (this is needed
@@ -245,7 +265,7 @@ mod tests {
 
     #[test]
     fn recid_sanity_check() {
-        let one = RecoveryId(1);
+        let one = RecoveryId::One;
         assert_eq!(one, one.clone());
     }
 
@@ -271,7 +291,7 @@ mod tests {
             0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
             0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
             0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89],
-            RecoveryId(1)))
+            RecoveryId::One))
     }
 
     #[test]
@@ -297,7 +317,7 @@ mod tests {
             0xd9, 0xfd, 0xdb, 0x44, 0xbd, 0x0d, 0xd9, 0xb9,
             0xdd, 0x47, 0x66, 0x6a, 0xb5, 0x28, 0x71, 0x90,
             0x1d, 0x17, 0x61, 0xeb, 0x82, 0xec, 0x87, 0x22],
-            RecoveryId(0)))
+            RecoveryId::Zero))
     }
 
     #[test]
@@ -365,10 +385,10 @@ mod tests {
         let msg = Message::from_digest_slice(&[0x55; 32]).unwrap();
 
         // Zero is not a valid sig
-        let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId(0)).unwrap();
+        let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId::Zero).unwrap();
         assert_eq!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature));
         // ...but 111..111 is
-        let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId(0)).unwrap();
+        let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId::Zero).unwrap();
         assert!(s.recover_ecdsa(&msg, &sig).is_ok());
     }
 
@@ -384,13 +404,13 @@ mod tests {
             0x80, 0x12, 0x0e, 0xf8, 0x02, 0x5e, 0x70, 0x9f,
             0xff, 0x20, 0x80, 0xc4, 0xa3, 0x9a, 0xae, 0x06,
             0x8d, 0x12, 0xee, 0xd0, 0x09, 0xb6, 0x8c, 0x89],
-            RecoveryId(1)).unwrap();
+            RecoveryId::One).unwrap();
         assert_eq!(&format!("{:?}", sig), "RecoverableSignature(6673ffad2147741f04772b6f921f0ba6af0c1e77fc439e65c36dedf4092e88984c1a971652e0ada880120ef8025e709fff2080c4a39aae068d12eed009b68c8901)");
     }
 
     #[test]
     fn test_recov_sig_serialize_compact() {
-        let recid_in = RecoveryId(1);
+        let recid_in = RecoveryId::One;
         #[rustfmt::skip]
         let bytes_in = &[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
@@ -409,16 +429,16 @@ mod tests {
 
     #[test]
     fn test_recov_id_conversion_between_i32() {
-        assert!(RecoveryId::from_i32(-1).is_err());
-        assert!(RecoveryId::from_i32(0).is_ok());
-        assert!(RecoveryId::from_i32(1).is_ok());
-        assert!(RecoveryId::from_i32(2).is_ok());
-        assert!(RecoveryId::from_i32(3).is_ok());
-        assert!(RecoveryId::from_i32(4).is_err());
-        let id0 = RecoveryId::from_i32(0).unwrap();
-        assert_eq!(id0.to_i32(), 0);
-        let id1 = RecoveryId(1);
-        assert_eq!(id1.to_i32(), 1);
+        assert!(RecoveryId::try_from(-1i32).is_err());
+        assert!(RecoveryId::try_from(0i32).is_ok());
+        assert!(RecoveryId::try_from(1i32).is_ok());
+        assert!(RecoveryId::try_from(2i32).is_ok());
+        assert!(RecoveryId::try_from(3i32).is_ok());
+        assert!(RecoveryId::try_from(4i32).is_err());
+        let id0 = RecoveryId::Zero;
+        assert_eq!(Into::<i32>::into(id0), 0i32);
+        let id1 = RecoveryId::One;
+        assert_eq!(Into::<i32>::into(id1), 1i32);
     }
 }
 
