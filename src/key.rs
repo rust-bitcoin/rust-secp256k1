@@ -144,7 +144,7 @@ impl str::FromStr for SecretKey {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct PublicKey(ffi::PublicKey);
 impl_fast_comparisons!(PublicKey);
@@ -160,6 +160,10 @@ impl fmt::LowerHex for PublicKey {
 }
 
 impl fmt::Display for PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
+}
+
+impl fmt::Debug for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
 }
 
@@ -1138,7 +1142,7 @@ impl CPtr for Keypair {
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
 /// [`cbor`]: https://docs.rs/cbor
-#[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct XOnlyPublicKey(ffi::XOnlyPublicKey);
 impl_fast_comparisons!(XOnlyPublicKey);
 
@@ -1153,6 +1157,10 @@ impl fmt::LowerHex for XOnlyPublicKey {
 }
 
 impl fmt::Display for XOnlyPublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
+}
+
+impl fmt::Debug for XOnlyPublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
 }
 
