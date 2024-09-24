@@ -146,7 +146,7 @@ impl str::FromStr for SecretKey {
 /// [`cbor`]: https://docs.rs/cbor
 #[derive(Copy, Clone, Debug, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct PublicKey(ffi::PublicKey);
+pub struct PublicKey(pub ffi::PublicKey);
 impl_fast_comparisons!(PublicKey);
 
 impl fmt::LowerHex for PublicKey {

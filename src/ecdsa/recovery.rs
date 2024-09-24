@@ -184,6 +184,20 @@ impl<C: Signing> Secp256k1<C> {
     }
 }
 
+/// Takes a 64 byte array and reverses the endian-ness of each 32 byte segment.
+/// Useful for flipping the byte endian-ness of the signature and public key components.
+fn flip_secp256k1_endianness(input: &[u8; 64]) -> [u8; 64] {
+    let mut output = [0u8; 64];
+    for i in 0..2 {
+        let start = i * 32;
+        let end = start + 32;
+        let mut segment: [u8; 32] = input[start..end].try_into().unwrap();
+        segment.reverse();
+        output[start..end].copy_from_slice(&segment);
+    }
+    output
+}
+
 impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
@@ -192,6 +206,41 @@ impl<C: Verification> Secp256k1<C> {
         msg: &Message,
         sig: &RecoverableSignature,
     ) -> Result<key::PublicKey, Error> {
+        cfg_if::cfg_if! {
+            if #[cfg(all(target_os = "zkvm", target_vendor = "succinct"))] {
+                // `msg.0` contains the message data as a byte array.
+                let prehash: &[u8] = &msg.0;
+
+                // `sig` is a 65-byte array containing r (32 bytes), s (32 bytes), and the recovery ID (1 byte). We need to handle the 
+                // signature bytes according to their endianness. The signature is in little-endian format, but needs to be processed
+                // in big-endian format for masking by the ecdsa-core library.
+
+                // Reverse the first 32 bytes (r) and the second 32 bytes (s) of the signature
+                // and concatenate them to get the signature in big-endian format.
+                let mut sig_be_bytes = flip_secp256k1_endianness(&sig.0[..64].try_into().unwrap());
+
+                let signature = sp1_ecdsa::Signature::<k256::Secp256k1>::from_slice(&sig_be_bytes).unwrap();
+
+                // The recovery ID is the last byte of the signature.
+                let recovery_id = sp1_ecdsa::RecoveryId::from_byte(sig.0[64]).unwrap();
+
+                let verifying_key = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256k1(prehash, &signature, recovery_id).unwrap();
+                let verifying_key_bytes = {
+                    // Convert the verifying key to a byte array. The encoded point returned by `to_encoded_point` is in uncompressed format,
+                    // with the prefix byte (0x04) and two 32-byte coordinates in big-endian format. This needs to be flipped to little-endian
+                    // for the from_array_unchecked constructor.
+                    let bytes = verifying_key.to_encoded_point(false).to_bytes();
+                    flip_secp256k1_endianness(&bytes[1..65].try_into().unwrap())
+                };
+
+                // In recover_from_prehash_secp256k1, the public key is verified to be valid, so we can use the unchecked constructor.
+                unsafe {
+                    let k = key::PublicKey(crate::ffi::PublicKey::from_array_unchecked(verifying_key_bytes));
+                    return Ok(k);
+                }
+            }
+        }
+        
         unsafe {
             let mut pk = super_ffi::PublicKey::new();
             if ffi::secp256k1_ecdsa_recover(
