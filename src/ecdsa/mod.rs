@@ -429,3 +429,58 @@ pub(crate) fn der_length_check(sig: &ffi::Signature, max_len: usize) -> bool {
     }
     len <= max_len
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::ecdsa::Signature;
+    use crate::Scalar;
+
+    #[test]
+    fn test_from_compact_min_r_and_min_s() {
+        // From libsecp256k1: "The signature must consist of a 32-byte big endian R value, followed
+        // by a 32-byte big endian S value. If R or S fall outside of [0..order-1], the encoding is
+        // invalid. R and S with value 0 are allowed in the encoding."
+        let r = Scalar::ZERO;
+        let s = Scalar::ZERO;
+        let mut bytes: [u8; 64] = [0; 64];
+        bytes[..32].copy_from_slice(&r.to_be_bytes());
+        bytes[32..].copy_from_slice(&s.to_be_bytes());
+
+        assert!(Signature::from_compact(&bytes).is_ok())
+    }
+
+    #[test]
+    fn test_from_compact_max_r_and_max_s() {
+        let r = Scalar::MAX;
+        let s = Scalar::MAX;
+        let mut bytes: [u8; 64] = [0; 64];
+        bytes[..32].copy_from_slice(&r.to_be_bytes());
+        bytes[32..].copy_from_slice(&s.to_be_bytes());
+
+        assert!(Signature::from_compact(&bytes).is_ok())
+    }
+
+    #[test]
+    fn test_from_compact_invalid_r() {
+        let r = Scalar::MAX;
+        let s = Scalar::MAX;
+        let mut bytes: [u8; 64] = [0; 64];
+        bytes[..32].copy_from_slice(&r.to_be_bytes());
+        bytes[32..].copy_from_slice(&s.to_be_bytes());
+        bytes[31] += 1;
+
+        assert!(Signature::from_compact(&bytes).is_err())
+    }
+
+    #[test]
+    fn test_from_compact_invalid_s() {
+        let r = Scalar::MAX;
+        let s = Scalar::MAX;
+        let mut bytes: [u8; 64] = [0; 64];
+        bytes[..32].copy_from_slice(&r.to_be_bytes());
+        bytes[32..].copy_from_slice(&s.to_be_bytes());
+        bytes[63] += 1;
+
+        assert!(Signature::from_compact(&bytes).is_err())
+    }
+}
