@@ -1,3 +1,16 @@
+# 0.30.0 - 2024-10-08
+
+* Allow signing variable-length messages [#706](https://github.com/rust-bitcoin/rust-secp256k1/pull/706)
+* Bump MSRV to 1.63 [#709](https://github.com/rust-bitcoin/rust-secp256k1/pull/709)
+* Deprecate `Message::from_digest_slice` in favor of `Message::from_digest` [#712](https://github.com/rust-bitcoin/rust-secp256k1/pull/712)
+* Truncate debug output of `SecretKey`; tighten `bitcoin_hashes` dependency version [#722](https://github.com/rust-bitcoin/rust-secp256k1/pull/722)
+* Simplify and improve consistency of secret key types' debug output [#726](https://github.com/rust-bitcoin/rust-secp256k1/pull/726)
+* Simplify and improve consistency of public key types' debug output [#745](https://github.com/rust-bitcoin/rust-secp256k1/pull/745)
+* Feature-gate `KeyPair::from_str` on `global-context` or `alloc` [#728](https://github.com/rust-bitcoin/rust-secp256k1/pull/728)
+* Add infallible constructors for `schnorr::Signature` from byteslices [#730](https://github.com/rust-bitcoin/rust-secp256k1/pull/730)
+* Deprecate slice-parsing methods in favor of array-parsing ones [#737](https://github.com/rust-bitcoin/rust-secp256k1/pull/737)
+* Make `RecoveryId` an enum rather than integer [#743](https://github.com/rust-bitcoin/rust-secp256k1/pull/743)
+
 # 0.29.0 - 2024-04-02
 
 * Deprecate `ThirtyTwoByteHash` [#686](https://github.com/rust-bitcoin/rust-secp256k1/pull/686)
