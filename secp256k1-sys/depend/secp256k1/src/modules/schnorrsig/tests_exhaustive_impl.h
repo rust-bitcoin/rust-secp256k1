@@ -104,7 +104,7 @@ static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_10_0_contex
             while (e_count_done < EXHAUSTIVE_TEST_ORDER) {
                 rustsecp256k1_v0_10_0_scalar e;
                 unsigned char msg32[32];
-                rustsecp256k1_v0_10_0_testrand256(msg32);
+                testrand256(msg32);
                 rustsecp256k1_v0_10_0_schnorrsig_challenge(&e, sig64, msg32, sizeof(msg32), pk32);
                 /* Only do work if we hit a challenge we haven't tried before. */
                 if (!e_done[e]) {
@@ -120,7 +120,7 @@ static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_10_0_contex
                             expect_valid = actual_k != -1 && s != EXHAUSTIVE_TEST_ORDER &&
                                            (s == (actual_k + actual_d * e) % EXHAUSTIVE_TEST_ORDER);
                         } else {
-                            rustsecp256k1_v0_10_0_testrand256(sig64 + 32);
+                            testrand256(sig64 + 32);
                             expect_valid = 0;
                         }
                         valid = rustsecp256k1_v0_10_0_schnorrsig_verify(ctx, sig64, msg32, sizeof(msg32), &pubkeys[d - 1]);
@@ -161,7 +161,7 @@ static void test_exhaustive_schnorrsig_sign(const rustsecp256k1_v0_10_0_context 
             /* Generate random messages until all challenges have been tried. */
             while (e_count_done < EXHAUSTIVE_TEST_ORDER) {
                 rustsecp256k1_v0_10_0_scalar e;
-                rustsecp256k1_v0_10_0_testrand256(msg32);
+                testrand256(msg32);
                 rustsecp256k1_v0_10_0_schnorrsig_challenge(&e, xonly_pubkey_bytes[k - 1], msg32, sizeof(msg32), xonly_pubkey_bytes[d - 1]);
                 /* Only do work if we hit a challenge we haven't tried before. */
                 if (!e_done[e]) {

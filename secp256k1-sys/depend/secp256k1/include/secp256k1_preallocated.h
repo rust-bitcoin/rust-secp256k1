@@ -52,8 +52,8 @@ SECP256K1_API size_t rustsecp256k1_v0_10_0_context_preallocated_size(
  *  in the memory. In simpler words, the prealloc pointer (or any pointer derived
  *  from it) should not be used during the lifetime of the context object.
  *
- *  Returns: a newly created context object.
- *  In:      prealloc: a pointer to a rewritable contiguous block of memory of
+ *  Returns: pointer to newly created context object.
+ *  In:      prealloc: pointer to a rewritable contiguous block of memory of
  *                     size at least rustsecp256k1_v0_10_0_context_preallocated_size(flags)
  *                     bytes, as detailed above.
  *           flags:    which parts of the context to initialize.
@@ -72,7 +72,7 @@ SECP256K1_API rustsecp256k1_v0_10_0_context *rustsecp256k1_v0_10_0_context_preal
  *  caller-provided memory.
  *
  *  Returns: the required size of the caller-provided memory block.
- *  In:      ctx: an existing context to copy.
+ *  In:      ctx: pointer to a context to copy.
  */
 SECP256K1_API size_t rustsecp256k1_v0_10_0_context_preallocated_clone_size(
     const rustsecp256k1_v0_10_0_context *ctx
@@ -91,9 +91,9 @@ SECP256K1_API size_t rustsecp256k1_v0_10_0_context_preallocated_clone_size(
  *  Cloning rustsecp256k1_v0_10_0_context_static is not possible, and should not be emulated by
  *  the caller (e.g., using memcpy). Create a new context instead.
  *
- *  Returns: a newly created context object.
- *  Args:    ctx:      an existing context to copy (not rustsecp256k1_v0_10_0_context_static).
- *  In:      prealloc: a pointer to a rewritable contiguous block of memory of
+ *  Returns: pointer to a newly created context object.
+ *  Args:    ctx:      pointer to a context to copy (not rustsecp256k1_v0_10_0_context_static).
+ *  In:      prealloc: pointer to a rewritable contiguous block of memory of
  *                     size at least rustsecp256k1_v0_10_0_context_preallocated_size(flags)
  *                     bytes, as detailed above.
  */
@@ -118,7 +118,7 @@ SECP256K1_API rustsecp256k1_v0_10_0_context *rustsecp256k1_v0_10_0_context_preal
  *  preallocated pointer given to rustsecp256k1_v0_10_0_context_preallocated_create or
  *  rustsecp256k1_v0_10_0_context_preallocated_clone.
  *
- *  Args:   ctx: an existing context to destroy, constructed using
+ *  Args:   ctx: pointer to a context to destroy, constructed using
  *               rustsecp256k1_v0_10_0_context_preallocated_create or
  *               rustsecp256k1_v0_10_0_context_preallocated_clone
  *               (i.e., not rustsecp256k1_v0_10_0_context_static).
