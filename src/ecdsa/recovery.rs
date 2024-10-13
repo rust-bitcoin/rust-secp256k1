@@ -351,7 +351,7 @@ mod tests {
 
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(s.verify_ecdsa(&sig, msg, &pk), Err(Error::IncorrectSignature));
 
         let recovered_key = s.recover_ecdsa(msg, &sigr).unwrap();
         assert!(recovered_key != pk);

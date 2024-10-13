@@ -743,7 +743,7 @@ impl PublicKey {
         msg: impl Into<Message>,
         sig: &ecdsa::Signature,
     ) -> Result<(), Error> {
-        secp.verify_ecdsa(msg, sig, self)
+        secp.verify_ecdsa(sig, msg, self)
     }
 }
 
