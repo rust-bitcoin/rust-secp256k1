@@ -301,6 +301,33 @@ impl ElligatorSwiftParty {
     }
 }
 
+/// Represents the two parties in ECDH
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Party {
+    /// The party that starts the key exchange or communication process
+    Initiator,
+    /// The party that responds to the initiator's communications
+    Responder,
+}
+
+impl From<ElligatorSwiftParty> for Party {
+    fn from(value: ElligatorSwiftParty) -> Self {
+        match value {
+            ElligatorSwiftParty::A => Party::Initiator,
+            ElligatorSwiftParty::B => Party::Responder,
+        }
+    }
+}
+
+impl Party {
+    fn to_ffi_int(self) -> c_int {
+        match self {
+            Party::Initiator => 0,
+            Party::Responder => 1,
+        }
+    }
+}
+
 impl FromStr for ElligatorSwift {
     fn from_str(hex: &str) -> Result<Self, Self::Err> {
         let mut ser = [0u8; 64];
