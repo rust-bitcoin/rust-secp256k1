@@ -154,7 +154,7 @@ impl ElligatorSwift {
     /// ```
     /// # #[cfg(feature = "alloc")] {
     ///     use secp256k1::{
-    ///         ellswift::{ElligatorSwift, ElligatorSwiftParty},
+    ///         ellswift::{ElligatorSwift, Party},
     ///         PublicKey, SecretKey, XOnlyPublicKey, Secp256k1,
     ///     };
     ///     use core::str::FromStr;
@@ -167,8 +167,8 @@ impl ElligatorSwift {
     ///     let alice_es = ElligatorSwift::from_seckey(&secp, alice_sk, None);
     ///     let bob_es = ElligatorSwift::from_seckey(&secp, bob_sk, None);
     ///
-    ///     let alice_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, alice_sk, ElligatorSwiftParty::A, None);
-    ///     let bob_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, bob_sk, ElligatorSwiftParty::B, None);
+    ///     let alice_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, alice_sk, Party::Initiator, None);
+    ///     let bob_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, bob_sk, Party::Responder, None);
     ///
     ///     assert_eq!(alice_shared_secret, bob_shared_secret);
     /// # }
@@ -177,10 +177,11 @@ impl ElligatorSwift {
         ellswift_a: ElligatorSwift,
         ellswift_b: ElligatorSwift,
         secret_key: SecretKey,
-        party: ElligatorSwiftParty,
+        party: impl Into<Party>,
         data: Option<&[u8]>,
     ) -> ElligatorSwiftSharedSecret {
         let mut shared_secret = [0u8; 32];
+        let p: Party = party.into();
         unsafe {
             let ret = ffi::secp256k1_ellswift_xdh(
                 ffi::secp256k1_context_no_precomp,
@@ -188,7 +189,7 @@ impl ElligatorSwift {
                 ellswift_a.as_c_ptr(),
                 ellswift_b.as_c_ptr(),
                 secret_key.as_c_ptr(),
-                party.to_ffi_int(),
+                p.to_ffi_int(),
                 ffi::secp256k1_ellswift_xdh_hash_function_bip324,
                 data.as_c_ptr() as *mut c_void,
             );
@@ -206,7 +207,7 @@ impl ElligatorSwift {
         ellswift_a: ElligatorSwift,
         ellswift_b: ElligatorSwift,
         secret_key: SecretKey,
-        party: ElligatorSwiftParty,
+        party: impl Into<Party>,
         mut hash_function: F,
     ) -> ElligatorSwiftSharedSecret
     where
@@ -214,6 +215,7 @@ impl ElligatorSwift {
     {
         let mut shared_secret = [0u8; 32];
         let hashfp = hash_callback::<F>;
+        let p: Party = party.into();
         unsafe {
             let ret = ffi::secp256k1_ellswift_xdh(
                 ffi::secp256k1_context_no_precomp,
@@ -221,7 +223,7 @@ impl ElligatorSwift {
                 ellswift_a.0.as_c_ptr(),
                 ellswift_b.0.as_c_ptr(),
                 secret_key.as_c_ptr(),
-                party.to_ffi_int(),
+                p.to_ffi_int(),
                 Some(hashfp),
                 &mut hash_function as *mut F as *mut c_void,
             );
@@ -291,20 +293,12 @@ impl ElligatorSwiftSharedSecret {
 /// This distinction is important because the different parties compute different
 /// hashes of the shared secret.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[deprecated(since = "0.30.0", note = "Use `Party` instead.")]
 pub enum ElligatorSwiftParty {
     /// We are the initiator of the ECDH
     A,
     /// We are the responder of the ECDH
     B,
-}
-
-impl ElligatorSwiftParty {
-    fn to_ffi_int(self) -> c_int {
-        match self {
-            ElligatorSwiftParty::A => 0,
-            ElligatorSwiftParty::B => 1,
-        }
-    }
 }
 
 /// Represents the two parties in ECDH
@@ -316,6 +310,7 @@ pub enum Party {
     Responder,
 }
 
+#[allow(deprecated)]
 impl From<ElligatorSwiftParty> for Party {
     fn from(value: ElligatorSwiftParty) -> Self {
         match value {
@@ -372,7 +367,7 @@ mod tests {
 
     use crate::ellswift::ElligatorSwift;
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
-    use crate::ellswift::{ElligatorSwiftParty, ElligatorSwiftSharedSecret};
+    use crate::ellswift::{ElligatorSwiftSharedSecret, Party};
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     use crate::SecretKey;
     use crate::{from_hex, PublicKey, XOnlyPublicKey};
@@ -418,7 +413,7 @@ mod tests {
             ell,
             ell,
             SecretKey::from_slice(&priv32).unwrap(),
-            ElligatorSwiftParty::A,
+            Party::Initiator,
             |_, _, _| ElligatorSwiftSharedSecret([0xff; 32]),
         );
         assert_eq!(pk, ElligatorSwiftSharedSecret([0xff; 32]));
@@ -632,8 +627,7 @@ mod tests {
                 )
             };
             let sec_key = SecretKey::from_slice(&my_secret).unwrap();
-            let initiator =
-                if initiator == 0 { ElligatorSwiftParty::B } else { ElligatorSwiftParty::A };
+            let initiator = if initiator == 0 { Party::Responder } else { Party::Initiator };
 
             let shared = ElligatorSwift::shared_secret(el_a, el_b, sec_key, initiator, None);
 
