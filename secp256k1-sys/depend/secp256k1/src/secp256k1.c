@@ -36,6 +36,7 @@
 #include "int128_impl.h"
 #include "scratch_impl.h"
 #include "selftest.h"
+#include "hsort_impl.h"
 
 #ifdef SECP256K1_NO_BUILD
 # error "secp256k1.h processed without SECP256K1_BUILD defined while building secp256k1.c"
@@ -75,7 +76,7 @@ const rustsecp256k1_v0_10_0_context *rustsecp256k1_v0_10_0_context_no_precomp = 
 
 /* Helper function that determines if a context is proper, i.e., is not the static context or a copy thereof.
  *
- * This is intended for "context" functions such as rustsecp256k1_v0_10_0_context_clone. Function which need specific
+ * This is intended for "context" functions such as rustsecp256k1_v0_10_0_context_clone. Functions that need specific
  * features of a context should still check for these features directly. For example, a function that needs
  * ecmult_gen should directly check for the existence of the ecmult_gen context. */
 static int rustsecp256k1_v0_10_0_context_is_proper(const rustsecp256k1_v0_10_0_context* ctx) {
@@ -191,36 +192,13 @@ static SECP256K1_INLINE void rustsecp256k1_v0_10_0_declassify(const rustsecp256k
 }
 
 static int rustsecp256k1_v0_10_0_pubkey_load(const rustsecp256k1_v0_10_0_context* ctx, rustsecp256k1_v0_10_0_ge* ge, const rustsecp256k1_v0_10_0_pubkey* pubkey) {
-    if (sizeof(rustsecp256k1_v0_10_0_ge_storage) == 64) {
-        /* When the rustsecp256k1_v0_10_0_ge_storage type is exactly 64 byte, use its
-         * representation inside rustsecp256k1_v0_10_0_pubkey, as conversion is very fast.
-         * Note that rustsecp256k1_v0_10_0_pubkey_save must use the same representation. */
-        rustsecp256k1_v0_10_0_ge_storage s;
-        memcpy(&s, &pubkey->data[0], sizeof(s));
-        rustsecp256k1_v0_10_0_ge_from_storage(ge, &s);
-    } else {
-        /* Otherwise, fall back to 32-byte big endian for X and Y. */
-        rustsecp256k1_v0_10_0_fe x, y;
-        ARG_CHECK(rustsecp256k1_v0_10_0_fe_set_b32_limit(&x, pubkey->data));
-        ARG_CHECK(rustsecp256k1_v0_10_0_fe_set_b32_limit(&y, pubkey->data + 32));
-        rustsecp256k1_v0_10_0_ge_set_xy(ge, &x, &y);
-    }
+    rustsecp256k1_v0_10_0_ge_from_bytes(ge, pubkey->data);
     ARG_CHECK(!rustsecp256k1_v0_10_0_fe_is_zero(&ge->x));
     return 1;
 }
 
 static void rustsecp256k1_v0_10_0_pubkey_save(rustsecp256k1_v0_10_0_pubkey* pubkey, rustsecp256k1_v0_10_0_ge* ge) {
-    if (sizeof(rustsecp256k1_v0_10_0_ge_storage) == 64) {
-        rustsecp256k1_v0_10_0_ge_storage s;
-        rustsecp256k1_v0_10_0_ge_to_storage(&s, ge);
-        memcpy(&pubkey->data[0], &s, sizeof(s));
-    } else {
-        VERIFY_CHECK(!rustsecp256k1_v0_10_0_ge_is_infinity(ge));
-        rustsecp256k1_v0_10_0_fe_normalize_var(&ge->x);
-        rustsecp256k1_v0_10_0_fe_normalize_var(&ge->y);
-        rustsecp256k1_v0_10_0_fe_get_b32(pubkey->data, &ge->x);
-        rustsecp256k1_v0_10_0_fe_get_b32(pubkey->data + 32, &ge->y);
-    }
+    rustsecp256k1_v0_10_0_ge_to_bytes(pubkey->data, ge);
 }
 
 int rustsecp256k1_v0_10_0_ec_pubkey_parse(const rustsecp256k1_v0_10_0_context* ctx, rustsecp256k1_v0_10_0_pubkey* pubkey, const unsigned char *input, size_t inputlen) {
@@ -288,6 +266,34 @@ int rustsecp256k1_v0_10_0_ec_pubkey_cmp(const rustsecp256k1_v0_10_0_context* ctx
         }
     }
     return rustsecp256k1_v0_10_0_memcmp_var(out[0], out[1], sizeof(out[0]));
+}
+
+static int rustsecp256k1_v0_10_0_ec_pubkey_sort_cmp(const void* pk1, const void* pk2, void *ctx) {
+    return rustsecp256k1_v0_10_0_ec_pubkey_cmp((rustsecp256k1_v0_10_0_context *)ctx,
+                                     *(rustsecp256k1_v0_10_0_pubkey **)pk1,
+                                     *(rustsecp256k1_v0_10_0_pubkey **)pk2);
+}
+
+int rustsecp256k1_v0_10_0_ec_pubkey_sort(const rustsecp256k1_v0_10_0_context* ctx, const rustsecp256k1_v0_10_0_pubkey **pubkeys, size_t n_pubkeys) {
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(pubkeys != NULL);
+
+    /* Suppress wrong warning (fixed in MSVC 19.33) */
+    #if defined(_MSC_VER) && (_MSC_VER < 1933)
+    #pragma warning(push)
+    #pragma warning(disable: 4090)
+    #endif
+
+    /* Casting away const is fine because neither rustsecp256k1_v0_10_0_hsort nor
+     * rustsecp256k1_v0_10_0_ec_pubkey_sort_cmp modify the data pointed to by the cmp_data
+     * argument. */
+    rustsecp256k1_v0_10_0_hsort(pubkeys, n_pubkeys, sizeof(*pubkeys), rustsecp256k1_v0_10_0_ec_pubkey_sort_cmp, (void *)ctx);
+
+    #if defined(_MSC_VER) && (_MSC_VER < 1933)
+    #pragma warning(pop)
+    #endif
+
+    return 1;
 }
 
 static void rustsecp256k1_v0_10_0_ecdsa_signature_load(const rustsecp256k1_v0_10_0_context* ctx, rustsecp256k1_v0_10_0_scalar* r, rustsecp256k1_v0_10_0_scalar* s, const rustsecp256k1_v0_10_0_ecdsa_signature* sig) {
@@ -480,7 +486,7 @@ static int rustsecp256k1_v0_10_0_ecdsa_sign_inner(const rustsecp256k1_v0_10_0_co
             break;
         }
         is_nonce_valid = rustsecp256k1_v0_10_0_scalar_set_b32_seckey(&non, nonce32);
-        /* The nonce is still secret here, but it being invalid is is less likely than 1:2^255. */
+        /* The nonce is still secret here, but it being invalid is less likely than 1:2^255. */
         rustsecp256k1_v0_10_0_declassify(ctx, &is_nonce_valid, sizeof(is_nonce_valid));
         if (is_nonce_valid) {
             ret = rustsecp256k1_v0_10_0_ecdsa_sig_sign(&ctx->ecmult_gen_ctx, r, s, &sec, &msg, &non, recid);
@@ -764,6 +770,10 @@ int rustsecp256k1_v0_10_0_tagged_sha256(const rustsecp256k1_v0_10_0_context* ctx
 
 #ifdef ENABLE_MODULE_SCHNORRSIG
 # include "modules/schnorrsig/main_impl.h"
+#endif
+
+#ifdef ENABLE_MODULE_MUSIG
+# include "modules/musig/main_impl.h"
 #endif
 
 #ifdef ENABLE_MODULE_ELLSWIFT
