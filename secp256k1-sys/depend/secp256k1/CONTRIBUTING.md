@@ -44,11 +44,12 @@ The Contributor Workflow & Peer Review in libsecp256k1 are similar to Bitcoin Co
 
 In addition, libsecp256k1 tries to maintain the following coding conventions:
 
-* No runtime heap allocation (e.g., no `malloc`) unless explicitly requested by the caller (via `rustsecp256k1_v0_10_0_context_create` or `rustsecp256k1_v0_10_0_scratch_space_create`, for example). Morever, it should be possible to use the library without any heap allocations.
+* No runtime heap allocation (e.g., no `malloc`) unless explicitly requested by the caller (via `rustsecp256k1_v0_10_0_context_create` or `rustsecp256k1_v0_10_0_scratch_space_create`, for example). Moreover, it should be possible to use the library without any heap allocations.
 * The tests should cover all lines and branches of the library (see [Test coverage](#coverage)).
 * Operations involving secret data should be tested for being constant time with respect to the secrets (see [src/ctime_tests.c](src/ctime_tests.c)).
 * Local variables containing secret data should be cleared explicitly to try to delete secrets from memory.
 * Use `rustsecp256k1_v0_10_0_memcmp_var` instead of `memcmp` (see [#823](https://github.com/bitcoin-core/secp256k1/issues/823)).
+* As a rule of thumb, the default values for configuration options should target standard desktop machines and align with Bitcoin Core's defaults, and the tests should mostly exercise the default configuration (see [#1549](https://github.com/bitcoin-core/secp256k1/issues/1549#issuecomment-2200559257)).
 
 #### Style conventions
 

@@ -10,8 +10,8 @@ env:
   MAKEFLAGS: -j4
   BUILD: check
   ### secp256k1 config
-  ECMULTWINDOW: auto
-  ECMULTGENPRECISION: auto
+  ECMULTWINDOW: 15
+  ECMULTGENKB: 22
   ASM: no
   WIDEMUL: auto
   WITH_VALGRIND: yes
@@ -20,8 +20,10 @@ env:
   EXPERIMENTAL: no
   ECDH: no
   RECOVERY: no
+  EXTRAKEYS: no
   SCHNORRSIG: no
   ELLSWIFT: no
+  SILENTPAYMENTS: no
   ### test options
   SECP256K1_TEST_ITERS:
   BENCH: yes
@@ -66,8 +68,10 @@ task:
   env:
     ECDH: yes
     RECOVERY: yes
+    EXTRAKEYS: yes
     SCHNORRSIG: yes
     ELLSWIFT: yes
+    SILENTPAYMENTS: yes
   matrix:
      # Currently only gcc-snapshot, the other compilers are tested on GHA with QEMU
      - env: { CC: 'gcc-snapshot' }
@@ -82,8 +86,10 @@ task:
   env:
     ECDH: yes
     RECOVERY: yes
+    EXTRAKEYS: yes
     SCHNORRSIG: yes
     ELLSWIFT: yes
+    SILENTPAYMENTS: yes
     WRAPPER_CMD: 'valgrind --error-exitcode=42'
     SECP256K1_TEST_ITERS: 2
   matrix:

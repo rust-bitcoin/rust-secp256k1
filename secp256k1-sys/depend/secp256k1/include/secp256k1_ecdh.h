@@ -39,7 +39,7 @@ SECP256K1_API const rustsecp256k1_v0_10_0_ecdh_hash_function rustsecp256k1_v0_10
  *           0: scalar was invalid (zero or overflow) or hashfp returned 0
  *  Args:    ctx:        pointer to a context object.
  *  Out:     output:     pointer to an array to be filled by hashfp.
- *  In:      pubkey:     a pointer to a rustsecp256k1_v0_10_0_pubkey containing an initialized public key.
+ *  In:      pubkey:     pointer to a rustsecp256k1_v0_10_0_pubkey containing an initialized public key.
  *           seckey:     a 32-byte scalar with which to multiply the point.
  *           hashfp:     pointer to a hash function. If NULL,
  *                       rustsecp256k1_v0_10_0_ecdh_hash_function_sha256 is used
