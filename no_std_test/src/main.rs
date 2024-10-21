@@ -94,12 +94,12 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
-    let sig = secp.sign_ecdsa(&message, &secret_key);
-    assert!(secp.verify_ecdsa(&message, &sig, &public_key).is_ok());
+    let sig = secp.sign_ecdsa(message, &secret_key);
+    assert!(secp.verify_ecdsa(message, &sig, &public_key).is_ok());
 
-    let rec_sig = secp.sign_ecdsa_recoverable(&message, &secret_key);
-    assert!(secp.verify_ecdsa(&message, &rec_sig.to_standard(), &public_key).is_ok());
-    assert_eq!(public_key, secp.recover_ecdsa(&message, &rec_sig).unwrap());
+    let rec_sig = secp.sign_ecdsa_recoverable(message, &secret_key);
+    assert!(secp.verify_ecdsa(message, &rec_sig.to_standard(), &public_key).is_ok());
+    assert_eq!(public_key, secp.recover_ecdsa(message, &rec_sig).unwrap());
     let (rec_id, data) = rec_sig.serialize_compact();
     let new_rec_sig = ecdsa::RecoverableSignature::from_compact(&data, rec_id).unwrap();
     assert_eq!(rec_sig, new_rec_sig);
@@ -121,8 +121,8 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
         let public_key = PublicKey::from_secret_key(&secp_alloc, &secret_key);
         let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
-        let sig = secp_alloc.sign_ecdsa(&message, &secret_key);
-        assert!(secp_alloc.verify_ecdsa(&message, &sig, &public_key).is_ok());
+        let sig = secp_alloc.sign_ecdsa(message, &secret_key);
+        assert!(secp_alloc.verify_ecdsa(message, &sig, &public_key).is_ok());
         unsafe { libc::printf("Verified alloc Successfully!\n\0".as_ptr() as _) };
     }
 

@@ -133,7 +133,7 @@ impl RecoverableSignature {
     /// verify-capable context.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn recover(&self, msg: &Message) -> Result<key::PublicKey, Error> {
+    pub fn recover(&self, msg: impl Into<Message>) -> Result<key::PublicKey, Error> {
         crate::SECP256K1.recover_ecdsa(msg, self)
     }
 }
@@ -154,7 +154,7 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
 impl<C: Signing> Secp256k1<C> {
     fn sign_ecdsa_recoverable_with_noncedata_pointer(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &key::SecretKey,
         noncedata_ptr: *const super_ffi::types::c_void,
     ) -> RecoverableSignature {
@@ -166,7 +166,7 @@ impl<C: Signing> Secp256k1<C> {
                 ffi::secp256k1_ecdsa_sign_recoverable(
                     self.ctx.as_ptr(),
                     &mut ret,
-                    msg.as_c_ptr(),
+                    msg.into().as_c_ptr(),
                     sk.as_c_ptr(),
                     super_ffi::secp256k1_nonce_function_rfc6979,
                     noncedata_ptr
@@ -182,7 +182,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing-capable context.
     pub fn sign_ecdsa_recoverable(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &key::SecretKey,
     ) -> RecoverableSignature {
         self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
@@ -195,7 +195,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing-capable context.
     pub fn sign_ecdsa_recoverable_with_noncedata(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &key::SecretKey,
         noncedata: &[u8; 32],
     ) -> RecoverableSignature {
@@ -209,7 +209,7 @@ impl<C: Verification> Secp256k1<C> {
     /// `msg`. Requires a verify-capable context.
     pub fn recover_ecdsa(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sig: &RecoverableSignature,
     ) -> Result<key::PublicKey, Error> {
         unsafe {
@@ -218,7 +218,7 @@ impl<C: Verification> Secp256k1<C> {
                 self.ctx.as_ptr(),
                 &mut pk,
                 sig.as_c_ptr(),
-                msg.as_c_ptr(),
+                msg.into().as_c_ptr(),
             ) != 1
             {
                 return Err(Error::InvalidSignature);
@@ -252,15 +252,15 @@ mod tests {
         let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
 
         // Try signing
-        assert_eq!(sign.sign_ecdsa_recoverable(&msg, &sk), full.sign_ecdsa_recoverable(&msg, &sk));
-        let sigr = full.sign_ecdsa_recoverable(&msg, &sk);
+        assert_eq!(sign.sign_ecdsa_recoverable(msg, &sk), full.sign_ecdsa_recoverable(msg, &sk));
+        let sigr = full.sign_ecdsa_recoverable(msg, &sk);
 
         // Try pk recovery
-        assert!(vrfy.recover_ecdsa(&msg, &sigr).is_ok());
-        assert!(full.recover_ecdsa(&msg, &sigr).is_ok());
+        assert!(vrfy.recover_ecdsa(msg, &sigr).is_ok());
+        assert!(full.recover_ecdsa(msg, &sigr).is_ok());
 
-        assert_eq!(vrfy.recover_ecdsa(&msg, &sigr), full.recover_ecdsa(&msg, &sigr));
-        assert_eq!(full.recover_ecdsa(&msg, &sigr), Ok(pk));
+        assert_eq!(vrfy.recover_ecdsa(msg, &sigr), full.recover_ecdsa(msg, &sigr));
+        assert_eq!(full.recover_ecdsa(msg, &sigr), Ok(pk));
     }
 
     #[test]
@@ -280,7 +280,7 @@ mod tests {
         let sk = SecretKey::from_slice(&ONE).unwrap();
         let msg = Message::from_digest_slice(&ONE).unwrap();
 
-        let sig = s.sign_ecdsa_recoverable(&msg, &sk);
+        let sig = s.sign_ecdsa_recoverable(msg, &sk);
 
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
@@ -306,7 +306,7 @@ mod tests {
         let msg = Message::from_digest_slice(&ONE).unwrap();
         let noncedata = [42u8; 32];
 
-        let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
+        let sig = s.sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
 
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
@@ -331,14 +331,14 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
-        let sigr = s.sign_ecdsa_recoverable(&msg, &sk);
+        let sigr = s.sign_ecdsa_recoverable(msg, &sk);
         let sig = sigr.to_standard();
 
         let msg = crate::random_32_bytes(&mut rand::thread_rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
-        assert_eq!(s.verify_ecdsa(&msg, &sig, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(s.verify_ecdsa(msg, &sig, &pk), Err(Error::IncorrectSignature));
 
-        let recovered_key = s.recover_ecdsa(&msg, &sigr).unwrap();
+        let recovered_key = s.recover_ecdsa(msg, &sigr).unwrap();
         assert!(recovered_key != pk);
     }
 
@@ -353,9 +353,9 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
-        let sig = s.sign_ecdsa_recoverable(&msg, &sk);
+        let sig = s.sign_ecdsa_recoverable(msg, &sk);
 
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
+        assert_eq!(s.recover_ecdsa(msg, &sig), Ok(pk));
     }
 
     #[test]
@@ -371,9 +371,9 @@ mod tests {
 
         let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
 
-        let sig = s.sign_ecdsa_recoverable_with_noncedata(&msg, &sk, &noncedata);
+        let sig = s.sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
 
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Ok(pk));
+        assert_eq!(s.recover_ecdsa(msg, &sig), Ok(pk));
     }
 
     #[test]
@@ -386,10 +386,10 @@ mod tests {
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId::Zero).unwrap();
-        assert_eq!(s.recover_ecdsa(&msg, &sig), Err(Error::InvalidSignature));
+        assert_eq!(s.recover_ecdsa(msg, &sig), Err(Error::InvalidSignature));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId::Zero).unwrap();
-        assert!(s.recover_ecdsa(&msg, &sig).is_ok());
+        assert!(s.recover_ecdsa(msg, &sig).is_ok());
     }
 
     #[test]

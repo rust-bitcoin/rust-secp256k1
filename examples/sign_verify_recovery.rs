@@ -15,7 +15,7 @@ fn recover<C: Verification>(
     let id = ecdsa::RecoveryId::try_from(i32::from(recovery_id))?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
-    secp.recover_ecdsa(&msg, &sig)
+    secp.recover_ecdsa(msg, &sig)
 }
 
 fn sign_recovery<C: Signing>(
@@ -26,7 +26,7 @@ fn sign_recovery<C: Signing>(
     let msg = sha256::Hash::hash(msg);
     let msg = Message::from_digest_slice(msg.as_ref())?;
     let seckey = SecretKey::from_slice(&seckey)?;
-    Ok(secp.sign_ecdsa_recoverable(&msg, &seckey))
+    Ok(secp.sign_ecdsa_recoverable(msg, &seckey))
 }
 
 fn main() {
