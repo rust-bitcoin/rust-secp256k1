@@ -30,13 +30,27 @@
 #  define SECP256K1_INLINE inline
 # endif
 
+/** Assert statically that expr is true.
+ *
+ * This is a statement-like macro and can only be used inside functions.
+ */
+#define STATIC_ASSERT(expr) do { \
+    switch(0) { \
+        case 0: \
+        /* If expr evaluates to 0, we have two case labels "0", which is illegal. */ \
+        case /* ERROR: static assertion failed */ (expr): \
+        ; \
+    } \
+} while(0)
+
 /** Assert statically that expr is an integer constant expression, and run stmt.
  *
  * Useful for example to enforce that magnitude arguments are constant.
  */
 #define ASSERT_INT_CONST_AND_DO(expr, stmt) do { \
     switch(42) { \
-        case /* ERROR: integer argument is not constant */ expr: \
+        /* C allows only integer constant expressions as case labels. */ \
+        case /* ERROR: integer argument is not constant */ (expr): \
             break; \
         default: ; \
     } \
@@ -133,7 +147,10 @@ static SECP256K1_INLINE void *checked_malloc(const rustsecp256k1_v0_10_0_callbac
 #define ALIGNMENT 16
 #endif
 
-#define ROUND_TO_ALIGN(size) ((((size) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT)
+/* ceil(x/y) for integers x > 0 and y > 0. Here, / denotes rational division. */
+#define CEIL_DIV(x, y) (1 + ((x) - 1) / (y))
+
+#define ROUND_TO_ALIGN(size) (CEIL_DIV(size, ALIGNMENT) * ALIGNMENT)
 
 /* Macro for restrict, when available and not in a VERIFY build. */
 #if defined(SECP256K1_BUILD) && defined(VERIFY)
@@ -352,6 +369,18 @@ SECP256K1_INLINE static void rustsecp256k1_v0_10_0_write_be64(unsigned char* p, 
     p[2] = x >> 40;
     p[1] = x >> 48;
     p[0] = x >> 56;
+}
+
+/* Rotate a uint32_t to the right. */
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_rotr32(const uint32_t x, const unsigned int by) {
+#if defined(_MSC_VER)
+    return _rotr(x, by);  /* needs <stdlib.h> */
+#else
+    /* Reduce rotation amount to avoid UB when shifting. */
+    const unsigned int mask = CHAR_BIT * sizeof(x) - 1;
+    /* Turned into a rot instruction by GCC and clang. */
+    return (x >> (by & mask)) | (x << ((-by) & mask));
+#endif
 }
 
 #endif /* SECP256K1_UTIL_H */
