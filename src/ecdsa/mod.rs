@@ -194,7 +194,7 @@ impl Signature {
     /// The signature must be normalized or verification will fail (see [`Signature::normalize_s`]).
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn verify(&self, msg: &Message, pk: &PublicKey) -> Result<(), Error> {
+    pub fn verify(&self, msg: impl Into<Message>, pk: &PublicKey) -> Result<(), Error> {
         SECP256K1.verify_ecdsa(msg, self, pk)
     }
 }
@@ -243,10 +243,11 @@ impl<'de> serde::Deserialize<'de> for Signature {
 impl<C: Signing> Secp256k1<C> {
     fn sign_ecdsa_with_noncedata_pointer(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &SecretKey,
         noncedata: Option<&[u8; 32]>,
     ) -> Signature {
+        let msg = msg.into();
         unsafe {
             let mut ret = ffi::Signature::new();
             let noncedata_ptr = match noncedata {
@@ -272,7 +273,7 @@ impl<C: Signing> Secp256k1<C> {
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
-    pub fn sign_ecdsa(&self, msg: &Message, sk: &SecretKey) -> Signature {
+    pub fn sign_ecdsa(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
         self.sign_ecdsa_with_noncedata_pointer(msg, sk, None)
     }
 
@@ -283,7 +284,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing-capable context.
     pub fn sign_ecdsa_with_noncedata(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &SecretKey,
         noncedata: &[u8; 32],
     ) -> Signature {
@@ -292,13 +293,14 @@ impl<C: Signing> Secp256k1<C> {
 
     fn sign_grind_with_check(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &SecretKey,
         check: impl Fn(&ffi::Signature) -> bool,
     ) -> Signature {
         let mut entropy_p: *const ffi::types::c_void = ptr::null();
         let mut counter: u32 = 0;
         let mut extra_entropy = [0u8; 32];
+        let msg = msg.into();
         loop {
             unsafe {
                 let mut ret = ffi::Signature::new();
@@ -338,7 +340,7 @@ impl<C: Signing> Secp256k1<C> {
     /// Requires a signing capable context.
     pub fn sign_ecdsa_grind_r(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sk: &SecretKey,
         bytes_to_grind: usize,
     ) -> Signature {
@@ -352,7 +354,7 @@ impl<C: Signing> Secp256k1<C> {
     /// signature implementation of bitcoin core. In average, this function
     /// will perform two signing operations.
     /// Requires a signing capable context.
-    pub fn sign_ecdsa_low_r(&self, msg: &Message, sk: &SecretKey) -> Signature {
+    pub fn sign_ecdsa_low_r(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
         self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
     }
 }
@@ -372,20 +374,21 @@ impl<C: Verification> Secp256k1<C> {
     /// # let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
     /// #
     /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
-    /// let sig = secp.sign_ecdsa(&message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Ok(()));
+    /// let sig = secp.sign_ecdsa(message, &secret_key);
+    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Ok(()));
     ///
     /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&message, &sig, &public_key), Err(Error::IncorrectSignature));
+    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Err(Error::IncorrectSignature));
     /// # }
     /// ```
     #[inline]
     pub fn verify_ecdsa(
         &self,
-        msg: &Message,
+        msg: impl Into<Message>,
         sig: &Signature,
         pk: &PublicKey,
     ) -> Result<(), Error> {
+        let msg = msg.into();
         unsafe {
             if ffi::secp256k1_ecdsa_verify(
                 self.ctx.as_ptr(),

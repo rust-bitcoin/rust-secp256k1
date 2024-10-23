@@ -338,7 +338,9 @@ impl SecretKey {
     /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn sign_ecdsa(&self, msg: Message) -> ecdsa::Signature { SECP256K1.sign_ecdsa(&msg, self) }
+    pub fn sign_ecdsa(&self, msg: impl Into<Message>) -> ecdsa::Signature {
+        SECP256K1.sign_ecdsa(msg, self)
+    }
 
     /// Returns the [`Keypair`] for this [`SecretKey`].
     ///
@@ -737,7 +739,7 @@ impl PublicKey {
     pub fn verify<C: Verification>(
         &self,
         secp: &Secp256k1<C>,
-        msg: &Message,
+        msg: impl Into<Message>,
         sig: &ecdsa::Signature,
     ) -> Result<(), Error> {
         secp.verify_ecdsa(msg, sig, self)
