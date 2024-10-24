@@ -25,7 +25,7 @@ static int recovery_test_nonce_function(unsigned char *nonce32, const unsigned c
     }
     /* On the next run, return a valid nonce, but flip a coin as to whether or not to fail signing. */
     memset(nonce32, 1, 32);
-    return rustsecp256k1_v0_10_0_testrand_bits(1);
+    return testrand_bits(1);
 }
 
 static void test_ecdsa_recovery_api(void) {
@@ -106,8 +106,8 @@ static void test_ecdsa_recovery_end_to_end(void) {
     /* Generate a random key and message. */
     {
         rustsecp256k1_v0_10_0_scalar msg, key;
-        random_scalar_order_test(&msg);
-        random_scalar_order_test(&key);
+        testutil_random_scalar_order_test(&msg);
+        testutil_random_scalar_order_test(&key);
         rustsecp256k1_v0_10_0_scalar_get_b32(privkey, &key);
         rustsecp256k1_v0_10_0_scalar_get_b32(message, &msg);
     }
@@ -141,7 +141,7 @@ static void test_ecdsa_recovery_end_to_end(void) {
     CHECK(rustsecp256k1_v0_10_0_memcmp_var(&pubkey, &recpubkey, sizeof(pubkey)) == 0);
     /* Serialize/destroy/parse signature and verify again. */
     CHECK(rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_serialize_compact(CTX, sig, &recid, &rsignature[4]) == 1);
-    sig[rustsecp256k1_v0_10_0_testrand_bits(6)] += 1 + rustsecp256k1_v0_10_0_testrand_int(255);
+    sig[testrand_bits(6)] += 1 + testrand_int(255);
     CHECK(rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_parse_compact(CTX, &rsignature[4], sig, recid) == 1);
     CHECK(rustsecp256k1_v0_10_0_ecdsa_recoverable_signature_convert(CTX, &signature[4], &rsignature[4]) == 1);
     CHECK(rustsecp256k1_v0_10_0_ecdsa_verify(CTX, &signature[4], message, &pubkey) == 0);
