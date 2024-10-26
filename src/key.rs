@@ -30,13 +30,13 @@ use crate::{
 ///
 /// We have attempted to reduce the side channel attack surface by implementing a constant time `eq`
 /// method. For similar reasons we explicitly do not implement `PartialOrd`, `Ord`, or `Hash` on
-/// `SecretKey`. If you really want to order secrets keys then you can use `AsRef` to get at the
+/// `SecretKey`. If you really want to order secret keys then you can use `AsRef` to get at the
 /// underlying bytes and compare them - however this is almost certainly a bad idea.
 ///
 /// # Serde support
 ///
 /// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
-/// of 32 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// of 32 `u8`s for non-human-readable formats. This representation is optimal for some formats
 /// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
 ///
 /// # Examples
@@ -126,7 +126,7 @@ impl str::FromStr for SecretKey {
 /// # Serde support
 ///
 /// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
-/// of 33 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// of 33 `u8`s for non-human-readable formats. This representation is optimal for some formats
 /// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
 ///
 /// # Examples
@@ -358,7 +358,7 @@ impl SecretKey {
         PublicKey::from_secret_key(secp, self)
     }
 
-    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`SecretKey`].
+    /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for this [`SecretKey`].
     ///
     /// This is equivalent to `XOnlyPublicKey::from_keypair(self.keypair(secp))`.
     #[inline]
@@ -715,7 +715,7 @@ impl PublicKey {
         }
     }
 
-    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`PublicKey`].
+    /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for this [`PublicKey`].
     #[inline]
     pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
         let mut pk_parity = 0;
@@ -803,9 +803,9 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 ///
 /// # Serde support
 ///
-/// Implements de/serialization with the `serde` and_`global-context` features enabled. Serializes
+/// Implements de/serialization with the `serde` and `global-context` features enabled. Serializes
 /// the secret bytes only. We treat the byte value as a tuple of 32 `u8`s for non-human-readable
-/// formats. This representation is optimal for for some formats (e.g. [`bincode`]) however other
+/// formats. This representation is optimal for some formats (e.g. [`bincode`]) however other
 /// formats may be less optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
 ///
 /// # Examples
@@ -905,7 +905,7 @@ impl Keypair {
         Keypair::from_seckey_str(SECP256K1, s)
     }
 
-    /// Generates a new random secret key.
+    /// Generates a new random key pair.
     /// # Examples
     ///
     /// ```
@@ -999,7 +999,7 @@ impl Keypair {
     #[inline]
     pub fn public_key(&self) -> PublicKey { PublicKey::from_keypair(self) }
 
-    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for this [`Keypair`].
+    /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for this [`Keypair`].
     ///
     /// This is equivalent to using [`XOnlyPublicKey::from_keypair`].
     #[inline]
@@ -1007,7 +1007,7 @@ impl Keypair {
         XOnlyPublicKey::from_keypair(self)
     }
 
-    /// Constructs an schnorr signature for `msg` using the global [`SECP256K1`] context.
+    /// Constructs a schnorr signature for `msg` using the global [`SECP256K1`] context.
     #[inline]
     #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
     pub fn sign_schnorr(&self, msg: &[u8]) -> schnorr::Signature {
@@ -1126,7 +1126,7 @@ impl CPtr for Keypair {
 /// # Serde support
 ///
 /// Implements de/serialization with the `serde` feature enabled. We treat the byte value as a tuple
-/// of 32 `u8`s for non-human-readable formats. This representation is optimal for for some formats
+/// of 32 `u8`s for non-human-readable formats. This representation is optimal for some formats
 /// (e.g. [`bincode`]) however other formats may be less optimal (e.g. [`cbor`]).
 ///
 /// # Examples
@@ -1191,7 +1191,7 @@ impl XOnlyPublicKey {
     )]
     pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey { self.as_mut_c_ptr() }
 
-    /// Returns the [`XOnlyPublicKey`] (and it's [`Parity`]) for `keypair`.
+    /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for `keypair`.
     #[inline]
     pub fn from_keypair(keypair: &Keypair) -> (XOnlyPublicKey, Parity) {
         let mut pk_parity = 0;
