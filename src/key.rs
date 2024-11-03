@@ -1014,6 +1014,14 @@ impl Keypair {
         SECP256K1.sign_schnorr(msg, self)
     }
 
+    /// Constructs a schnorr signature without aux rand for `msg` using the global
+    /// [`SECP256K1`] context.
+    #[inline]
+    #[cfg(all(feature = "global-context", feature = "std"))]
+    pub fn sign_schnorr_no_aux_rand(&self, msg: &[u8]) -> schnorr::Signature {
+        SECP256K1.sign_schnorr_no_aux_rand(msg, self)
+    }
+
     /// Attempts to erase the secret within the underlying array.
     ///
     /// Note, however, that the compiler is allowed to freely copy or move the contents
