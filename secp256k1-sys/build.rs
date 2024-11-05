@@ -48,7 +48,7 @@ fn main() {
             .flag("-fdata-sections")
             .flag("-ffunction-sections")
             .flag("-flto")
-            .target("riscv32-unknown-none-elf");
+            .target("riscv32im-unknown-none-elf");
     }
 
     base_config.include("depend/secp256k1/")
