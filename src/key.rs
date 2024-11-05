@@ -1016,6 +1016,7 @@ impl Keypair {
 
     /// Constructs a schnorr signature without aux rand for `msg` using the global
     /// [`SECP256K1`] context.
+    ///
     /// ⚠️ **Warning:** Signing multiple messages with the same private key without a unique nonce
     /// can expose the private key. **This function signs the message without a random nonce!**
     #[inline]
