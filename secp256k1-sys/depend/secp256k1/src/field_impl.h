@@ -18,6 +18,10 @@
 #error "Please select wide multiplication implementation"
 #endif
 
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(rustsecp256k1_v0_10_0_fe *a) {
+    rustsecp256k1_v0_10_0_memclear(a, sizeof(rustsecp256k1_v0_10_0_fe));
+}
+
 SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_equal(const rustsecp256k1_v0_10_0_fe *a, const rustsecp256k1_v0_10_0_fe *b) {
     rustsecp256k1_v0_10_0_fe na;
     SECP256K1_FE_VERIFY(a);
@@ -230,15 +234,6 @@ SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_add_int(rustsecp256k1_v0_1
     r->normalized = 0;
 
     SECP256K1_FE_VERIFY(r);
-}
-
-static void rustsecp256k1_v0_10_0_fe_impl_clear(rustsecp256k1_v0_10_0_fe *a);
-SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_clear(rustsecp256k1_v0_10_0_fe *a) {
-    a->magnitude = 0;
-    a->normalized = 1;
-    rustsecp256k1_v0_10_0_fe_impl_clear(a);
-
-    SECP256K1_FE_VERIFY(a);
 }
 
 static int rustsecp256k1_v0_10_0_fe_impl_is_zero(const rustsecp256k1_v0_10_0_fe *a);

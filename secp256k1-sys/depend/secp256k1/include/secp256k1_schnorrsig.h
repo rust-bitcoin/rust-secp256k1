@@ -79,7 +79,7 @@ SECP256K1_API const rustsecp256k1_v0_10_0_nonce_function_hardened rustsecp256k1_
  *             rustsecp256k1_v0_10_0_nonce_function_bip340 is used, then ndata must be a
  *             pointer to 32-byte auxiliary randomness as per BIP-340.
  */
-typedef struct {
+typedef struct rustsecp256k1_v0_10_0_schnorrsig_extraparams {
     unsigned char magic[4];
     rustsecp256k1_v0_10_0_nonce_function_hardened noncefp;
     void *ndata;
@@ -169,11 +169,11 @@ SECP256K1_API int rustsecp256k1_v0_10_0_schnorrsig_sign_custom(
  *
  *  Returns: 1: correct signature
  *           0: incorrect signature
- *  Args:    ctx: a secp256k1 context object.
+ *  Args:    ctx: pointer to a context object.
  *  In:    sig64: pointer to the 64-byte signature to verify.
  *           msg: the message being verified. Can only be NULL if msglen is 0.
  *        msglen: length of the message
- *        pubkey: pointer to an x-only public key to verify with (cannot be NULL)
+ *        pubkey: pointer to an x-only public key to verify with
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_schnorrsig_verify(
     const rustsecp256k1_v0_10_0_context *ctx,

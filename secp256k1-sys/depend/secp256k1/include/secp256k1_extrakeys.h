@@ -19,7 +19,7 @@ extern "C" {
  *  use rustsecp256k1_v0_10_0_xonly_pubkey_serialize and rustsecp256k1_v0_10_0_xonly_pubkey_parse. To
  *  compare keys, use rustsecp256k1_v0_10_0_xonly_pubkey_cmp.
  */
-typedef struct {
+typedef struct rustsecp256k1_v0_10_0_xonly_pubkey {
     unsigned char data[64];
 } rustsecp256k1_v0_10_0_xonly_pubkey;
 
@@ -30,7 +30,7 @@ typedef struct {
  *  guaranteed to be portable between different platforms or versions. It is
  *  however guaranteed to be 96 bytes in size, and can be safely copied/moved.
  */
-typedef struct {
+typedef struct rustsecp256k1_v0_10_0_keypair {
     unsigned char data[96];
 } rustsecp256k1_v0_10_0_keypair;
 
@@ -39,7 +39,7 @@ typedef struct {
  *  Returns: 1 if the public key was fully valid.
  *           0 if the public key could not be parsed or is invalid.
  *
- *  Args:   ctx: a secp256k1 context object.
+ *  Args:   ctx: pointer to a context object.
  *  Out: pubkey: pointer to a pubkey object. If 1 is returned, it is set to a
  *               parsed version of input. If not, it's set to an invalid value.
  *  In: input32: pointer to a serialized xonly_pubkey.
@@ -54,9 +54,9 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_xonly_pubke
  *
  *  Returns: 1 always.
  *
- *  Args:     ctx: a secp256k1 context object.
- *  Out: output32: a pointer to a 32-byte array to place the serialized key in.
- *  In:    pubkey: a pointer to a rustsecp256k1_v0_10_0_xonly_pubkey containing an initialized public key.
+ *  Args:     ctx: pointer to a context object.
+ *  Out: output32: pointer to a 32-byte array to place the serialized key in.
+ *  In:    pubkey: pointer to a rustsecp256k1_v0_10_0_xonly_pubkey containing an initialized public key.
  */
 SECP256K1_API int rustsecp256k1_v0_10_0_xonly_pubkey_serialize(
     const rustsecp256k1_v0_10_0_context *ctx,
@@ -69,7 +69,7 @@ SECP256K1_API int rustsecp256k1_v0_10_0_xonly_pubkey_serialize(
  *  Returns: <0 if the first public key is less than the second
  *           >0 if the first public key is greater than the second
  *           0 if the two public keys are equal
- *  Args: ctx:      a secp256k1 context object.
+ *  Args: ctx:      pointer to a context object.
  *  In:   pubkey1:  first public key to compare
  *        pubkey2:  second public key to compare
  */
@@ -155,10 +155,13 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_xonly_pubke
     const unsigned char *tweak32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
 
-/** Compute the keypair for a secret key.
+/** Compute the keypair for a valid secret key.
  *
- *  Returns: 1: secret was valid, keypair is ready to use
- *           0: secret was invalid, try again with a different secret
+ *  See the documentation of `rustsecp256k1_v0_10_0_ec_seckey_verify` for more information
+ *  about the validity of secret keys.
+ *
+ *  Returns: 1: secret key is valid
+ *           0: secret key is invalid
  *  Args:    ctx: pointer to a context object (not rustsecp256k1_v0_10_0_context_static).
  *  Out: keypair: pointer to the created keypair.
  *  In:   seckey: pointer to a 32-byte secret key.

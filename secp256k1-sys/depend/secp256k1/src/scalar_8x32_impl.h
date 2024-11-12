@@ -38,17 +38,6 @@
 #define SECP256K1_N_H_6 ((uint32_t)0xFFFFFFFFUL)
 #define SECP256K1_N_H_7 ((uint32_t)0x7FFFFFFFUL)
 
-SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(rustsecp256k1_v0_10_0_scalar *r) {
-    r->d[0] = 0;
-    r->d[1] = 0;
-    r->d[2] = 0;
-    r->d[3] = 0;
-    r->d[4] = 0;
-    r->d[5] = 0;
-    r->d[6] = 0;
-    r->d[7] = 0;
-}
-
 SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(rustsecp256k1_v0_10_0_scalar *r, unsigned int v) {
     r->d[0] = v;
     r->d[1] = 0;
@@ -62,23 +51,24 @@ SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_set_int(rustsecp256k1_
     SECP256K1_SCALAR_VERIFY(r);
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_limb32(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
     SECP256K1_SCALAR_VERIFY(a);
+    VERIFY_CHECK(count > 0 && count <= 32);
     VERIFY_CHECK((offset + count - 1) >> 5 == offset >> 5);
 
-    return (a->d[offset >> 5] >> (offset & 0x1F)) & ((1 << count) - 1);
+    return (a->d[offset >> 5] >> (offset & 0x1F)) & (0xFFFFFFFF >> (32 - count));
 }
 
-SECP256K1_INLINE static unsigned int rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
+SECP256K1_INLINE static uint32_t rustsecp256k1_v0_10_0_scalar_get_bits_var(const rustsecp256k1_v0_10_0_scalar *a, unsigned int offset, unsigned int count) {
     SECP256K1_SCALAR_VERIFY(a);
-    VERIFY_CHECK(count < 32);
+    VERIFY_CHECK(count > 0 && count <= 32);
     VERIFY_CHECK(offset + count <= 256);
 
     if ((offset + count - 1) >> 5 == offset >> 5) {
-        return rustsecp256k1_v0_10_0_scalar_get_bits(a, offset, count);
+        return rustsecp256k1_v0_10_0_scalar_get_bits_limb32(a, offset, count);
     } else {
         VERIFY_CHECK((offset >> 5) + 1 < 8);
-        return ((a->d[offset >> 5] >> (offset & 0x1F)) | (a->d[(offset >> 5) + 1] << (32 - (offset & 0x1F)))) & ((((uint32_t)1) << count) - 1);
+        return ((a->d[offset >> 5] >> (offset & 0x1F)) | (a->d[(offset >> 5) + 1] << (32 - (offset & 0x1F)))) & (0xFFFFFFFF >> (32 - count));
     }
 }
 

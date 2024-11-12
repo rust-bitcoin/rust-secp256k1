@@ -18,18 +18,6 @@
 <     secp256k1_context *ctx
 < ) SECP256K1_ARG_NONNULL(1);
 < 
-402,406d386
-< SECP256K1_API SECP256K1_WARN_UNUSED_RESULT secp256k1_scratch_space *secp256k1_scratch_space_create(
-<     const secp256k1_context *ctx,
-<     size_t size
-< ) SECP256K1_ARG_NONNULL(1);
-< 
-413,417d392
-< SECP256K1_API void secp256k1_scratch_space_destroy(
-<     const secp256k1_context *ctx,
-<     secp256k1_scratch_space *scratch
-< ) SECP256K1_ARG_NONNULL(1);
-< 
 636d610
 < SECP256K1_API const secp256k1_nonce_function secp256k1_nonce_function_rfc6979;
 639d612

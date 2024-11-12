@@ -27,6 +27,10 @@
 static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_one = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 1);
 static const rustsecp256k1_v0_10_0_scalar rustsecp256k1_v0_10_0_scalar_zero = SECP256K1_SCALAR_CONST(0, 0, 0, 0, 0, 0, 0, 0);
 
+SECP256K1_INLINE static void rustsecp256k1_v0_10_0_scalar_clear(rustsecp256k1_v0_10_0_scalar *r) {
+    rustsecp256k1_v0_10_0_memclear(r, sizeof(rustsecp256k1_v0_10_0_scalar));
+}
+
 static int rustsecp256k1_v0_10_0_scalar_set_b32_seckey(rustsecp256k1_v0_10_0_scalar *r, const unsigned char *bin) {
     int overflow;
     rustsecp256k1_v0_10_0_scalar_set_b32(r, bin, &overflow);
@@ -229,7 +233,7 @@ static void rustsecp256k1_v0_10_0_scalar_split_lambda(rustsecp256k1_v0_10_0_scal
  * <=   {triangle inequality}
  *    a1*|k*b2/n - c1| + a2*|k*(-b1)/n - c2|
  * <    {Lemma 1 and Lemma 2}
- *    a1*(2^-1 + epslion1) + a2*(2^-1 + epsilon2)
+ *    a1*(2^-1 + epsilon1) + a2*(2^-1 + epsilon2)
  * <    {rounding up to an integer}
  *    (a1 + a2 + 1)/2
  * <    {rounding up to a power of 2}
@@ -247,7 +251,7 @@ static void rustsecp256k1_v0_10_0_scalar_split_lambda(rustsecp256k1_v0_10_0_scal
  * <=   {triangle inequality}
  *    (-b1)*|k*b2/n - c1| + b2*|k*(-b1)/n - c2|
  * <    {Lemma 1 and Lemma 2}
- *    (-b1)*(2^-1 + epslion1) + b2*(2^-1 + epsilon2)
+ *    (-b1)*(2^-1 + epsilon1) + b2*(2^-1 + epsilon2)
  * <    {rounding up to an integer}
  *    (-b1 + b2)/2 + 1
  * <    {rounding up to a power of 2}

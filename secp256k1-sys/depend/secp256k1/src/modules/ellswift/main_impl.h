@@ -510,6 +510,7 @@ static int ellswift_xdh_hash_function_prefix(unsigned char *output, const unsign
     rustsecp256k1_v0_10_0_sha256_write(&sha, ell_b64, 64);
     rustsecp256k1_v0_10_0_sha256_write(&sha, x32, 32);
     rustsecp256k1_v0_10_0_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_10_0_sha256_clear(&sha);
 
     return 1;
 }
@@ -539,6 +540,7 @@ static int ellswift_xdh_hash_function_bip324(unsigned char* output, const unsign
     rustsecp256k1_v0_10_0_sha256_write(&sha, ell_b64, 64);
     rustsecp256k1_v0_10_0_sha256_write(&sha, x32, 32);
     rustsecp256k1_v0_10_0_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_10_0_sha256_clear(&sha);
 
     return 1;
 }
@@ -580,7 +582,7 @@ int rustsecp256k1_v0_10_0_ellswift_xdh(const rustsecp256k1_v0_10_0_context *ctx,
     /* Invoke hasher */
     ret = hashfp(output, sx, ell_a64, ell_b64, data);
 
-    memset(sx, 0, 32);
+    rustsecp256k1_v0_10_0_memclear(sx, sizeof(sx));
     rustsecp256k1_v0_10_0_fe_clear(&px);
     rustsecp256k1_v0_10_0_scalar_clear(&s);
 

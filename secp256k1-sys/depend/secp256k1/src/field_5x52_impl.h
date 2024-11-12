@@ -212,13 +212,6 @@ SECP256K1_INLINE static int rustsecp256k1_v0_10_0_fe_impl_is_odd(const rustsecp2
     return a->n[0] & 1;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_10_0_fe_impl_clear(rustsecp256k1_v0_10_0_fe *a) {
-    int i;
-    for (i=0; i<5; i++) {
-        a->n[i] = 0;
-    }
-}
-
 static int rustsecp256k1_v0_10_0_fe_impl_cmp_var(const rustsecp256k1_v0_10_0_fe *a, const rustsecp256k1_v0_10_0_fe *b) {
     int i;
     for (i = 4; i >= 0; i--) {

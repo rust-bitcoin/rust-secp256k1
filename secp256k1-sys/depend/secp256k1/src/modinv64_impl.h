@@ -621,13 +621,12 @@ static void rustsecp256k1_v0_10_0_modinv64(rustsecp256k1_v0_10_0_modinv64_signed
 
     /* g == 0 */
     VERIFY_CHECK(rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&g, 5, &SECP256K1_SIGNED62_ONE, 0) == 0);
-    /* |f| == 1, or (x == 0 and d == 0 and |f|=modulus) */
+    /* |f| == 1, or (x == 0 and d == 0 and f == modulus) */
     VERIFY_CHECK(rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, 5, &SECP256K1_SIGNED62_ONE, -1) == 0 ||
                  rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, 5, &SECP256K1_SIGNED62_ONE, 1) == 0 ||
                  (rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(x, 5, &SECP256K1_SIGNED62_ONE, 0) == 0 &&
                   rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&d, 5, &SECP256K1_SIGNED62_ONE, 0) == 0 &&
-                  (rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, 5, &modinfo->modulus, 1) == 0 ||
-                   rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, 5, &modinfo->modulus, -1) == 0)));
+                  rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, 5, &modinfo->modulus, 1) == 0));
 
     /* Optionally negate d, normalize to [0,modulus), and return it. */
     rustsecp256k1_v0_10_0_modinv64_normalize_62(&d, f.v[4], modinfo);
@@ -698,13 +697,12 @@ static void rustsecp256k1_v0_10_0_modinv64_var(rustsecp256k1_v0_10_0_modinv64_si
 
     /* g == 0 */
     VERIFY_CHECK(rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&g, len, &SECP256K1_SIGNED62_ONE, 0) == 0);
-    /* |f| == 1, or (x == 0 and d == 0 and |f|=modulus) */
+    /* |f| == 1, or (x == 0 and d == 0 and f == modulus) */
     VERIFY_CHECK(rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, len, &SECP256K1_SIGNED62_ONE, -1) == 0 ||
                  rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, len, &SECP256K1_SIGNED62_ONE, 1) == 0 ||
                  (rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(x, 5, &SECP256K1_SIGNED62_ONE, 0) == 0 &&
                   rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&d, 5, &SECP256K1_SIGNED62_ONE, 0) == 0 &&
-                  (rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, len, &modinfo->modulus, 1) == 0 ||
-                   rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, len, &modinfo->modulus, -1) == 0)));
+                  rustsecp256k1_v0_10_0_modinv64_mul_cmp_62(&f, len, &modinfo->modulus, 1) == 0));
 
     /* Optionally negate d, normalize to [0,modulus), and return it. */
     rustsecp256k1_v0_10_0_modinv64_normalize_62(&d, f.v[len - 1], modinfo);

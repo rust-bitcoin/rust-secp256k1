@@ -81,7 +81,6 @@ static const rustsecp256k1_v0_10_0_fe rustsecp256k1_v0_10_0_const_beta = SECP256
 #  define rustsecp256k1_v0_10_0_fe_normalizes_to_zero rustsecp256k1_v0_10_0_fe_impl_normalizes_to_zero
 #  define rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var rustsecp256k1_v0_10_0_fe_impl_normalizes_to_zero_var
 #  define rustsecp256k1_v0_10_0_fe_set_int rustsecp256k1_v0_10_0_fe_impl_set_int
-#  define rustsecp256k1_v0_10_0_fe_clear rustsecp256k1_v0_10_0_fe_impl_clear
 #  define rustsecp256k1_v0_10_0_fe_is_zero rustsecp256k1_v0_10_0_fe_impl_is_zero
 #  define rustsecp256k1_v0_10_0_fe_is_odd rustsecp256k1_v0_10_0_fe_impl_is_odd
 #  define rustsecp256k1_v0_10_0_fe_cmp_var rustsecp256k1_v0_10_0_fe_impl_cmp_var
@@ -144,11 +143,7 @@ static int rustsecp256k1_v0_10_0_fe_normalizes_to_zero_var(const rustsecp256k1_v
  */
 static void rustsecp256k1_v0_10_0_fe_set_int(rustsecp256k1_v0_10_0_fe *r, int a);
 
-/** Set a field element to 0.
- *
- * On input, a does not need to be initialized.
- * On output, a represents 0, is normalized and has magnitude 0.
- */
+/** Clear a field element to prevent leaking sensitive information. */
 static void rustsecp256k1_v0_10_0_fe_clear(rustsecp256k1_v0_10_0_fe *a);
 
 /** Determine whether a represents field element 0.
@@ -255,8 +250,8 @@ static void rustsecp256k1_v0_10_0_fe_add(rustsecp256k1_v0_10_0_fe *r, const rust
 /** Multiply two field elements.
  *
  * On input, a and b must be valid field elements; r does not need to be initialized.
- * r and a may point to the same object, but neither can be equal to b. The magnitudes
- * of a and b must not exceed 8.
+ * r and a may point to the same object, but neither may point to the object pointed
+ * to by b. The magnitudes of a and b must not exceed 8.
  * Performs {r = a * b}
  * On output, r will have magnitude 1, but won't be normalized.
  */

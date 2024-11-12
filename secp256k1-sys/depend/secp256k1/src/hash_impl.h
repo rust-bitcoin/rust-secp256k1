@@ -171,6 +171,10 @@ static void rustsecp256k1_v0_10_0_sha256_initialize_tagged(rustsecp256k1_v0_10_0
     rustsecp256k1_v0_10_0_sha256_write(hash, buf, 32);
 }
 
+static void rustsecp256k1_v0_10_0_sha256_clear(rustsecp256k1_v0_10_0_sha256 *hash) {
+    rustsecp256k1_v0_10_0_memclear(hash, sizeof(*hash));
+}
+
 static void rustsecp256k1_v0_10_0_hmac_sha256_initialize(rustsecp256k1_v0_10_0_hmac_sha256 *hash, const unsigned char *key, size_t keylen) {
     size_t n;
     unsigned char rkey[64];
@@ -196,7 +200,7 @@ static void rustsecp256k1_v0_10_0_hmac_sha256_initialize(rustsecp256k1_v0_10_0_h
         rkey[n] ^= 0x5c ^ 0x36;
     }
     rustsecp256k1_v0_10_0_sha256_write(&hash->inner, rkey, sizeof(rkey));
-    memset(rkey, 0, sizeof(rkey));
+    rustsecp256k1_v0_10_0_memclear(rkey, sizeof(rkey));
 }
 
 static void rustsecp256k1_v0_10_0_hmac_sha256_write(rustsecp256k1_v0_10_0_hmac_sha256 *hash, const unsigned char *data, size_t size) {
@@ -207,10 +211,13 @@ static void rustsecp256k1_v0_10_0_hmac_sha256_finalize(rustsecp256k1_v0_10_0_hma
     unsigned char temp[32];
     rustsecp256k1_v0_10_0_sha256_finalize(&hash->inner, temp);
     rustsecp256k1_v0_10_0_sha256_write(&hash->outer, temp, 32);
-    memset(temp, 0, 32);
+    rustsecp256k1_v0_10_0_memclear(temp, sizeof(temp));
     rustsecp256k1_v0_10_0_sha256_finalize(&hash->outer, out32);
 }
 
+static void rustsecp256k1_v0_10_0_hmac_sha256_clear(rustsecp256k1_v0_10_0_hmac_sha256 *hash) {
+    rustsecp256k1_v0_10_0_memclear(hash, sizeof(*hash));
+}
 
 static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_initialize(rustsecp256k1_v0_10_0_rfc6979_hmac_sha256 *rng, const unsigned char *key, size_t keylen) {
     rustsecp256k1_v0_10_0_hmac_sha256 hmac;
@@ -274,9 +281,11 @@ static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_generate(rustsecp256k1_v0_
 }
 
 static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_finalize(rustsecp256k1_v0_10_0_rfc6979_hmac_sha256 *rng) {
-    memset(rng->k, 0, 32);
-    memset(rng->v, 0, 32);
-    rng->retry = 0;
+    (void) rng;
+}
+
+static void rustsecp256k1_v0_10_0_rfc6979_hmac_sha256_clear(rustsecp256k1_v0_10_0_rfc6979_hmac_sha256 *rng) {
+    rustsecp256k1_v0_10_0_memclear(rng, sizeof(*rng));
 }
 
 #undef Round

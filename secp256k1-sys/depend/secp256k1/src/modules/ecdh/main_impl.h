@@ -19,6 +19,7 @@ static int ecdh_hash_function_sha256(unsigned char *output, const unsigned char 
     rustsecp256k1_v0_10_0_sha256_write(&sha, &version, 1);
     rustsecp256k1_v0_10_0_sha256_write(&sha, x32, 32);
     rustsecp256k1_v0_10_0_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_10_0_sha256_clear(&sha);
 
     return 1;
 }
@@ -61,9 +62,11 @@ int rustsecp256k1_v0_10_0_ecdh(const rustsecp256k1_v0_10_0_context* ctx, unsigne
 
     ret = hashfp(output, x, y, data);
 
-    memset(x, 0, 32);
-    memset(y, 0, 32);
+    rustsecp256k1_v0_10_0_memclear(x, sizeof(x));
+    rustsecp256k1_v0_10_0_memclear(y, sizeof(y));
     rustsecp256k1_v0_10_0_scalar_clear(&s);
+    rustsecp256k1_v0_10_0_ge_clear(&pt);
+    rustsecp256k1_v0_10_0_gej_clear(&res);
 
     return !!ret & !overflow;
 }

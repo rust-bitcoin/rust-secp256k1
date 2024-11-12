@@ -96,6 +96,7 @@ echo "$SOURCE_REV" >> ./secp256k1-HEAD-revision.txt
 # To compensate, the secp_context_create and _destroy methods are redefined in Rust.
 patch "$DIR/include/secp256k1.h" "./secp256k1.h.patch"
 patch "$DIR/src/secp256k1.c" "./secp256k1.c.patch"
+patch "$DIR/src/scratch.h" "./scratch.h.patch"
 patch "$DIR/src/scratch_impl.h" "./scratch_impl.h.patch"
 patch "$DIR/src/util.h" "./util.h.patch"
 

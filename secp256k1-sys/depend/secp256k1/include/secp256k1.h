@@ -49,19 +49,6 @@ extern "C" {
  */
 typedef struct rustsecp256k1_v0_10_0_context_struct rustsecp256k1_v0_10_0_context;
 
-/** Opaque data structure that holds rewritable "scratch space"
- *
- *  The purpose of this structure is to replace dynamic memory allocations,
- *  because we target architectures where this may not be available. It is
- *  essentially a resizable (within specified parameters) block of bytes,
- *  which is initially created either by memory allocation or TODO as a pointer
- *  into some fixed rewritable space.
- *
- *  Unlike the context object, this cannot safely be shared between threads
- *  without additional synchronization logic.
- */
-typedef struct rustsecp256k1_v0_10_0_scratch_space_struct rustsecp256k1_v0_10_0_scratch_space;
-
 /** Opaque data structure that holds a parsed and valid public key.
  *
  *  The exact representation of data inside is implementation defined and not
@@ -71,11 +58,11 @@ typedef struct rustsecp256k1_v0_10_0_scratch_space_struct rustsecp256k1_v0_10_0_
  *  use rustsecp256k1_v0_10_0_ec_pubkey_serialize and rustsecp256k1_v0_10_0_ec_pubkey_parse. To
  *  compare keys, use rustsecp256k1_v0_10_0_ec_pubkey_cmp.
  */
-typedef struct {
+typedef struct rustsecp256k1_v0_10_0_pubkey {
     unsigned char data[64];
 } rustsecp256k1_v0_10_0_pubkey;
 
-/** Opaque data structured that holds a parsed ECDSA signature.
+/** Opaque data structure that holds a parsed ECDSA signature.
  *
  *  The exact representation of data inside is implementation defined and not
  *  guaranteed to be portable between different platforms or versions. It is
@@ -84,7 +71,7 @@ typedef struct {
  *  comparison, use the rustsecp256k1_v0_10_0_ecdsa_signature_serialize_* and
  *  rustsecp256k1_v0_10_0_ecdsa_signature_parse_* functions.
  */
-typedef struct {
+typedef struct rustsecp256k1_v0_10_0_ecdsa_signature {
     unsigned char data[64];
 } rustsecp256k1_v0_10_0_ecdsa_signature;
 
@@ -147,6 +134,15 @@ typedef int (*rustsecp256k1_v0_10_0_nonce_function)(
      * 1. If using Libtool, it defines DLL_EXPORT automatically.
      * 2. In other cases, SECP256K1_DLL_EXPORT must be defined. */
 #   define SECP256K1_API extern __declspec (dllexport)
+#  else
+    /* Building libsecp256k1 as a static library on Windows.
+     * No declspec is needed, and so we would want the non-Windows-specific
+     * logic below take care of this case. However, this may result in setting
+     * __attribute__ ((visibility("default"))), which is supposed to be a noop
+     * on Windows but may trigger warnings when compiling with -flto due to a
+     * bug in GCC, see
+     * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=116478 . */
+#   define SECP256K1_API extern
 #  endif
   /* The user must define SECP256K1_STATIC when consuming libsecp256k1 as a static
    * library on Windows. */
@@ -156,11 +152,12 @@ typedef int (*rustsecp256k1_v0_10_0_nonce_function)(
 # endif
 #endif
 #ifndef SECP256K1_API
+/* All cases not captured by the Windows-specific logic. */
 # if defined(__GNUC__) && (__GNUC__ >= 4) && defined(SECP256K1_BUILD)
-   /* Building libsecp256k1 on non-Windows using GCC or compatible. */
+   /* Building libsecp256k1 using GCC or compatible. */
 #  define SECP256K1_API extern __attribute__ ((visibility ("default")))
 # else
-   /* All cases not captured above. */
+   /* Fall back to standard C's extern. */
 #  define SECP256K1_API extern
 # endif
 #endif
@@ -262,7 +259,7 @@ SECP256K1_API void rustsecp256k1_v0_10_0_selftest(void);
  *  memory allocation entirely, see rustsecp256k1_v0_10_0_context_static and the functions in
  *  rustsecp256k1_v0_10_0_preallocated.h.
  *
- *  Returns: a newly created context object.
+ *  Returns: pointer to a newly created context object.
  *  In:      flags: Always set to SECP256K1_CONTEXT_NONE (see below).
  *
  *  The only valid non-deprecated flag in recent library versions is
@@ -289,8 +286,8 @@ SECP256K1_API void rustsecp256k1_v0_10_0_selftest(void);
  *  Cloning rustsecp256k1_v0_10_0_context_static is not possible, and should not be emulated by
  *  the caller (e.g., using memcpy). Create a new context instead.
  *
- *  Returns: a newly created context object.
- *  Args:    ctx: an existing context to copy (not rustsecp256k1_v0_10_0_context_static)
+ *  Returns: pointer to a newly created context object.
+ *  Args:    ctx: pointer to a context to copy (not rustsecp256k1_v0_10_0_context_static).
  */
 /** Destroy a secp256k1 context object (created in dynamically allocated memory).
  *
@@ -302,7 +299,7 @@ SECP256K1_API void rustsecp256k1_v0_10_0_selftest(void);
  *  behaviour is undefined. In that case, rustsecp256k1_v0_10_0_context_preallocated_destroy must
  *  be used instead.
  *
- *  Args:   ctx: an existing context to destroy, constructed using
+ *  Args:   ctx: pointer to a context to destroy, constructed using
  *               rustsecp256k1_v0_10_0_context_create or rustsecp256k1_v0_10_0_context_clone
  *               (i.e., not rustsecp256k1_v0_10_0_context_static).
  */
@@ -335,8 +332,8 @@ SECP256K1_API void rustsecp256k1_v0_10_0_selftest(void);
  *  fails. In this case, the corresponding default handler will be called with
  *  the data pointer argument set to NULL.
  *
- *  Args: ctx:  an existing context object.
- *  In:   fun:  a pointer to a function to call when an illegal argument is
+ *  Args: ctx:  pointer to a context object.
+ *  In:   fun:  pointer to a function to call when an illegal argument is
  *              passed to the API, taking a message and an opaque pointer.
  *              (NULL restores the default handler.)
  *        data: the opaque pointer to pass to fun above, must be NULL for the default handler.
@@ -362,8 +359,8 @@ SECP256K1_API void rustsecp256k1_v0_10_0_context_set_illegal_callback(
  *  for that). After this callback returns, anything may happen, including
  *  crashing.
  *
- *  Args: ctx:  an existing context object.
- *  In:   fun:  a pointer to a function to call when an internal error occurs,
+ *  Args: ctx:  pointer to a context object.
+ *  In:   fun:  pointer to a function to call when an internal error occurs,
  *              taking a message and an opaque pointer (NULL restores the
  *              default handler, see rustsecp256k1_v0_10_0_context_set_illegal_callback
  *              for details).
@@ -377,24 +374,11 @@ SECP256K1_API void rustsecp256k1_v0_10_0_context_set_error_callback(
     const void *data
 ) SECP256K1_ARG_NONNULL(1);
 
-/** Create a secp256k1 scratch space object.
- *
- *  Returns: a newly created scratch space.
- *  Args: ctx:  an existing context object.
- *  In:   size: amount of memory to be available as scratch space. Some extra
- *              (<100 bytes) will be allocated for extra accounting.
- */
-/** Destroy a secp256k1 scratch space.
- *
- *  The pointer may not be used afterwards.
- *  Args:       ctx: a secp256k1 context object.
- *          scratch: space to destroy
- */
 /** Parse a variable-length public key into the pubkey object.
  *
  *  Returns: 1 if the public key was fully valid.
  *           0 if the public key could not be parsed or is invalid.
- *  Args: ctx:      a secp256k1 context object.
+ *  Args: ctx:      pointer to a context object.
  *  Out:  pubkey:   pointer to a pubkey object. If 1 is returned, it is set to a
  *                  parsed version of input. If not, its value is undefined.
  *  In:   input:    pointer to a serialized public key
@@ -414,14 +398,14 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_ec_pubkey_p
 /** Serialize a pubkey object into a serialized byte sequence.
  *
  *  Returns: 1 always.
- *  Args:   ctx:        a secp256k1 context object.
- *  Out:    output:     a pointer to a 65-byte (if compressed==0) or 33-byte (if
+ *  Args:   ctx:        pointer to a context object.
+ *  Out:    output:     pointer to a 65-byte (if compressed==0) or 33-byte (if
  *                      compressed==1) byte array to place the serialized key
  *                      in.
- *  In/Out: outputlen:  a pointer to an integer which is initially set to the
+ *  In/Out: outputlen:  pointer to an integer which is initially set to the
  *                      size of output, and is overwritten with the written
  *                      size.
- *  In:     pubkey:     a pointer to a rustsecp256k1_v0_10_0_pubkey containing an
+ *  In:     pubkey:     pointer to a rustsecp256k1_v0_10_0_pubkey containing an
  *                      initialized public key.
  *          flags:      SECP256K1_EC_COMPRESSED if serialization should be in
  *                      compressed format, otherwise SECP256K1_EC_UNCOMPRESSED.
@@ -439,7 +423,7 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ec_pubkey_serialize(
  *  Returns: <0 if the first public key is less than the second
  *           >0 if the first public key is greater than the second
  *           0 if the two public keys are equal
- *  Args: ctx:      a secp256k1 context object.
+ *  Args: ctx:      pointer to a context object
  *  In:   pubkey1:  first public key to compare
  *        pubkey2:  second public key to compare
  */
@@ -449,12 +433,26 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_ec_pubkey_c
     const rustsecp256k1_v0_10_0_pubkey *pubkey2
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
+/** Sort public keys using lexicographic (of compressed serialization) order
+ *
+ *  Returns: 0 if the arguments are invalid. 1 otherwise.
+ *
+ *  Args:     ctx: pointer to a context object
+ *  In:   pubkeys: array of pointers to pubkeys to sort
+ *      n_pubkeys: number of elements in the pubkeys array
+ */
+SECP256K1_API int rustsecp256k1_v0_10_0_ec_pubkey_sort(
+    const rustsecp256k1_v0_10_0_context *ctx,
+    const rustsecp256k1_v0_10_0_pubkey **pubkeys,
+    size_t n_pubkeys
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2);
+
 /** Parse an ECDSA signature in compact (64 bytes) format.
  *
  *  Returns: 1 when the signature could be parsed, 0 otherwise.
- *  Args: ctx:      a secp256k1 context object
- *  Out:  sig:      a pointer to a signature object
- *  In:   input64:  a pointer to the 64-byte array to parse
+ *  Args: ctx:      pointer to a context object
+ *  Out:  sig:      pointer to a signature object
+ *  In:   input64:  pointer to the 64-byte array to parse
  *
  *  The signature must consist of a 32-byte big endian R value, followed by a
  *  32-byte big endian S value. If R or S fall outside of [0..order-1], the
@@ -473,9 +471,9 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_signature_parse_compact(
 /** Parse a DER ECDSA signature.
  *
  *  Returns: 1 when the signature could be parsed, 0 otherwise.
- *  Args: ctx:      a secp256k1 context object
- *  Out:  sig:      a pointer to a signature object
- *  In:   input:    a pointer to the signature to be parsed
+ *  Args: ctx:      pointer to a context object
+ *  Out:  sig:      pointer to a signature object
+ *  In:   input:    pointer to the signature to be parsed
  *        inputlen: the length of the array pointed to be input
  *
  *  This function will accept any valid DER encoded signature, even if the
@@ -495,13 +493,13 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der(
 /** Serialize an ECDSA signature in DER format.
  *
  *  Returns: 1 if enough space was available to serialize, 0 otherwise
- *  Args:   ctx:       a secp256k1 context object
- *  Out:    output:    a pointer to an array to store the DER serialization
- *  In/Out: outputlen: a pointer to a length integer. Initially, this integer
+ *  Args:   ctx:       pointer to a context object
+ *  Out:    output:    pointer to an array to store the DER serialization
+ *  In/Out: outputlen: pointer to a length integer. Initially, this integer
  *                     should be set to the length of output. After the call
  *                     it will be set to the length of the serialization (even
  *                     if 0 was returned).
- *  In:     sig:       a pointer to an initialized signature object
+ *  In:     sig:       pointer to an initialized signature object
  */
 SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_der(
     const rustsecp256k1_v0_10_0_context *ctx,
@@ -513,9 +511,9 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_der(
 /** Serialize an ECDSA signature in compact (64 byte) format.
  *
  *  Returns: 1
- *  Args:   ctx:       a secp256k1 context object
- *  Out:    output64:  a pointer to a 64-byte array to store the compact serialization
- *  In:     sig:       a pointer to an initialized signature object
+ *  Args:   ctx:       pointer to a context object
+ *  Out:    output64:  pointer to a 64-byte array to store the compact serialization
+ *  In:     sig:       pointer to an initialized signature object
  *
  *  See rustsecp256k1_v0_10_0_ecdsa_signature_parse_compact for details about the encoding.
  */
@@ -529,7 +527,7 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_signature_serialize_compact(
  *
  *  Returns: 1: correct signature
  *           0: incorrect or unparseable signature
- *  Args:    ctx:       a secp256k1 context object.
+ *  Args:    ctx:       pointer to a context object
  *  In:      sig:       the signature being verified.
  *           msghash32: the 32-byte message hash being verified.
  *                      The verifier must make sure to apply a cryptographic
@@ -560,12 +558,12 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_10_0_ecdsa_verif
 /** Convert a signature to a normalized lower-S form.
  *
  *  Returns: 1 if sigin was not normalized, 0 if it already was.
- *  Args: ctx:    a secp256k1 context object
- *  Out:  sigout: a pointer to a signature to fill with the normalized form,
+ *  Args: ctx:    pointer to a context object
+ *  Out:  sigout: pointer to a signature to fill with the normalized form,
  *                or copy if the input was already normalized. (can be NULL if
  *                you're only interested in whether the input was already
  *                normalized).
- *  In:   sigin:  a pointer to a signature to check/normalize (can be identical to sigout)
+ *  In:   sigin:  pointer to a signature to check/normalize (can be identical to sigout)
  *
  *  With ECDSA a third-party can forge a second distinct signature of the same
  *  message, given a single initial signature, but without knowing the key. This
@@ -638,12 +636,14 @@ SECP256K1_API int rustsecp256k1_v0_10_0_ecdsa_sign(
     const void *ndata
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
-/** Verify an ECDSA secret key.
+/** Verify an elliptic curve secret key.
  *
  *  A secret key is valid if it is not 0 and less than the secp256k1 curve order
  *  when interpreted as an integer (most significant byte first). The
  *  probability of choosing a 32-byte string uniformly at random which is an
- *  invalid secret key is negligible.
+ *  invalid secret key is negligible. However, if it does happen it should
+ *  be assumed that the randomness source is severely broken and there should
+ *  be no retry.
  *
  *  Returns: 1: secret key is valid
  *           0: secret key is invalid

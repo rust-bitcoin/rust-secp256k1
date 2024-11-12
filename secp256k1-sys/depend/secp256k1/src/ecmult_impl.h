@@ -42,7 +42,7 @@
 #endif
 
 #define WNAF_BITS 128
-#define WNAF_SIZE_BITS(bits, w) (((bits) + (w) - 1) / (w))
+#define WNAF_SIZE_BITS(bits, w) CEIL_DIV(bits, w)
 #define WNAF_SIZE(w) WNAF_SIZE_BITS(WNAF_BITS, w)
 
 /* The number of objects allocated on the scratch space for ecmult_multi algorithms */
@@ -171,18 +171,21 @@ static int rustsecp256k1_v0_10_0_ecmult_wnaf(int *wnaf, int len, const rustsecp2
     VERIFY_CHECK(a != NULL);
     VERIFY_CHECK(2 <= w && w <= 31);
 
-    memset(wnaf, 0, len * sizeof(wnaf[0]));
+    for (bit = 0; bit < len; bit++) {
+        wnaf[bit] = 0;
+    }
 
     s = *a;
-    if (rustsecp256k1_v0_10_0_scalar_get_bits(&s, 255, 1)) {
+    if (rustsecp256k1_v0_10_0_scalar_get_bits_limb32(&s, 255, 1)) {
         rustsecp256k1_v0_10_0_scalar_negate(&s, &s);
         sign = -1;
     }
 
+    bit = 0;
     while (bit < len) {
         int now;
         int word;
-        if (rustsecp256k1_v0_10_0_scalar_get_bits(&s, bit, 1) == (unsigned int)carry) {
+        if (rustsecp256k1_v0_10_0_scalar_get_bits_limb32(&s, bit, 1) == (unsigned int)carry) {
             bit++;
             continue;
         }
@@ -209,7 +212,7 @@ static int rustsecp256k1_v0_10_0_ecmult_wnaf(int *wnaf, int len, const rustsecp2
         VERIFY_CHECK(carry == 0);
 
         while (verify_bit < 256) {
-            VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits(&s, verify_bit, 1) == 0);
+            VERIFY_CHECK(rustsecp256k1_v0_10_0_scalar_get_bits_limb32(&s, verify_bit, 1) == 0);
             verify_bit++;
         }
     }
@@ -660,7 +663,6 @@ static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch(const rustsecp256k1_v0_1
     struct rustsecp256k1_v0_10_0_pippenger_state *state_space;
     size_t idx = 0;
     size_t point_idx = 0;
-    int i, j;
     int bucket_window;
 
     rustsecp256k1_v0_10_0_gej_set_infinity(r);
@@ -708,18 +710,6 @@ static int rustsecp256k1_v0_10_0_ecmult_pippenger_batch(const rustsecp256k1_v0_1
     }
 
     rustsecp256k1_v0_10_0_ecmult_pippenger_wnaf(buckets, bucket_window, state_space, r, scalars, points, idx);
-
-    /* Clear data */
-    for(i = 0; (size_t)i < idx; i++) {
-        rustsecp256k1_v0_10_0_scalar_clear(&scalars[i]);
-        state_space->ps[i].skew_na = 0;
-        for(j = 0; j < WNAF_SIZE(bucket_window+1); j++) {
-            state_space->wnaf_na[i * WNAF_SIZE(bucket_window+1) + j] = 0;
-        }
-    }
-    for(i = 0; i < 1<<bucket_window; i++) {
-        rustsecp256k1_v0_10_0_gej_clear(&buckets[i]);
-    }
     rustsecp256k1_v0_10_0_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
     return 1;
 }
@@ -808,8 +798,8 @@ static int rustsecp256k1_v0_10_0_ecmult_multi_batch_size_helper(size_t *n_batche
         return 1;
     }
     /* Compute ceil(n/max_n_batch_points) and ceil(n/n_batches) */
-    *n_batches = 1 + (n - 1) / max_n_batch_points;
-    *n_batch_points = 1 + (n - 1) / *n_batches;
+    *n_batches = CEIL_DIV(n, max_n_batch_points);
+    *n_batch_points = CEIL_DIV(n, *n_batches);
     return 1;
 }
 
