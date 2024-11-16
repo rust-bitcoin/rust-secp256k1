@@ -26,8 +26,8 @@
  * certain violations are easily supported. You may need to adapt it.
  *
  * Do not use this for new systems. Use well-defined DER or compact signatures
- * instead if you have the choice (see rustsecp256k1_v0_10_0_ecdsa_signature_parse_der and
- * rustsecp256k1_v0_10_0_ecdsa_signature_parse_compact).
+ * instead if you have the choice (see rustsecp256k1_v0_11_ecdsa_signature_parse_der and
+ * rustsecp256k1_v0_11_ecdsa_signature_parse_compact).
  *
  * The supported violations are:
  * - All numbers are parsed as nonnegative integers, even though X.609-0207
@@ -67,8 +67,8 @@ extern "C" {
  *
  *  Returns: 1 when the signature could be parsed, 0 otherwise.
  *  Args: ctx:      a secp256k1 context object
- *  Out:  sig:      a pointer to a signature object
- *  In:   input:    a pointer to the signature to be parsed
+ *  Out:  sig:      pointer to a signature object
+ *  In:   input:    pointer to the signature to be parsed
  *        inputlen: the length of the array pointed to be input
  *
  *  This function will accept any valid DER encoded signature, even if the
@@ -83,9 +83,9 @@ extern "C" {
  *  encoded numbers are out of range, signature validation with it is
  *  guaranteed to fail for every message and public key.
  */
-int rustsecp256k1_v0_10_0_ecdsa_signature_parse_der_lax(
-    const rustsecp256k1_v0_10_0_context* ctx,
-    rustsecp256k1_v0_10_0_ecdsa_signature* sig,
+int rustsecp256k1_v0_11_ecdsa_signature_parse_der_lax(
+    const rustsecp256k1_v0_11_context* ctx,
+    rustsecp256k1_v0_11_ecdsa_signature* sig,
     const unsigned char *input,
     size_t inputlen
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
