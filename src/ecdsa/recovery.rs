@@ -25,10 +25,10 @@ pub enum RecoveryId {
     Three,
 }
 
-impl TryFrom<i32> for RecoveryId {
-    type Error = Error;
+impl RecoveryId {
+    /// Allows library users to create valid recovery IDs from i32.
     #[inline]
-    fn try_from(id: i32) -> Result<RecoveryId, Error> {
+    pub fn from_i32(id: i32) -> Result<Self, Error> {
         match id {
             0 => Ok(RecoveryId::Zero),
             1 => Ok(RecoveryId::One),
@@ -37,18 +37,28 @@ impl TryFrom<i32> for RecoveryId {
             _ => Err(Error::InvalidRecoveryId),
         }
     }
-}
 
-impl From<RecoveryId> for i32 {
+    /// Allows library users to convert recovery IDs to i32.
     #[inline]
-    fn from(val: RecoveryId) -> Self {
-        match val {
+    pub fn to_i32(self) -> i32 {
+        match self {
             RecoveryId::Zero => 0,
             RecoveryId::One => 1,
             RecoveryId::Two => 2,
             RecoveryId::Three => 3,
         }
     }
+}
+
+impl TryFrom<i32> for RecoveryId {
+    type Error = Error;
+    #[inline]
+    fn try_from(id: i32) -> Result<RecoveryId, Error> { Self::from_i32(id) }
+}
+
+impl From<RecoveryId> for i32 {
+    #[inline]
+    fn from(val: RecoveryId) -> Self { val.to_i32() }
 }
 
 /// An ECDSA signature with a recovery ID for pubkey recovery.
