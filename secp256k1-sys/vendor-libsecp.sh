@@ -8,7 +8,7 @@ else
     SECP_VENDOR_GIT_ROOT="$(realpath "$SECP_VENDOR_GIT_ROOT")"
 fi
 SECP_SYS="$SECP_VENDOR_GIT_ROOT"/secp256k1-sys
-DEFAULT_VERSION_CODE=$(grep "^version" "$SECP_SYS/Cargo.toml" | sed 's/\./_/g' | sed 's/.*"\(.*\)".*/\1/')
+DEFAULT_VERSION_CODE=$(grep "^version" "$SECP_SYS/Cargo.toml" | sed 's/\./_/g' | sed 's/.*"\(.*\)".*/\1/' | cut -d_ -f1-2)
 DEFAULT_DEPEND_DIR="$SECP_SYS/depend"
 DEFAULT_SECP_REPO=https://github.com/bitcoin-core/secp256k1.git
 
@@ -96,6 +96,7 @@ echo "$SOURCE_REV" >> ./secp256k1-HEAD-revision.txt
 # To compensate, the secp_context_create and _destroy methods are redefined in Rust.
 patch "$DIR/include/secp256k1.h" "./secp256k1.h.patch"
 patch "$DIR/src/secp256k1.c" "./secp256k1.c.patch"
+patch "$DIR/src/scratch.h" "./scratch.h.patch"
 patch "$DIR/src/scratch_impl.h" "./scratch_impl.h.patch"
 patch "$DIR/src/util.h" "./util.h.patch"
 
