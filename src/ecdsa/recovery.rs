@@ -224,19 +224,20 @@ impl<C: Verification> Secp256k1<C> {
                 // The recovery ID is the last byte of the signature.
                 let recovery_id = sp1_ecdsa::RecoveryId::from_byte(sig.0[64]).unwrap();
 
-                let verifying_key = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256k1(prehash, &signature, recovery_id).unwrap();
-                let verifying_key_bytes = {
-                    // Convert the verifying key to a byte array. The encoded point returned by `to_encoded_point` is in uncompressed format,
-                    // with the prefix byte (0x04) and two 32-byte coordinates in big-endian format. This needs to be flipped to little-endian
-                    // for the from_array_unchecked constructor.
-                    let bytes = verifying_key.to_encoded_point(false).to_bytes();
-                    flip_secp256k1_endianness(&bytes[1..65].try_into().unwrap())
-                };
+                if let Ok(verifying_key) = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256k1(prehash, &signature, recovery_id) {
+                    let verifying_key_bytes = {
+                        // Convert the verifying key to a byte array. The encoded point returned by `to_encoded_point` is in uncompressed format,
+                        // with the prefix byte (0x04) and two 32-byte coordinates in big-endian format. This needs to be flipped to little-endian
+                        // for the from_array_unchecked constructor.
+                        let bytes = verifying_key.to_encoded_point(false).to_bytes();
+                        flip_secp256k1_endianness(&bytes[1..65].try_into().unwrap())
+                    };
 
-                // In recover_from_prehash_secp256k1, the public key is verified to be valid, so we can use the unchecked constructor.
-                unsafe {
-                    let k = key::PublicKey(crate::ffi::PublicKey::from_array_unchecked(verifying_key_bytes));
-                    return Ok(k);
+                    // In recover_from_prehash_secp256k1, the public key is verified to be valid, so we can use the unchecked constructor.
+                    unsafe {
+                        let k = key::PublicKey(crate::ffi::PublicKey::from_array_unchecked(verifying_key_bytes));
+                        return Ok(k);
+                    }
                 }
             }
         }
