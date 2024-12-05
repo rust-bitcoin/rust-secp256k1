@@ -16,6 +16,7 @@ use crate::{key, Error, Message, Secp256k1, Signing, Verification};
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Ord, PartialOrd)]
 pub struct RecoveryId(i32);
 
+
 /// An ECDSA signature with a recovery ID for pubkey recovery.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct RecoverableSignature(ffi::RecoverableSignature);
@@ -224,7 +225,7 @@ impl<C: Verification> Secp256k1<C> {
                 // The recovery ID is the last byte of the signature.
                 let recovery_id = sp1_ecdsa::RecoveryId::from_byte(sig.0[64]).unwrap();
 
-                if let Ok(verifying_key) = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256k1(prehash, &signature, recovery_id) {
+                if let Ok(verifying_key) = sp1_ecdsa::VerifyingKey::recover_from_prehash_secp256(prehash, &signature, recovery_id, sp1_ecdsa::Secp256Curve::K1) {
                     let verifying_key_bytes = {
                         // Convert the verifying key to a byte array. The encoded point returned by `to_encoded_point` is in uncompressed format,
                         // with the prefix byte (0x04) and two 32-byte coordinates in big-endian format. This needs to be flipped to little-endian
