@@ -120,7 +120,7 @@ The major change in this version is the increase of the Minimum Supported Rust V
 
 ## Other improvements
 
-* `global-context` feature now activates `global-context-less-secure`.
+* `global-context-less-secure` feature now activates `global-context`.
 * `githooks/` directory added for contributors
 * [Clippy is now used in CI](https://github.com/rust-bitcoin/rust-secp256k1/pull/448) and the code is clippy-compliant
 * Various documentation improvements
