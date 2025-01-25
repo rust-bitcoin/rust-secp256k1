@@ -6,6 +6,7 @@
 use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
+use secp256k1_sys::secp256k1_ec_pubkey_sort;
 #[cfg(feature = "serde")]
 use serde::ser::SerializeTuple;
 
@@ -1598,6 +1599,36 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
                 XOnlyPublicKey::from_slice,
             );
             d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
+        }
+    }
+}
+
+/// Sort public keys using lexicographic (of compressed serialization) order.
+/// Example:
+///
+/// ```rust
+/// # # [cfg(any(test, feature = "rand-std"))] {
+/// # use secp256k1::rand::{thread_rng, RngCore};
+/// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
+/// # let secp = Secp256k1::new();
+/// # let sk1 = SecretKey::new(&mut thread_rng());
+/// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+/// # let sk2 = SecretKey::new(&mut thread_rng());
+/// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+/// #
+/// # let pubkeys = [pub_key1, pub_key2];
+/// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
+/// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
+/// # 
+/// # pubkey_sort(&secp, pubkeys_ref);
+/// # }
+/// ```
+pub fn pubkey_sort<C: Verification>(secp: &Secp256k1<C>, pubkeys: &mut [&PublicKey]) {
+    let cx = secp.ctx().as_ptr();
+    unsafe {
+        let mut pubkeys_ref = core::slice::from_raw_parts(pubkeys.as_c_ptr() as *mut *const ffi::PublicKey, pubkeys.len());
+        if secp256k1_ec_pubkey_sort(cx, pubkeys_ref.as_mut_c_ptr(), pubkeys_ref.len()) == 0 {
+            unreachable!("Invalid public keys for sorting function")
         }
     }
 }
