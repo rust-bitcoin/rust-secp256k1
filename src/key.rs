@@ -1517,7 +1517,7 @@ impl<'de> serde::Deserialize<'de> for Parity {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         struct Visitor;
 
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Parity;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

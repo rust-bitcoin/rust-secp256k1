@@ -499,7 +499,7 @@ fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
     }
     let result = &target[..hex_len];
     debug_assert!(str::from_utf8(result).is_ok());
-    return unsafe { Ok(str::from_utf8_unchecked(result)) };
+    unsafe { Ok(str::from_utf8_unchecked(result)) }
 }
 
 #[cfg(feature = "rand")]
