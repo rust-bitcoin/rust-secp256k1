@@ -25,6 +25,19 @@ pub enum RecoveryId {
     Three,
 }
 
+impl RecoveryId {
+    /// Creates a `RecoveryId` from a `u8` value by masking off the top 6 bits.
+    #[inline]
+    pub const fn from_u8_masked(id: u8) -> RecoveryId {
+        match id & 0x03 {
+            0 => RecoveryId::Zero,
+            1 => RecoveryId::One,
+            2 => RecoveryId::Two,
+            _ => RecoveryId::Three,
+        }
+    }
+}
+
 impl TryFrom<i32> for RecoveryId {
     type Error = Error;
     #[inline]
