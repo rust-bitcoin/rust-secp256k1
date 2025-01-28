@@ -100,9 +100,9 @@ mod private {
     use super::*;
     pub trait Sealed {}
 
-    impl<'buf> Sealed for AllPreallocated<'buf> {}
-    impl<'buf> Sealed for VerifyOnlyPreallocated<'buf> {}
-    impl<'buf> Sealed for SignOnlyPreallocated<'buf> {}
+    impl Sealed for AllPreallocated<'_> {}
+    impl Sealed for VerifyOnlyPreallocated<'_> {}
+    impl Sealed for SignOnlyPreallocated<'_> {}
 }
 
 #[cfg(feature = "alloc")]
@@ -274,13 +274,13 @@ mod alloc_only {
     }
 }
 
-impl<'buf> Signing for SignOnlyPreallocated<'buf> {}
-impl<'buf> Signing for AllPreallocated<'buf> {}
+impl Signing for SignOnlyPreallocated<'_> {}
+impl Signing for AllPreallocated<'_> {}
 
-impl<'buf> Verification for VerifyOnlyPreallocated<'buf> {}
-impl<'buf> Verification for AllPreallocated<'buf> {}
+impl Verification for VerifyOnlyPreallocated<'_> {}
+impl Verification for AllPreallocated<'_> {}
 
-unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
+unsafe impl Context for SignOnlyPreallocated<'_> {
     const FLAGS: c_uint = ffi::SECP256K1_START_SIGN;
     const DESCRIPTION: &'static str = "signing only";
 
@@ -289,7 +289,7 @@ unsafe impl<'buf> Context for SignOnlyPreallocated<'buf> {
     }
 }
 
-unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
+unsafe impl Context for VerifyOnlyPreallocated<'_> {
     const FLAGS: c_uint = ffi::SECP256K1_START_VERIFY;
     const DESCRIPTION: &'static str = "verification only";
 
@@ -298,7 +298,7 @@ unsafe impl<'buf> Context for VerifyOnlyPreallocated<'buf> {
     }
 }
 
-unsafe impl<'buf> Context for AllPreallocated<'buf> {
+unsafe impl Context for AllPreallocated<'_> {
     const FLAGS: c_uint = SignOnlyPreallocated::FLAGS | VerifyOnlyPreallocated::FLAGS;
     const DESCRIPTION: &'static str = "all capabilities";
 

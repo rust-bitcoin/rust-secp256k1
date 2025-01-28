@@ -18,7 +18,7 @@ impl<T> FromStrVisitor<T> {
     }
 }
 
-impl<'de, T> de::Visitor<'de> for FromStrVisitor<T>
+impl<T> de::Visitor<'_> for FromStrVisitor<T>
 where
     T: FromStr,
     <T as FromStr>::Err: fmt::Display,
@@ -49,7 +49,7 @@ where
     }
 }
 
-impl<'de, F, T, Err> de::Visitor<'de> for BytesVisitor<F>
+impl<F, T, Err> de::Visitor<'_> for BytesVisitor<F>
 where
     F: FnOnce(&[u8]) -> Result<T, Err>,
     Err: fmt::Display,
