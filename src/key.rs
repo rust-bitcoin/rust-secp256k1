@@ -891,7 +891,7 @@ impl Keypair {
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) =>
                 Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
-            _ => Err(Error::InvalidPublicKey),
+            _ => Err(Error::InvalidSecretKey),
         }
     }
 
