@@ -858,8 +858,8 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if the provided data has an incorrect length, exceeds Secp256k1
-    /// field `p` value or the corresponding public key is not even.
+    /// [`Error::InvalidSecretKey`] if the slice is not exactly 32 bytes long,
+    /// or if the encoded number exceeds the Secp256k1 field `p` value.
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
@@ -883,7 +883,8 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
+    /// or if the encoded number exceeds the Secp256k1 field `p` value.
     #[inline]
     pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
@@ -898,7 +899,8 @@ impl Keypair {
     ///
     /// # Errors
     ///
-    /// [`Error::InvalidSecretKey`] if corresponding public key for the provided secret key is not even.
+    /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
+    /// or if the encoded number exceeds the Secp256k1 field `p` value.
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
