@@ -401,10 +401,10 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
                 "a hex string representing 32 byte SecretKey",
             ))
         } else {
-            let visitor = super::serde_util::Tuple32Visitor::new(
-                "raw 32 bytes SecretKey",
-                SecretKey::from_slice,
-            );
+            let visitor =
+                super::serde_util::Tuple32Visitor::new("raw 32 bytes SecretKey", |bytes| {
+                    SecretKey::from_byte_array(&bytes)
+                });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
     }
@@ -790,10 +790,10 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
                 "an ASCII hex string representing a public key",
             ))
         } else {
-            let visitor = super::serde_util::Tuple33Visitor::new(
-                "33 bytes compressed public key",
-                PublicKey::from_slice,
-            );
+            let visitor =
+                super::serde_util::Tuple33Visitor::new("33 bytes compressed public key", |bytes| {
+                    PublicKey::from_byte_array_compressed(&bytes)
+                });
             d.deserialize_tuple(constants::PUBLIC_KEY_SIZE, visitor)
         }
     }
@@ -1117,7 +1117,7 @@ impl<'de> serde::Deserialize<'de> for Keypair {
                 let ctx = Secp256k1::signing_only();
 
                 #[allow(clippy::needless_borrow)]
-                Keypair::from_seckey_slice(&ctx, data)
+                Keypair::from_seckey_slice(&ctx, &data)
             });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
@@ -1597,7 +1597,7 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes schnorr public key",
-                XOnlyPublicKey::from_slice,
+                |bytes| XOnlyPublicKey::from_byte_array(&bytes),
             );
             d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
         }

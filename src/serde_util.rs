@@ -74,7 +74,7 @@ macro_rules! impl_tuple_visitor {
 
         impl<F, T, E> $thing<F>
         where
-            F: FnOnce(&[u8]) -> Result<T, E>,
+            F: FnOnce([u8; $len]) -> Result<T, E>,
             E: fmt::Display,
         {
             pub fn new(expectation: &'static str, parse_fn: F) -> Self {
@@ -84,7 +84,7 @@ macro_rules! impl_tuple_visitor {
 
         impl<'de, F, T, E> de::Visitor<'de> for $thing<F>
         where
-            F: FnOnce(&[u8]) -> Result<T, E>,
+            F: FnOnce([u8; $len]) -> Result<T, E>,
             E: fmt::Display,
         {
             type Value = T;
@@ -106,7 +106,7 @@ macro_rules! impl_tuple_visitor {
                         return Err(de::Error::invalid_length(i, &self));
                     }
                 }
-                (self.parse_fn)(&bytes).map_err(de::Error::custom)
+                (self.parse_fn)(bytes).map_err(de::Error::custom)
             }
         }
     };
