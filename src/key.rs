@@ -859,16 +859,29 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the slice is not exactly 32 bytes long,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
+    #[deprecated(since = "TBD", note = "Use `from_seckey_byte_array` instead.")]
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
         data: &[u8],
     ) -> Result<Keypair, Error> {
-        if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
-            return Err(Error::InvalidSecretKey);
+        match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
+            Ok(data) => Self::from_seckey_byte_array(secp, data),
+            Err(_) => Err(Error::InvalidSecretKey),
         }
+    }
 
+    /// Creates a [`Keypair`] directly from a secret key byte array.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if the encoded number is an invalid scalar.
+    #[inline]
+    pub fn from_seckey_byte_array<C: Signing>(
+        secp: &Secp256k1<C>,
+        data: [u8; constants::SECRET_KEY_SIZE],
+    ) -> Result<Keypair, Error> {
         unsafe {
             let mut kp = ffi::Keypair::new();
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
@@ -884,13 +897,12 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
     #[inline]
     pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) =>
-                Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
+            Ok(constants::SECRET_KEY_SIZE) => Keypair::from_seckey_byte_array(secp, res),
             _ => Err(Error::InvalidSecretKey),
         }
     }
@@ -900,7 +912,7 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
@@ -1117,7 +1129,7 @@ impl<'de> serde::Deserialize<'de> for Keypair {
                 let ctx = Secp256k1::signing_only();
 
                 #[allow(clippy::needless_borrow)]
-                Keypair::from_seckey_slice(&ctx, &data)
+                Keypair::from_seckey_byte_array(&ctx, data)
             });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
@@ -1665,7 +1677,7 @@ mod test {
     #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
     fn erased_keypair_is_valid() {
         let s = Secp256k1::new();
-        let kp = Keypair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+        let kp = Keypair::from_seckey_byte_array(&s, [1u8; constants::SECRET_KEY_SIZE])
             .expect("valid secret key");
         let mut kp2 = kp;
         kp2.non_secure_erase();
@@ -2272,7 +2284,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let sk = Keypair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
+        let sk = Keypair::from_seckey_byte_array(SECP256K1, SK_BYTES).unwrap();
         #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
@@ -2452,7 +2464,7 @@ mod test {
 
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        let kp = Keypair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
+        let kp = Keypair::from_seckey_byte_array(crate::SECP256K1, SK_BYTES).unwrap();
         let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
 
         #[rustfmt::skip]
