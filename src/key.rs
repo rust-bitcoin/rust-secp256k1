@@ -115,7 +115,7 @@ impl str::FromStr for SecretKey {
     fn from_str(s: &str) -> Result<SecretKey, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_byte_array(&res),
+            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_byte_array(res),
             _ => Err(Error::InvalidSecretKey),
         }
     }
@@ -138,7 +138,7 @@ impl str::FromStr for SecretKey {
 /// use secp256k1::{SecretKey, Secp256k1, PublicKey};
 ///
 /// let secp = Secp256k1::new();
-/// let secret_key = SecretKey::from_byte_array(&[0xcd; 32]).expect("32 bytes, within curve order");
+/// let secret_key = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
 /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
@@ -175,10 +175,10 @@ impl str::FromStr for PublicKey {
             Ok(constants::PUBLIC_KEY_SIZE) => {
                 let bytes: [u8; constants::PUBLIC_KEY_SIZE] =
                     res[0..constants::PUBLIC_KEY_SIZE].try_into().unwrap();
-                PublicKey::from_byte_array_compressed(&bytes)
+                PublicKey::from_byte_array_compressed(bytes)
             }
             Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) =>
-                PublicKey::from_byte_array_uncompressed(&res),
+                PublicKey::from_byte_array_uncompressed(res),
             _ => Err(Error::InvalidPublicKey),
         }
     }
@@ -223,7 +223,7 @@ impl SecretKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(&data),
+            Ok(data) => Self::from_byte_array(data),
             Err(_) => Err(InvalidSecretKey),
         }
     }
@@ -234,10 +234,10 @@ impl SecretKey {
     ///
     /// ```
     /// use secp256k1::SecretKey;
-    /// let sk = SecretKey::from_byte_array(&[0xcd; 32]).expect("32 bytes, within curve order");
+    /// let sk = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
     /// ```
     #[inline]
-    pub fn from_byte_array(data: &[u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
+    pub fn from_byte_array(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_verify(ffi::secp256k1_context_no_precomp, data.as_c_ptr())
                 == 0
@@ -245,7 +245,7 @@ impl SecretKey {
                 return Err(InvalidSecretKey);
             }
         }
-        Ok(SecretKey(*data))
+        Ok(SecretKey(data))
     }
 
     /// Creates a new secret key using data from BIP-340 [`Keypair`].
@@ -373,7 +373,7 @@ impl SecretKey {
 impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
     /// Converts a 32-byte hash directly to a secret key without error paths.
     fn from(t: T) -> SecretKey {
-        SecretKey::from_byte_array(&t.into_32()).expect("failed to create secret key")
+        SecretKey::from_byte_array(t.into_32()).expect("failed to create secret key")
     }
 }
 
@@ -403,7 +403,7 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
         } else {
             let visitor =
                 super::serde_util::Tuple32Visitor::new("raw 32 bytes SecretKey", |bytes| {
-                    SecretKey::from_byte_array(&bytes)
+                    SecretKey::from_byte_array(bytes)
                 });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
@@ -464,10 +464,10 @@ impl PublicKey {
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         match data.len() {
             constants::PUBLIC_KEY_SIZE => PublicKey::from_byte_array_compressed(
-                &<[u8; constants::PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+                <[u8; constants::PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
             ),
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => PublicKey::from_byte_array_uncompressed(
-                &<[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+                <[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
             ),
             _ => Err(InvalidPublicKey),
         }
@@ -476,7 +476,7 @@ impl PublicKey {
     /// Creates a public key from a serialized array in compressed format.
     #[inline]
     pub fn from_byte_array_compressed(
-        data: &[u8; constants::PUBLIC_KEY_SIZE],
+        data: [u8; constants::PUBLIC_KEY_SIZE],
     ) -> Result<PublicKey, Error> {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -497,7 +497,7 @@ impl PublicKey {
     /// Creates a public key from a serialized array in uncompressed format.
     #[inline]
     pub fn from_byte_array_uncompressed(
-        data: &[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE],
+        data: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE],
     ) -> Result<PublicKey, Error> {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -553,7 +553,7 @@ impl PublicKey {
         };
         buf[1..].clone_from_slice(&pk.serialize());
 
-        PublicKey::from_byte_array_compressed(&buf).expect("we know the buffer is valid")
+        PublicKey::from_byte_array_compressed(buf).expect("we know the buffer is valid")
     }
 
     #[inline]
@@ -792,7 +792,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
         } else {
             let visitor =
                 super::serde_util::Tuple33Visitor::new("33 bytes compressed public key", |bytes| {
-                    PublicKey::from_byte_array_compressed(&bytes)
+                    PublicKey::from_byte_array_compressed(bytes)
                 });
             d.deserialize_tuple(constants::PUBLIC_KEY_SIZE, visitor)
         }
@@ -1193,7 +1193,7 @@ impl str::FromStr for XOnlyPublicKey {
     fn from_str(s: &str) -> Result<XOnlyPublicKey, Error> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::from_byte_array(&res),
+            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::from_byte_array(res),
             _ => Err(Error::InvalidPublicKey),
         }
     }
@@ -1243,7 +1243,7 @@ impl XOnlyPublicKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
         match <[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(&data),
+            Ok(data) => Self::from_byte_array(data),
             Err(_) => Err(InvalidPublicKey),
         }
     }
@@ -1256,7 +1256,7 @@ impl XOnlyPublicKey {
     /// x coordinate.
     #[inline]
     pub fn from_byte_array(
-        data: &[u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
+        data: [u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
     ) -> Result<XOnlyPublicKey, Error> {
         unsafe {
             let mut pk = ffi::XOnlyPublicKey::new();
@@ -1609,7 +1609,7 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes schnorr public key",
-                |bytes| XOnlyPublicKey::from_byte_array(&bytes),
+                XOnlyPublicKey::from_byte_array,
             );
             d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
         }
