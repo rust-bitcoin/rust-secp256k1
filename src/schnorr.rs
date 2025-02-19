@@ -393,7 +393,7 @@ mod tests {
                 0x63, 0x63, 0x63, 0x63,
             ];
 
-            let kp = Keypair::from_seckey_slice(&secp, &SK_BYTES).expect("sk");
+            let kp = Keypair::from_seckey_byte_array(&secp, SK_BYTES).expect("sk");
 
             // In fuzzing mode secret->public key derivation is different, so
             // hard-code the expected result.
@@ -473,7 +473,7 @@ mod tests {
         let s = Secp256k1::new();
 
         let msg = [1; 32];
-        let keypair = Keypair::from_seckey_slice(&s, &[2; 32]).unwrap();
+        let keypair = Keypair::from_seckey_byte_array(&s, [2; 32]).unwrap();
         let aux = [3u8; 32];
         let sig = s.sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORR_SIGNATURE_SIZE] = [
@@ -706,7 +706,7 @@ mod tests {
         } in vectors
         {
             if let (Some(secret_key), Some(aux_rand)) = (secret_key, aux_rand) {
-                let keypair = Keypair::from_seckey_slice(&secp, &secret_key).unwrap();
+                let keypair = Keypair::from_seckey_byte_array(&secp, secret_key).unwrap();
                 assert_eq!(keypair.x_only_public_key().0.serialize(), public_key);
                 let sig = secp.sign_schnorr_with_aux_rand(&message, &keypair, &aux_rand);
                 assert_eq!(sig.to_byte_array(), signature);

@@ -1,3 +1,7 @@
+# Next
+
+* Create keys from owned array values instead of from references [#781](https://github.com/rust-bitcoin/rust-secp256k1/pull/781)
+
 # 0.30.0 - 2024-10-08
 
 * Allow signing variable-length messages [#706](https://github.com/rust-bitcoin/rust-secp256k1/pull/706)

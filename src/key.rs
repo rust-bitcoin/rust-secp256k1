@@ -115,7 +115,7 @@ impl str::FromStr for SecretKey {
     fn from_str(s: &str) -> Result<SecretKey, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_byte_array(&res),
+            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_byte_array(res),
             _ => Err(Error::InvalidSecretKey),
         }
     }
@@ -138,7 +138,7 @@ impl str::FromStr for SecretKey {
 /// use secp256k1::{SecretKey, Secp256k1, PublicKey};
 ///
 /// let secp = Secp256k1::new();
-/// let secret_key = SecretKey::from_byte_array(&[0xcd; 32]).expect("32 bytes, within curve order");
+/// let secret_key = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
 /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
@@ -175,10 +175,10 @@ impl str::FromStr for PublicKey {
             Ok(constants::PUBLIC_KEY_SIZE) => {
                 let bytes: [u8; constants::PUBLIC_KEY_SIZE] =
                     res[0..constants::PUBLIC_KEY_SIZE].try_into().unwrap();
-                PublicKey::from_byte_array_compressed(&bytes)
+                PublicKey::from_byte_array_compressed(bytes)
             }
             Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) =>
-                PublicKey::from_byte_array_uncompressed(&res),
+                PublicKey::from_byte_array_uncompressed(res),
             _ => Err(Error::InvalidPublicKey),
         }
     }
@@ -223,7 +223,7 @@ impl SecretKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(&data),
+            Ok(data) => Self::from_byte_array(data),
             Err(_) => Err(InvalidSecretKey),
         }
     }
@@ -234,10 +234,10 @@ impl SecretKey {
     ///
     /// ```
     /// use secp256k1::SecretKey;
-    /// let sk = SecretKey::from_byte_array(&[0xcd; 32]).expect("32 bytes, within curve order");
+    /// let sk = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
     /// ```
     #[inline]
-    pub fn from_byte_array(data: &[u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
+    pub fn from_byte_array(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_verify(ffi::secp256k1_context_no_precomp, data.as_c_ptr())
                 == 0
@@ -245,7 +245,7 @@ impl SecretKey {
                 return Err(InvalidSecretKey);
             }
         }
-        Ok(SecretKey(*data))
+        Ok(SecretKey(data))
     }
 
     /// Creates a new secret key using data from BIP-340 [`Keypair`].
@@ -373,7 +373,7 @@ impl SecretKey {
 impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
     /// Converts a 32-byte hash directly to a secret key without error paths.
     fn from(t: T) -> SecretKey {
-        SecretKey::from_byte_array(&t.into_32()).expect("failed to create secret key")
+        SecretKey::from_byte_array(t.into_32()).expect("failed to create secret key")
     }
 }
 
@@ -401,10 +401,10 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
                 "a hex string representing 32 byte SecretKey",
             ))
         } else {
-            let visitor = super::serde_util::Tuple32Visitor::new(
-                "raw 32 bytes SecretKey",
-                SecretKey::from_slice,
-            );
+            let visitor =
+                super::serde_util::Tuple32Visitor::new("raw 32 bytes SecretKey", |bytes| {
+                    SecretKey::from_byte_array(bytes)
+                });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
     }
@@ -464,10 +464,10 @@ impl PublicKey {
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
         match data.len() {
             constants::PUBLIC_KEY_SIZE => PublicKey::from_byte_array_compressed(
-                &<[u8; constants::PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+                <[u8; constants::PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
             ),
             constants::UNCOMPRESSED_PUBLIC_KEY_SIZE => PublicKey::from_byte_array_uncompressed(
-                &<[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
+                <[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE]>::try_from(data).unwrap(),
             ),
             _ => Err(InvalidPublicKey),
         }
@@ -476,7 +476,7 @@ impl PublicKey {
     /// Creates a public key from a serialized array in compressed format.
     #[inline]
     pub fn from_byte_array_compressed(
-        data: &[u8; constants::PUBLIC_KEY_SIZE],
+        data: [u8; constants::PUBLIC_KEY_SIZE],
     ) -> Result<PublicKey, Error> {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -497,7 +497,7 @@ impl PublicKey {
     /// Creates a public key from a serialized array in uncompressed format.
     #[inline]
     pub fn from_byte_array_uncompressed(
-        data: &[u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE],
+        data: [u8; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE],
     ) -> Result<PublicKey, Error> {
         unsafe {
             let mut pk = ffi::PublicKey::new();
@@ -553,7 +553,7 @@ impl PublicKey {
         };
         buf[1..].clone_from_slice(&pk.serialize());
 
-        PublicKey::from_byte_array_compressed(&buf).expect("we know the buffer is valid")
+        PublicKey::from_byte_array_compressed(buf).expect("we know the buffer is valid")
     }
 
     #[inline]
@@ -790,10 +790,10 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
                 "an ASCII hex string representing a public key",
             ))
         } else {
-            let visitor = super::serde_util::Tuple33Visitor::new(
-                "33 bytes compressed public key",
-                PublicKey::from_slice,
-            );
+            let visitor =
+                super::serde_util::Tuple33Visitor::new("33 bytes compressed public key", |bytes| {
+                    PublicKey::from_byte_array_compressed(bytes)
+                });
             d.deserialize_tuple(constants::PUBLIC_KEY_SIZE, visitor)
         }
     }
@@ -859,16 +859,29 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the slice is not exactly 32 bytes long,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
+    #[deprecated(since = "TBD", note = "Use `from_seckey_byte_array` instead.")]
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
         data: &[u8],
     ) -> Result<Keypair, Error> {
-        if data.is_empty() || data.len() != constants::SECRET_KEY_SIZE {
-            return Err(Error::InvalidSecretKey);
+        match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
+            Ok(data) => Self::from_seckey_byte_array(secp, data),
+            Err(_) => Err(Error::InvalidSecretKey),
         }
+    }
 
+    /// Creates a [`Keypair`] directly from a secret key byte array.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if the encoded number is an invalid scalar.
+    #[inline]
+    pub fn from_seckey_byte_array<C: Signing>(
+        secp: &Secp256k1<C>,
+        data: [u8; constants::SECRET_KEY_SIZE],
+    ) -> Result<Keypair, Error> {
         unsafe {
             let mut kp = ffi::Keypair::new();
             if ffi::secp256k1_keypair_create(secp.ctx.as_ptr(), &mut kp, data.as_c_ptr()) == 1 {
@@ -884,13 +897,12 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
     #[inline]
     pub fn from_seckey_str<C: Signing>(secp: &Secp256k1<C>, s: &str) -> Result<Keypair, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) =>
-                Keypair::from_seckey_slice(secp, &res[0..constants::SECRET_KEY_SIZE]),
+            Ok(constants::SECRET_KEY_SIZE) => Keypair::from_seckey_byte_array(secp, res),
             _ => Err(Error::InvalidSecretKey),
         }
     }
@@ -900,7 +912,7 @@ impl Keypair {
     /// # Errors
     ///
     /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number exceeds the Secp256k1 field `p` value.
+    /// or if the encoded number is an invalid scalar.
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> {
@@ -1117,7 +1129,7 @@ impl<'de> serde::Deserialize<'de> for Keypair {
                 let ctx = Secp256k1::signing_only();
 
                 #[allow(clippy::needless_borrow)]
-                Keypair::from_seckey_slice(&ctx, data)
+                Keypair::from_seckey_byte_array(&ctx, data)
             });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
@@ -1181,7 +1193,7 @@ impl str::FromStr for XOnlyPublicKey {
     fn from_str(s: &str) -> Result<XOnlyPublicKey, Error> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::from_byte_array(&res),
+            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::from_byte_array(res),
             _ => Err(Error::InvalidPublicKey),
         }
     }
@@ -1231,7 +1243,7 @@ impl XOnlyPublicKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
         match <[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(&data),
+            Ok(data) => Self::from_byte_array(data),
             Err(_) => Err(InvalidPublicKey),
         }
     }
@@ -1244,7 +1256,7 @@ impl XOnlyPublicKey {
     /// x coordinate.
     #[inline]
     pub fn from_byte_array(
-        data: &[u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
+        data: [u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
     ) -> Result<XOnlyPublicKey, Error> {
         unsafe {
             let mut pk = ffi::XOnlyPublicKey::new();
@@ -1597,7 +1609,7 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes schnorr public key",
-                XOnlyPublicKey::from_slice,
+                XOnlyPublicKey::from_byte_array,
             );
             d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
         }
@@ -1665,7 +1677,7 @@ mod test {
     #[cfg(all(feature = "std", not(secp256k1_fuzz)))]
     fn erased_keypair_is_valid() {
         let s = Secp256k1::new();
-        let kp = Keypair::from_seckey_slice(&s, &[1u8; constants::SECRET_KEY_SIZE])
+        let kp = Keypair::from_seckey_byte_array(&s, [1u8; constants::SECRET_KEY_SIZE])
             .expect("valid secret key");
         let mut kp2 = kp;
         kp2.non_secure_erase();
@@ -2272,7 +2284,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let sk = Keypair::from_seckey_slice(SECP256K1, &SK_BYTES).unwrap();
+        let sk = Keypair::from_seckey_byte_array(SECP256K1, SK_BYTES).unwrap();
         #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
@@ -2452,7 +2464,7 @@ mod test {
 
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        let kp = Keypair::from_seckey_slice(crate::SECP256K1, &SK_BYTES).unwrap();
+        let kp = Keypair::from_seckey_byte_array(crate::SECP256K1, SK_BYTES).unwrap();
         let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
 
         #[rustfmt::skip]
