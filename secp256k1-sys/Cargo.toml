@@ -21,10 +21,10 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [build-dependencies]
-cc = "1.0.28"
+cc = { workspace = true }
 
 [dev-dependencies]
-libc = "0.2"
+libc = { workspace = true }
 
 [features]
 default = ["std"]

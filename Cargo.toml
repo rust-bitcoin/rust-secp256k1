@@ -34,18 +34,18 @@ global-context = ["std"]
 global-context-less-secure = ["global-context"]
 
 [dependencies]
-secp256k1-sys = { version = "0.11.0", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys = { workspace = true }
 
 hashes = { package = "bitcoin_hashes", version = "0.14", default-features = false, optional = true }
-rand = { version = "0.8", default-features = false, optional = true }
-serde = { version = "1.0.103", default-features = false, optional = true }
+rand = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
-rand_core = "0.6"
-serde_cbor = "0.10.0"
-serde_test = "1.0.19"
-bincode = "1.3.3"
-hex_lit = "0.1.1"
+rand_core = { workspace = true }
+serde_cbor = { workspace = true }
+serde_test = { workspace = true }
+bincode = { workspace = true }
+hex_lit = { workspace = true }
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
@@ -69,3 +69,16 @@ required-features = ["rand", "std"]
 [workspace]
 members = ["secp256k1-sys"]
 exclude = ["no_std_test"]
+
+[workspace.dependencies]
+bincode = "1.3.3"
+cc = "1.0.28"
+hashes = { version = "0.14", default-features = false }
+hex_lit = "0.1.1"
+libc = "0.2"
+rand = { version = "0.8", default-features = false }
+rand_core = "0.6"
+secp256k1-sys = { version = "0.11.0", path = "secp256k1-sys", default-features = false }
+serde = { version = "1.0.103", default-features = false }
+serde_cbor = "0.10.0"
+serde_test = "1.0.19"
