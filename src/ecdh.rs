@@ -24,8 +24,8 @@ const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
 /// # use secp256k1::{rand, Secp256k1};
 /// # use secp256k1::ecdh::SharedSecret;
 /// let s = Secp256k1::new();
-/// let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-/// let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
+/// let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
 /// let sec1 = SharedSecret::new(&pk2, &sk1);
 /// let sec2 = SharedSecret::new(&pk1, &sk2);
 /// assert_eq!(sec1, sec2);
@@ -116,8 +116,8 @@ impl AsRef<[u8]> for SharedSecret {
 /// # use secp256k1::hashes::{Hash, sha512};
 ///
 /// let s = Secp256k1::new();
-/// let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-/// let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
+/// let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
+/// let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
 ///
 /// let point1 = ecdh::shared_secret_point(&pk2, &sk1);
 /// let secret1 = sha512::Hash::hash(&point1);
@@ -197,8 +197,8 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn ecdh() {
         let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
+        let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
 
         let sec1 = SharedSecret::new(&pk2, &sk1);
         let sec2 = SharedSecret::new(&pk1, &sk2);
@@ -233,8 +233,8 @@ mod tests {
         use crate::ecdh::shared_secret_point;
 
         let s = Secp256k1::signing_only();
-        let (sk1, _) = s.generate_keypair(&mut rand::thread_rng());
-        let (_, pk2) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, _) = s.generate_keypair(&mut rand::rng());
+        let (_, pk2) = s.generate_keypair(&mut rand::rng());
 
         let secret_sys = SharedSecret::new(&pk2, &sk1);
 
@@ -286,7 +286,7 @@ mod benches {
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
         let s = Secp256k1::signing_only();
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         bh.iter(|| {
             let res = SharedSecret::new(&pk, &sk);
