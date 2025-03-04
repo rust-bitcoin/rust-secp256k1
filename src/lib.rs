@@ -29,12 +29,12 @@
 //!
 //! ```rust
 //! # #[cfg(all(feature = "rand", feature = "hashes", feature = "std"))] {
-//! use secp256k1::rand::rngs::OsRng;
+//! use secp256k1::rand::rng;
 //! use secp256k1::{Secp256k1, Message};
 //! use secp256k1::hashes::{sha256, Hash};
 //!
 //! let secp = Secp256k1::new();
-//! let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
+//! let (secret_key, public_key) = secp.generate_keypair(&mut rng());
 //! let digest = sha256::Hash::hash("Hello World!".as_bytes());
 //! let message = Message::from_digest(digest.to_byte_array());
 //!
@@ -50,7 +50,7 @@
 //! use secp256k1::{generate_keypair, Message};
 //! use secp256k1::hashes::{sha256, Hash};
 //!
-//! let (secret_key, public_key) = generate_keypair(&mut rand::thread_rng());
+//! let (secret_key, public_key) = generate_keypair(&mut rand::rng());
 //! let digest = sha256::Hash::hash("Hello World!".as_bytes());
 //! let message = Message::from_digest(digest.to_byte_array());
 //!
@@ -540,7 +540,7 @@ mod tests {
         let sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
         let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
 
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = full.generate_keypair(&mut rand::rng());
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
@@ -607,7 +607,7 @@ mod tests {
         //        drop(buf_vfy); // The buffer can't get dropped before the context.
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = full.generate_keypair(&mut rand::rng());
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
@@ -625,11 +625,11 @@ mod tests {
         let vrfy = Secp256k1::verification_only();
         let full = Secp256k1::new();
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = full.generate_keypair(&mut rand::rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
@@ -651,13 +651,13 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn signature_serialize_roundtrip() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         for _ in 0..100 {
-            let msg = crate::random_32_bytes(&mut rand::thread_rng());
+            let msg = crate::random_32_bytes(&mut rand::rng());
             let msg = Message::from_digest(msg);
 
-            let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+            let (sk, _) = s.generate_keypair(&mut rand::rng());
             let sig1 = s.sign_ecdsa(msg, &sk);
             let der = sig1.serialize_der();
             let sig2 = ecdsa::Signature::from_der(&der[..]).unwrap();
@@ -741,14 +741,14 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_ecdsa() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         let noncedata = [42u8; 32];
         for _ in 0..100 {
-            let msg = crate::random_32_bytes(&mut rand::thread_rng());
+            let msg = crate::random_32_bytes(&mut rand::rng());
             let msg = Message::from_digest(msg);
 
-            let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+            let (sk, pk) = s.generate_keypair(&mut rand::rng());
             let sig = s.sign_ecdsa(msg, &sk);
             assert_eq!(s.verify_ecdsa(msg, &sig, &pk), Ok(()));
             let noncedata_sig = s.sign_ecdsa_with_noncedata(msg, &sk, &noncedata);
@@ -775,7 +775,7 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_extreme() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         // Wild keys: 1, CURVE_ORDER - 1
         // Wild msgs: 1, CURVE_ORDER - 1
@@ -809,16 +809,16 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         let sig = s.sign_ecdsa(msg, &sk);
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
         assert_eq!(s.verify_ecdsa(msg, &sig, &pk), Err(Error::IncorrectSignature));
     }
@@ -854,7 +854,7 @@ mod tests {
 
         use super::to_hex;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         const AMOUNT: usize = 1024;
         for i in 0..AMOUNT {
             // 255 isn't a valid utf8 character.
@@ -1026,9 +1026,9 @@ mod benches {
     #[bench]
     pub fn bench_sign_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
-        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, _) = s.generate_keypair(&mut rand::rng());
 
         bh.iter(|| {
             let sig = s.sign_ecdsa(msg, &sk);
@@ -1039,9 +1039,9 @@ mod benches {
     #[bench]
     pub fn bench_verify_ecdsa(bh: &mut Bencher) {
         let s = Secp256k1::new();
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
         let sig = s.sign_ecdsa(msg, &sk);
 
         bh.iter(|| {

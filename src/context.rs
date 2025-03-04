@@ -33,7 +33,7 @@ pub mod global {
     /// ```
     /// # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
     /// use secp256k1::{PublicKey, SECP256K1};
-    /// let _ = SECP256K1.generate_keypair(&mut rand::thread_rng());
+    /// let _ = SECP256K1.generate_keypair(&mut rand::rng());
     /// # }
     /// ```
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
@@ -180,9 +180,9 @@ mod alloc_only {
         /// ```
         /// # #[cfg(all(feature = "rand", feature = "std"))] {
         /// # use secp256k1::Secp256k1;
-        /// # use secp256k1::rand::{thread_rng, RngCore};
+        /// # use secp256k1::rand::{rng, RngCore};
         /// let mut ctx = Secp256k1::new();
-        /// # let mut rng = thread_rng();
+        /// # let mut rng = rng();
         /// # let mut seed = [0u8; 32];
         /// # rng.fill_bytes(&mut seed);
         /// // let seed = <32 bytes of random data>
@@ -216,7 +216,7 @@ mod alloc_only {
                 not(feature = "global-context-less-secure")
             ))]
             {
-                ctx.randomize(&mut rand::thread_rng());
+                ctx.randomize(&mut rand::rng());
             }
 
             #[allow(clippy::let_and_return)] // as for unusted_mut

@@ -260,11 +260,11 @@ mod tests {
         let vrfy = Secp256k1::verification_only();
         let full = Secp256k1::new();
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = full.generate_keypair(&mut rand::rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa_recoverable(msg, &sk), full.sign_ecdsa_recoverable(msg, &sk));
@@ -290,7 +290,7 @@ mod tests {
     #[rustfmt::skip]
     fn sign() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         let sk = SecretKey::from_slice(&ONE).unwrap();
         let msg = Message::from_digest_slice(&ONE).unwrap();
@@ -315,7 +315,7 @@ mod tests {
     #[rustfmt::skip]
     fn sign_with_noncedata() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         let sk = SecretKey::from_slice(&ONE).unwrap();
         let msg = Message::from_digest_slice(&ONE).unwrap();
@@ -339,17 +339,17 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_fail() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         let sigr = s.sign_ecdsa_recoverable(msg, &sk);
         let sig = sigr.to_standard();
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
         assert_eq!(s.verify_ecdsa(msg, &sig, &pk), Err(Error::IncorrectSignature));
 
@@ -361,12 +361,12 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_with_recovery() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         let sig = s.sign_ecdsa_recoverable(msg, &sk);
 
@@ -377,14 +377,14 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_with_recovery_and_noncedata() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
 
         let noncedata = [42u8; 32];
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         let sig = s.sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
 
@@ -395,7 +395,7 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn bad_recovery() {
         let mut s = Secp256k1::new();
-        s.randomize(&mut rand::thread_rng());
+        s.randomize(&mut rand::rng());
 
         let msg = Message::from_digest_slice(&[0x55; 32]).unwrap();
 
@@ -467,9 +467,9 @@ mod benches {
     #[bench]
     pub fn bench_recover(bh: &mut Bencher) {
         let s = Secp256k1::new();
-        let msg = crate::random_32_bytes(&mut rand::thread_rng());
+        let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest_slice(&msg).unwrap();
-        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, _) = s.generate_keypair(&mut rand::rng());
         let sig = s.sign_ecdsa_recoverable(&msg, &sk);
 
         bh.iter(|| {
