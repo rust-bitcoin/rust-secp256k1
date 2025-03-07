@@ -49,7 +49,7 @@ hex_lit = "0.1.1"
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
-getrandom = { version = "0.3", features = [] }
+getrandom = { version = "0.3", default-features = false, features = [] }
 
 [lints.rust]
 unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fuzz)', 'cfg(rust_secp_no_symbol_renaming)'] }
