@@ -47,7 +47,7 @@
 //!
 //! ```rust
 //! # #[cfg(all(feature = "global-context", feature = "hashes", feature = "rand", feature = "std"))] {
-//! use secp256k1::{generate_keypair, Message};
+//! use secp256k1::{rand, generate_keypair, Message};
 //! use secp256k1::hashes::{sha256, Hash};
 //!
 //! let (secret_key, public_key) = generate_keypair(&mut rand::thread_rng());
