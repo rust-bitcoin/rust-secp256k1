@@ -8,7 +8,7 @@
 set -euox pipefail
 
 clang --version
-CARGO_TARGET_DIR=wasm cargo install --force wasm-pack
+CARGO_TARGET_DIR=wasm cargo install --locked --force wasm-pack --version "`cat wasm-pack-version`"
 printf '\n[lib]\ncrate-type = ["cdylib", "rlib"]\n' >> Cargo.toml
 CC=clang wasm-pack build
 CC=clang wasm-pack test --node
