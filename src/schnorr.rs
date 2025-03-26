@@ -141,7 +141,7 @@ impl<C: Signing> Secp256k1<C> {
     /// generator to generate the auxiliary random data.
     #[cfg(all(feature = "rand", feature = "std"))]
     pub fn sign_schnorr(&self, msg: &[u8], keypair: &Keypair) -> Signature {
-        self.sign_schnorr_with_rng(msg, keypair, &mut rand::thread_rng())
+        self.sign_schnorr_with_rng(msg, keypair, &mut rand::rng())
     }
 
     /// Creates a schnorr signature without using any auxiliary random data.
@@ -253,12 +253,12 @@ mod tests {
     fn sign_helper(sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut ThreadRng) -> Signature) {
         let secp = Secp256k1::new();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let kp = Keypair::new(&secp, &mut rng);
         let (pk, _parity) = kp.x_only_public_key();
 
         for _ in 0..100 {
-            let msg = crate::random_32_bytes(&mut rand::thread_rng());
+            let msg = crate::random_32_bytes(&mut rand::rng());
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
 
@@ -359,7 +359,7 @@ mod tests {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn test_pubkey_serialize_roundtrip() {
         let secp = Secp256k1::new();
-        let kp = Keypair::new(&secp, &mut rand::thread_rng());
+        let kp = Keypair::new(&secp, &mut rand::rng());
         let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
