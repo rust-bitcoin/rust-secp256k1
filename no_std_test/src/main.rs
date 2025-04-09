@@ -71,14 +71,10 @@ impl RngCore for FakeRng {
     fn next_u64(&mut self) -> u64 {
         57
     }
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
         for i in dest {
             *i = 57;
         }
-        Ok(())
-    }
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_bytes(dest).unwrap();
     }
 }
 

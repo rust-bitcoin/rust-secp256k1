@@ -48,7 +48,7 @@ use crate::{
 /// use secp256k1::{rand, Secp256k1, SecretKey};
 ///
 /// let secp = Secp256k1::new();
-/// let secret_key = SecretKey::new(&mut rand::thread_rng());
+/// let secret_key = SecretKey::new(&mut rand::rng());
 /// # }
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
@@ -192,7 +192,7 @@ impl SecretKey {
     /// ```
     /// # #[cfg(all(feature = "std", feature =  "rand"))] {
     /// use secp256k1::{rand, SecretKey};
-    /// let secret_key = SecretKey::new(&mut rand::thread_rng());
+    /// let secret_key = SecretKey::new(&mut rand::rng());
     /// # }
     /// ```
     #[inline]
@@ -257,7 +257,7 @@ impl SecretKey {
     /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let keypair = Keypair::new(&secp, &mut rand::rng());
     /// let secret_key = SecretKey::from_keypair(&keypair);
     /// # }
     /// ```
@@ -433,7 +433,7 @@ impl PublicKey {
     /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
     ///
     /// let secp = Secp256k1::new();
-    /// let secret_key = SecretKey::new(&mut rand::thread_rng());
+    /// let secret_key = SecretKey::new(&mut rand::rng());
     /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
     /// # }
     /// ```
@@ -524,7 +524,7 @@ impl PublicKey {
     /// use secp256k1::{rand, Secp256k1, PublicKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let keypair = Keypair::new(&secp, &mut rand::rng());
     /// let public_key = PublicKey::from_keypair(&keypair);
     /// # }
     /// ```
@@ -657,7 +657,7 @@ impl PublicKey {
     /// use secp256k1::{rand, Secp256k1};
     ///
     /// let secp = Secp256k1::new();
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     /// let (_, pk1) = secp.generate_keypair(&mut rng);
     /// let (_, pk2) = secp.generate_keypair(&mut rng);
     /// let sum = pk1.combine(&pk2).expect("It's improbable to fail for 2 random public keys");
@@ -683,7 +683,7 @@ impl PublicKey {
     /// use secp256k1::{rand, Secp256k1, PublicKey};
     ///
     /// let secp = Secp256k1::new();
-    /// let mut rng = rand::thread_rng();
+    /// let mut rng = rand::rng();
     /// let (_, pk1) = secp.generate_keypair(&mut rng);
     /// let (_, pk2) = secp.generate_keypair(&mut rng);
     /// let (_, pk3) = secp.generate_keypair(&mut rng);
@@ -817,7 +817,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 /// use secp256k1::{rand, Keypair, Secp256k1};
 ///
 /// let secp = Secp256k1::new();
-/// let (secret_key, public_key) = secp.generate_keypair(&mut rand::thread_rng());
+/// let (secret_key, public_key) = secp.generate_keypair(&mut rand::rng());
 /// let keypair = Keypair::from_secret_key(&secp, &secret_key);
 /// # }
 /// ```
@@ -927,7 +927,7 @@ impl Keypair {
     /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
     ///
     /// let secp = Secp256k1::new();
-    /// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let keypair = Keypair::new(&secp, &mut rand::rng());
     /// # }
     /// ```
     #[inline]
@@ -976,7 +976,7 @@ impl Keypair {
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
     /// let tweaked = keypair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
@@ -1160,7 +1160,7 @@ impl CPtr for Keypair {
 /// use secp256k1::{rand, Secp256k1, Keypair, XOnlyPublicKey};
 ///
 /// let secp = Secp256k1::new();
-/// let keypair = Keypair::new(&secp, &mut rand::thread_rng());
+/// let keypair = Keypair::new(&secp, &mut rand::rng());
 /// let xonly = XOnlyPublicKey::from_keypair(&keypair);
 /// # }
 /// ```
@@ -1310,7 +1310,7 @@ impl XOnlyPublicKey {
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
     /// let (xonly, _parity) = keypair.x_only_public_key();
     /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
@@ -1370,7 +1370,7 @@ impl XOnlyPublicKey {
     /// let secp = Secp256k1::new();
     /// let tweak = Scalar::random();
     ///
-    /// let mut keypair = Keypair::new(&secp, &mut rand::thread_rng());
+    /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
     /// let (mut public_key, _) = keypair.x_only_public_key();
     /// let original = public_key;
     /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
@@ -1667,7 +1667,7 @@ mod test {
     fn keypair_slice_round_trip() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
         assert_eq!(SecretKey::from_slice(&sk1[..]), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
@@ -1732,10 +1732,6 @@ mod test {
                 data.copy_from_slice(&group_order[..]);
                 data[31] = self.0;
                 self.0 -= 1;
-            }
-            fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-                self.fill_bytes(dest);
-                Ok(())
             }
         }
 
@@ -1950,7 +1946,7 @@ mod test {
     fn tweak_add_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
@@ -1969,7 +1965,7 @@ mod test {
     fn tweak_add_zero() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         let tweak = Scalar::ZERO;
 
@@ -1984,7 +1980,7 @@ mod test {
     fn tweak_mul_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
@@ -2002,7 +1998,7 @@ mod test {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_mul_zero() {
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, _) = s.generate_keypair(&mut rand::rng());
 
         let tweak = Scalar::ZERO;
         assert!(sk.mul_tweak(&tweak).is_err())
@@ -2013,7 +2009,7 @@ mod test {
     fn test_negation() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk, pk) = s.generate_keypair(&mut rand::rng());
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
@@ -2047,7 +2043,7 @@ mod test {
         let mut set = HashSet::new();
         const COUNT: usize = 1024;
         for _ in 0..COUNT {
-            let (_, pk) = s.generate_keypair(&mut rand::thread_rng());
+            let (_, pk) = s.generate_keypair(&mut rand::rng());
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
@@ -2118,8 +2114,8 @@ mod test {
     fn create_pubkey_combine() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut rand::thread_rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::thread_rng());
+        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
+        let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
 
         let sum1 = pk1.combine(&pk2);
         assert!(sum1.is_ok());
@@ -2232,7 +2228,7 @@ mod test {
         for _ in 0..10 {
             let tweak = Scalar::random();
 
-            let kp = Keypair::new(&s, &mut rand::thread_rng());
+            let kp = Keypair::new(&s, &mut rand::rng());
             let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
             let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
@@ -2486,7 +2482,7 @@ mod test {
     #[cfg(all(feature = "rand", feature = "std"))]
     fn test_keypair_from_str() {
         let ctx = crate::Secp256k1::new();
-        let keypair = Keypair::new(&ctx, &mut rand::thread_rng());
+        let keypair = Keypair::new(&ctx, &mut rand::rng());
         let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
         let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
         let parsed_key = Keypair::from_str(s).unwrap();
