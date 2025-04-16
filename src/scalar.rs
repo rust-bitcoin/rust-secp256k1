@@ -42,7 +42,7 @@ impl Scalar {
 
     /// Generates a random scalar
     #[cfg(all(feature = "rand", feature = "std"))]
-    pub fn random() -> Self { Self::random_custom(rand::thread_rng()) }
+    pub fn random() -> Self { Self::random_custom(rand::rng()) }
 
     /// Generates a random scalar using supplied RNG
     #[cfg(feature = "rand")]

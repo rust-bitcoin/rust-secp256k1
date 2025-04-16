@@ -28,12 +28,12 @@ pub mod global {
     /// A global static context to avoid repeatedly creating contexts.
     ///
     /// If `rand` and `std` feature is enabled, context will have been randomized using
-    /// `thread_rng`.
+    /// `rng`.
     ///
     /// ```
     /// # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
     /// use secp256k1::{PublicKey, SECP256K1};
-    /// let _ = SECP256K1.generate_keypair(&mut rand::thread_rng());
+    /// let _ = SECP256K1.generate_keypair(&mut rand::rng());
     /// # }
     /// ```
     pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
@@ -174,15 +174,15 @@ mod alloc_only {
         /// Lets you create a context in a generic manner (sign/verify/all).
         ///
         /// If `rand` and `std` feature is enabled, context will have been randomized using
-        /// `thread_rng`.
+        /// `rng`.
         /// If `rand` or `std` feature is not enabled please consider randomizing the context as
         /// follows:
         /// ```
         /// # #[cfg(all(feature = "rand", feature = "std"))] {
         /// # use secp256k1::Secp256k1;
-        /// # use secp256k1::rand::{thread_rng, RngCore};
+        /// # use secp256k1::rand::{rng, RngCore};
         /// let mut ctx = Secp256k1::new();
-        /// # let mut rng = thread_rng();
+        /// # let mut rng = rng();
         /// # let mut seed = [0u8; 32];
         /// # rng.fill_bytes(&mut seed);
         /// // let seed = <32 bytes of random data>
@@ -216,7 +216,7 @@ mod alloc_only {
                 not(feature = "global-context-less-secure")
             ))]
             {
-                ctx.randomize(&mut rand::thread_rng());
+                ctx.randomize(&mut rand::rng());
             }
 
             #[allow(clippy::let_and_return)] // as for unusted_mut
@@ -228,7 +228,7 @@ mod alloc_only {
         /// Creates a new Secp256k1 context with all capabilities.
         ///
         /// If `rand` and `std` feature is enabled, context will have been randomized using
-        /// `thread_rng`.
+        /// `rng`.
         /// If `rand` or `std` feature is not enabled please consider randomizing the context (see
         /// docs for `Secp256k1::gen_new()`).
         pub fn new() -> Secp256k1<All> { Secp256k1::gen_new() }
@@ -238,7 +238,7 @@ mod alloc_only {
         /// Creates a new Secp256k1 context that can only be used for signing.
         ///
         /// If `rand` and `std` feature is enabled, context will have been randomized using
-        /// `thread_rng`.
+        /// `rng`.
         /// If `rand` or `std` feature is not enabled please consider randomizing the context (see
         /// docs for `Secp256k1::gen_new()`).
         pub fn signing_only() -> Secp256k1<SignOnly> { Secp256k1::gen_new() }
@@ -248,7 +248,7 @@ mod alloc_only {
         /// Creates a new Secp256k1 context that can only be used for verification.
         ///
         /// If `rand` and `std` feature is enabled, context will have been randomized using
-        /// `thread_rng`.
+        /// `rng`.
         /// If `rand` or `std` feature is not enabled please consider randomizing the context (see
         /// docs for `Secp256k1::gen_new()`).
         pub fn verification_only() -> Secp256k1<VerifyOnly> { Secp256k1::gen_new() }
