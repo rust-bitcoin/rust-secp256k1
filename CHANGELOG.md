@@ -1,6 +1,12 @@
-# Next
+# 0.31.0 - 2025-04-21
 
+* Update `rand` to 0.9 [#788](https://github.com/rust-bitcoin/rust-secp256k1/pull/788)
 * Create keys from owned array values instead of from references [#781](https://github.com/rust-bitcoin/rust-secp256k1/pull/781)
+* Add `from_u8_masked` `RecoveryId` constructor [#778](https://github.com/rust-bitcoin/rust-secp256k1/pull/778)
+* Update upstream to `0cdc758a56360bf58a851fe91085a327ec97685a` (secp256k1-sys 0.6) [#764](https://github.com/rust-bitcoin/rust-secp256k1/pull/764)
+* Add `Keypair::sign_schnorr_no_aux_rand` [#762](https://github.com/rust-bitcoin/rust-secp256k1/pull/762)
+* Replace `Message` with `Into<Message>` in ECDSA signing API [#755](https://github.com/rust-bitcoin/rust-secp256k1/pull/755)
+* Deprecate `ElligatorSwiftParty` in favor of `Party` [#752](https://github.com/rust-bitcoin/rust-secp256k1/pull/752)
 
 # 0.30.0 - 2024-10-08
 
