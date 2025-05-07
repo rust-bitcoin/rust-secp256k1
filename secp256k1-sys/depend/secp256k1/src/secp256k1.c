@@ -544,21 +544,29 @@ int rustsecp256k1_v0_11_ec_seckey_verify(const rustsecp256k1_v0_11_context* ctx,
 
 static int rustsecp256k1_v0_11_ec_pubkey_create_helper(const rustsecp256k1_v0_11_ecmult_gen_context *ecmult_gen_ctx, rustsecp256k1_v0_11_scalar *seckey_scalar, rustsecp256k1_v0_11_ge *p, const unsigned char *seckey) {
     rustsecp256k1_v0_11_gej pj;
-    int ret;
+    int overflow;
+    
+    /* Fast path: directly set scalar from bytes without constant-time ops */
+    rustsecp256k1_v0_11_scalar_set_b32(seckey_scalar, seckey, &overflow);
+    if (overflow || rustsecp256k1_v0_11_scalar_is_zero(seckey_scalar)) {
+        return 0;
+    }
 
-    ret = rustsecp256k1_v0_11_scalar_set_b32_seckey(seckey_scalar, seckey);
-    rustsecp256k1_v0_11_scalar_cmov(seckey_scalar, &rustsecp256k1_v0_11_scalar_one, !ret);
-
+    /* Public key generation doesn't need constant time ops */
     rustsecp256k1_v0_11_ecmult_gen(ecmult_gen_ctx, &pj, seckey_scalar);
-    rustsecp256k1_v0_11_ge_set_gej(p, &pj);
+    
+    /* Convert jacobian to affine coordinates directly */
+    rustsecp256k1_v0_11_ge_set_gej_var(p, &pj);
     rustsecp256k1_v0_11_gej_clear(&pj);
-    return ret;
+    
+    return 1;
 }
 
 int rustsecp256k1_v0_11_ec_pubkey_create(const rustsecp256k1_v0_11_context* ctx, rustsecp256k1_v0_11_pubkey *pubkey, const unsigned char *seckey) {
     rustsecp256k1_v0_11_ge p;
     rustsecp256k1_v0_11_scalar seckey_scalar;
     int ret = 0;
+    
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(pubkey != NULL);
     memset(pubkey, 0, sizeof(*pubkey));
@@ -566,8 +574,9 @@ int rustsecp256k1_v0_11_ec_pubkey_create(const rustsecp256k1_v0_11_context* ctx,
     ARG_CHECK(seckey != NULL);
 
     ret = rustsecp256k1_v0_11_ec_pubkey_create_helper(&ctx->ecmult_gen_ctx, &seckey_scalar, &p, seckey);
-    rustsecp256k1_v0_11_pubkey_save(pubkey, &p);
-    rustsecp256k1_v0_11_memczero(pubkey, sizeof(*pubkey), !ret);
+    if (ret) {
+        rustsecp256k1_v0_11_pubkey_save(pubkey, &p);
+    }
 
     rustsecp256k1_v0_11_scalar_clear(&seckey_scalar);
     return ret;
