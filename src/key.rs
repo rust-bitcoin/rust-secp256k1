@@ -1619,14 +1619,17 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 /// # let pubkeys = [pub_key1, pub_key2];
 /// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
 /// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
-/// # 
+/// #
 /// # pubkey_sort(&secp, pubkeys_ref);
 /// # }
 /// ```
 pub fn pubkey_sort<C: Verification>(secp: &Secp256k1<C>, pubkeys: &mut [&PublicKey]) {
     let cx = secp.ctx().as_ptr();
     unsafe {
-        let mut pubkeys_ref = core::slice::from_raw_parts(pubkeys.as_c_ptr() as *mut *const ffi::PublicKey, pubkeys.len());
+        let mut pubkeys_ref = core::slice::from_raw_parts(
+            pubkeys.as_c_ptr() as *mut *const ffi::PublicKey,
+            pubkeys.len(),
+        );
         if secp256k1_ec_pubkey_sort(cx, pubkeys_ref.as_mut_c_ptr(), pubkeys_ref.len()) == 0 {
             unreachable!("Invalid public keys for sorting function")
         }

@@ -13,7 +13,8 @@ use std;
 
 use crate::ffi::{self, CPtr};
 use crate::{
-    schnorr, Error, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, Signing, Verification, XOnlyPublicKey
+    schnorr, Error, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
+    Verification, XOnlyPublicKey,
 };
 
 /// Musig partial signature parsing errors
@@ -43,9 +44,7 @@ pub struct SessionSecretRand([u8; 32]);
 impl SessionSecretRand {
     /// Generates a new session ID using thread RNG.
     #[cfg(all(feature = "rand", feature = "std"))]
-    pub fn new() -> Self {
-        Self::from_rng(&mut rand::thread_rng())
-    }
+    pub fn new() -> Self { Self::from_rng(&mut rand::thread_rng()) }
 
     /// Creates a new [`SessionSecretRand`] with random bytes from the given rng
     #[cfg(feature = "rand")]
@@ -73,9 +72,9 @@ impl SessionSecretRand {
 
 ///  Cached data related to a key aggregation.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct KeyAggCache{
+pub struct KeyAggCache {
     data: ffi::MusigKeyAggCache,
-    aggregated_xonly_public_key: XOnlyPublicKey
+    aggregated_xonly_public_key: XOnlyPublicKey,
 }
 
 impl CPtr for KeyAggCache {
@@ -85,7 +84,6 @@ impl CPtr for KeyAggCache {
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.as_mut_ptr() }
 }
-
 
 /// Musig tweaking related error.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -239,7 +237,9 @@ impl PartialSignature {
     /// # Errors:
     ///
     /// - MalformedArg: If the signature [`PartialSignature`] is out of curve order
-    pub fn from_byte_array(data: &[u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN]) -> Result<Self, ParseError> {
+    pub fn from_byte_array(
+        data: &[u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN],
+    ) -> Result<Self, ParseError> {
         let mut partial_sig = MaybeUninit::<ffi::MusigPartialSignature>::uninit();
         unsafe {
             if ffi::secp256k1_musig_partial_sig_parse(
@@ -306,7 +306,10 @@ impl KeyAggCache {
         let mut agg_pk = MaybeUninit::<ffi::XOnlyPublicKey>::uninit();
 
         unsafe {
-            let pubkeys_ref = core::slice::from_raw_parts(pubkeys.as_c_ptr() as *const *const ffi::PublicKey, pubkeys.len());
+            let pubkeys_ref = core::slice::from_raw_parts(
+                pubkeys.as_c_ptr() as *const *const ffi::PublicKey,
+                pubkeys.len(),
+            );
 
             if ffi::secp256k1_musig_pubkey_agg(
                 cx,
@@ -322,7 +325,7 @@ impl KeyAggCache {
                 // secp256k1_musig_pubkey_agg overwrites the cache and the key so this is sound.
                 let key_agg_cache = key_agg_cache.assume_init();
                 let agg_pk = XOnlyPublicKey::from(agg_pk.assume_init());
-                KeyAggCache{ data: key_agg_cache,  aggregated_xonly_public_key: agg_pk }
+                KeyAggCache { data: key_agg_cache, aggregated_xonly_public_key: agg_pk }
             }
         }
     }
@@ -645,7 +648,9 @@ impl PublicNonce {
     /// # Errors:
     ///
     /// - MalformedArg: If the [`PublicNonce`] is 132 bytes, but out of curve order
-    pub fn from_byte_array(data: &[u8; ffi::MUSIG_PUBNONCE_SERIALIZED_LEN]) -> Result<Self, ParseError> {
+    pub fn from_byte_array(
+        data: &[u8; ffi::MUSIG_PUBNONCE_SERIALIZED_LEN],
+    ) -> Result<Self, ParseError> {
         let mut pub_nonce = MaybeUninit::<ffi::MusigPubNonce>::uninit();
         unsafe {
             if ffi::secp256k1_musig_pubnonce_parse(
@@ -718,7 +723,6 @@ impl AggregatedNonce {
     /// # }
     /// ```
     pub fn new<C: Signing>(secp: &Secp256k1<C>, nonces: &[&PublicNonce]) -> Self {
-
         if nonces.is_empty() {
             panic!("Cannot aggregate an empty slice of nonces");
         }
@@ -726,7 +730,10 @@ impl AggregatedNonce {
         let mut aggnonce = MaybeUninit::<ffi::MusigAggNonce>::uninit();
 
         unsafe {
-            let pubnonces = core::slice::from_raw_parts(nonces.as_c_ptr() as *const *const ffi::MusigPubNonce, nonces.len());
+            let pubnonces = core::slice::from_raw_parts(
+                nonces.as_c_ptr() as *const *const ffi::MusigPubNonce,
+                nonces.len(),
+            );
 
             if ffi::secp256k1_musig_nonce_agg(
                 secp.ctx().as_ptr(),
@@ -767,7 +774,9 @@ impl AggregatedNonce {
     /// # Errors:
     ///
     /// - MalformedArg: If the byte slice is 66 bytes, but the [`AggregatedNonce`] is invalid
-    pub fn from_byte_array(data: &[u8; ffi::MUSIG_AGGNONCE_SERIALIZED_LEN]) -> Result<Self, ParseError> {
+    pub fn from_byte_array(
+        data: &[u8; ffi::MUSIG_AGGNONCE_SERIALIZED_LEN],
+    ) -> Result<Self, ParseError> {
         let mut aggnonce = MaybeUninit::<ffi::MusigAggNonce>::uninit();
         unsafe {
             if ffi::secp256k1_musig_aggnonce_parse(
@@ -807,13 +816,17 @@ impl AggregatedSignature {
     /// signature is more performant. Thus it should be generally better to verify the signature using this function first
     /// and fall back to detection of violators if it fails.
     pub fn assume_valid(self) -> schnorr::Signature {
-        schnorr::Signature::from_slice(&self.0)
-            .expect("Invalid signature data")
+        schnorr::Signature::from_slice(&self.0).expect("Invalid signature data")
     }
 
     /// Verify the aggregated signature against the aggregate public key and message
     /// before returning the signature.
-    pub fn verify<C: Verification>(self, secp: &Secp256k1<C>, aggregate_key: &XOnlyPublicKey, message: &[u8]) -> Result<schnorr::Signature, Error> {
+    pub fn verify<C: Verification>(
+        self,
+        secp: &Secp256k1<C>,
+        aggregate_key: &XOnlyPublicKey,
+        message: &[u8],
+    ) -> Result<schnorr::Signature, Error> {
         let sig = schnorr::Signature::from_slice(&self.0)?;
         secp.verify_schnorr(&sig, message, aggregate_key)
             .map(|_| sig)
@@ -1123,15 +1136,16 @@ impl Session {
     /// # }
     /// ```
     pub fn partial_sig_agg(&self, partial_sigs: &[&PartialSignature]) -> AggregatedSignature {
-
         if partial_sigs.is_empty() {
             panic!("Cannot aggregate an empty slice of partial signatures");
         }
 
         let mut sig = [0u8; 64];
         unsafe {
-
-            let partial_sigs_ref = core::slice::from_raw_parts(partial_sigs.as_ptr() as *const *const ffi::MusigPartialSignature, partial_sigs.len());
+            let partial_sigs_ref = core::slice::from_raw_parts(
+                partial_sigs.as_ptr() as *const *const ffi::MusigPartialSignature,
+                partial_sigs.len(),
+            );
 
             if ffi::secp256k1_musig_partial_sig_agg(
                 ffi::secp256k1_context_no_precomp,

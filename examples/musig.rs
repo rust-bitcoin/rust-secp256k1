@@ -1,10 +1,10 @@
 extern crate secp256k1;
 
 use secp256k1::musig::{
-    new_nonce_pair, AggregatedNonce, KeyAggCache, PartialSignature, PublicNonce,
-    Session, SessionSecretRand,
+    new_nonce_pair, AggregatedNonce, KeyAggCache, PartialSignature, PublicNonce, Session,
+    SessionSecretRand,
 };
-use secp256k1::{Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, pubkey_sort};
+use secp256k1::{pubkey_sort, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey};
 
 fn main() {
     let secp = Secp256k1::new();
@@ -78,12 +78,10 @@ fn main() {
     let session = Session::new(&secp, &musig_key_agg_cache, agg_nonce, msg);
 
     let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
-    let partial_sign1 =
-        session.partial_sign(&secp, sec_nonce1, &keypair1, &musig_key_agg_cache);
+    let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &musig_key_agg_cache);
 
     let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
-    let partial_sign2 =
-        session.partial_sign(&secp, sec_nonce2, &keypair2, &musig_key_agg_cache);
+    let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &musig_key_agg_cache);
 
     let is_partial_signature_valid =
         session.partial_verify(&secp, &musig_key_agg_cache, partial_sign1, pub_nonce1, pubkey1);
