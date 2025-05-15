@@ -134,10 +134,6 @@ impl fmt::Display for InvalidTweakErr {
 ///
 /// Remember that nonce reuse will immediately leak the secret key!
 ///
-/// # Errors:
-///
-/// * `ZeroSession`: if the `session_secrand` is supplied is all zeros.
-///
 /// Example:
 ///
 /// ```rust
@@ -516,10 +512,6 @@ impl KeyAggCache {
     /// * `pub_key`: [`PublicKey`] of the signer creating the nonce.
     /// * `msg`: [`Message`] that will be signed later on.
     /// * `extra_rand`: Additional randomness for mis-use resistance
-    ///
-    /// # Errors:
-    ///
-    /// * `ZeroSession`: if the `session_secrand` is supplied is all zeros.
     ///
     /// Example:
     ///
