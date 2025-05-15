@@ -843,7 +843,7 @@ extern "C" {
         cx: *const Context,
         secnonce: *mut MusigSecNonce,
         pubnonce: *mut MusigPubNonce,
-        session_secrand32: *const c_uchar,
+        session_secrand32: *mut c_uchar,
         seckey: *const c_uchar,
         pubkey: *const PublicKey,
         msg32: *const c_uchar,
@@ -915,7 +915,7 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_ec_pubkey_sort")]
     pub fn secp256k1_ec_pubkey_sort(
         ctx: *const Context,
-        pubkeys: *mut *const PublicKey,
+        pubkeys: *const *const PublicKey,
         n_pubkeys: size_t,
     ) -> c_int;
 }

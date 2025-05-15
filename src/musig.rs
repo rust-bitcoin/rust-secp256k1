@@ -68,6 +68,11 @@ impl SessionSecretRand {
 
     /// Obtains a reference to the inner bytes of the [`SessionSecretRand`].
     pub fn as_bytes(&self) -> &[u8; 32] { &self.0 }
+
+    /// Obtains a mutable raw pointer to the beginning of the underlying storage.
+    ///
+    /// This is a low-level function and not exposed in the public API.
+    fn as_mut_ptr(&mut self) -> *mut u8 { self.0.as_mut_ptr() }
 }
 
 ///  Cached data related to a key aggregation.
@@ -154,7 +159,7 @@ impl fmt::Display for InvalidTweakErr {
 /// ```
 pub fn new_nonce_pair<C: Signing>(
     secp: &Secp256k1<C>,
-    session_secrand: SessionSecretRand,
+    mut session_secrand: SessionSecretRand,
     key_agg_cache: Option<&KeyAggCache>,
     sec_key: Option<SecretKey>,
     pub_key: PublicKey,
@@ -167,13 +172,19 @@ pub fn new_nonce_pair<C: Signing>(
     let msg_ptr = msg.as_ref().map(|e| e.as_c_ptr()).unwrap_or(core::ptr::null());
     let cache_ptr = key_agg_cache.map(|e| e.as_ptr()).unwrap_or(core::ptr::null());
     unsafe {
+        // The use of a mutable pointer to `session_secrand`, which is a local variable,
+        // may seem concerning/wrong. It is ok: this pointer is only mutable because the
+        // behavior of `secp256k1_musig_nonce_gen` on error is to zero out the secret
+        // nonce. We guarantee this won't happen, but also if it does, it's harmless
+        // to zero out a local variable without propagating that change back to the
+        // caller or anything.
         let mut sec_nonce = MaybeUninit::<ffi::MusigSecNonce>::uninit();
         let mut pub_nonce = MaybeUninit::<ffi::MusigPubNonce>::uninit();
         if ffi::secp256k1_musig_nonce_gen(
             cx,
             sec_nonce.as_mut_ptr(),
             pub_nonce.as_mut_ptr(),
-            session_secrand.as_bytes().as_ptr(),
+            session_secrand.as_mut_ptr(),
             sk_ptr,
             pub_key.as_c_ptr(),
             msg_ptr,
