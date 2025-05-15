@@ -42,10 +42,6 @@ impl fmt::Display for ParseError {
 pub struct SessionSecretRand([u8; 32]);
 
 impl SessionSecretRand {
-    /// Generates a new session ID using thread RNG.
-    #[cfg(all(feature = "rand", feature = "std"))]
-    pub fn new() -> Self { Self::from_rng(&mut rand::rng()) }
-
     /// Creates a new [`SessionSecretRand`] with random bytes from the given rng
     #[cfg(feature = "rand")]
     pub fn from_rng<R: rand::Rng + ?Sized>(rng: &mut R) -> Self {
@@ -59,8 +55,8 @@ impl SessionSecretRand {
     /// [`KeyAggCache::nonce_gen`] or [`new_nonce_pair`]. The simplest
     /// recommendation is to use a cryptographicaly random 32-byte value.
     ///
-    /// In rand-std environment, [`SessionSecretRand::new`] can be used to generate a random
-    /// session id using thread rng.
+    /// If the **rand** feature is enabled, [`SessionSecretRand::from_rng`] can be used to generate a
+    /// random session id.
     pub fn assume_unique_per_nonce_gen(inner: [u8; 32]) -> Self { SessionSecretRand(inner) }
 
     /// Obtains the inner bytes of the [`SessionSecretRand`].
