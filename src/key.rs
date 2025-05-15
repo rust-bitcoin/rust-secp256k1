@@ -1622,12 +1622,12 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 ///
 /// ```rust
 /// # # [cfg(any(test, feature = "rand-std"))] {
-/// # use secp256k1::rand::{thread_rng, RngCore};
+/// # use secp256k1::rand::{rng, RngCore};
 /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
 /// # let secp = Secp256k1::new();
-/// # let sk1 = SecretKey::new(&mut thread_rng());
+/// # let sk1 = SecretKey::new(&mut rng());
 /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-/// # let sk2 = SecretKey::new(&mut thread_rng());
+/// # let sk2 = SecretKey::new(&mut rng());
 /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
 /// #
 /// # let pubkeys = [pub_key1, pub_key2];

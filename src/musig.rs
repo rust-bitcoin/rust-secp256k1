@@ -44,7 +44,7 @@ pub struct SessionSecretRand([u8; 32]);
 impl SessionSecretRand {
     /// Generates a new session ID using thread RNG.
     #[cfg(all(feature = "rand", feature = "std"))]
-    pub fn new() -> Self { Self::from_rng(&mut rand::thread_rng()) }
+    pub fn new() -> Self { Self::from_rng(&mut rand::rng()) }
 
     /// Creates a new [`SessionSecretRand`] with random bytes from the given rng
     #[cfg(feature = "rand")]
@@ -142,12 +142,12 @@ impl fmt::Display for InvalidTweakErr {
 ///
 /// ```rust
 /// # # [cfg(any(test, feature = "rand-std"))] {
-/// # use secp256k1::rand::{thread_rng, RngCore};
+/// # use secp256k1::rand::{rng, RngCore};
 /// # use secp256k1::{PublicKey, Secp256k1, SecretKey, new_nonce_pair, SessionSecretRand};
 /// # let secp = Secp256k1::new();
 /// // The session id must be sampled at random. Read documentation for more details.
-/// let session_secrand = SessionSecretRand::new(&mut thread_rng());
-/// let sk = SecretKey::new(&mut thread_rng());
+/// let session_secrand = SessionSecretRand::new(&mut rng());
+/// let sk = SecretKey::new(&mut rng());
 /// let pk = PublicKey::from_secret_key(&secp, &sk);
 ///
 /// // Supply extra auxillary randomness to prevent misuse(for example, time of day)
@@ -298,12 +298,12 @@ impl KeyAggCache {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     /// #
     /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -387,12 +387,12 @@ impl KeyAggCache {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     /// #
     /// let mut key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -446,12 +446,12 @@ impl KeyAggCache {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     ///
     /// let mut key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -520,17 +520,17 @@ impl KeyAggCache {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     /// #
     /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
-    /// let session_secrand = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand = SessionSecretRand::new(&mut rng());
     ///
     /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
     ///
@@ -708,12 +708,12 @@ impl AggregatedNonce {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message, AggregatedNonce};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -721,12 +721,12 @@ impl AggregatedNonce {
     ///
     /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
     ///
-    /// let session_secrand1 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand1 = SessionSecretRand::new(&mut rng());
     /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None)
     ///     .expect("non zero session id");
     ///
     /// // Signer two does the same: Possibly on a different device
-    /// let session_secrand2 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand2 = SessionSecretRand::new(&mut rng());
     /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None)
     ///     .expect("non zero session id");
     ///
@@ -870,12 +870,12 @@ impl Session {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message, AggregatedNonce, Session};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -884,13 +884,13 @@ impl Session {
     /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
     ///
     /// // Provide the current time for mis-use resistance
-    /// let session_secrand1 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand1 = SessionSecretRand::new(&mut rng());
     /// let extra_rand1 : Option<[u8; 32]> = None;
     /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, extra_rand1)
     ///     .expect("non zero session id");
     ///
     /// // Signer two does the same. Possibly on a different device
-    /// let session_secrand2 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand2 = SessionSecretRand::new(&mut rng());
     /// let extra_rand2 : Option<[u8; 32]> = None;
     /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, extra_rand2)
     ///     .expect("non zero session id");
@@ -1006,12 +1006,12 @@ impl Session {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message, AggregatedNonce, Session};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -1020,12 +1020,12 @@ impl Session {
     /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
     ///
     /// // Provide the current time for mis-use resistance
-    /// let session_secrand1 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand1 = SessionSecretRand::new(&mut rng());
     /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None)
     ///     .expect("non zero session id");
     ///
     /// // Signer two does the same. Possibly on a different device
-    /// let session_secrand2 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand2 = SessionSecretRand::new(&mut rng());
     /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None)
     ///     .expect("non zero session id");
     ///
@@ -1089,12 +1089,12 @@ impl Session {
     ///
     /// ```rust
     /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{thread_rng, RngCore};
+    /// # use secp256k1::rand::{rng, RngCore};
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message, AggregatedNonce, Session};
     /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut thread_rng());
+    /// # let sk1 = SecretKey::new(&mut rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-    /// # let sk2 = SecretKey::new(&mut thread_rng());
+    /// # let sk2 = SecretKey::new(&mut rng());
     /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
     ///
     /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
@@ -1103,12 +1103,12 @@ impl Session {
     /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
     ///
     /// // Provide the current time for mis-use resistance
-    /// let session_secrand1 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand1 = SessionSecretRand::new(&mut rng());
     /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None)
     ///     .expect("non zero session id");
     ///
     /// // Signer two does the same. Possibly on a different device
-    /// let session_secrand2 = SessionSecretRand::new(&mut thread_rng());
+    /// let session_secrand2 = SessionSecretRand::new(&mut rng());
     /// let (mut sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None)
     ///     .expect("non zero session id");
     ///
