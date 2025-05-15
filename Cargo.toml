@@ -73,3 +73,13 @@ required-features = ["rand", "std"]
 [workspace]
 members = ["secp256k1-sys"]
 exclude = ["no_std_test"]
+
+[lints.clippy]
+# Exclude lints we don't think are valuable.
+large_enum_variant = "allow" # docs say "measure before paying attention to this"; why is it on by default??
+similar_names = "allow" # Too many (subjectively) false positives.
+uninlined_format_args = "allow" # This is a subjective style choice.
+indexing_slicing = "allow" # Too many false positives ... would be cool though
+match_bool = "allow" # Adds extra indentation and LOC.
+match_same_arms = "allow" # Collapses things that are conceptually unrelated to each other.
+must_use_candidate = "allow" # Useful for audit but many false positives.
