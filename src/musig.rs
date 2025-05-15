@@ -57,13 +57,23 @@ impl SessionSecretRand {
     ///
     /// If the **rand** feature is enabled, [`SessionSecretRand::from_rng`] can be used to generate a
     /// random session id.
-    pub fn assume_unique_per_nonce_gen(inner: [u8; 32]) -> Self { SessionSecretRand(inner) }
+    ///
+    /// # Panics
+    ///
+    /// Panics if passed the all-zeros string. This is disallowed by the upstream
+    /// library. The input to this function should either be the whitened output of
+    /// a random number generator, or if that is not available, the output of a
+    /// stable monotonic counter.
+    pub fn assume_unique_per_nonce_gen(inner: [u8; 32]) -> Self {
+        assert_ne!(inner, [0; 32], "session secrets may not be all zero");
+        SessionSecretRand(inner)
+    }
 
     /// Obtains the inner bytes of the [`SessionSecretRand`].
-    pub fn to_bytes(&self) -> [u8; 32] { self.0 }
+    pub fn to_byte_array(&self) -> [u8; 32] { self.0 }
 
     /// Obtains a reference to the inner bytes of the [`SessionSecretRand`].
-    pub fn as_bytes(&self) -> &[u8; 32] { &self.0 }
+    pub fn as_byte_array(&self) -> &[u8; 32] { &self.0 }
 
     /// Obtains a mutable raw pointer to the beginning of the underlying storage.
     ///
@@ -213,13 +223,9 @@ impl CPtr for PartialSignature {
 }
 
 impl PartialSignature {
-    /// Serialize a PartialSignature.
-    ///
-    /// # Returns
-    ///
-    /// 32-byte array
-    pub fn serialize(&self) -> [u8; 32] {
-        let mut data = MaybeUninit::<[u8; 32]>::uninit();
+    /// Serialize a PartialSignature as a byte array.
+    pub fn serialize(&self) -> [u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN] {
+        let mut data = MaybeUninit::<[u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN]>::uninit();
         unsafe {
             if ffi::secp256k1_musig_partial_sig_serialize(
                 ffi::secp256k1_context_no_precomp,
