@@ -504,6 +504,8 @@ impl KeyAggCache {
     /// See the `new_nonce_pair` method that allows generating [`SecretNonce`] and [`PublicNonce`]
     /// with only the `session_secrand` field.
     ///
+    /// If the aggregator lies, the resulting signature will simply be invalid.
+    ///
     /// Remember that nonce reuse will immediately leak the secret key!
     ///
     /// # Returns:
