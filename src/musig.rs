@@ -307,6 +307,10 @@ impl KeyAggCache {
     /// let _agg_pk = key_agg_cache.agg_pk();
     /// # }
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if an empty slice of pubkeys is provided.
     pub fn new<C: Verification>(secp: &Secp256k1<C>, pubkeys: &[&PublicKey]) -> Self {
         let cx = secp.ctx().as_ptr();
 
@@ -729,6 +733,10 @@ impl AggregatedNonce {
     /// let aggnonce = AggregatedNonce::new(&secp, &[&pub_nonce1, &pub_nonce2]);
     /// # }
     /// ```
+    /// # Panics
+    ///
+    /// Panics if an empty slice of nonces is provided.
+    ///
     pub fn new<C: Signing>(secp: &Secp256k1<C>, nonces: &[&PublicNonce]) -> Self {
         if nonces.is_empty() {
             panic!("Cannot aggregate an empty slice of nonces");
@@ -1140,6 +1148,10 @@ impl Session {
     /// assert!(aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).is_ok());
     /// # }
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if an empty slice of partial signatures is provided.
     pub fn partial_sig_agg(&self, partial_sigs: &[&PartialSignature]) -> AggregatedSignature {
         if partial_sigs.is_empty() {
             panic!("Cannot aggregate an empty slice of partial signatures");
