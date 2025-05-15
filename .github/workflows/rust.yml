@@ -254,16 +254,18 @@ jobs:
         run: cargo test --target i686-unknown-linux-gnu
 
   WASM:
-    name: WASM - stable toolchain
+    name: WASM - MSRV toolchain
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # Note we do not use the recent lock file for wasm testing.
     steps:
       - name: "Checkout repo"
         uses: actions/checkout@v4
       - name: "Select toolchain"
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.63.0
+      - name: "Set dependencies"
+        # For now we only use minimal lock
+        run: cp Cargo-minimal.lock Cargo.lock
       - name: "Run wasm script"
         run: ./contrib/wasm.sh
 
