@@ -314,6 +314,10 @@ impl KeyAggCache {
     ///
     /// Panics if an empty slice of pubkeys is provided.
     pub fn new<C: Verification>(secp: &Secp256k1<C>, pubkeys: &[&PublicKey]) -> Self {
+        if pubkeys.is_empty() {
+            panic!("Cannot aggregate an empty slice of pubkeys");
+        }
+
         let cx = secp.ctx().as_ptr();
 
         let mut key_agg_cache = MaybeUninit::<ffi::MusigKeyAggCache>::uninit();
