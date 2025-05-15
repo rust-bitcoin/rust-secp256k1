@@ -42,6 +42,8 @@ pub mod global {
         type Target = Secp256k1<All>;
 
         #[allow(unused_mut)] // Unused when `rand` + `std` is not enabled.
+        #[allow(static_mut_refs)] // The "proper" way to do this is with OnceLock (MSRV 1.70) or LazyLock (MSRV 1.80)
+                                  // See https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html
         fn deref(&self) -> &Self::Target {
             static ONCE: Once = Once::new();
             static mut CONTEXT: Option<Secp256k1<All>> = None;
