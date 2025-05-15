@@ -66,6 +66,10 @@ required-features = ["hashes", "std"]
 name = "generate_keys"
 required-features = ["rand", "std"]
 
+[[example]]
+name = "musig"
+required-features = ["rand", "std"]
+
 [workspace]
 members = ["secp256k1-sys"]
 exclude = ["no_std_test"]

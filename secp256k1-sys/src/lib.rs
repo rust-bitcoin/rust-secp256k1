@@ -672,6 +672,147 @@ extern "C" {
                                   hashfp: EllswiftEcdhHashFn,
                                   data: *mut c_void)
                                   -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_pubnonce_parse")]
+    pub fn secp256k1_musig_pubnonce_parse(
+        cx: *const Context,
+        nonce: *mut MusigPubNonce,
+        in66: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_pubnonce_serialize")]
+    pub fn secp256k1_musig_pubnonce_serialize(
+        cx: *const Context,
+        out66: *mut c_uchar,
+        nonce: *const MusigPubNonce,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_aggnonce_parse")]
+    pub fn secp256k1_musig_aggnonce_parse(
+        cx: *const Context,
+        nonce: *mut MusigAggNonce,
+        in66: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_aggnonce_serialize")]
+    pub fn secp256k1_musig_aggnonce_serialize(
+        cx: *const Context,
+        out66: *mut c_uchar,
+        nonce: *const MusigAggNonce,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_partial_sig_parse")]
+    pub fn secp256k1_musig_partial_sig_parse(
+        cx: *const Context,
+        sig: *mut MusigPartialSignature,
+        in32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_partial_sig_serialize")]
+    pub fn secp256k1_musig_partial_sig_serialize(
+        cx: *const Context,
+        out32: *mut c_uchar,
+        sig: *const MusigPartialSignature,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_pubkey_agg")]
+    pub fn secp256k1_musig_pubkey_agg(
+        cx: *const Context,
+        agg_pk: *mut XOnlyPublicKey,
+        keyagg_cache: *mut MusigKeyAggCache,
+        pubkeys: *const *const PublicKey,
+        n_pubkeys: size_t,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming),link_name = "rustsecp256k1_v0_11_musig_pubkey_get")]
+    pub fn secp256k1_musig_pubkey_get(
+        cx: *const Context,
+        agg_pk: *mut PublicKey,
+        keyagg_cache: *const MusigKeyAggCache,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_pubkey_ec_tweak_add")]
+    pub fn secp256k1_musig_pubkey_ec_tweak_add(
+        cx: *const Context,
+        output_pubkey: *mut PublicKey,
+        keyagg_cache: *mut MusigKeyAggCache,
+        tweak32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_pubkey_xonly_tweak_add")]
+    pub fn secp256k1_musig_pubkey_xonly_tweak_add(
+        cx: *const Context,
+        output_pubkey: *mut PublicKey,
+        keyagg_cache: *mut MusigKeyAggCache,
+        tweak32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_nonce_gen")]
+    pub fn secp256k1_musig_nonce_gen(
+        cx: *const Context,
+        secnonce: *mut MusigSecNonce,
+        pubnonce: *mut MusigPubNonce,
+        session_secrand32: *const c_uchar,
+        seckey: *const c_uchar,
+        pubkey: *const PublicKey,
+        msg32: *const c_uchar,
+        keyagg_cache: *const MusigKeyAggCache,
+        extra_input32: *const c_uchar,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_nonce_agg")]
+    pub fn secp256k1_musig_nonce_agg(
+        cx: *const Context,
+        aggnonce: *mut MusigAggNonce,
+        pubnonces: *const *const MusigPubNonce,
+        n_pubnonces: size_t,
+    ) -> c_int;
+
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_nonce_process")]
+    pub fn secp256k1_musig_nonce_process(
+        cx: *const Context,
+        session: *mut MusigSession,
+        aggnonce: *const MusigAggNonce,
+        msg32: *const c_uchar,
+        keyagg_cache: *const MusigKeyAggCache,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_partial_sign")]
+    pub fn secp256k1_musig_partial_sign(
+        cx: *const Context,
+        partial_sig: *mut MusigPartialSignature,
+        secnonce: *mut MusigSecNonce,
+        keypair: *const Keypair,
+        keyagg_cache: *const MusigKeyAggCache,
+        session: *const MusigSession,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_partial_sig_verify")]
+    pub fn secp256k1_musig_partial_sig_verify(
+        cx: *const Context,
+        partial_sig: *const MusigPartialSignature,
+        pubnonce: *const MusigPubNonce,
+        pubkey: *const PublicKey,
+        keyagg_cache: *const MusigKeyAggCache,
+        session: *const MusigSession,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_musig_partial_sig_agg")]
+    pub fn secp256k1_musig_partial_sig_agg(
+        cx: *const Context,
+        sig64: *mut c_uchar,
+        session: *const MusigSession,
+        partial_sigs: *const *const MusigPartialSignature,
+        n_sigs: size_t,
+    ) -> c_int;
+
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_ec_pubkey_sort")]
+    pub fn secp256k1_ec_pubkey_sort(
+        ctx: *const Context,
+        pubkeys: *mut *const PublicKey,
+        n_pubkeys: size_t
+    ) -> c_int;
 }
 
 #[cfg(not(secp256k1_fuzz))]
@@ -1097,6 +1238,94 @@ impl <T: CPtr> CPtr for Option<T> {
         }
     }
 }
+/// Total length (in bytes) of the key aggregation context.
+/// This structure packs all metadata needed for aggregating individual public keys
+/// into a single MuSig2 aggregated key (including coefficients and any extra metadata).
+pub const MUSIG_KEYAGG_LEN: usize = 197;
+
+/// Length (in bytes) of the secret nonce structure used in a MuSig2 session.
+/// It holds the secret (ephemeral) nonces used internally for nonce derivation
+/// before the corresponding public nonces are computed.
+pub const MUSIG_SECNONCE_LEN: usize = 132;
+
+/// Length (in bytes) of the public nonce structure.
+/// This is derived from the secret nonce and shared among participants to build
+/// nonce commitments in the MuSig2 protocol.
+pub const MUSIG_PUBNONCE_LEN: usize = 132;
+
+/// Length (in bytes) of the aggregated nonce structure.
+/// Represents the combined nonce obtained by aggregating the individual public nonces
+/// from all participants for the final signature computation.
+pub const MUSIG_AGGNONCE_LEN: usize = 132;
+
+/// Serialized length (in bytes) of the aggregated nonce.
+/// This is the compact form (typically using a compressed representation) used for
+/// transmitting or storing the aggregated nonce.
+pub const MUSIG_AGGNONCE_SERIALIZED_LEN: usize = 66;
+
+/// Serialized length (in bytes) of an individual public nonce.
+/// This compact serialized form is what gets exchanged between signers.
+pub const MUSIG_PUBNONCE_SERIALIZED_LEN: usize = 66;
+
+/// Length (in bytes) of the session structure.
+/// The session object holds all state needed for a MuSig2 signing session (e.g. aggregated nonce,
+/// key aggregation info, and other state necessary for computing partial signatures).
+pub const MUSIG_SESSION_LEN: usize = 133;
+
+/// Length (in bytes) of the internal representation of a partial signature.
+/// This structure include magic bytes ([0xeb, 0xfb, 0x1a, 0x32]) alongside the actual signature scalar.
+pub const MUSIG_PART_SIG_LEN: usize = 36;
+
+/// Serialized length (in bytes) of a partial signature.
+/// This is the compact form (typically just the 32-byte scalar) that is used when communicating
+/// partial signatures to be combined into the final signature.
+pub const MUSIG_PART_SIG_SERIALIZED_LEN: usize = 32;
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MusigKeyAggCache([c_uchar; MUSIG_KEYAGG_LEN]);
+impl_array_newtype!(MusigKeyAggCache, c_uchar, MUSIG_KEYAGG_LEN);
+impl_raw_debug!(MusigKeyAggCache);
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct MusigSecNonce([c_uchar; MUSIG_SECNONCE_LEN]);
+impl_array_newtype!(MusigSecNonce, c_uchar, MUSIG_SECNONCE_LEN);
+impl_raw_debug!(MusigSecNonce);
+
+impl MusigSecNonce {
+    pub fn dangerous_from_bytes(bytes: [c_uchar; MUSIG_SECNONCE_LEN]) -> Self {
+        MusigSecNonce(bytes)
+    }
+
+    pub fn dangerous_into_bytes(self) -> [c_uchar; MUSIG_SECNONCE_LEN] {
+        self.0
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MusigPubNonce([c_uchar; MUSIG_PUBNONCE_LEN]);
+impl_array_newtype!(MusigPubNonce, c_uchar, MUSIG_PUBNONCE_LEN);
+impl_raw_debug!(MusigPubNonce);
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MusigAggNonce([c_uchar; MUSIG_AGGNONCE_LEN]);
+impl_array_newtype!(MusigAggNonce, c_uchar, MUSIG_AGGNONCE_LEN);
+impl_raw_debug!(MusigAggNonce);
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MusigSession([c_uchar; MUSIG_SESSION_LEN]);
+impl_array_newtype!(MusigSession, c_uchar, MUSIG_SESSION_LEN);
+impl_raw_debug!(MusigSession);
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct MusigPartialSignature([c_uchar; MUSIG_PART_SIG_LEN]);
+impl_array_newtype!(MusigPartialSignature, c_uchar, MUSIG_PART_SIG_LEN);
+impl_raw_debug!(MusigPartialSignature);
 
 #[cfg(secp256k1_fuzz)]
 mod fuzz_dummy {
