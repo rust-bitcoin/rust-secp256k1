@@ -1617,35 +1617,38 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
     }
 }
 
-/// Sort public keys using lexicographic (of compressed serialization) order.
-/// Example:
-///
-/// ```rust
-/// # # [cfg(any(test, feature = "rand-std"))] {
-/// # use secp256k1::rand::{thread_rng, RngCore};
-/// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
-/// # let secp = Secp256k1::new();
-/// # let sk1 = SecretKey::new(&mut thread_rng());
-/// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
-/// # let sk2 = SecretKey::new(&mut thread_rng());
-/// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
-/// #
-/// # let pubkeys = [pub_key1, pub_key2];
-/// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
-/// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
-/// #
-/// # pubkey_sort(&secp, pubkeys_ref);
-/// # }
-/// ```
-pub fn pubkey_sort<C: Verification>(secp: &Secp256k1<C>, pubkeys: &mut [&PublicKey]) {
-    let cx = secp.ctx().as_ptr();
-    unsafe {
-        let mut pubkeys_ref = core::slice::from_raw_parts(
-            pubkeys.as_c_ptr() as *mut *const ffi::PublicKey,
-            pubkeys.len(),
-        );
-        if secp256k1_ec_pubkey_sort(cx, pubkeys_ref.as_mut_c_ptr(), pubkeys_ref.len()) == 0 {
-            unreachable!("Invalid public keys for sorting function")
+impl<C: Verification> Secp256k1<C> {
+    /// Sort public keys using lexicographic (of compressed serialization) order.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// # # [cfg(any(test, feature = "rand-std"))] {
+    /// # use secp256k1::rand::{rng, RngCore};
+    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
+    /// # let secp = Secp256k1::new();
+    /// # let sk1 = SecretKey::new(&mut rng());
+    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let sk2 = SecretKey::new(&mut rng());
+    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// #
+    /// # let pubkeys = [pub_key1, pub_key2];
+    /// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
+    /// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
+    /// #
+    /// # secp.musig_sort_pubkeys(pubkeys_ref);
+    /// # }
+    /// ```
+    pub fn musig_sort_pubkeys(&self, pubkeys: &mut [&PublicKey]) {
+        let cx = self.ctx().as_ptr();
+        unsafe {
+            let mut pubkeys_ref = core::slice::from_raw_parts(
+                pubkeys.as_c_ptr() as *mut *const ffi::PublicKey,
+                pubkeys.len(),
+            );
+            if secp256k1_ec_pubkey_sort(cx, pubkeys_ref.as_mut_c_ptr(), pubkeys_ref.len()) == 0 {
+                unreachable!("Invalid public keys for sorting function")
+            }
         }
     }
 }

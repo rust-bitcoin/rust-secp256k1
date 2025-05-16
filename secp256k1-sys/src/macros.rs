@@ -27,9 +27,7 @@ macro_rules! impl_array_newtype {
             /// serializing it to a guaranteed format). This means they may be slow, this function
             /// provides a faster equality check if you know that your types come from the same
             /// library version.
-            pub fn eq_fast_unstable(&self, other: &Self) -> bool {
-                self[..].eq(&other[..])
-            }
+            pub fn eq_fast_unstable(&self, other: &Self) -> bool { self[..].eq(&other[..]) }
         }
 
         impl AsRef<[$ty; $len]> for $thing {
@@ -64,7 +62,7 @@ macro_rules! impl_array_newtype {
                 dat.as_mut_ptr()
             }
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -78,5 +76,5 @@ macro_rules! impl_raw_debug {
                 Ok(())
             }
         }
-     }
+    };
 }
