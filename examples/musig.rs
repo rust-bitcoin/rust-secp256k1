@@ -4,11 +4,11 @@ use secp256k1::musig::{
     new_nonce_pair, AggregatedNonce, KeyAggCache, PartialSignature, PublicNonce, Session,
     SessionSecretRand,
 };
-use secp256k1::{pubkey_sort, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey};
+use secp256k1::{Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey};
 
 fn main() {
     let secp = Secp256k1::new();
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let (seckey1, pubkey1) = secp.generate_keypair(&mut rng);
 
@@ -19,7 +19,7 @@ fn main() {
     let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
     let pubkeys_ref = pubkeys_ref.as_mut_slice();
 
-    pubkey_sort(&secp, pubkeys_ref);
+    secp.musig_sort_pubkeys(pubkeys_ref);
 
     let mut musig_key_agg_cache = KeyAggCache::new(&secp, pubkeys_ref);
 

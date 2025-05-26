@@ -1,8 +1,3 @@
-# Eventually this shoud be: ignore = []
-ignore = [
-       "secp256k1-sys"
-]
-
 hard_tabs = false
 tab_spaces = 4
 newline_style = "Auto"
