@@ -572,24 +572,15 @@ impl KeyAggCache {
 
 /// Musig Secret Nonce.
 ///
-/// This structure MUST NOT be copied or
-/// read or written to it directly. A signer who is online throughout the whole
-/// process and can keep this structure in memory can use the provided API
-/// functions for a safe standard workflow. See
-/// <https://blockstream.com/2019/02/18/musig-a-new-multisignature-standard/> for
-/// more details about the risks associated with serializing or deserializing
-/// this structure. There are no serialization and parsing functions (yet).
+/// A signer who is online throughout the whole process and can keep this structure
+/// in memory can use the provided API functions for a safe standard workflow.
 ///
-/// Note this deliberately does not implement `Copy` or `Clone`. After creation, the only
-/// use of this nonce is [`Session::partial_sign`] API that takes ownership of this
-/// and drops it. This is to prevent accidental misuse of this nonce.
+/// This structure does not implement `Copy` or `Clone`; after construction the only
+/// thing that can or should be done with this nonce is to call [`Session::partial_sign`],
+/// which will take ownership. This is to prevent accidental reuse of the nonce.
 ///
-/// A signer who is online throughout the whole process and can keep this
-/// structure in memory can use the provided API functions for a safe standard
-/// workflow.
-///
-/// Signers that pre-compute and save these nonces are not yet supported. Users
-/// who want to serialize this must use unsafe rust to do so.
+/// See the warning on [`Self::dangerous_into_bytes`] for more information about
+/// the risks of non-standard workflows.
 #[allow(missing_copy_implementations)]
 #[derive(Debug)]
 pub struct SecretNonce(ffi::MusigSecNonce);
@@ -612,20 +603,20 @@ impl SecretNonce {
     /// Function to return a copy of the internal array. See WARNING before using this function.
     ///
     /// # Warning:
-    ///  This structure MUST NOT be copied or read or written to directly. A
-    ///  signer who is online throughout the whole process and can keep this
-    ///  structure in memory can use the provided API functions for a safe standard
-    ///  workflow.
     ///
-    ///  We repeat, copying this data structure can result in nonce reuse which will
-    ///  leak the secret signing key.
+    /// Storing and re-creating this structure may leak to nonce reuse, which will leak
+    /// your secret key in two signing sessions, even if neither session is completed.
+    /// These functions should be avoided if possible and used with care.
+    ///
+    /// See <https://blockstream.com/2019/02/18/musig-a-new-multisignature-standard/>
+    /// for more details about these risks.
     pub fn dangerous_into_bytes(self) -> [u8; secp256k1_sys::MUSIG_SECNONCE_LEN] {
         self.0.dangerous_into_bytes()
     }
 
-    /// Function to create a new MusigKeyAggCoef from a 32 byte array. See WARNING before using this function.
+    /// Function to create a new [`SecretNonce`] from a 32 byte array.
     ///
-    /// Refer to [`SecretNonce::dangerous_into_bytes`] for more details.
+    /// Refer to the warning on [`SecretNonce::dangerous_into_bytes`] for more details.
     pub fn dangerous_from_bytes(array: [u8; secp256k1_sys::MUSIG_SECNONCE_LEN]) -> Self {
         SecretNonce(ffi::MusigSecNonce::dangerous_from_bytes(array))
     }
