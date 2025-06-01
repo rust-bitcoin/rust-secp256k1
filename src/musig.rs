@@ -17,7 +17,7 @@ use crate::{
     Verification, XOnlyPublicKey,
 };
 
-/// Musig partial signature parsing errors
+/// Musig parsing errors
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub enum ParseError {
     /// Parse Argument is malformed. This might occur if the point is on the secp order,
