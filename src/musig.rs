@@ -13,7 +13,7 @@ use std;
 
 use crate::ffi::{self, CPtr};
 use crate::{
-    schnorr, Error, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
+    from_hex, schnorr, Error, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
     Verification, XOnlyPublicKey,
 };
 
@@ -220,6 +220,62 @@ impl CPtr for PartialSignature {
     fn as_c_ptr(&self) -> *const Self::Target { self.as_ptr() }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.as_mut_ptr() }
+}
+
+impl fmt::LowerHex for PartialSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for b in self.serialize() {
+            write!(f, "{:02x}", b)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for PartialSignature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
+}
+
+impl core::str::FromStr for PartialSignature {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut res = [0u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN];
+        match from_hex(s, &mut res) {
+            Ok(ffi::MUSIG_PART_SIG_SERIALIZED_LEN) => PartialSignature::from_byte_array(&res),
+            _ => Err(ParseError::MalformedArg),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for PartialSignature {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize()[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for PartialSignature {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing a MuSig2 partial signature",
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "a raw MuSig2 partial signature",
+                |slice| {
+                    let bytes: &[u8; ffi::MUSIG_PART_SIG_SERIALIZED_LEN] =
+                        slice.try_into().map_err(|_| ParseError::MalformedArg)?;
+
+                    Self::from_byte_array(bytes)
+                },
+            ))
+        }
+    }
 }
 
 impl PartialSignature {
@@ -635,6 +691,62 @@ impl CPtr for PublicNonce {
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.as_mut_ptr() }
 }
 
+impl fmt::LowerHex for PublicNonce {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for b in self.serialize() {
+            write!(f, "{:02x}", b)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for PublicNonce {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
+}
+
+impl core::str::FromStr for PublicNonce {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut res = [0u8; ffi::MUSIG_PUBNONCE_SERIALIZED_LEN];
+        match from_hex(s, &mut res) {
+            Ok(ffi::MUSIG_PUBNONCE_SERIALIZED_LEN) => PublicNonce::from_byte_array(&res),
+            _ => Err(ParseError::MalformedArg),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for PublicNonce {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize()[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for PublicNonce {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing a MuSig2 public nonce",
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "a raw MuSig2 public nonce",
+                |slice| {
+                    let bytes: &[u8; ffi::MUSIG_PUBNONCE_SERIALIZED_LEN] =
+                        slice.try_into().map_err(|_| ParseError::MalformedArg)?;
+
+                    Self::from_byte_array(bytes)
+                },
+            ))
+        }
+    }
+}
+
 impl PublicNonce {
     /// Serialize a PublicNonce
     pub fn serialize(&self) -> [u8; ffi::MUSIG_PUBNONCE_SERIALIZED_LEN] {
@@ -694,6 +806,62 @@ impl CPtr for AggregatedNonce {
     fn as_c_ptr(&self) -> *const Self::Target { self.as_ptr() }
 
     fn as_mut_c_ptr(&mut self) -> *mut Self::Target { self.as_mut_ptr() }
+}
+
+impl fmt::LowerHex for AggregatedNonce {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for b in self.serialize() {
+            write!(f, "{:02x}", b)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for AggregatedNonce {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::LowerHex::fmt(self, f) }
+}
+
+impl core::str::FromStr for AggregatedNonce {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut res = [0u8; ffi::MUSIG_AGGNONCE_SERIALIZED_LEN];
+        match from_hex(s, &mut res) {
+            Ok(ffi::MUSIG_AGGNONCE_SERIALIZED_LEN) => AggregatedNonce::from_byte_array(&res),
+            _ => Err(ParseError::MalformedArg),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for AggregatedNonce {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if s.is_human_readable() {
+            s.collect_str(self)
+        } else {
+            s.serialize_bytes(&self.serialize()[..])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for AggregatedNonce {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        if d.is_human_readable() {
+            d.deserialize_str(super::serde_util::FromStrVisitor::new(
+                "a hex string representing a MuSig2 aggregated nonce",
+            ))
+        } else {
+            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
+                "a raw MuSig2 aggregated nonce",
+                |slice| {
+                    let bytes: &[u8; ffi::MUSIG_AGGNONCE_SERIALIZED_LEN] =
+                        slice.try_into().map_err(|_| ParseError::MalformedArg)?;
+
+                    Self::from_byte_array(bytes)
+                },
+            ))
+        }
+    }
 }
 
 impl AggregatedNonce {
