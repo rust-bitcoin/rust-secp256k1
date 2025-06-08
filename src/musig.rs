@@ -1688,4 +1688,21 @@ mod tests {
 
         let _agg_sig = session.partial_sig_agg(&[]);
     }
+
+    #[test]
+    fn de_serialization() {
+        const MUSIG_PUBLIC_NONCE_HEX: &str = "03f4a361abd3d50535be08421dbc73b0a8f595654ae3238afcaf2599f94e25204c036ba174214433e21f5cd0fcb14b038eb40b05b7e7c820dd21aa568fdb0a9de4d7";
+        let pubnonce: PublicNonce = MUSIG_PUBLIC_NONCE_HEX.parse().unwrap();
+
+        assert_eq!(pubnonce.to_string(), MUSIG_PUBLIC_NONCE_HEX);
+
+        const MUSIG_AGGREGATED_NONCE_HEX: &str = "0218c30fe0f567a4a9c05eb4835e2735419cf30f834c9ce2fe3430f021ba4eacd503112e97bcf6a022d236d71a9357824a2b19515f980131b3970b087cadf94cc4a7";
+        let aggregated_nonce: AggregatedNonce = MUSIG_AGGREGATED_NONCE_HEX.parse().unwrap();
+        assert_eq!(aggregated_nonce.to_string(), MUSIG_AGGREGATED_NONCE_HEX);
+
+        const MUSIG_PARTIAL_SIGNATURE_HEX: &str =
+            "289eeb2f5efc314aa6d87bf58125043c96d15a007db4b6aaaac7d18086f49a99";
+        let partial_signature: PartialSignature = MUSIG_PARTIAL_SIGNATURE_HEX.parse().unwrap();
+        assert_eq!(partial_signature.to_string(), MUSIG_PARTIAL_SIGNATURE_HEX);
+    }
 }
