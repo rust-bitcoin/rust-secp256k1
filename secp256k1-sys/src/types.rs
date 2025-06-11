@@ -19,13 +19,11 @@ pub use core::ffi::c_void;
 // 16 matches is as big as the biggest alignment in any arch that rust currently supports https://github.com/rust-lang/rust/blob/2c31b45ae878b821975c4ebd94cc1e49f6073fd0/library/std/src/sys_common/alloc.rs
 #[repr(align(16))]
 #[derive(Default, Copy, Clone)]
-#[allow(dead_code)]             // We never access the inner data directly, only by way of a pointer.
+#[allow(dead_code)] // We never access the inner data directly, only by way of a pointer.
 pub struct AlignedType([u8; 16]);
 
 impl AlignedType {
-    pub fn zeroed() -> Self {
-        AlignedType([0u8; 16])
-    }
+    pub fn zeroed() -> Self { AlignedType([0u8; 16]) }
 
     /// A static zeroed out AlignedType for use in static assignments of [AlignedType; _]
     pub const ZERO: AlignedType = AlignedType([0u8; 16]);
@@ -40,6 +38,7 @@ mod tests {
     use std::any::TypeId;
     use std::mem;
     use std::os::raw;
+
     use crate::{types, AlignedType};
 
     #[test]

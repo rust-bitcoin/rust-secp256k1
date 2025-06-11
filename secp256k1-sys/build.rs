@@ -16,21 +16,22 @@ use std::env;
 fn main() {
     // Actual build
     let mut base_config = cc::Build::new();
-    base_config.include("depend/secp256k1/")
-               .include("depend/secp256k1/include")
-               .include("depend/secp256k1/src")
-               .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
-               .flag_if_supported("-Wno-unused-parameter") // patching out printf causes this warning
-               .define("SECP256K1_API", Some(""))
-               .define("ENABLE_MODULE_ECDH", Some("1"))
-               .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
-               .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
-               .define("ENABLE_MODULE_ELLSWIFT", Some("1"))
-               .define("ENABLE_MODULE_MUSIG", Some("1"))
-               // upstream sometimes introduces calls to printf, which we cannot compile
-               // with WASM due to its lack of libc. printf is never necessary and we can
-               // just #define it away.
-               .define("printf(...)", Some(""));
+    base_config
+        .include("depend/secp256k1/")
+        .include("depend/secp256k1/include")
+        .include("depend/secp256k1/src")
+        .flag_if_supported("-Wno-unused-function") // some ecmult stuff is defined but not used upstream
+        .flag_if_supported("-Wno-unused-parameter") // patching out printf causes this warning
+        .define("SECP256K1_API", Some(""))
+        .define("ENABLE_MODULE_ECDH", Some("1"))
+        .define("ENABLE_MODULE_SCHNORRSIG", Some("1"))
+        .define("ENABLE_MODULE_EXTRAKEYS", Some("1"))
+        .define("ENABLE_MODULE_ELLSWIFT", Some("1"))
+        .define("ENABLE_MODULE_MUSIG", Some("1"))
+        // upstream sometimes introduces calls to printf, which we cannot compile
+        // with WASM due to its lack of libc. printf is never necessary and we can
+        // just #define it away.
+        .define("printf(...)", Some(""));
 
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume negligible memory
@@ -45,15 +46,15 @@ fn main() {
 
     // WASM headers and size/align defines.
     if env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "wasm32" {
-        base_config.include("wasm/wasm-sysroot")
-                   .file("wasm/wasm.c");
+        base_config.include("wasm/wasm-sysroot").file("wasm/wasm.c");
     }
 
     // secp256k1
-    base_config.file("depend/secp256k1/contrib/lax_der_parsing.c")
-               .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
-               .file("depend/secp256k1/src/precomputed_ecmult.c")
-               .file("depend/secp256k1/src/secp256k1.c");
+    base_config
+        .file("depend/secp256k1/contrib/lax_der_parsing.c")
+        .file("depend/secp256k1/src/precomputed_ecmult_gen.c")
+        .file("depend/secp256k1/src/precomputed_ecmult.c")
+        .file("depend/secp256k1/src/secp256k1.c");
 
     if base_config.try_compile("libsecp256k1.a").is_err() {
         // Some embedded platforms may not have, eg, string.h available, so if the build fails
@@ -63,4 +64,3 @@ fn main() {
         base_config.compile("libsecp256k1.a");
     }
 }
-
