@@ -65,7 +65,13 @@ impl SessionSecretRand {
     /// a random number generator, or if that is not available, the output of a
     /// stable monotonic counter.
     pub fn assume_unique_per_nonce_gen(inner: [u8; 32]) -> Self {
-        assert_ne!(inner, [0; 32], "session secrets may not be all zero");
+        // See SecretKey::eq for this "constant-time" algorithm for comparison against zero.
+        let inner_or = inner.iter().fold(0, |accum, x| accum | *x);
+        assert!(
+            unsafe { core::ptr::read_volatile(&inner_or) != 0 },
+            "session secrets may not be all zero",
+        );
+
         SessionSecretRand(inner)
     }
 
