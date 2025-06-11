@@ -35,10 +35,12 @@ fn main() {
 
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume negligible memory
-        base_config.define("ECMULT_GEN_PREC_BITS", Some("2"));
+        base_config.define("COMB_BLOCKS", Some("2"));
+        base_config.define("COMB_TEETH", Some("5"));
     } else {
-        base_config.define("ECMULT_GEN_PREC_BITS", Some("4"));
         base_config.define("ECMULT_WINDOW_SIZE", Some("15")); // This is the default in the configure file (`auto`)
+        base_config.define("COMB_BLOCKS", Some("43"));
+        base_config.define("COMB_TEETH", Some("6"));
     }
     base_config.define("USE_EXTERNAL_DEFAULT_CALLBACKS", Some("1"));
     #[cfg(feature = "recovery")]
