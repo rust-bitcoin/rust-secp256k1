@@ -604,7 +604,7 @@ impl SecretNonce {
     ///
     /// # Warning:
     ///
-    /// Storing and re-creating this structure may leak to nonce reuse, which will leak
+    /// Storing and re-creating this structure may lead to nonce reuse, which will leak
     /// your secret key in two signing sessions, even if neither session is completed.
     /// These functions should be avoided if possible and used with care.
     ///
