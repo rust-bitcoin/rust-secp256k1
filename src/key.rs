@@ -1620,6 +1620,8 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 impl<C: Verification> Secp256k1<C> {
     /// Sort public keys using lexicographic (of compressed serialization) order.
     ///
+    /// This is the canonical way to sort public keys for use with Musig2.
+    ///
     /// Example:
     ///
     /// ```rust
@@ -1636,10 +1638,10 @@ impl<C: Verification> Secp256k1<C> {
     /// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
     /// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
     /// #
-    /// # secp.musig_sort_pubkeys(pubkeys_ref);
+    /// # secp.sort_pubkeys(pubkeys_ref);
     /// # }
     /// ```
-    pub fn musig_sort_pubkeys(&self, pubkeys: &mut [&PublicKey]) {
+    pub fn sort_pubkeys(&self, pubkeys: &mut [&PublicKey]) {
         let cx = self.ctx().as_ptr();
         unsafe {
             let mut pubkeys_ref = core::slice::from_raw_parts(
