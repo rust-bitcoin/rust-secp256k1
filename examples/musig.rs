@@ -19,7 +19,7 @@ fn main() {
     let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
     let pubkeys_ref = pubkeys_ref.as_mut_slice();
 
-    secp.musig_sort_pubkeys(pubkeys_ref);
+    secp.sort_pubkeys(pubkeys_ref);
 
     let mut musig_key_agg_cache = KeyAggCache::new(&secp, pubkeys_ref);
 
