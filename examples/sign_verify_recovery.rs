@@ -47,8 +47,5 @@ fn main() {
 
     let (recovery_id, serialize_sig) = signature.serialize_compact();
 
-    assert_eq!(
-        recover(&secp, msg, serialize_sig, Into::<i32>::into(recovery_id) as u8),
-        Ok(pubkey)
-    );
+    assert_eq!(recover(&secp, msg, serialize_sig, recovery_id.to_u8()), Ok(pubkey));
 }
