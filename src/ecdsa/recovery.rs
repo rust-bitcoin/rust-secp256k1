@@ -16,13 +16,13 @@ use crate::{key, Error, Message, Secp256k1, Signing, Verification};
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum RecoveryId {
     /// Signature recovery ID 0
-    Zero,
+    Zero = 0,
     /// Signature recovery ID 1
-    One,
+    One = 1,
     /// Signature recovery ID 2
-    Two,
+    Two = 2,
     /// Signature recovery ID 3
-    Three,
+    Three = 3,
 }
 
 impl RecoveryId {
@@ -38,14 +38,7 @@ impl RecoveryId {
     }
 
     /// Returns the `RecoveryId` as an integer.
-    pub const fn to_u8(self) -> u8 {
-        match self {
-            RecoveryId::Zero => 0,
-            RecoveryId::One => 1,
-            RecoveryId::Two => 2,
-            RecoveryId::Three => 3,
-        }
-    }
+    pub const fn to_u8(self) -> u8 { self as u8 }
 }
 
 impl TryFrom<i32> for RecoveryId {
@@ -64,14 +57,7 @@ impl TryFrom<i32> for RecoveryId {
 
 impl From<RecoveryId> for u8 {
     #[inline]
-    fn from(val: RecoveryId) -> Self {
-        match val {
-            RecoveryId::Zero => 0,
-            RecoveryId::One => 1,
-            RecoveryId::Two => 2,
-            RecoveryId::Three => 3,
-        }
-    }
+    fn from(val: RecoveryId) -> Self { val.to_u8() }
 }
 
 /// An ECDSA signature with a recovery ID for pubkey recovery.
