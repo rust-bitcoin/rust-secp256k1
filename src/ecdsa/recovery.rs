@@ -36,6 +36,16 @@ impl RecoveryId {
             _ => RecoveryId::Three,
         }
     }
+
+    /// Returns the `RecoveryId` as an integer.
+    pub const fn to_u8(self) -> u8 {
+        match self {
+            RecoveryId::Zero => 0,
+            RecoveryId::One => 1,
+            RecoveryId::Two => 2,
+            RecoveryId::Three => 3,
+        }
+    }
 }
 
 impl TryFrom<i32> for RecoveryId {
