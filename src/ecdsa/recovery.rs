@@ -36,6 +36,16 @@ impl RecoveryId {
             _ => RecoveryId::Three,
         }
     }
+
+    /// Returns the `RecoveryId` as an integer.
+    pub const fn to_u8(self) -> u8 {
+        match self {
+            RecoveryId::Zero => 0,
+            RecoveryId::One => 1,
+            RecoveryId::Two => 2,
+            RecoveryId::Three => 3,
+        }
+    }
 }
 
 impl TryFrom<i32> for RecoveryId {
@@ -52,7 +62,7 @@ impl TryFrom<i32> for RecoveryId {
     }
 }
 
-impl From<RecoveryId> for i32 {
+impl From<RecoveryId> for u8 {
     #[inline]
     fn from(val: RecoveryId) -> Self {
         match val {
@@ -86,7 +96,7 @@ impl RecoverableSignature {
                 super_ffi::secp256k1_context_no_precomp,
                 &mut ret,
                 data.as_c_ptr(),
-                recid.into(),
+                i32::from(recid.to_u8()),
             ) == 1
             {
                 Ok(RecoverableSignature(ret))
@@ -113,7 +123,7 @@ impl RecoverableSignature {
     /// Serializes the recoverable signature in compact format.
     pub fn serialize_compact(&self) -> (RecoveryId, [u8; 64]) {
         let mut ret = [0u8; 64];
-        let mut recid = RecoveryId::Zero.into();
+        let mut recid = i32::from(RecoveryId::Zero.to_u8());
         unsafe {
             let err = ffi::secp256k1_ecdsa_recoverable_signature_serialize_compact(
                 super_ffi::secp256k1_context_no_precomp,
@@ -451,9 +461,9 @@ mod tests {
         assert!(RecoveryId::try_from(3i32).is_ok());
         assert!(RecoveryId::try_from(4i32).is_err());
         let id0 = RecoveryId::Zero;
-        assert_eq!(Into::<i32>::into(id0), 0i32);
+        assert_eq!(Into::<u8>::into(id0), 0u8);
         let id1 = RecoveryId::One;
-        assert_eq!(Into::<i32>::into(id1), 1i32);
+        assert_eq!(Into::<u8>::into(id1), 1u8);
     }
 }
 
