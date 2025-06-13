@@ -91,10 +91,10 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
     let sig = secp.sign_ecdsa(message, &secret_key);
-    assert!(secp.verify_ecdsa(message, &sig, &public_key).is_ok());
+    assert!(secp.verify_ecdsa(&sig, message, &public_key).is_ok());
 
     let rec_sig = secp.sign_ecdsa_recoverable(message, &secret_key);
-    assert!(secp.verify_ecdsa(message, &rec_sig.to_standard(), &public_key).is_ok());
+    assert!(secp.verify_ecdsa(&rec_sig.to_standard(), message, &public_key).is_ok());
     assert_eq!(public_key, secp.recover_ecdsa(message, &rec_sig).unwrap());
     let (rec_id, data) = rec_sig.serialize_compact();
     let new_rec_sig = ecdsa::RecoverableSignature::from_compact(&data, rec_id).unwrap();
@@ -118,7 +118,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
         let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
         let sig = secp_alloc.sign_ecdsa(message, &secret_key);
-        assert!(secp_alloc.verify_ecdsa(message, &sig, &public_key).is_ok());
+        assert!(secp_alloc.verify_ecdsa(&sig, message, &public_key).is_ok());
         unsafe { libc::printf("Verified alloc Successfully!\n\0".as_ptr() as _) };
     }
 

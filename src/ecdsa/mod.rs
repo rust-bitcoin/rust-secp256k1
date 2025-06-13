@@ -195,7 +195,7 @@ impl Signature {
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn verify(&self, msg: impl Into<Message>, pk: &PublicKey) -> Result<(), Error> {
-        SECP256K1.verify_ecdsa(msg, self, pk)
+        SECP256K1.verify_ecdsa(self, msg, pk)
     }
 }
 
@@ -375,17 +375,17 @@ impl<C: Verification> Secp256k1<C> {
     /// #
     /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign_ecdsa(message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Ok(()));
+    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Ok(()));
     ///
     /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Err(Error::IncorrectSignature));
+    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Err(Error::IncorrectSignature));
     /// # }
     /// ```
     #[inline]
     pub fn verify_ecdsa(
         &self,
-        msg: impl Into<Message>,
         sig: &Signature,
+        msg: impl Into<Message>,
         pk: &PublicKey,
     ) -> Result<(), Error> {
         let msg = msg.into();

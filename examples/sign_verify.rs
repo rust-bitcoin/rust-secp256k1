@@ -15,7 +15,7 @@ fn verify<C: Verification>(
     let sig = ecdsa::Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
-    Ok(secp.verify_ecdsa(msg, &sig, &pubkey).is_ok())
+    Ok(secp.verify_ecdsa(&sig, msg, &pubkey).is_ok())
 }
 
 fn sign<C: Signing>(
