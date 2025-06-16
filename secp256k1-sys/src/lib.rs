@@ -1450,12 +1450,11 @@ pub const MUSIG_PUBNONCE_LEN: usize = 132;
 pub const MUSIG_AGGNONCE_LEN: usize = 132;
 
 /// Serialized length (in bytes) of the aggregated nonce.
-/// This is the compact form (typically using a compressed representation) used for
-/// transmitting or storing the aggregated nonce.
+/// The serialized form is used for transmitting or storing the aggregated nonce.
 pub const MUSIG_AGGNONCE_SERIALIZED_LEN: usize = 66;
 
 /// Serialized length (in bytes) of an individual public nonce.
-/// This compact serialized form is what gets exchanged between signers.
+/// The serialized form is used for transmission between signers.
 pub const MUSIG_PUBNONCE_SERIALIZED_LEN: usize = 66;
 
 /// Length (in bytes) of the session structure.
@@ -1468,8 +1467,8 @@ pub const MUSIG_SESSION_LEN: usize = 133;
 pub const MUSIG_PART_SIG_LEN: usize = 36;
 
 /// Serialized length (in bytes) of a partial signature.
-/// This is the compact form (typically just the 32-byte scalar) that is used when communicating
-/// partial signatures to be combined into the final signature.
+/// The serialized form is used for transmitting partial signatures to be
+/// aggregated into the final signature.
 pub const MUSIG_PART_SIG_SERIALIZED_LEN: usize = 32;
 
 #[repr(C)]
