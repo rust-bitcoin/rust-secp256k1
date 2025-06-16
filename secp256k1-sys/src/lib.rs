@@ -1449,14 +1449,6 @@ pub const MUSIG_PUBNONCE_LEN: usize = 132;
 /// from all participants for the final signature computation.
 pub const MUSIG_AGGNONCE_LEN: usize = 132;
 
-/// Serialized length (in bytes) of the aggregated nonce.
-/// The serialized form is used for transmitting or storing the aggregated nonce.
-pub const MUSIG_AGGNONCE_SERIALIZED_LEN: usize = 66;
-
-/// Serialized length (in bytes) of an individual public nonce.
-/// The serialized form is used for transmission between signers.
-pub const MUSIG_PUBNONCE_SERIALIZED_LEN: usize = 66;
-
 /// Length (in bytes) of the session structure.
 /// The session object holds all state needed for a MuSig2 signing session (e.g. aggregated nonce,
 /// key aggregation info, and other state necessary for computing partial signatures).
@@ -1465,11 +1457,6 @@ pub const MUSIG_SESSION_LEN: usize = 133;
 /// Length (in bytes) of the internal representation of a partial signature.
 /// This structure include magic bytes ([0xeb, 0xfb, 0x1a, 0x32]) alongside the actual signature scalar.
 pub const MUSIG_PART_SIG_LEN: usize = 36;
-
-/// Serialized length (in bytes) of a partial signature.
-/// The serialized form is used for transmitting partial signatures to be
-/// aggregated into the final signature.
-pub const MUSIG_PART_SIG_SERIALIZED_LEN: usize = 32;
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
