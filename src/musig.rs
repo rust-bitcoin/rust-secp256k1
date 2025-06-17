@@ -1591,12 +1591,42 @@ mod tests {
         let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &key_agg_cache);
 
         // Test partial signature verification
-        assert!(session.partial_verify(&secp, &key_agg_cache, &partial_sign1, &pub_nonce1, pubkey1));
-        assert!(session.partial_verify(&secp, &key_agg_cache, &partial_sign2, &pub_nonce2, pubkey2));
+        assert!(session.partial_verify(
+            &secp,
+            &key_agg_cache,
+            &partial_sign1,
+            &pub_nonce1,
+            pubkey1
+        ));
+        assert!(session.partial_verify(
+            &secp,
+            &key_agg_cache,
+            &partial_sign2,
+            &pub_nonce2,
+            pubkey2
+        ));
         // Test that they are invalid if you switch keys
-        assert!(!session.partial_verify(&secp, &key_agg_cache, &partial_sign2, &pub_nonce2, pubkey1));
-        assert!(!session.partial_verify(&secp, &key_agg_cache, &partial_sign2, &pub_nonce1, pubkey2));
-        assert!(!session.partial_verify(&secp, &key_agg_cache, &partial_sign2, &pub_nonce1, pubkey1));
+        assert!(!session.partial_verify(
+            &secp,
+            &key_agg_cache,
+            &partial_sign2,
+            &pub_nonce2,
+            pubkey1
+        ));
+        assert!(!session.partial_verify(
+            &secp,
+            &key_agg_cache,
+            &partial_sign2,
+            &pub_nonce1,
+            pubkey2
+        ));
+        assert!(!session.partial_verify(
+            &secp,
+            &key_agg_cache,
+            &partial_sign2,
+            &pub_nonce1,
+            pubkey1
+        ));
 
         // Test PartialSignature serialization/deserialization
         let serialized_partial_sig = partial_sign1.serialize();
