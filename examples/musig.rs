@@ -84,11 +84,11 @@ fn main() {
     let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &musig_key_agg_cache);
 
     let is_partial_signature_valid =
-        session.partial_verify(&secp, &musig_key_agg_cache, partial_sign1, pub_nonce1, pubkey1);
+        session.partial_verify(&secp, &musig_key_agg_cache, &partial_sign1, &pub_nonce1, pubkey1);
     assert!(is_partial_signature_valid);
 
     let is_partial_signature_valid =
-        session.partial_verify(&secp, &musig_key_agg_cache, partial_sign2, pub_nonce2, pubkey2);
+        session.partial_verify(&secp, &musig_key_agg_cache, &partial_sign2, &pub_nonce2, pubkey2);
     assert!(is_partial_signature_valid);
 
     let partial_sigs = [partial_sign1, partial_sign2];
