@@ -1429,77 +1429,77 @@ impl<T: CPtr> CPtr for Option<T> {
         }
     }
 }
-/// Total length (in bytes) of the key aggregation context.
+/// Total size (in bytes) of the key aggregation context.
 /// This structure packs all metadata needed for aggregating individual public keys
 /// into a single MuSig2 aggregated key (including coefficients and any extra metadata).
-pub const MUSIG_KEYAGG_LEN: usize = 197;
+pub const MUSIG_KEYAGG_SIZE: usize = 197;
 
-/// Length (in bytes) of the secret nonce structure used in a MuSig2 session.
+/// Size (in bytes) of the secret nonce structure used in a MuSig2 session.
 /// It holds the secret (ephemeral) nonces used internally for nonce derivation
 /// before the corresponding public nonces are computed.
-pub const MUSIG_SECNONCE_LEN: usize = 132;
+pub const MUSIG_SECNONCE_SIZE: usize = 132;
 
-/// Length (in bytes) of the public nonce structure.
+/// Size (in bytes) of the public nonce structure.
 /// This is derived from the secret nonce and shared among participants to build
 /// nonce commitments in the MuSig2 protocol.
-pub const MUSIG_PUBNONCE_LEN: usize = 132;
+pub const MUSIG_PUBNONCE_SIZE: usize = 132;
 
-/// Length (in bytes) of the aggregated nonce structure.
+/// Size (in bytes) of the aggregated nonce structure.
 /// Represents the combined nonce obtained by aggregating the individual public nonces
 /// from all participants for the final signature computation.
-pub const MUSIG_AGGNONCE_LEN: usize = 132;
+pub const MUSIG_AGGNONCE_SIZE: usize = 132;
 
-/// Length (in bytes) of the session structure.
+/// Size (in bytes) of the session structure.
 /// The session object holds all state needed for a MuSig2 signing session (e.g. aggregated nonce,
 /// key aggregation info, and other state necessary for computing partial signatures).
-pub const MUSIG_SESSION_LEN: usize = 133;
+pub const MUSIG_SESSION_SIZE: usize = 133;
 
-/// Length (in bytes) of the internal representation of a partial signature.
+/// Size (in bytes) of the internal representation of a partial signature.
 /// This structure include magic bytes ([0xeb, 0xfb, 0x1a, 0x32]) alongside the actual signature scalar.
-pub const MUSIG_PART_SIG_LEN: usize = 36;
+pub const MUSIG_PART_SIG_SIZE: usize = 36;
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MusigKeyAggCache([c_uchar; MUSIG_KEYAGG_LEN]);
-impl_array_newtype!(MusigKeyAggCache, c_uchar, MUSIG_KEYAGG_LEN);
+pub struct MusigKeyAggCache([c_uchar; MUSIG_KEYAGG_SIZE]);
+impl_array_newtype!(MusigKeyAggCache, c_uchar, MUSIG_KEYAGG_SIZE);
 impl_raw_debug!(MusigKeyAggCache);
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq)]
-pub struct MusigSecNonce([c_uchar; MUSIG_SECNONCE_LEN]);
-impl_array_newtype!(MusigSecNonce, c_uchar, MUSIG_SECNONCE_LEN);
+pub struct MusigSecNonce([c_uchar; MUSIG_SECNONCE_SIZE]);
+impl_array_newtype!(MusigSecNonce, c_uchar, MUSIG_SECNONCE_SIZE);
 impl_raw_debug!(MusigSecNonce);
 
 impl MusigSecNonce {
-    pub fn dangerous_from_bytes(bytes: [c_uchar; MUSIG_SECNONCE_LEN]) -> Self {
+    pub fn dangerous_from_bytes(bytes: [c_uchar; MUSIG_SECNONCE_SIZE]) -> Self {
         MusigSecNonce(bytes)
     }
 
-    pub fn dangerous_into_bytes(self) -> [c_uchar; MUSIG_SECNONCE_LEN] { self.0 }
+    pub fn dangerous_into_bytes(self) -> [c_uchar; MUSIG_SECNONCE_SIZE] { self.0 }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MusigPubNonce([c_uchar; MUSIG_PUBNONCE_LEN]);
-impl_array_newtype!(MusigPubNonce, c_uchar, MUSIG_PUBNONCE_LEN);
+pub struct MusigPubNonce([c_uchar; MUSIG_PUBNONCE_SIZE]);
+impl_array_newtype!(MusigPubNonce, c_uchar, MUSIG_PUBNONCE_SIZE);
 impl_raw_debug!(MusigPubNonce);
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MusigAggNonce([c_uchar; MUSIG_AGGNONCE_LEN]);
-impl_array_newtype!(MusigAggNonce, c_uchar, MUSIG_AGGNONCE_LEN);
+pub struct MusigAggNonce([c_uchar; MUSIG_AGGNONCE_SIZE]);
+impl_array_newtype!(MusigAggNonce, c_uchar, MUSIG_AGGNONCE_SIZE);
 impl_raw_debug!(MusigAggNonce);
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MusigSession([c_uchar; MUSIG_SESSION_LEN]);
-impl_array_newtype!(MusigSession, c_uchar, MUSIG_SESSION_LEN);
+pub struct MusigSession([c_uchar; MUSIG_SESSION_SIZE]);
+impl_array_newtype!(MusigSession, c_uchar, MUSIG_SESSION_SIZE);
 impl_raw_debug!(MusigSession);
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MusigPartialSignature([c_uchar; MUSIG_PART_SIG_LEN]);
-impl_array_newtype!(MusigPartialSignature, c_uchar, MUSIG_PART_SIG_LEN);
+pub struct MusigPartialSignature([c_uchar; MUSIG_PART_SIG_SIZE]);
+impl_array_newtype!(MusigPartialSignature, c_uchar, MUSIG_PART_SIG_SIZE);
 impl_raw_debug!(MusigPartialSignature);
 
 #[cfg(secp256k1_fuzz)]

@@ -17,18 +17,18 @@ use crate::{
     Verification, XOnlyPublicKey,
 };
 
-/// Serialized length (in bytes) of the aggregated nonce.
+/// Serialized size (in bytes) of the aggregated nonce.
 /// The serialized form is used for transmitting or storing the aggregated nonce.
-pub const AGGNONCE_SERIALIZED_LEN: usize = 66;
+pub const AGGNONCE_SERIALIZED_SIZE: usize = 66;
 
-/// Serialized length (in bytes) of an individual public nonce.
+/// Serialized size (in bytes) of an individual public nonce.
 /// The serialized form is used for transmission between signers.
-pub const PUBNONCE_SERIALIZED_LEN: usize = 66;
+pub const PUBNONCE_SERIALIZED_SIZE: usize = 66;
 
-/// Serialized length (in bytes) of a partial signature.
+/// Serialized size (in bytes) of a partial signature.
 /// The serialized form is used for transmitting partial signatures to be
 /// aggregated into the final signature.
-pub const PART_SIG_SERIALIZED_LEN: usize = 32;
+pub const PART_SIG_SERIALIZED_SIZE: usize = 32;
 
 /// Musig parsing errors
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -257,9 +257,9 @@ impl fmt::Display for PartialSignature {
 impl core::str::FromStr for PartialSignature {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut res = [0u8; PART_SIG_SERIALIZED_LEN];
+        let mut res = [0u8; PART_SIG_SERIALIZED_SIZE];
         match from_hex(s, &mut res) {
-            Ok(PART_SIG_SERIALIZED_LEN) => PartialSignature::from_byte_array(&res),
+            Ok(PART_SIG_SERIALIZED_SIZE) => PartialSignature::from_byte_array(&res),
             _ => Err(ParseError::MalformedArg),
         }
     }
@@ -287,7 +287,7 @@ impl<'de> serde::Deserialize<'de> for PartialSignature {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "a raw MuSig2 partial signature",
                 |slice| {
-                    let bytes: &[u8; PART_SIG_SERIALIZED_LEN] =
+                    let bytes: &[u8; PART_SIG_SERIALIZED_SIZE] =
                         slice.try_into().map_err(|_| ParseError::MalformedArg)?;
 
                     Self::from_byte_array(bytes)
@@ -299,8 +299,8 @@ impl<'de> serde::Deserialize<'de> for PartialSignature {
 
 impl PartialSignature {
     /// Serialize a PartialSignature as a byte array.
-    pub fn serialize(&self) -> [u8; PART_SIG_SERIALIZED_LEN] {
-        let mut data = MaybeUninit::<[u8; PART_SIG_SERIALIZED_LEN]>::uninit();
+    pub fn serialize(&self) -> [u8; PART_SIG_SERIALIZED_SIZE] {
+        let mut data = MaybeUninit::<[u8; PART_SIG_SERIALIZED_SIZE]>::uninit();
         unsafe {
             if ffi::secp256k1_musig_partial_sig_serialize(
                 ffi::secp256k1_context_no_precomp,
@@ -321,9 +321,7 @@ impl PartialSignature {
     /// # Errors:
     ///
     /// - MalformedArg: If the signature [`PartialSignature`] is out of curve order
-    pub fn from_byte_array(
-        data: &[u8; PART_SIG_SERIALIZED_LEN],
-    ) -> Result<Self, ParseError> {
+    pub fn from_byte_array(data: &[u8; PART_SIG_SERIALIZED_SIZE]) -> Result<Self, ParseError> {
         let mut partial_sig = MaybeUninit::<ffi::MusigPartialSignature>::uninit();
         unsafe {
             if ffi::secp256k1_musig_partial_sig_parse(
@@ -686,14 +684,14 @@ impl SecretNonce {
     ///
     /// See <https://blockstream.com/2019/02/18/musig-a-new-multisignature-standard/>
     /// for more details about these risks.
-    pub fn dangerous_into_bytes(self) -> [u8; secp256k1_sys::MUSIG_SECNONCE_LEN] {
+    pub fn dangerous_into_bytes(self) -> [u8; secp256k1_sys::MUSIG_SECNONCE_SIZE] {
         self.0.dangerous_into_bytes()
     }
 
     /// Function to create a new [`SecretNonce`] from a 32 byte array.
     ///
     /// Refer to the warning on [`SecretNonce::dangerous_into_bytes`] for more details.
-    pub fn dangerous_from_bytes(array: [u8; secp256k1_sys::MUSIG_SECNONCE_LEN]) -> Self {
+    pub fn dangerous_from_bytes(array: [u8; secp256k1_sys::MUSIG_SECNONCE_SIZE]) -> Self {
         SecretNonce(ffi::MusigSecNonce::dangerous_from_bytes(array))
     }
 }
@@ -727,9 +725,9 @@ impl fmt::Display for PublicNonce {
 impl core::str::FromStr for PublicNonce {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut res = [0u8; PUBNONCE_SERIALIZED_LEN];
+        let mut res = [0u8; PUBNONCE_SERIALIZED_SIZE];
         match from_hex(s, &mut res) {
-            Ok(PUBNONCE_SERIALIZED_LEN) => PublicNonce::from_byte_array(&res),
+            Ok(PUBNONCE_SERIALIZED_SIZE) => PublicNonce::from_byte_array(&res),
             _ => Err(ParseError::MalformedArg),
         }
     }
@@ -757,7 +755,7 @@ impl<'de> serde::Deserialize<'de> for PublicNonce {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "a raw MuSig2 public nonce",
                 |slice| {
-                    let bytes: &[u8; PUBNONCE_SERIALIZED_LEN] =
+                    let bytes: &[u8; PUBNONCE_SERIALIZED_SIZE] =
                         slice.try_into().map_err(|_| ParseError::MalformedArg)?;
 
                     Self::from_byte_array(bytes)
@@ -769,8 +767,8 @@ impl<'de> serde::Deserialize<'de> for PublicNonce {
 
 impl PublicNonce {
     /// Serialize a PublicNonce
-    pub fn serialize(&self) -> [u8; PUBNONCE_SERIALIZED_LEN] {
-        let mut data = [0; PUBNONCE_SERIALIZED_LEN];
+    pub fn serialize(&self) -> [u8; PUBNONCE_SERIALIZED_SIZE] {
+        let mut data = [0; PUBNONCE_SERIALIZED_SIZE];
         unsafe {
             if ffi::secp256k1_musig_pubnonce_serialize(
                 ffi::secp256k1_context_no_precomp,
@@ -791,9 +789,7 @@ impl PublicNonce {
     /// # Errors:
     ///
     /// - MalformedArg: If the [`PublicNonce`] is 132 bytes, but out of curve order
-    pub fn from_byte_array(
-        data: &[u8; PUBNONCE_SERIALIZED_LEN],
-    ) -> Result<Self, ParseError> {
+    pub fn from_byte_array(data: &[u8; PUBNONCE_SERIALIZED_SIZE]) -> Result<Self, ParseError> {
         let mut pub_nonce = MaybeUninit::<ffi::MusigPubNonce>::uninit();
         unsafe {
             if ffi::secp256k1_musig_pubnonce_parse(
@@ -844,9 +840,9 @@ impl fmt::Display for AggregatedNonce {
 impl core::str::FromStr for AggregatedNonce {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut res = [0u8; AGGNONCE_SERIALIZED_LEN];
+        let mut res = [0u8; AGGNONCE_SERIALIZED_SIZE];
         match from_hex(s, &mut res) {
-            Ok(AGGNONCE_SERIALIZED_LEN) => AggregatedNonce::from_byte_array(&res),
+            Ok(AGGNONCE_SERIALIZED_SIZE) => AggregatedNonce::from_byte_array(&res),
             _ => Err(ParseError::MalformedArg),
         }
     }
@@ -874,7 +870,7 @@ impl<'de> serde::Deserialize<'de> for AggregatedNonce {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "a raw MuSig2 aggregated nonce",
                 |slice| {
-                    let bytes: &[u8; AGGNONCE_SERIALIZED_LEN] =
+                    let bytes: &[u8; AGGNONCE_SERIALIZED_SIZE] =
                         slice.try_into().map_err(|_| ParseError::MalformedArg)?;
 
                     Self::from_byte_array(bytes)
@@ -954,8 +950,8 @@ impl AggregatedNonce {
     }
 
     /// Serialize a AggregatedNonce into a 66 bytes array.
-    pub fn serialize(&self) -> [u8; AGGNONCE_SERIALIZED_LEN] {
-        let mut data = [0; AGGNONCE_SERIALIZED_LEN];
+    pub fn serialize(&self) -> [u8; AGGNONCE_SERIALIZED_SIZE] {
+        let mut data = [0; AGGNONCE_SERIALIZED_SIZE];
         unsafe {
             if ffi::secp256k1_musig_aggnonce_serialize(
                 ffi::secp256k1_context_no_precomp,
@@ -976,9 +972,7 @@ impl AggregatedNonce {
     /// # Errors:
     ///
     /// - MalformedArg: If the byte slice is 66 bytes, but the [`AggregatedNonce`] is invalid
-    pub fn from_byte_array(
-        data: &[u8; AGGNONCE_SERIALIZED_LEN],
-    ) -> Result<Self, ParseError> {
+    pub fn from_byte_array(data: &[u8; AGGNONCE_SERIALIZED_SIZE]) -> Result<Self, ParseError> {
         let mut aggnonce = MaybeUninit::<ffi::MusigAggNonce>::uninit();
         unsafe {
             if ffi::secp256k1_musig_aggnonce_parse(
