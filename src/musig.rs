@@ -653,7 +653,7 @@ impl KeyAggCache {
 /// thing that can or should be done with this nonce is to call [`Session::partial_sign`],
 /// which will take ownership. This is to prevent accidental reuse of the nonce.
 ///
-/// See the warning on [`Self::dangerous_into_bytes`] for more information about
+/// See the warnings on [`Self::dangerous_into_bytes`] for more information about
 /// the risks of non-standard workflows.
 #[allow(missing_copy_implementations)]
 #[derive(Debug)]
@@ -684,13 +684,20 @@ impl SecretNonce {
     ///
     /// See <https://blockstream.com/2019/02/18/musig-a-new-multisignature-standard/>
     /// for more details about these risks.
+    ///
+    /// # Warning:
+    ///
+    /// The underlying library, libsecp256k1, does not guarantee the byte format will be consistent
+    /// across versions or platforms. Special care should be taken to ensure the returned bytes are
+    /// only ever passed to `dangerous_from_bytes` from the same libsecp256k1 version, and the same
+    /// platform.
     pub fn dangerous_into_bytes(self) -> [u8; secp256k1_sys::MUSIG_SECNONCE_SIZE] {
         self.0.dangerous_into_bytes()
     }
 
     /// Function to create a new [`SecretNonce`] from a 32 byte array.
     ///
-    /// Refer to the warning on [`SecretNonce::dangerous_into_bytes`] for more details.
+    /// Refer to the warnings on [`SecretNonce::dangerous_into_bytes`] for more details.
     pub fn dangerous_from_bytes(array: [u8; secp256k1_sys::MUSIG_SECNONCE_SIZE]) -> Self {
         SecretNonce(ffi::MusigSecNonce::dangerous_from_bytes(array))
     }
