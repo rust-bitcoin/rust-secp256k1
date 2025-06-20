@@ -10,6 +10,205 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
+#[cfg(not(feature = "std"))]
+mod internal {
+    use core::cell::UnsafeCell;
+    use core::hint::spin_loop;
+    use core::marker::PhantomData;
+    use core::mem::ManuallyDrop;
+    use core::ops::{Deref, DerefMut};
+    use core::ptr::NonNull;
+    use core::sync::atomic::{AtomicBool, Ordering};
+
+    use crate::ffi::types::{c_void, AlignedType};
+    use crate::{ffi, AllPreallocated, Context, Secp256k1};
+
+    const MAX_SPINLOCK_ATTEMPTS: usize = 128;
+    const MAX_PREALLOC_SIZE: usize = 16; // measured at 208 bytes on Andrew's 64-bit system
+
+    static SECP256K1: SpinLock = SpinLock::new();
+
+    // Simple spinlock-gated structure which holds the backing store for a
+    // secp256k1 context.
+    //
+    // To obtain exclusive access, call [`Self::try_lock`], which will spinlock
+    // for some small number of iterations before giving up. By trying again in
+    // a loop, you can emulate a "true" spinlock that will only yield once it
+    // has access. However, this would be very dangerous, especially in a nostd
+    // environment, because if we are pre-empted by an interrupt handler while
+    // the lock is held, and that interrupt handler attempts to take the lock,
+    // then we deadlock.
+    //
+    // Instead, the strategy we take within this module is to simply create a
+    // new stack-local context object if we are unable to obtain a lock on the
+    // global one. This is slow and loses the defense-in-depth "rerandomization"
+    // anti-sidechannel measure, but it is better than deadlocking..
+    struct SpinLock {
+        flag: AtomicBool,
+        // Invariant: if this is non-None, then the store is valid and can be
+        // used with `ffi::secp256k1_context_preallocated_create`.
+        data: UnsafeCell<([AlignedType; MAX_PREALLOC_SIZE], Option<NonNull<ffi::Context>>)>,
+    }
+
+    // Required by rustc if we have a static of this type.
+    // Safety: `data` is accessed only while the `flag` is held.
+    unsafe impl Sync for SpinLock {}
+    unsafe impl Send for SpinLock {}
+
+    impl SpinLock {
+        const fn new() -> Self {
+            Self {
+                flag: AtomicBool::new(false),
+                data: UnsafeCell::new(([AlignedType::ZERO; MAX_PREALLOC_SIZE], None)),
+            }
+        }
+
+        /// Blocks until the lock is acquired, then returns an RAII guard.
+        fn try_lock(&self) -> Option<SpinLockGuard<'_>> {
+            for _ in 0..MAX_SPINLOCK_ATTEMPTS {
+                // `compare_exchange_weak` is fine here: we’re spinning anyway.
+                if self
+                    .flag
+                    .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
+                    .is_ok()
+                {
+                    return Some(SpinLockGuard { lock: self });
+                }
+                spin_loop();
+            }
+            None
+        }
+
+        #[inline(always)]
+        fn unlock(&self) { self.flag.store(false, Ordering::Release); }
+    }
+
+    /// Drops the lock when it goes out of scope.
+    pub struct SpinLockGuard<'a> {
+        lock: &'a SpinLock,
+    }
+
+    impl Deref for SpinLockGuard<'_> {
+        type Target = ([AlignedType; MAX_PREALLOC_SIZE], Option<NonNull<ffi::Context>>);
+        fn deref(&self) -> &Self::Target {
+            // Safe: we hold the lock.
+            unsafe { &*self.lock.data.get() }
+        }
+    }
+
+    impl DerefMut for SpinLockGuard<'_> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            // Safe: mutable access is unique while the guard lives.
+            unsafe { &mut *self.lock.data.get() }
+        }
+    }
+
+    impl Drop for SpinLockGuard<'_> {
+        fn drop(&mut self) { self.lock.unlock(); }
+    }
+
+    /// Borrows the global context and do some operation on it.
+    ///
+    /// If provided, after the operation is complete, [`rerandomize_global_context`]
+    /// is called on the context. If you have some random data available,
+    pub fn with_global_context<T, Ctx: Context, F: FnOnce(&Secp256k1<Ctx>) -> T>(
+        f: F,
+        rerandomize_seed: Option<&[u8; 32]>,
+    ) -> T {
+        with_raw_global_context(
+            |ctx| {
+                let secp = ManuallyDrop::new(Secp256k1 { ctx, phantom: PhantomData });
+                f(&*secp)
+            },
+            rerandomize_seed,
+        )
+    }
+
+    /// Borrows the global context as a raw pointer and do some operation on it.
+    ///
+    /// If provided, after the operation is complete, [`rerandomize_global_context`]
+    /// is called on the context. If you have some random data available,
+    pub fn with_raw_global_context<T, F: FnOnce(NonNull<ffi::Context>) -> T>(
+        f: F,
+        rerandomize_seed: Option<&[u8; 32]>,
+    ) -> T {
+        assert!(
+            unsafe {
+                ffi::secp256k1_context_preallocated_size(AllPreallocated::FLAGS)
+                    <= core::mem::size_of::<[AlignedType; MAX_PREALLOC_SIZE]>()
+            },
+            "prealloc size exceeds our guessed compile-time upper bound"
+        );
+
+        // Our function may be expensive, so before calling it, we copy the global
+        // context into this local buffer on the stack. Then we can release it,
+        // allowing other callers to use it simultaneously.
+        let mut store = [AlignedType::ZERO; MAX_PREALLOC_SIZE];
+        let buf = NonNull::new(store.as_mut_ptr() as *mut c_void).unwrap();
+
+        let ctx = match SECP256K1.try_lock() {
+            None => unsafe {
+                // If we can't get the lock, just do everything on the stack.
+                ffi::secp256k1_context_preallocated_create(buf, AllPreallocated::FLAGS)
+            },
+            Some(ref mut guard) => unsafe {
+                // If we *can* get the lock, use it and update it.
+                let (ref mut store, ref mut ctx) = **guard;
+                let global_ctx = ctx.get_or_insert_with(|| {
+                    let buf = NonNull::new(store.as_mut_ptr() as *mut c_void).unwrap();
+                    ffi::secp256k1_context_preallocated_create(buf, AllPreallocated::FLAGS)
+                });
+                ffi::secp256k1_context_preallocated_clone(global_ctx.as_ptr(), buf)
+            },
+        };
+        // The lock is now dropped. Call the function.
+        let ret = f(ctx);
+        // ...then rerandomize the local copy, and try to replace the global one
+        // with this. There are three cases for how this can work:
+        //
+        //     1. In the happy path, we succeeded in getting the lock above, have
+        //        a copy of the global context, are rerandomizing and storing it.
+        //        Great.
+        //     2. Same as above, except that another thread is doing the same thing
+        //        in parallel. Now we both have copies that we're rerandomizing, and
+        //        both will try to store it. One of us will clobber the other, wasting
+        //        work but otherwise not causing any problems.
+        //     3. If we -failed- to get the lock above, we are rerandomizing a fresh
+        //        copy of the context object. This may "undo" previous rerandomization.
+        //        In theory if an attacker is able to reliably and repeatedly trigger
+        //        this situation, they will have defeated the rerandomization. Since
+        //        this is a defense-in-depth measure, we will accept this.
+        if let Some(seed) = rerandomize_seed {
+            // Safety: this is a FFI call. It's fine.
+            unsafe {
+                assert_eq!(ffi::secp256k1_context_randomize(ctx, seed.as_ptr()), 1);
+            }
+            if let Some(ref mut guard) = SECP256K1.try_lock() {
+                let (ref mut global_store, ref mut global_ctx_ptr) = **guard;
+                unsafe {
+                    ffi::secp256k1_context_preallocated_clone(
+                        ctx.as_ptr(),
+                        NonNull::new(global_store.as_mut_ptr() as *mut _).unwrap(),
+                    );
+                }
+
+                // 2. Update the pointer to refer to the *global* buffer, **not** the stack
+                *global_ctx_ptr =
+                    Some(NonNull::new(global_store.as_mut_ptr() as *mut ffi::Context).unwrap());
+            }
+        }
+        ret
+    }
+
+    /// Rerandomize the global context, using the given data as a seed.
+    ///
+    /// The provided data will be mixed with the entropy from previous calls in a timing
+    /// analysis resistant way. It is safe to directly pass secret data to this function.
+    pub fn rerandomize_global_context(seed: &[u8; 32]) {
+        with_raw_global_context(|_| {}, Some(seed))
+    }
+}
+
 #[cfg(feature = "std")]
 mod internal {
     use std::cell::RefCell;
@@ -109,7 +308,6 @@ mod internal {
         });
     }
 }
-#[cfg(feature = "std")]
 pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
 
 #[cfg(all(feature = "global-context", feature = "std"))]
@@ -471,7 +669,8 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// * The version of `libsecp256k1` used to create `raw_ctx` must be **exactly the one linked
     ///   into this library**.
     /// * The lifetime of the `raw_ctx` pointer must outlive `'buf`.
-    /// * `raw_ctx` must point to writable memory (cannot be `ffi::secp256k1_context_no_precomp`).
+    /// * `raw_ctx` must point to writable memory (cannot be `ffi::secp256k1_context_no_precomp`),
+    ///   **or** the user must never attempt to rerandomize the context.
     pub unsafe fn from_raw_all(
         raw_ctx: NonNull<ffi::Context>,
     ) -> ManuallyDrop<Secp256k1<AllPreallocated<'buf>>> {
