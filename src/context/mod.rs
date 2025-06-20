@@ -10,6 +10,13 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
+#[cfg(feature = "std")]
+#[cfg_attr(feature = "std", path = "internal_std.rs")]
+mod internal;
+
+#[cfg(feature = "std")]
+pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
+
 #[cfg(all(feature = "global-context", feature = "std"))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {
