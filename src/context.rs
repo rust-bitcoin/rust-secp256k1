@@ -10,6 +10,108 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
+#[cfg(feature = "std")]
+mod internal {
+    use std::cell::RefCell;
+    use std::marker::PhantomData;
+    use std::mem::ManuallyDrop;
+    use std::ptr::NonNull;
+
+    use secp256k1_sys as ffi;
+
+    use crate::{All, Context, Secp256k1};
+
+    thread_local! {
+        static SECP256K1: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
+        static RAND_SEED: RefCell<[u8; 32]> = const { RefCell::new([0; 32]) };
+    }
+
+    /// Borrows the global context and do some operation on it.
+    ///
+    /// If provided, after the operation is complete, [`rerandomize_global_context`]
+    /// is called on the context. If you have some random data available,
+    pub fn with_global_context<T, Ctx: Context, F: FnOnce(&Secp256k1<Ctx>) -> T>(
+        f: F,
+        rerandomize_seed: Option<&[u8; 32]>,
+    ) -> T {
+        with_raw_global_context(
+            |ctx| {
+                let secp = ManuallyDrop::new(Secp256k1 { ctx, phantom: PhantomData });
+                f(&*secp)
+            },
+            rerandomize_seed,
+        )
+    }
+
+    /// Borrows the global context as a raw pointer and do some operation on it.
+    ///
+    /// If provided, after the operation is complete, [`rerandomize_global_context`]
+    /// is called on the context. If you have some random data available,
+    pub fn with_raw_global_context<T, F: FnOnce(NonNull<ffi::Context>) -> T>(
+        f: F,
+        rerandomize_seed: Option<&[u8; 32]>,
+    ) -> T {
+        SECP256K1.with(|secp| {
+            let borrow = secp.borrow();
+            let ret = f(borrow.ctx);
+            drop(borrow);
+
+            if let Some(seed) = rerandomize_seed {
+                rerandomize_global_context(seed);
+            }
+            ret
+        })
+    }
+
+    /// Rerandomize the global context, using the given data as a seed.
+    ///
+    /// The provided data will be mixed with the entropy from previous calls in a timing
+    /// analysis resistant way. It is safe to directly pass secret data to this function.
+    pub fn rerandomize_global_context(seed: &[u8; 32]) {
+        SECP256K1.with(|secp| {
+            RAND_SEED.with(|rand_seed| {
+                let mut old_seed = rand_seed.borrow_mut();
+                let mut new_seed = [0; 32];
+                // We don't have direct access to sha256 except through the default nonce
+                // functions. The ECDSA one uses RFC6979 which is absurdly slow, but the
+                // Schnorr one is not too bad.
+                unsafe {
+                    assert_eq!(
+                        (ffi::secp256k1_nonce_function_bip340.unwrap())(
+                            new_seed.as_mut_ptr(),
+                            seed.as_ptr(),     // msg
+                            seed.len(),        // msg len
+                            old_seed.as_ptr(), // key32
+                            old_seed.as_ptr(), // xonly_pk32
+                            b"rust-secp-randomize".as_ptr(),
+                            b"rust-secp-randomize".len(),
+                            core::ptr::null_mut(),
+                        ),
+                        1,
+                        "calling bip340 nonce function failed",
+                    );
+                }
+
+                // If we have access to the thread rng then use it as well.
+                #[cfg(feature = "rand")]
+                {
+                    let mask: [u8; 32] = rand::random();
+                    for (byte, mask) in new_seed.iter_mut().zip(mask.iter()) {
+                        *byte ^= *mask;
+                    }
+                }
+
+                // Actual rerandomization
+                let mut borrow = secp.borrow_mut();
+                borrow.seeded_randomize(&new_seed);
+                old_seed.copy_from_slice(&new_seed);
+            });
+        });
+    }
+}
+#[cfg(feature = "std")]
+pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
+
 #[cfg(all(feature = "global-context", feature = "std"))]
 /// Module implementing a singleton pattern for a global `Secp256k1` context.
 pub mod global {
