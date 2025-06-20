@@ -13,7 +13,7 @@ thread_local! {
     static SECP256K1: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
 }
 
-/// Borrows the global context and do some operation on it.
+/// Borrows the global context and does some operation on it.
 ///
 /// If provided, after the operation is complete, [`rerandomize_global_context`]
 /// is called on the context. If you have some random data available,
@@ -30,7 +30,7 @@ pub fn with_global_context<T, Ctx: Context, F: FnOnce(&Secp256k1<Ctx>) -> T>(
     )
 }
 
-/// Borrows the global context as a raw pointer and do some operation on it.
+/// Borrows the global context as a raw pointer and does some operation on it.
 ///
 /// If provided, after the operation is complete, [`rerandomize_global_context`]
 /// is called on the context. If you have some random data available,
