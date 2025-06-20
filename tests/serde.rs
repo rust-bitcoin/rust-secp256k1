@@ -4,9 +4,9 @@ extern crate bincode;
 extern crate secp256k1;
 extern crate serde_cbor;
 
-use secp256k1::{musig, PublicKey, SecretKey, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
-use secp256k1::{Keypair, Secp256k1};
+use secp256k1::Keypair;
+use secp256k1::{musig, PublicKey, SecretKey, XOnlyPublicKey};
 
 // Arbitrary key data.
 
@@ -97,8 +97,7 @@ fn bincode_public_key() {
 #[test]
 #[cfg(feature = "global-context")]
 fn bincode_keypair() {
-    let secp = Secp256k1::new();
-    let kp = Keypair::from_seckey_byte_array(&secp, SK_BYTES).expect("failed to create keypair");
+    let kp = Keypair::from_seckey_byte_array(SK_BYTES).expect("failed to create keypair");
     let ser = bincode::serialize(&kp).unwrap();
 
     assert_eq!(ser, SK_BYTES);
