@@ -192,6 +192,10 @@ pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
 
+#[cfg(feature = "std")]
+pub use crate::context::{
+    rerandomize_global_context, with_global_context, with_raw_global_context,
+};
 #[cfg(feature = "alloc")]
 pub use crate::context::{All, SignOnly, VerifyOnly};
 pub use crate::context::{
