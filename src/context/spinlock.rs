@@ -5,6 +5,8 @@ use core::hint::spin_loop;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicBool, Ordering};
 
+use crate::context::internal::SelfContainedContext;
+
 const MAX_SPINLOCK_ATTEMPTS: usize = 128;
 
 // Best-Effort Spinlock
@@ -31,6 +33,15 @@ pub struct SpinLock<T> {
 // Required by rustc if we have a static of this type.
 // Safety: `data` is accessed only while the `flag` is held.
 unsafe impl<T: Send> Sync for SpinLock<T> {}
+
+impl SpinLock<SelfContainedContext> {
+    pub const fn new() -> Self {
+        Self {
+            flag: AtomicBool::new(false),
+            data: UnsafeCell::new(SelfContainedContext::new_uninitialized()),
+        }
+    }
+}
 
 #[cfg(test)]
 impl SpinLock<u64> {
