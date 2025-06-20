@@ -10,14 +10,13 @@ use crate::ffi::types::{c_uint, c_void, AlignedType};
 use crate::ffi::{self, CPtr};
 use crate::{Error, Secp256k1};
 
-#[cfg(feature = "std")]
 #[cfg_attr(feature = "std", path = "internal_std.rs")]
+#[cfg_attr(not(feature = "std"), path = "internal_nostd.rs")]
 mod internal;
 
-#[cfg(test)] // will have a better feature-gate in next commit
+#[cfg(not(feature = "std"))]
 mod spinlock;
 
-#[cfg(feature = "std")]
 pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
 
 #[cfg(all(feature = "global-context", feature = "std"))]
@@ -379,7 +378,8 @@ impl<'buf> Secp256k1<AllPreallocated<'buf>> {
     /// * The version of `libsecp256k1` used to create `raw_ctx` must be **exactly the one linked
     ///   into this library**.
     /// * The lifetime of the `raw_ctx` pointer must outlive `'buf`.
-    /// * `raw_ctx` must point to writable memory (cannot be `ffi::secp256k1_context_no_precomp`).
+    /// * `raw_ctx` must point to writable memory (cannot be `ffi::secp256k1_context_no_precomp`),
+    ///   **or** the user must never attempt to rerandomize the context.
     pub unsafe fn from_raw_all(
         raw_ctx: NonNull<ffi::Context>,
     ) -> ManuallyDrop<Secp256k1<AllPreallocated<'buf>>> {

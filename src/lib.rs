@@ -192,16 +192,13 @@ pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
 
-#[cfg(feature = "std")]
 pub use crate::context::{
-    rerandomize_global_context, with_global_context, with_raw_global_context,
+    rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
+    Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
+    VerifyOnlyPreallocated,
 };
 #[cfg(feature = "alloc")]
 pub use crate::context::{All, SignOnly, VerifyOnly};
-pub use crate::context::{
-    AllPreallocated, Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
-    VerifyOnlyPreallocated,
-};
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
 pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
