@@ -1374,7 +1374,7 @@ mod tests {
     use super::*;
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
-    use crate::{Message, PublicKey, Secp256k1, SecretKey};
+    use crate::{Message, PublicKey, Secp256k1};
 
     #[test]
     #[cfg(feature = "std")]
@@ -1405,14 +1405,11 @@ mod tests {
     #[test]
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(feature = "std")]
-    #[cfg(feature = "rand")]
     fn key_agg_cache() {
         let secp = Secp256k1::new();
-        let mut rng = rand::rng();
 
-        let (_seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (_seckey1, pubkey1) = crate::test_random_keypair();
+        let (_seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
         let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
@@ -1426,14 +1423,11 @@ mod tests {
     #[test]
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(feature = "std")]
-    #[cfg(feature = "rand")]
     fn key_agg_cache_tweaking() {
         let secp = Secp256k1::new();
-        let mut rng = rand::rng();
 
-        let (_seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (_seckey1, pubkey1) = crate::test_random_keypair();
+        let (_seckey2, pubkey2) = crate::test_random_keypair();
 
         let mut key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
         let key_agg_cache1 = KeyAggCache::new(&secp, &[&pubkey2, &pubkey1]);
@@ -1463,7 +1457,6 @@ mod tests {
 
     #[test]
     #[cfg(feature = "std")]
-    #[cfg(feature = "rand")]
     #[should_panic(expected = "Cannot aggregate an empty slice of pubkeys")]
     fn key_agg_cache_empty_panic() {
         let secp = Secp256k1::new();
@@ -1477,9 +1470,8 @@ mod tests {
         let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
-        let (_seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (_seckey1, pubkey1) = crate::test_random_keypair();
+        let (seckey2, pubkey2) = crate::test_random_keypair();
 
         let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
 
@@ -1517,9 +1509,8 @@ mod tests {
         let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
-        let (_seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (_seckey1, pubkey1) = crate::test_random_keypair();
+        let (_seckey2, pubkey2) = crate::test_random_keypair();
 
         let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
 
@@ -1550,7 +1541,6 @@ mod tests {
 
     #[test]
     #[cfg(feature = "std")]
-    #[cfg(feature = "rand")]
     #[should_panic(expected = "Cannot aggregate an empty slice of nonces")]
     fn aggregated_nonce_empty_panic() {
         let secp = Secp256k1::new();
@@ -1566,9 +1556,8 @@ mod tests {
         let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
-        let (seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (seckey1, pubkey1) = crate::test_random_keypair();
+        let (seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
         let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
@@ -1650,9 +1639,8 @@ mod tests {
         let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
-        let (seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (seckey1, pubkey1) = crate::test_random_keypair();
+        let (seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
         let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
@@ -1708,9 +1696,8 @@ mod tests {
         let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
-        let (_seckey1, pubkey1) = secp.generate_keypair(&mut rng);
-        let seckey2 = SecretKey::new(&mut rng);
-        let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+        let (_seckey1, pubkey1) = crate::test_random_keypair();
+        let (_seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [pubkey1, pubkey2];
         let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
