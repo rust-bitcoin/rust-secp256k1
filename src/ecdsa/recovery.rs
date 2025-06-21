@@ -10,7 +10,7 @@ use self::super_ffi::CPtr;
 use super::ffi as super_ffi;
 use crate::ecdsa::Signature;
 use crate::ffi::recovery as ffi;
-use crate::{key, Error, Message, Secp256k1, Signing, Verification};
+use crate::{key, Error, Message};
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -143,7 +143,7 @@ impl RecoverableSignature {
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn recover(&self, msg: impl Into<Message>) -> Result<key::PublicKey, Error> {
-        crate::SECP256K1.recover_ecdsa(msg, self)
+        self.recover_ecdsa(msg)
     }
 }
 
@@ -160,30 +160,38 @@ impl From<ffi::RecoverableSignature> for RecoverableSignature {
     fn from(sig: ffi::RecoverableSignature) -> RecoverableSignature { RecoverableSignature(sig) }
 }
 
-impl<C: Signing> Secp256k1<C> {
+impl RecoverableSignature {
     fn sign_ecdsa_recoverable_with_noncedata_pointer(
-        &self,
         msg: impl Into<Message>,
         sk: &key::SecretKey,
         noncedata_ptr: *const super_ffi::types::c_void,
-    ) -> RecoverableSignature {
+    ) -> Self {
         let msg = msg.into();
         let mut ret = ffi::RecoverableSignature::new();
-        unsafe {
-            // We can assume the return value because it's not possible to construct
-            // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(
-                ffi::secp256k1_ecdsa_sign_recoverable(
-                    self.ctx.as_ptr(),
-                    &mut ret,
-                    msg.as_c_ptr(),
-                    sk.as_c_ptr(),
-                    super_ffi::secp256k1_nonce_function_rfc6979,
-                    noncedata_ptr
-                ),
-                1
-            );
+        // xor the secret key and message together to get a rerandomization seed
+        // for timing analysis defense-in-depth
+        let mut rerandomize = sk.secret_bytes();
+        for (rera, byte) in rerandomize.iter_mut().zip(msg[..].iter()) {
+            *rera ^= *byte;
         }
+        crate::with_raw_global_context(
+            |ctx| unsafe {
+                // We can assume the return value because it's not possible to construct
+                // an invalid signature from a valid `Message` and `SecretKey`
+                assert_eq!(
+                    ffi::secp256k1_ecdsa_sign_recoverable(
+                        ctx.as_ptr(),
+                        &mut ret,
+                        msg.as_c_ptr(),
+                        sk.as_c_ptr(),
+                        super_ffi::secp256k1_nonce_function_rfc6979,
+                        noncedata_ptr
+                    ),
+                    1
+                );
+            },
+            Some(&rerandomize),
+        );
 
         RecoverableSignature::from(ret)
     }
@@ -191,11 +199,10 @@ impl<C: Signing> Secp256k1<C> {
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
     /// Requires a signing-capable context.
     pub fn sign_ecdsa_recoverable(
-        &self,
         msg: impl Into<Message>,
         sk: &key::SecretKey,
     ) -> RecoverableSignature {
-        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
+        Self::sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, ptr::null())
     }
 
     /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
@@ -204,38 +211,34 @@ impl<C: Signing> Secp256k1<C> {
     /// signatures are needed for the same Message and SecretKey while still using RFC6979.
     /// Requires a signing-capable context.
     pub fn sign_ecdsa_recoverable_with_noncedata(
-        &self,
         msg: impl Into<Message>,
         sk: &key::SecretKey,
         noncedata: &[u8; 32],
     ) -> RecoverableSignature {
         let noncedata_ptr = noncedata.as_ptr() as *const super_ffi::types::c_void;
-        self.sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, noncedata_ptr)
+        Self::sign_ecdsa_recoverable_with_noncedata_pointer(msg, sk, noncedata_ptr)
     }
-}
 
-impl<C: Verification> Secp256k1<C> {
     /// Determines the public key for which `sig` is a valid signature for
     /// `msg`. Requires a verify-capable context.
-    pub fn recover_ecdsa(
-        &self,
-        msg: impl Into<Message>,
-        sig: &RecoverableSignature,
-    ) -> Result<key::PublicKey, Error> {
+    pub fn recover_ecdsa(&self, msg: impl Into<Message>) -> Result<key::PublicKey, Error> {
         let msg = msg.into();
-        unsafe {
-            let mut pk = super_ffi::PublicKey::new();
-            if ffi::secp256k1_ecdsa_recover(
-                self.ctx.as_ptr(),
-                &mut pk,
-                sig.as_c_ptr(),
-                msg.as_c_ptr(),
-            ) != 1
-            {
-                return Err(Error::InvalidSignature);
-            }
-            Ok(key::PublicKey::from(pk))
-        }
+        crate::with_raw_global_context(
+            |ctx| unsafe {
+                let mut pk = super_ffi::PublicKey::new();
+                if ffi::secp256k1_ecdsa_recover(
+                    ctx.as_ptr(),
+                    &mut pk,
+                    self.as_c_ptr(),
+                    msg.as_c_ptr(),
+                ) != 1
+                {
+                    return Err(Error::InvalidSignature);
+                }
+                Ok(key::PublicKey::from(pk))
+            },
+            None,
+        )
     }
 }
 
@@ -250,28 +253,13 @@ mod tests {
     use crate::{Error, Message, Secp256k1, SecretKey};
 
     #[test]
-    #[cfg(feature = "std")]
     fn capabilities() {
-        let sign = Secp256k1::signing_only();
-        let vrfy = Secp256k1::verification_only();
-        let full = Secp256k1::new();
-
         let msg = crate::test_random_32_bytes();
         let msg = Message::from_digest(msg);
 
-        // Try key generation
         let (sk, pk) = crate::test_random_keypair();
-
-        // Try signing
-        assert_eq!(sign.sign_ecdsa_recoverable(msg, &sk), full.sign_ecdsa_recoverable(msg, &sk));
-        let sigr = full.sign_ecdsa_recoverable(msg, &sk);
-
-        // Try pk recovery
-        assert!(vrfy.recover_ecdsa(msg, &sigr).is_ok());
-        assert!(full.recover_ecdsa(msg, &sigr).is_ok());
-
-        assert_eq!(vrfy.recover_ecdsa(msg, &sigr), full.recover_ecdsa(msg, &sigr));
-        assert_eq!(full.recover_ecdsa(msg, &sigr), Ok(pk));
+        let sigr = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
+        assert_eq!(sigr.recover_ecdsa(msg), Ok(pk));
     }
 
     #[test]
@@ -282,15 +270,11 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(feature = "std")]
     #[rustfmt::skip]
     fn sign() {
-        let s = Secp256k1::new();
-
         let sk = SecretKey::from_byte_array(ONE).unwrap();
         let msg = Message::from_digest(ONE);
-
-        let sig = s.sign_ecdsa_recoverable(msg, &sk);
+        let sig = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
 
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0x66, 0x73, 0xff, 0xad, 0x21, 0x47, 0x74, 0x1f,
@@ -306,16 +290,13 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
-    #[cfg(feature = "std")]
     #[rustfmt::skip]
     fn sign_with_noncedata() {
-        let s = Secp256k1::new();
-
         let sk = SecretKey::from_byte_array(ONE).unwrap();
-        let msg = Message::from_digest(ONE);
         let noncedata = [42u8; 32];
+        let msg = Message::from_digest(ONE);
 
-        let sig = s.sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
+        let sig = RecoverableSignature::sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
 
         assert_eq!(Ok(sig), RecoverableSignature::from_compact(&[
             0xb5, 0x0b, 0xb6, 0x79, 0x5f, 0x31, 0x74, 0x8a,
@@ -337,57 +318,48 @@ mod tests {
         let msg = Message::from_digest(crate::test_random_32_bytes());
         let (sk, pk) = crate::test_random_keypair();
 
-        let sigr = s.sign_ecdsa_recoverable(msg, &sk);
+        let sigr = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
         let sig = sigr.to_standard();
 
         let msg = Message::from_digest(crate::test_random_32_bytes());
         assert_eq!(s.verify_ecdsa(&sig, msg, &pk), Err(Error::IncorrectSignature));
 
-        let recovered_key = s.recover_ecdsa(msg, &sigr).unwrap();
+        let recovered_key = sigr.recover_ecdsa(msg).unwrap();
         assert!(recovered_key != pk);
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn sign_with_recovery() {
-        let s = Secp256k1::new();
-
         let msg = Message::from_digest(crate::test_random_32_bytes());
         let (sk, pk) = crate::test_random_keypair();
 
-        let sig = s.sign_ecdsa_recoverable(msg, &sk);
+        let sig = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
 
-        assert_eq!(s.recover_ecdsa(msg, &sig), Ok(pk));
+        assert_eq!(sig.recover_ecdsa(msg), Ok(pk));
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn sign_with_recovery_and_noncedata() {
-        let s = Secp256k1::new();
-
         let msg = Message::from_digest(crate::test_random_32_bytes());
         let noncedata = crate::test_random_32_bytes();
 
         let (sk, pk) = crate::test_random_keypair();
 
-        let sig = s.sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
+        let sig = RecoverableSignature::sign_ecdsa_recoverable_with_noncedata(msg, &sk, &noncedata);
 
-        assert_eq!(s.recover_ecdsa(msg, &sig), Ok(pk));
+        assert_eq!(sig.recover_ecdsa(msg), Ok(pk));
     }
 
     #[test]
-    #[cfg(feature = "std")]
     fn bad_recovery() {
-        let s = Secp256k1::new();
-
         let msg = Message::from_digest(crate::test_random_32_bytes());
 
         // Zero is not a valid sig
         let sig = RecoverableSignature::from_compact(&[0; 64], RecoveryId::Zero).unwrap();
-        assert_eq!(s.recover_ecdsa(msg, &sig), Err(Error::InvalidSignature));
+        assert_eq!(sig.recover_ecdsa(msg), Err(Error::InvalidSignature));
         // ...but 111..111 is
         let sig = RecoverableSignature::from_compact(&[1; 64], RecoveryId::Zero).unwrap();
-        assert!(s.recover_ecdsa(msg, &sig).is_ok());
+        assert!(sig.recover_ecdsa(msg).is_ok());
     }
 
     #[test]
@@ -441,21 +413,20 @@ mod tests {
 }
 
 #[cfg(bench)]
-#[cfg(feature = "std")] // Currently only a single bench that requires "rand" + "std".
 mod benches {
     use test::{black_box, Bencher};
 
-    use crate::{Message, Secp256k1, SecretKey};
+    use super::RecoverableSignature;
+    use crate::{Message, SecretKey};
 
     #[bench]
     pub fn bench_recover(bh: &mut Bencher) {
-        let s = Secp256k1::new();
         let msg = Message::from_digest(crate::test_random_32_bytes());
         let sk = SecretKey::test_random();
-        let sig = s.sign_ecdsa_recoverable(msg, &sk);
+        let sig = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
 
         bh.iter(|| {
-            let res = s.recover_ecdsa(msg, &sig).unwrap();
+            let res = sig.recover_ecdsa(msg).unwrap();
             black_box(res);
         });
     }
