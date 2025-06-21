@@ -192,11 +192,9 @@ mod tests {
     use crate::Secp256k1;
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn ecdh() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
+        let (sk1, pk1) = crate::test_random_keypair();
+        let (sk2, pk2) = crate::test_random_keypair();
 
         let sec1 = SharedSecret::new(&pk2, &sk1);
         let sec2 = SharedSecret::new(&pk1, &sk2);

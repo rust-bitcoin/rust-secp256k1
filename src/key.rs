@@ -367,6 +367,22 @@ impl SecretKey {
         let kp = self.keypair(secp);
         XOnlyPublicKey::from_keypair(&kp)
     }
+
+    /// Constructor for unit testing.
+    #[cfg(test)]
+    #[cfg(all(feature = "rand", feature = "std"))]
+    pub fn test_random() -> Self { Self::new(&mut rand::rng()) }
+
+    /// Constructor for unit testing.
+    #[cfg(test)]
+    #[cfg(not(all(feature = "rand", feature = "std")))]
+    pub fn test_random() -> Self {
+        loop {
+            if let Ok(ret) = Self::from_byte_array(crate::test_random_32_bytes()) {
+                return ret;
+            }
+        }
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -1036,6 +1052,16 @@ impl Keypair {
     /// [`zeroize`](https://docs.rs/zeroize) crate.
     #[inline]
     pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
+
+    /// Constructor for unit testing.
+    #[cfg(test)]
+    pub fn test_random() -> Self {
+        let sk = SecretKey::test_random();
+        crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| Self::from_secret_key(secp, &sk),
+            Some(&sk.secret_bytes()),
+        )
+    }
 }
 
 impl fmt::Debug for Keypair {
@@ -1733,11 +1759,8 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn keypair_slice_round_trip() {
-        let s = Secp256k1::new();
-
-        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
+        let (sk1, pk1) = crate::test_random_keypair();
         assert_eq!(SecretKey::from_byte_array(sk1.secret_bytes()), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
@@ -2010,15 +2033,15 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn tweak_add_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::test_random_keypair();
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
-        let tweak = Scalar::random();
+        let tweak = Scalar::test_random();
 
         let tweaked_sk = sk.add_tweak(&tweak).unwrap();
         assert_ne!(sk, tweaked_sk); // Make sure we did something.
@@ -2029,11 +2052,11 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn tweak_add_zero() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::test_random_keypair();
 
         let tweak = Scalar::ZERO;
 
@@ -2044,40 +2067,38 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn tweak_mul_arbitrary_data() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::test_random_keypair();
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
-        // TODO: This would be better tested with a _lot_ of different tweaks.
-        let tweak = Scalar::random();
+        for _ in 0..10 {
+            let tweak = Scalar::test_random();
 
-        let tweaked_sk = sk.mul_tweak(&tweak).unwrap();
-        assert_ne!(sk, tweaked_sk); // Make sure we did something.
-        let tweaked_pk = pk.mul_tweak(&s, &tweak).unwrap();
-        assert_ne!(pk, tweaked_pk);
-
-        assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+            let tweaked_sk = sk.mul_tweak(&tweak).unwrap();
+            assert_ne!(sk, tweaked_sk); // Make sure we did something.
+            let tweaked_pk = pk.mul_tweak(&s, &tweak).unwrap();
+            assert_ne!(pk, tweaked_pk);
+            assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+        }
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn tweak_mul_zero() {
-        let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut rand::rng());
+        let (sk, _) = crate::test_random_keypair();
 
         let tweak = Scalar::ZERO;
         assert!(sk.mul_tweak(&tweak).is_err())
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn test_negation() {
         let s = Secp256k1::new();
 
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::test_random_keypair();
 
         assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
 
@@ -2095,7 +2116,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn pubkey_hash() {
         use std::collections::hash_map::DefaultHasher;
         use std::collections::HashSet;
@@ -2107,11 +2128,10 @@ mod test {
             s.finish()
         }
 
-        let s = Secp256k1::new();
         let mut set = HashSet::new();
         const COUNT: usize = 1024;
         for _ in 0..COUNT {
-            let (_, pk) = s.generate_keypair(&mut rand::rng());
+            let (_, pk) = crate::test_random_keypair();
             let hash = hash(&pk);
             assert!(!set.contains(&hash));
             set.insert(hash);
@@ -2178,12 +2198,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn create_pubkey_combine() {
         let s = Secp256k1::new();
 
-        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
+        let (sk1, pk1) = crate::test_random_keypair();
+        let (sk2, pk2) = crate::test_random_keypair();
 
         let sum1 = pk1.combine(&pk2);
         assert!(sum1.is_ok());
@@ -2288,15 +2308,14 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn test_tweak_add_then_tweak_add_check() {
         let s = Secp256k1::new();
 
-        // TODO: 10 times is arbitrary, we should test this a _lot_ of times.
         for _ in 0..10 {
-            let tweak = Scalar::random();
+            let tweak = Scalar::test_random();
 
-            let kp = Keypair::new(&s, &mut rand::rng());
+            let kp = Keypair::test_random();
             let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
             let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
@@ -2548,10 +2567,8 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_keypair_from_str() {
-        let ctx = crate::Secp256k1::new();
-        let keypair = Keypair::new(&ctx, &mut rand::rng());
+        let keypair = Keypair::test_random();
         let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
         let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
         let parsed_key = Keypair::from_str(s).unwrap();
