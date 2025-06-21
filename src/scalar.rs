@@ -106,6 +106,22 @@ impl Scalar {
 
         self.as_be_bytes().as_c_ptr()
     }
+
+    /// Constructor for unit testing.
+    #[cfg(test)]
+    #[cfg(all(feature = "rand", feature = "std"))]
+    pub fn test_random() -> Self { Self::random() }
+
+    /// Constructor for unit testing.
+    #[cfg(test)]
+    #[cfg(not(all(feature = "rand", feature = "std")))]
+    pub fn test_random() -> Self {
+        loop {
+            if let Ok(ret) = Self::from_be_bytes(crate::test_random_32_bytes()) {
+                return ret;
+            }
+        }
+    }
 }
 
 impl<I> ops::Index<I> for Scalar

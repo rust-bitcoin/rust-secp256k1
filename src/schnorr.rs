@@ -225,10 +225,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn schnorr_sign_with_aux_rand_verify() {
-        sign_helper(|secp, msg, seckey, rng| {
-            let aux_rand = crate::random_32_bytes(rng);
+        sign_helper((), |secp, msg, seckey, _| {
+            let aux_rand = crate::test_random_32_bytes();
             secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
         })
     }
@@ -236,29 +236,35 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn schnor_sign_with_rng_verify() {
-        sign_helper(|secp, msg, seckey, rng| secp.sign_schnorr_with_rng(msg, seckey, rng))
+        sign_helper(&mut rand::rng(), |secp, msg, seckey, rng| {
+            secp.sign_schnorr_with_rng(msg, seckey, rng)
+        })
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
-    fn schnorr_sign_verify() { sign_helper(|secp, msg, seckey, _| secp.sign_schnorr(msg, seckey)) }
+    #[cfg(all(feature = "rand", feature = "std"))] // sign_schnorr requires "rand"
+    fn schnorr_sign_verify() {
+        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr(msg, seckey))
+    }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn schnorr_sign_no_aux_rand_verify() {
-        sign_helper(|secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
+        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
     }
 
-    #[cfg(all(feature = "rand", feature = "std"))]
-    fn sign_helper(sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut ThreadRng) -> Signature) {
+    #[cfg(feature = "std")]
+    fn sign_helper<R>(
+        mut rng: R,
+        sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut R) -> Signature,
+    ) {
         let secp = Secp256k1::new();
 
-        let mut rng = rand::rng();
-        let kp = Keypair::new(&secp, &mut rng);
+        let kp = Keypair::test_random();
         let (pk, _parity) = kp.x_only_public_key();
 
         for _ in 0..100 {
-            let msg = crate::random_32_bytes(&mut rand::rng());
+            let msg = crate::test_random_32_bytes();
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
 
@@ -358,10 +364,8 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_pubkey_serialize_roundtrip() {
-        let secp = Secp256k1::new();
-        let kp = Keypair::new(&secp, &mut rand::rng());
+        let kp = Keypair::test_random();
         let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
