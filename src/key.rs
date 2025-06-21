@@ -19,7 +19,8 @@ use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
 use crate::{
-    constants, ecdsa, from_hex, schnorr, Message, Scalar, Secp256k1, Signing, Verification,
+    constants, ecdsa, from_hex, schnorr, AllPreallocated, Message, Scalar, Secp256k1, Signing,
+    Verification,
 };
 
 /// Secret key - a 256-bit key used to create ECDSA and Taproot signatures.
@@ -1066,20 +1067,14 @@ impl<'a> From<&'a Keypair> for PublicKey {
     fn from(pair: &'a Keypair) -> Self { PublicKey::from_keypair(pair) }
 }
 
-#[cfg(any(feature = "global-context", feature = "alloc"))]
 impl str::FromStr for Keypair {
     type Err = Error;
 
-    #[allow(unused_variables, unreachable_code)] // When built with no default features.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        #[cfg(feature = "global-context")]
-        let ctx = SECP256K1;
-
-        #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
-        let ctx = Secp256k1::signing_only();
-
-        #[allow(clippy::needless_borrow)]
-        Keypair::from_seckey_str(&ctx, s)
+        crate::with_global_context(
+            |secp: &Secp256k1<AllPreallocated>| Self::from_seckey_str(secp, s),
+            None,
+        )
     }
 }
 
@@ -1103,8 +1098,6 @@ impl serde::Serialize for Keypair {
 }
 
 #[cfg(feature = "serde")]
-#[allow(unused_variables)] // For `data` under some feature combinations (the unconditional panic below).
-#[cfg(all(feature = "serde", any(feature = "global-context", feature = "alloc")))]
 impl<'de> serde::Deserialize<'de> for Keypair {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         if d.is_human_readable() {
@@ -1113,14 +1106,10 @@ impl<'de> serde::Deserialize<'de> for Keypair {
             ))
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new("raw 32 bytes Keypair", |data| {
-                #[cfg(feature = "global-context")]
-                let ctx = SECP256K1;
-
-                #[cfg(all(not(feature = "global-context"), feature = "alloc"))]
-                let ctx = Secp256k1::signing_only();
-
-                #[allow(clippy::needless_borrow)]
-                Keypair::from_seckey_byte_array(&ctx, data)
+                crate::with_global_context(
+                    |secp: &Secp256k1<AllPreallocated>| Self::from_seckey_byte_array(secp, data),
+                    None,
+                )
             });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }
