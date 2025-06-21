@@ -194,11 +194,9 @@ mod tests {
     use crate::Secp256k1;
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn ecdh() {
-        let s = Secp256k1::signing_only();
-        let (sk1, pk1) = s.generate_keypair(&mut rand::rng());
-        let (sk2, pk2) = s.generate_keypair(&mut rand::rng());
+        let (sk1, pk1) = crate::test_random_keypair();
+        let (sk2, pk2) = crate::test_random_keypair();
 
         let sec1 = SharedSecret::new(&pk2, &sk1);
         let sec2 = SharedSecret::new(&pk1, &sk2);
@@ -226,15 +224,14 @@ mod tests {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]
-    #[cfg(all(feature = "hashes", feature = "rand", feature = "std"))]
+    #[cfg(feature = "hashes")]
     fn hashes_and_sys_generate_same_secret() {
         use hashes::{sha256, Hash, HashEngine};
 
         use crate::ecdh::shared_secret_point;
 
-        let s = Secp256k1::signing_only();
-        let (sk1, _) = s.generate_keypair(&mut rand::rng());
-        let (_, pk2) = s.generate_keypair(&mut rand::rng());
+        let (sk1, _) = crate::test_random_keypair();
+        let (_, pk2) = crate::test_random_keypair();
 
         let secret_sys = SharedSecret::new(&pk2, &sk1);
 
@@ -251,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "serde", feature = "alloc"))]
+    #[cfg(feature = "serde")]
     fn serde() {
         use serde_test::{assert_tokens, Configure, Token};
         #[rustfmt::skip]
