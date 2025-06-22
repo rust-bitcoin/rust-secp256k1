@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: CC0-1.0
+
+#![allow(dead_code)]
+#![allow(unused_imports)]
+
+use secp256k1::{
+    ecdh, ecdsa, ellswift, schnorr, Keypair, Message, Parity, PublicKey, Scalar, SecretKey,
+    XOnlyPublicKey,
+};
+
+/// A struct that includes all public non-error enums.
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+struct Enums {
+    a: Parity,
+    b: ellswift::Party,
+    #[cfg(feature = "recovery")]
+    c: ecdsa::RecoveryId,
+}
+
+/// A struct that includes all "public" (i.e. not secret key material) structures.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
+struct PublicStructs {
+    a: Message,
+    b: PublicKey,
+    c: XOnlyPublicKey,
+    d: ecdsa::Signature,
+    e: ecdsa::SerializedSignature,
+    #[cfg(feature = "recovery")]
+    f: ecdsa::RecoverableSignature,
+    g: ellswift::ElligatorSwift,
+    h: Scalar,
+    i: schnorr::Signature,
+}
+
+/// A struct that includes all "secret" structures.
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+struct SecretStructs {
+    a: SecretKey,
+    b: ecdh::SharedSecret,
+    c: Keypair,
+    // FIXME should be renamed
+    d: ellswift::ElligatorSwiftSharedSecret,
+}
+
+macro_rules! bytes_rtt_test {
+    ($name: ident, $ty:ty) => {
+        fn $name(obj: &$ty) {
+            let x = obj.to_byte_array();
+            let y = <$ty>::from_byte_array(x);
+            assert_eq!(*obj, y);
+        }
+    };
+}
+
+// Message is special because its to/from methods havve the name "digest" in them
+// PublicKey is special because it has two serialization forms with different names (but maybe I should rename them?)
+// FIXME XOnlyPublicKey should pass this
+// ecdsa::Signature and SerializedSignature and RecoverableSignature are variable-length
+// FIXME ElligatorSwift should pass this
+// Scalar has to_be_bytes and to_le_bytes (and corresponding froms)
+bytes_rtt_test!(rtt_i, schnorr::Signature);
+
+macro_rules! secret_bytes_rtt_test {
+    ($name: ident, $ty:ty) => {
+        fn $name(obj: &$ty) {
+            // FIXME should have to_ prefix and probably as_ variant as well to minimize copies
+            let x = obj.secret_bytes();
+            // FIXME should have a symmetric name to secret_bytes
+            let _ = <$ty>::from_byte_array(x);
+            obj.clone().non_secure_erase();
+        }
+    };
+}
+secret_bytes_rtt_test!(secret_rtt_a, SecretKey);
+// FIXME ecdh::SharedSecret should pass this
+// FIXME unsure about Keypair -- it currently only roundtrips through secret keys
+// FIXME ellswift::ElligatorSwiftharedSecret should pass this
