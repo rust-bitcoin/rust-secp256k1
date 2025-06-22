@@ -64,7 +64,7 @@ impl SharedSecret {
     pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret { SharedSecret(bytes) }
 
     /// Creates a shared secret from `bytes` slice.
-    #[deprecated(since = "TBD", note = "Use `from_bytes` instead.")]
+    #[deprecated(since = "0.30.0", note = "Use `from_bytes` instead.")]
     #[inline]
     pub fn from_slice(bytes: &[u8]) -> Result<SharedSecret, Error> {
         match bytes.len() {

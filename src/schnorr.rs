@@ -78,7 +78,7 @@ impl Signature {
     pub fn from_byte_array(sig: [u8; constants::SCHNORR_SIGNATURE_SIZE]) -> Self { Self(sig) }
 
     /// Creates a `Signature` directly from a slice.
-    #[deprecated(since = "TBD", note = "Use `from_byte_array` instead.")]
+    #[deprecated(since = "0.30.0", note = "Use `from_byte_array` instead.")]
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<Signature, Error> {
         match data.len() {

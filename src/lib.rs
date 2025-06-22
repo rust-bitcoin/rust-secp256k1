@@ -255,7 +255,7 @@ impl Message {
     ///
     /// [secure signature]: https://twitter.com/pwuille/status/1063582706288586752
     #[inline]
-    #[deprecated(since = "TBD", note = "use from_digest instead")]
+    #[deprecated(since = "0.30.0", note = "use from_digest instead")]
     pub fn from_digest_slice(digest: &[u8]) -> Result<Message, Error> {
         Ok(Message::from_digest(digest.try_into().map_err(|_| Error::InvalidMessage)?))
     }
