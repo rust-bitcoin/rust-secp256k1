@@ -220,7 +220,7 @@ impl SecretKey {
     /// use secp256k1::SecretKey;
     /// let sk = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
     /// ```
-    #[deprecated(since = "TBD", note = "Use `from_byte_array` instead.")]
+    #[deprecated(since = "0.31.0", note = "Use `from_byte_array` instead.")]
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
         match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
@@ -861,7 +861,7 @@ impl Keypair {
     ///
     /// [`Error::InvalidSecretKey`] if the slice is not exactly 32 bytes long,
     /// or if the encoded number is an invalid scalar.
-    #[deprecated(since = "TBD", note = "Use `from_seckey_byte_array` instead.")]
+    #[deprecated(since = "0.31.0", note = "Use `from_seckey_byte_array` instead.")]
     #[inline]
     pub fn from_seckey_slice<C: Signing>(
         secp: &Secp256k1<C>,
@@ -1240,7 +1240,7 @@ impl XOnlyPublicKey {
     ///
     /// Returns [`Error::InvalidPublicKey`] if the length of the data slice is not 32 bytes or the
     /// slice does not represent a valid Secp256k1 point x coordinate.
-    #[deprecated(since = "TBD", note = "Use `from_byte_array` instead.")]
+    #[deprecated(since = "0.31.0", note = "Use `from_byte_array` instead.")]
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
         match <[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]>::try_from(data) {
