@@ -42,7 +42,7 @@ impl<'de> serde::Deserialize<'de> for Signature {
         } else {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "raw 64 bytes schnorr signature",
-                Signature::from_slice,
+                |x| x.try_into().map(Signature::from_byte_array),
             ))
         }
     }
@@ -317,6 +317,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_pubkey_from_slice() {
         let pk = XOnlyPublicKey::from_slice(&[
             0xB3, 0x3C, 0xC9, 0xED, 0xC0, 0x96, 0xD0, 0xA8, 0x34, 0x16, 0x96, 0x4B, 0xD3, 0xC6,
@@ -327,6 +328,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_pubkey_from_bad_slice() {
         // Bad sizes
         assert_eq!(XOnlyPublicKey::from_slice(&[]), Err(InvalidPublicKey));
@@ -363,7 +365,7 @@ mod tests {
         let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
-        let pubkey2 = XOnlyPublicKey::from_slice(&ser).unwrap();
+        let pubkey2 = XOnlyPublicKey::from_byte_array(ser).unwrap();
         assert_eq!(pk, pubkey2);
     }
 
@@ -492,7 +494,7 @@ mod tests {
             170, 12, 208, 84, 74, 200, 135, 254, 145, 221, 209, 102,
         ];
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
-        let pk = XOnlyPublicKey::from_slice(&PK_BYTES).unwrap();
+        let pk = XOnlyPublicKey::from_byte_array(PK_BYTES).unwrap();
 
         assert_tokens(&sig.compact(), &[Token::BorrowedBytes(&SIG_BYTES[..])]);
         assert_tokens(&sig.compact(), &[Token::Bytes(&SIG_BYTES[..])]);
@@ -712,7 +714,7 @@ mod tests {
                 assert_eq!(sig.to_byte_array(), signature);
             }
             let sig = Signature::from_byte_array(signature);
-            let is_verified = if let Ok(pubkey) = XOnlyPublicKey::from_slice(&public_key) {
+            let is_verified = if let Ok(pubkey) = XOnlyPublicKey::from_byte_array(public_key) {
                 secp.verify_schnorr(&sig, &message, &pubkey).is_ok()
             } else {
                 false
