@@ -178,7 +178,7 @@ impl<'de> ::serde::Deserialize<'de> for SharedSecret {
         } else {
             d.deserialize_bytes(super::serde_util::BytesVisitor::new(
                 "raw 32 bytes SharedSecret",
-                SharedSecret::from_slice,
+                |x| x.try_into().map(SharedSecret::from_bytes),
             ))
         }
     }
@@ -263,7 +263,7 @@ mod tests {
         ];
         static STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let secret = SharedSecret::from_slice(&BYTES).unwrap();
+        let secret = SharedSecret::from_bytes(BYTES);
 
         assert_tokens(&secret.compact(), &[Token::BorrowedBytes(&BYTES[..])]);
         assert_tokens(&secret.compact(), &[Token::Bytes(&BYTES)]);

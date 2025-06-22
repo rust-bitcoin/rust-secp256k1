@@ -1017,9 +1017,7 @@ impl AggregatedSignature {
     /// Note that while an alternative approach of verifying partial signatures is valid, verifying the aggregated
     /// signature is more performant. Thus it should be generally better to verify the signature using this function first
     /// and fall back to detection of violators if it fails.
-    pub fn assume_valid(self) -> schnorr::Signature {
-        schnorr::Signature::from_slice(&self.0).expect("Invalid signature data")
-    }
+    pub fn assume_valid(self) -> schnorr::Signature { schnorr::Signature::from_byte_array(self.0) }
 
     /// Verify the aggregated signature against the aggregate public key and message
     /// before returning the signature.
@@ -1029,7 +1027,7 @@ impl AggregatedSignature {
         aggregate_key: &XOnlyPublicKey,
         message: &[u8],
     ) -> Result<schnorr::Signature, Error> {
-        let sig = schnorr::Signature::from_slice(&self.0)?;
+        let sig = schnorr::Signature::from_byte_array(self.0);
         secp.verify_schnorr(&sig, message, aggregate_key)
             .map(|_| sig)
             .map_err(|_| Error::IncorrectSignature)
