@@ -36,7 +36,7 @@ static XONLY_PK_BYTES: [u8; 32] = [
 ];
 
 fn secret_key() -> SecretKey {
-    SecretKey::from_slice(&SK_BYTES).expect("failed to create sk from slice")
+    SecretKey::from_byte_array(SK_BYTES).expect("failed to create sk from slice")
 }
 
 // Our current serde serialization implementation is only guaranteed to be fixed
@@ -69,8 +69,8 @@ fn bincode_keypair() {
 
 #[test]
 fn bincode_x_only_public_key() {
-    let pk =
-        XOnlyPublicKey::from_slice(&XONLY_PK_BYTES).expect("failed to create xonly pk from slice");
+    let pk = XOnlyPublicKey::from_byte_array(XONLY_PK_BYTES)
+        .expect("failed to create xonly pk from slice");
     let ser = bincode::serialize(&pk).unwrap();
 
     assert_eq!(ser, XONLY_PK_BYTES);
