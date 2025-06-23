@@ -378,7 +378,7 @@ mod tests {
         // Test that we can round trip an ElligatorSwift encoding
         let secp = crate::Secp256k1::new();
         let public_key =
-            PublicKey::from_secret_key(&secp, &SecretKey::from_slice(&[1u8; 32]).unwrap());
+            PublicKey::from_secret_key(&secp, &SecretKey::from_byte_array([1u8; 32]).unwrap());
 
         let ell = ElligatorSwift::from_pubkey(public_key);
         let pk = PublicKey::from_ellswift(ell);
@@ -391,9 +391,11 @@ mod tests {
         let secp = crate::Secp256k1::new();
         let rand32 = [1u8; 32];
         let priv32 = [1u8; 32];
-        let ell = ElligatorSwift::from_seckey(&secp, SecretKey::from_slice(&rand32).unwrap(), None);
+        let ell =
+            ElligatorSwift::from_seckey(&secp, SecretKey::from_byte_array(rand32).unwrap(), None);
         let pk = PublicKey::from_ellswift(ell);
-        let expected = PublicKey::from_secret_key(&secp, &SecretKey::from_slice(&priv32).unwrap());
+        let expected =
+            PublicKey::from_secret_key(&secp, &SecretKey::from_byte_array(priv32).unwrap());
 
         assert_eq!(pk, expected);
     }
@@ -406,13 +408,13 @@ mod tests {
         let priv32 = [2u8; 32];
         let ell = ElligatorSwift::from_seckey(
             &secp,
-            SecretKey::from_slice(&rand32).unwrap(),
+            SecretKey::from_byte_array(rand32).unwrap(),
             Some(rand32),
         );
         let pk = ElligatorSwift::shared_secret_with_hasher(
             ell,
             ell,
-            SecretKey::from_slice(&priv32).unwrap(),
+            SecretKey::from_byte_array(priv32).unwrap(),
             Party::Initiator,
             |_, _, _| ElligatorSwiftSharedSecret([0xff; 32]),
         );
@@ -626,7 +628,7 @@ mod tests {
                     ElligatorSwift::from_array(ellswift_theirs),
                 )
             };
-            let sec_key = SecretKey::from_slice(&my_secret).unwrap();
+            let sec_key = SecretKey::from_byte_array(my_secret).unwrap();
             let initiator = if initiator == 0 { Party::Responder } else { Party::Initiator };
 
             let shared = ElligatorSwift::shared_secret(el_a, el_b, sec_key, initiator, None);
