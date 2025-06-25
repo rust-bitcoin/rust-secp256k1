@@ -4,7 +4,7 @@ use secp256k1::musig::{
     new_nonce_pair, AggregatedNonce, KeyAggCache, PartialSignature, PublicNonce, Session,
     SessionSecretRand,
 };
-use secp256k1::{Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey};
+use secp256k1::{Keypair, PublicKey, Scalar, Secp256k1, SecretKey};
 
 fn main() {
     let secp = Secp256k1::new();
@@ -36,8 +36,7 @@ fn main() {
 
     assert_eq!(agg_pk, tweaked_agg_pk.x_only_public_key().0);
 
-    let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-    let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+    let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
     let musig_session_sec_rand1 = SessionSecretRand::from_rng(&mut rng);
 
@@ -97,5 +96,5 @@ fn main() {
 
     let aggregated_signature = session.partial_sig_agg(partial_sigs_ref);
 
-    assert!(aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).is_ok());
+    assert!(aggregated_signature.verify(&secp, &agg_pk, msg).is_ok());
 }

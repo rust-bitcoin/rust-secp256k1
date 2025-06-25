@@ -13,7 +13,7 @@ use std;
 
 use crate::ffi::{self, CPtr};
 use crate::{
-    from_hex, schnorr, Error, Keypair, Message, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
+    from_hex, schnorr, Error, Keypair, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
     Verification, XOnlyPublicKey,
 };
 
@@ -154,7 +154,7 @@ impl fmt::Display for InvalidTweakErr {
 ///   for maximal mis-use resistance.
 /// * `pub_key`: [`PublicKey`] that we will use to create partial signature. The secnonce
 ///   output of this function cannot be used to sign for any other public key.
-/// * `msg`: Optional [`Message`] that will be signed later on. Provide this for maximal misuse resistance.
+/// * `msg`: Optional message that will be signed later on. Provide this for maximal misuse resistance.
 /// * `extra_rand`: Additional randomness for mis-use resistance. Provide this for maximal misuse resistance
 ///
 /// Remember that nonce reuse will immediately leak the secret key!
@@ -184,7 +184,7 @@ pub fn new_nonce_pair<C: Signing>(
     key_agg_cache: Option<&KeyAggCache>,
     sec_key: Option<SecretKey>,
     pub_key: PublicKey,
-    msg: Option<Message>,
+    msg: Option<&[u8; 32]>,
     extra_rand: Option<[u8; 32]>,
 ) -> (SecretNonce, PublicNonce) {
     let cx = secp.ctx().as_ptr();
@@ -596,7 +596,7 @@ impl KeyAggCache {
     /// * `session_secrand`: [`SessionSecretRand`] Uniform random identifier for this session. Each call to this
     ///   function must have a UNIQUE `session_secrand`.
     /// * `pub_key`: [`PublicKey`] of the signer creating the nonce.
-    /// * `msg`: [`Message`] that will be signed later on.
+    /// * `msg`: message that will be signed later on.
     /// * `extra_rand`: Additional randomness for mis-use resistance
     ///
     /// Example:
@@ -604,7 +604,7 @@ impl KeyAggCache {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, Message};
+    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{KeyAggCache, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
@@ -616,9 +616,8 @@ impl KeyAggCache {
     /// // The session id must be sampled at random. Read documentation for more details.
     /// let session_secrand = SessionSecretRand::from_rng(&mut rand::rng());
     ///
-    /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
-    ///
     /// // Provide the current time for mis-use resistance
+    /// let msg = b"Public message we want to sign!!";
     /// let extra_rand : Option<[u8; 32]> = None;
     /// let (_sec_nonce, _pub_nonce) = key_agg_cache.nonce_gen(&secp, session_secrand, pub_key1, msg, extra_rand);
     /// # }
@@ -628,7 +627,7 @@ impl KeyAggCache {
         secp: &Secp256k1<C>,
         session_secrand: SessionSecretRand,
         pub_key: PublicKey,
-        msg: Message,
+        msg: &[u8; 32],
         extra_rand: Option<[u8; 32]>,
     ) -> (SecretNonce, PublicNonce) {
         // The secret key here is supplied as NULL. This is okay because we supply the
@@ -900,7 +899,7 @@ impl AggregatedNonce {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, Message};
+    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
@@ -911,7 +910,7 @@ impl AggregatedNonce {
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
-    /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
+    /// let msg = b"Public message we want to sign!!";
     ///
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
     /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None);
@@ -1056,14 +1055,14 @@ impl Session {
     /// * `secp` : [`Secp256k1`] context object initialized for signing
     /// * `key_agg_cache`: [`KeyAggCache`] to be used for this session
     /// * `agg_nonce`: [`AggregatedNonce`], the aggregate nonce
-    /// * `msg`: [`Message`] that will be signed later on.
+    /// * `msg`: message that will be signed later on.
     ///
     /// Example:
     ///
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, Message};
+    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, Session, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
@@ -1074,7 +1073,7 @@ impl Session {
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
-    /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
+    /// let msg = b"Public message we want to sign!!";
     ///
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
@@ -1100,7 +1099,7 @@ impl Session {
         secp: &Secp256k1<C>,
         key_agg_cache: &KeyAggCache,
         agg_nonce: AggregatedNonce,
-        msg: Message,
+        msg: &[u8; 32],
     ) -> Self {
         let mut session = MaybeUninit::<ffi::MusigSession>::uninit();
 
@@ -1199,7 +1198,7 @@ impl Session {
     /// # #[cfg(not(secp256k1_fuzz))]
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, Message};
+    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand, Session};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
@@ -1210,7 +1209,7 @@ impl Session {
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
-    /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
+    /// let msg = b"Public message we want to sign!!";
     ///
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
@@ -1280,7 +1279,7 @@ impl Session {
     ///
     /// ```rust
     /// # #[cfg(feature = "rand-std")] {
-    /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, Message, AggregatedNonce, Session};
+    /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, AggregatedNonce, Session};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
     /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
@@ -1290,7 +1289,7 @@ impl Session {
     /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
-    /// let msg = Message::from_digest_slice(b"Public Message we want to sign!!").unwrap();
+    /// let msg = b"Public message we want to sign!!";
     ///
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
@@ -1381,7 +1380,7 @@ mod tests {
     use super::*;
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
-    use crate::{Message, PublicKey, Secp256k1, SecretKey};
+    use crate::{PublicKey, Secp256k1, SecretKey};
 
     #[test]
     #[cfg(feature = "std")]
@@ -1490,8 +1489,7 @@ mod tests {
 
         let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
 
-        let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-        let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+        let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         // Test nonce generation with KeyAggCache
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
@@ -1530,8 +1528,7 @@ mod tests {
 
         let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
 
-        let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-        let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+        let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (_, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
@@ -1580,8 +1577,7 @@ mod tests {
         let pubkeys = [&pubkey1, &pubkey2];
         let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
 
-        let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-        let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+        let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce1, pub_nonce1) =
@@ -1664,8 +1660,7 @@ mod tests {
         let pubkeys = [&pubkey1, &pubkey2];
         let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
 
-        let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-        let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+        let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce1, pub_nonce1) =
@@ -1688,23 +1683,23 @@ mod tests {
         // Test signature verification
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign2]);
         let agg_pk = key_agg_cache.agg_pk();
-        aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).unwrap();
+        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
 
         // Test assume_valid
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, &msg_bytes, &agg_pk).unwrap();
+        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
 
         // Test with wrong aggregate (repeated sigs)
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).unwrap_err();
+        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap_err();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, &msg_bytes, &agg_pk).unwrap_err();
+        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap_err();
 
         // Test with swapped sigs -- this will work. Unlike keys, sigs are not ordered.
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign2, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).unwrap();
+        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, &msg_bytes, &agg_pk).unwrap();
+        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
     }
 
     #[test]
@@ -1724,8 +1719,7 @@ mod tests {
         let pubkeys_ref = pubkeys_ref.as_mut_slice();
 
         let key_agg_cache = KeyAggCache::new(&secp, pubkeys_ref);
-        let msg_bytes: [u8; 32] = *b"this_could_be_the_hash_of_a_msg!";
-        let msg = Message::from_digest_slice(&msg_bytes).unwrap();
+        let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (_, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);

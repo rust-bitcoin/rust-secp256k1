@@ -213,7 +213,7 @@ mod tests {
     use super::*;
     use crate::schnorr::{Keypair, Signature, XOnlyPublicKey};
     use crate::Error::InvalidPublicKey;
-    use crate::{constants, from_hex, Message, Secp256k1, SecretKey};
+    use crate::{constants, from_hex, Secp256k1, SecretKey};
 
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     macro_rules! hex_32 {
