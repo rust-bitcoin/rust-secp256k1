@@ -11,7 +11,7 @@ fn recover<C: Verification>(
     recovery_id: u8,
 ) -> Result<PublicKey, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest_slice(msg.as_ref())?;
+    let msg = Message::from_digest(msg.to_byte_array());
     let id = ecdsa::RecoveryId::try_from(i32::from(recovery_id))?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
@@ -24,8 +24,8 @@ fn sign_recovery<C: Signing>(
     seckey: [u8; 32],
 ) -> Result<ecdsa::RecoverableSignature, Error> {
     let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest_slice(msg.as_ref())?;
-    let seckey = SecretKey::from_slice(&seckey)?;
+    let msg = Message::from_digest(msg.to_byte_array());
+    let seckey = SecretKey::from_byte_array(seckey)?;
     Ok(secp.sign_ecdsa_recoverable(msg, &seckey))
 }
 
