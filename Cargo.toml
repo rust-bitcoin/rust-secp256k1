@@ -56,7 +56,7 @@ unexpected_cfgs = { level = "deny", check-cfg = ['cfg(bench)', 'cfg(secp256k1_fu
 
 [[example]]
 name = "sign_verify_recovery"
-required-features = ["recovery", "hashes", "std"]
+required-features = ["recovery", "hashes"]
 
 [[example]]
 name = "sign_verify"
