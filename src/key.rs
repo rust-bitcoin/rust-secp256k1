@@ -1644,11 +1644,9 @@ impl<C: Verification> Secp256k1<C> {
     pub fn sort_pubkeys(&self, pubkeys: &mut [&PublicKey]) {
         let cx = self.ctx().as_ptr();
         unsafe {
-            let mut pubkeys_ref = core::slice::from_raw_parts(
-                pubkeys.as_c_ptr() as *mut *const ffi::PublicKey,
-                pubkeys.len(),
-            );
-            if secp256k1_ec_pubkey_sort(cx, pubkeys_ref.as_mut_c_ptr(), pubkeys_ref.len()) == 0 {
+            // SAFETY: `PublicKey` has repr(transparent) so we can convert to `ffi::PublicKey`
+            let pubkeys_ptr = pubkeys.as_mut_c_ptr() as *mut *const ffi::PublicKey;
+            if secp256k1_ec_pubkey_sort(cx, pubkeys_ptr, pubkeys.len()) == 0 {
                 unreachable!("Invalid public keys for sorting function")
             }
         }
