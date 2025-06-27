@@ -167,8 +167,8 @@ impl ElligatorSwift {
     ///     let alice_es = ElligatorSwift::from_seckey(&secp, alice_sk, None);
     ///     let bob_es = ElligatorSwift::from_seckey(&secp, bob_sk, None);
     ///
-    ///     let alice_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, alice_sk, Party::Initiator, None);
-    ///     let bob_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, bob_sk, Party::Responder, None);
+    ///     let alice_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, alice_sk, Party::Initiator);
+    ///     let bob_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, bob_sk, Party::Responder);
     ///
     ///     assert_eq!(alice_shared_secret, bob_shared_secret);
     /// # }
@@ -178,7 +178,6 @@ impl ElligatorSwift {
         ellswift_b: ElligatorSwift,
         secret_key: SecretKey,
         party: impl Into<Party>,
-        data: Option<&[u8]>,
     ) -> ElligatorSwiftSharedSecret {
         let mut shared_secret = [0u8; 32];
         let p: Party = party.into();
@@ -191,7 +190,7 @@ impl ElligatorSwift {
                 secret_key.as_c_ptr(),
                 p.to_ffi_int(),
                 ffi::secp256k1_ellswift_xdh_hash_function_bip324,
-                data.as_c_ptr() as *mut c_void,
+                ptr::null_mut(),
             );
             debug_assert_eq!(ret, 1);
         }
@@ -631,7 +630,7 @@ mod tests {
             let sec_key = SecretKey::from_byte_array(my_secret).unwrap();
             let initiator = if initiator == 0 { Party::Responder } else { Party::Initiator };
 
-            let shared = ElligatorSwift::shared_secret(el_a, el_b, sec_key, initiator, None);
+            let shared = ElligatorSwift::shared_secret(el_a, el_b, sec_key, initiator);
 
             assert_eq!(shared.0, shared_secret);
         }
