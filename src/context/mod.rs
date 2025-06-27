@@ -14,6 +14,9 @@ use crate::{Error, Secp256k1};
 #[cfg_attr(feature = "std", path = "internal_std.rs")]
 mod internal;
 
+#[cfg(test)] // will have a better feature-gate in next commit
+mod spinlock;
+
 #[cfg(feature = "std")]
 pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
 
