@@ -915,7 +915,7 @@ extern "C" {
     #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_ec_pubkey_sort")]
     pub fn secp256k1_ec_pubkey_sort(
         ctx: *const Context,
-        pubkeys: *const *const PublicKey,
+        pubkeys: *mut *const PublicKey,
         n_pubkeys: size_t,
     ) -> c_int;
 }
