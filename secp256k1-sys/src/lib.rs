@@ -1388,25 +1388,6 @@ impl<T> CPtr for [T] {
     }
 }
 
-impl<T> CPtr for &[T] {
-    type Target = T;
-    fn as_c_ptr(&self) -> *const Self::Target {
-        if self.is_empty() {
-            ptr::null()
-        } else {
-            self.as_ptr()
-        }
-    }
-
-    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
-        if self.is_empty() {
-            ptr::null_mut()
-        } else {
-            self.as_ptr() as *mut Self::Target
-        }
-    }
-}
-
 impl CPtr for [u8; 32] {
     type Target = u8;
     fn as_c_ptr(&self) -> *const Self::Target { self.as_ptr() }
