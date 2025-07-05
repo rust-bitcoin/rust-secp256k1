@@ -51,7 +51,7 @@ use core::panic::PanicInfo;
 
 use secp256k1::ecdh::{self, SharedSecret};
 use secp256k1::ffi::types::AlignedType;
-use secp256k1::rand::{self, RngCore};
+use secp256k1::rand::RngCore;
 use secp256k1::serde::Serialize;
 use secp256k1::*;
 
@@ -93,9 +93,9 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let sig = secp.sign_ecdsa(message, &secret_key);
     assert!(secp.verify_ecdsa(&sig, message, &public_key).is_ok());
 
-    let rec_sig = secp.sign_ecdsa_recoverable(message, &secret_key);
+    let rec_sig = ecdsa::RecoverableSignature::sign_ecdsa_recoverable(message, &secret_key);
     assert!(secp.verify_ecdsa(&rec_sig.to_standard(), message, &public_key).is_ok());
-    assert_eq!(public_key, secp.recover_ecdsa(message, &rec_sig).unwrap());
+    assert_eq!(public_key, rec_sig.recover_ecdsa(message).unwrap());
     let (rec_id, data) = rec_sig.serialize_compact();
     let new_rec_sig = ecdsa::RecoverableSignature::from_compact(&data, rec_id).unwrap();
     assert_eq!(rec_sig, new_rec_sig);
