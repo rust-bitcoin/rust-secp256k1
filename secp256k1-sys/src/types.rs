@@ -34,12 +34,14 @@ pub(crate) const ALIGN_TO: usize = core::mem::align_of::<AlignedType>();
 #[cfg(test)]
 mod tests {
     extern crate libc;
-    use std::any::TypeId;
-    use std::mem;
+    use core::any::TypeId;
+    use core::mem;
+    #[cfg(feature = "std")]
     use std::os::raw;
     use crate::{types, AlignedType};
 
     #[test]
+    #[cfg(feature = "std")]
     fn verify_types() {
         assert_eq!(TypeId::of::<types::c_int>(), TypeId::of::<raw::c_int>());
         assert_eq!(TypeId::of::<types::c_uchar>(), TypeId::of::<raw::c_uchar>());
