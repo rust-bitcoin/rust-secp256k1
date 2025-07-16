@@ -3,7 +3,7 @@
 # Run the WASM tests.
 #
 # The wasm-pack command does not correctly pass args to cargo so we cannot use --locked and test
-# with per-commited lockfiles (recent/minimal). Just run the WASM tests from here instead.
+# with per-committed lockfiles (recent/minimal). Just run the WASM tests from here instead.
 
 set -euox pipefail
 
