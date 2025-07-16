@@ -3,7 +3,7 @@
 //! # secp256k1 no-std test.
 //! This binary is a short smallest rust code to produce a working binary *without libstd*.
 //! This gives us 2 things:
-//!     1. Test that the parts of the code that should work in a no-std enviroment actually work. Note that this is not a comprehensive list.
+//!     1. Test that the parts of the code that should work in a no-std environment actually work. Note that this is not a comprehensive list.
 //!     2. Test that we don't accidentally import libstd into `secp256k1`.
 //!
 //! The first is tested using the following command `cargo run --release | grep -q "Verified Successfully"`.
