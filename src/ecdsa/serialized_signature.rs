@@ -222,7 +222,7 @@ mod into_iter {
 
         #[inline]
         fn size_hint(&self) -> (usize, Option<usize>) {
-            // can't underlflow thanks to the invariant
+            // can't overflow thanks to the invariant
             let len = self.signature.len() - self.pos;
             (len, Some(len))
         }
@@ -231,11 +231,11 @@ mod into_iter {
         #[inline]
         fn nth(&mut self, n: usize) -> Option<Self::Item> {
             if n >= self.len() {
-                // upholds invariant becasue the values will be equal
+                // upholds invariant because the values will be equal
                 self.pos = self.signature.len();
                 None
             } else {
-                // if n < signtature.len() - self.pos then n + self.pos < signature.len() which neither
+                // if n < signature.len() - self.pos then n + self.pos < signature.len() which neither
                 // overflows nor breaks the invariant
                 self.pos += n;
                 self.next()
