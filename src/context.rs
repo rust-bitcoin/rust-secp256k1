@@ -221,7 +221,7 @@ mod alloc_only {
                 ctx.randomize(&mut rand::rng());
             }
 
-            #[allow(clippy::let_and_return)] // as for unusted_mut
+            #[allow(clippy::let_and_return)] // as for unused_mut
             ctx
         }
     }
