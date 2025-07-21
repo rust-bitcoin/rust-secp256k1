@@ -19,7 +19,7 @@ use crate::constants;
 ///
 /// **Warning: the operations on this type are NOT constant time!**
 /// Using this with secret values is not advised.
-// Internal represenation is big endian to match what `libsecp256k1` uses.
+// Internal representation is big endian to match what `libsecp256k1` uses.
 // Also easier to implement comparison.
 // Debug impl omitted for now, the bytes may be secret
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
