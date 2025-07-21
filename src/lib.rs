@@ -197,7 +197,7 @@ pub use crate::scalar::Scalar;
 
 /// Trait describing something that promises to be a 32-byte uniformly random number.
 ///
-/// In particular, anything implementing this trait must have neglibile probability
+/// In particular, anything implementing this trait must have negligible probability
 /// of being zero, overflowing the group order, or equalling any specific value.
 ///
 /// Since version 0.29 this has been deprecated; users should instead implement
