@@ -6,6 +6,8 @@
 use core::ops::{self, BitXor};
 use core::{fmt, ptr, str};
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::{Arbitrary, Unstructured};
 use secp256k1_sys::secp256k1_ec_pubkey_sort;
 #[cfg(feature = "serde")]
 use serde::ser::SerializeTuple;
@@ -1648,6 +1650,26 @@ impl<C: Verification> Secp256k1<C> {
             let pubkeys_ptr = pubkeys.as_mut_c_ptr() as *mut *const ffi::PublicKey;
             if secp256k1_ec_pubkey_sort(cx, pubkeys_ptr, pubkeys.len()) == 0 {
                 unreachable!("Invalid public keys for sorting function")
+            }
+        }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for PublicKey {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut bytes = [0u8; 33];
+        loop {
+            // Unstructured::fill_buffer pads the buffer with zeroes if it runs out of data
+            if u.len() < 33 {
+                return Err(arbitrary::Error::NotEnoughData);
+            }
+
+            bytes[0] = if u.arbitrary::<bool>()? { 0x02 } else { 0x03 };
+            u.fill_buffer(&mut bytes[1..])?;
+
+            if let Ok(pk) = PublicKey::from_slice(&bytes) {
+                return Ok(pk);
             }
         }
     }

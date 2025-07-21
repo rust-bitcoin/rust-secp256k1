@@ -32,10 +32,12 @@ global-context = ["std"]
 # if you are doing a no-std build, then this feature does nothing
 # and is not necessary.)
 global-context-less-secure = ["global-context"]
+arbitrary = ["dep:arbitrary"]
 
 [dependencies]
 secp256k1-sys = { version = "0.11.0", default-features = false, path = "./secp256k1-sys" }
 
+arbitrary = { version = "1.4", optional = true }
 hashes = { package = "bitcoin_hashes", version = "0.14", default-features = false, optional = true }
 rand = { version = "0.9", default-features = false, optional = true }
 serde = { version = "1.0.103", default-features = false, optional = true }
