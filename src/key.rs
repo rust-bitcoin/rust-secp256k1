@@ -1658,17 +1658,50 @@ impl<C: Verification> Secp256k1<C> {
 #[cfg(feature = "arbitrary")]
 impl<'a> Arbitrary<'a> for PublicKey {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
-        let mut bytes = [0u8; 33];
+        Ok(PublicKey::from_x_only_public_key(u.arbitrary()?, u.arbitrary()?))
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for Parity {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        match bool::arbitrary(u)? {
+            true => Ok(Parity::Even),
+            false => Ok(Parity::Odd),
+        }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for SecretKey {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut bytes = [0u8; constants::SECRET_KEY_SIZE];
         loop {
             // Unstructured::fill_buffer pads the buffer with zeroes if it runs out of data
-            if u.len() < 33 {
+            if u.len() < constants::SECRET_KEY_SIZE {
+                return Err(arbitrary::Error::NotEnoughData);
+            }
+            u.fill_buffer(&mut bytes[..])?;
+
+            if let Ok(sk) = SecretKey::from_byte_array(bytes) {
+                return Ok(sk);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> Arbitrary<'a> for XOnlyPublicKey {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut bytes = [0u8; 32];
+        loop {
+            // Unstructured::fill_buffer pads the buffer with zeroes if it runs out of data
+            if u.len() < 32 {
                 return Err(arbitrary::Error::NotEnoughData);
             }
 
-            bytes[0] = if u.arbitrary::<bool>()? { 0x02 } else { 0x03 };
-            u.fill_buffer(&mut bytes[1..])?;
-
-            if let Ok(pk) = PublicKey::from_slice(&bytes) {
+            u.fill_buffer(&mut bytes[..])?;
+            if let Ok(pk) = XOnlyPublicKey::from_byte_array(bytes) {
                 return Ok(pk);
             }
         }
