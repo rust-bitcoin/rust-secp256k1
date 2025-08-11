@@ -172,7 +172,7 @@ impl fmt::Display for InvalidTweakErr {
 /// let sk = SecretKey::new(&mut rand::rng());
 /// let pk = PublicKey::from_secret_key(&secp, &sk);
 ///
-/// // Supply extra auxillary randomness to prevent misuse(for example, time of day)
+/// // Supply extra auxiliary randomness to prevent misuse(for example, time of day)
 /// let extra_rand : Option<[u8; 32]> = None;
 ///
 /// let (_sec_nonce, _pub_nonce) = new_nonce_pair(&secp, session_secrand, None, Some(sk), pk, None, None);
