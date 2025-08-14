@@ -1,7 +1,7 @@
 extern crate hashes;
 extern crate secp256k1;
 
-use hashes::{sha256, Hash};
+use hashes::sha256;
 use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 fn recover<C: Verification>(

@@ -14,7 +14,7 @@ macro_rules! impl_display_secret {
         #[cfg(feature = "hashes")]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use hashes::{sha256, Hash, HashEngine};
+                use hashes::{sha256, HashEngine};
 
                 let tag = "rust-secp256k1DEBUG";
 
@@ -25,7 +25,7 @@ macro_rules! impl_display_secret {
                 engine.input(&self.secret_bytes());
                 let hash = sha256::Hash::from_engine(engine);
 
-                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:.16}", hash)).finish()
+                f.debug_tuple(stringify!($thing)).field(&format_args!("{:?}", hash)).finish()
             }
         }
 
