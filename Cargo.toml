@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["std"]
-std = ["alloc", "secp256k1-sys/std", "rand?/std", "rand?/std_rng", "rand?/thread_rng", "hashes?/std"]
+std = ["alloc", "secp256k1-sys/std", "rand?/std", "rand?/std_rng", "rand?/thread_rng"]
 # allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
 recovery = ["secp256k1-sys/recovery"]
@@ -38,7 +38,6 @@ arbitrary = ["dep:arbitrary"]
 secp256k1-sys = { version = "0.11.0", default-features = false, path = "./secp256k1-sys" }
 
 arbitrary = { version = "1.4", optional = true }
-hashes = { package = "bitcoin_hashes", version = "0.14", default-features = false, optional = true }
 rand = { version = "0.9", default-features = false, optional = true }
 serde = { version = "1.0.103", default-features = false, optional = true }
 
