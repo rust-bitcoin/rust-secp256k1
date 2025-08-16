@@ -78,6 +78,20 @@ impl SharedSecret {
     }
 }
 
+impl ffi::CPtr for SharedSecret {
+    type Target = u8;
+
+    fn as_c_ptr(&self) -> *const Self::Target {
+        let SharedSecret(dat) = self;
+        dat.as_ptr()
+    }
+
+    fn as_mut_c_ptr(&mut self) -> *mut Self::Target {
+        let &mut SharedSecret(ref mut dat) = self;
+        dat.as_mut_ptr()
+    }
+}
+
 impl str::FromStr for SharedSecret {
     type Err = Error;
     fn from_str(s: &str) -> Result<SharedSecret, Error> {

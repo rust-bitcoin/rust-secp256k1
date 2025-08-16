@@ -8,34 +8,29 @@ use crate::constants::SECRET_KEY_SIZE;
 use crate::ecdh::SharedSecret;
 use crate::key::{Keypair, SecretKey};
 use crate::to_hex;
+
 macro_rules! impl_display_secret {
-    // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
-        #[cfg(feature = "hashes")]
         impl ::core::fmt::Debug for $thing {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use hashes::{sha256, Hash, HashEngine};
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                use crate::ffi;
+                use secp256k1_sys::CPtr;
 
-                let tag = "rust-secp256k1DEBUG";
-
-                let mut engine = sha256::Hash::engine();
-                let tag_hash = sha256::Hash::hash(tag.as_bytes());
-                engine.input(&tag_hash.as_ref());
-                engine.input(&tag_hash.as_ref());
-                engine.input(&self.secret_bytes());
-                let hash = sha256::Hash::from_engine(engine);
-
-                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:.16}", hash)).finish()
-            }
-        }
-
-        #[cfg(not(feature = "hashes"))]
-        impl ::core::fmt::Debug for $thing {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(
-                    f,
-                    "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
-                )
+                let mut finger_print = [0; 32];
+                let msg = b"rust-secp256k1-DEBUG-MESSAGE-000";
+                unsafe {
+                    let nonce_fn= ffi::secp256k1_nonce_function_rfc6979.expect("nonce fn");
+                    let ret = nonce_fn(
+                        finger_print.as_mut_c_ptr(),
+                        msg.as_c_ptr(),
+                        self.as_c_ptr(),
+                        core::ptr::null(),
+                        core::ptr::null_mut(),
+                        0
+                    );
+                    debug_assert_eq!(ret, 1)
+                }
+                f.debug_tuple(stringify!($thing)).field(&format_args!("{:?}", finger_print)).finish()
             }
         }
     };
