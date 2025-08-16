@@ -16,9 +16,6 @@ use crate::ellswift::ElligatorSwift;
 use crate::ffi::types::c_uint;
 use crate::ffi::{self, CPtr};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum, InvalidSecretKey};
-#[cfg(feature = "hashes")]
-#[allow(deprecated)]
-use crate::ThirtyTwoByteHash;
 #[cfg(feature = "global-context")]
 use crate::SECP256K1;
 use crate::{
@@ -368,15 +365,6 @@ impl SecretKey {
     pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
         let kp = self.keypair(secp);
         XOnlyPublicKey::from_keypair(&kp)
-    }
-}
-
-#[cfg(feature = "hashes")]
-#[allow(deprecated)]
-impl<T: ThirtyTwoByteHash> From<T> for SecretKey {
-    /// Converts a 32-byte hash directly to a secret key without error paths.
-    fn from(t: T) -> SecretKey {
-        SecretKey::from_byte_array(t.into_32()).expect("failed to create secret key")
     }
 }
 
@@ -1889,7 +1877,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "alloc", not(feature = "hashes")))]
+    #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_debug_output() {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
