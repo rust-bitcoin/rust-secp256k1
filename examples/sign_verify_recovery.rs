@@ -1,17 +1,14 @@
-extern crate hashes;
 extern crate secp256k1;
 
-use hashes::{sha256, Hash};
 use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 fn recover<C: Verification>(
     secp: &Secp256k1<C>,
-    msg: &[u8],
+    msg_digest: [u8; 32],
     sig: [u8; 64],
     recovery_id: u8,
 ) -> Result<PublicKey, Error> {
-    let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest(msg.to_byte_array());
+    let msg = Message::from_digest(msg_digest);
     let id = ecdsa::RecoveryId::try_from(i32::from(recovery_id))?;
     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
 
@@ -20,11 +17,10 @@ fn recover<C: Verification>(
 
 fn sign_recovery<C: Signing>(
     secp: &Secp256k1<C>,
-    msg: &[u8],
+    msg_digest: [u8; 32],
     seckey: [u8; 32],
 ) -> Result<ecdsa::RecoverableSignature, Error> {
-    let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest(msg.to_byte_array());
+    let msg = Message::from_digest(msg_digest);
     let seckey = SecretKey::from_byte_array(seckey)?;
     Ok(secp.sign_ecdsa_recoverable(msg, &seckey))
 }
@@ -41,11 +37,11 @@ fn main() {
         134, 245, 114, 45, 63, 82, 19, 251, 210, 57, 79, 54,
     ])
     .unwrap();
-    let msg = b"This is some message";
+    let msg_digest = *b"this must be secure hash output.";
 
-    let signature = sign_recovery(&secp, msg, seckey).unwrap();
+    let signature = sign_recovery(&secp, msg_digest, seckey).unwrap();
 
     let (recovery_id, serialize_sig) = signature.serialize_compact();
 
-    assert_eq!(recover(&secp, msg, serialize_sig, recovery_id.to_u8()), Ok(pubkey));
+    assert_eq!(recover(&secp, msg_digest, serialize_sig, recovery_id.to_u8()), Ok(pubkey));
 }
