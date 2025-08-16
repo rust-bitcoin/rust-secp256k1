@@ -1894,10 +1894,7 @@ mod test {
         let s = Secp256k1::new();
         let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
 
-        assert_eq!(
-            &format!("{:?}", sk),
-            "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
-        );
+        assert_eq!(&format!("{:?}", sk), "SecretKey(7ad2d060fb2971d6)");
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
