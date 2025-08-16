@@ -1,17 +1,29 @@
-extern crate hashes;
+//! Signing and Verification Example
+//!
+//! In this example we directly sign the "output of a hash function"
+//! as represented by a 32-byte array. In practice, when signing with
+//! the ECDSA API, you should not sign an arbitrary hash like this,
+//! whether it is typed as a `[u8; 32]` or a `sha2::Sha256` or whatever.
+//!
+//! Instead, you should have a dedicated signature hash type, which has
+//! constructors ensuring that it represents an (ideally) domain-separated
+//! hash of the data you intend to sign. This type should implement
+//! `Into<Message>` so it can be passed to `sign_ecdsa` as a message.
+//!
+//! An example of such a type is `bitcoin::LegacySighash` from rust-bitcoin.
+//!
+
 extern crate secp256k1;
 
-use hashes::{sha256, Hash};
 use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
 
 fn verify<C: Verification>(
     secp: &Secp256k1<C>,
-    msg: &[u8],
+    msg_digest: [u8; 32],
     sig: [u8; 64],
     pubkey: [u8; 33],
 ) -> Result<bool, Error> {
-    let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest(msg.to_byte_array());
+    let msg = Message::from_digest(msg_digest);
     let sig = ecdsa::Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
@@ -20,11 +32,10 @@ fn verify<C: Verification>(
 
 fn sign<C: Signing>(
     secp: &Secp256k1<C>,
-    msg: &[u8],
+    msg_digest: [u8; 32],
     seckey: [u8; 32],
 ) -> Result<ecdsa::Signature, Error> {
-    let msg = sha256::Hash::hash(msg);
-    let msg = Message::from_digest(msg.to_byte_array());
+    let msg = Message::from_digest(msg_digest);
     let seckey = SecretKey::from_byte_array(seckey)?;
     Ok(secp.sign_ecdsa(msg, &seckey))
 }
@@ -40,11 +51,11 @@ fn main() {
         2, 29, 21, 35, 7, 198, 183, 43, 14, 208, 65, 139, 14, 112, 205, 128, 231, 245, 41, 91, 141,
         134, 245, 114, 45, 63, 82, 19, 251, 210, 57, 79, 54,
     ];
-    let msg = b"This is some message";
+    let msg_digest = *b"this must be secure hash output.";
 
-    let signature = sign(&secp, msg, seckey).unwrap();
+    let signature = sign(&secp, msg_digest, seckey).unwrap();
 
     let serialize_sig = signature.serialize_compact();
 
-    assert!(verify(&secp, msg, serialize_sig, pubkey).unwrap());
+    assert!(verify(&secp, msg_digest, serialize_sig, pubkey).unwrap());
 }
