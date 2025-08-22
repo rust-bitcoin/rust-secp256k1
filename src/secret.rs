@@ -11,31 +11,39 @@ use crate::to_hex;
 macro_rules! impl_display_secret {
     // Default hasher exists only in standard library and not alloc
     ($thing:ident) => {
-        #[cfg(feature = "hashes")]
         impl ::core::fmt::Debug for $thing {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                use hashes::{sha256, Hash, HashEngine};
+                use core::fmt;
 
-                let tag = "rust-secp256k1DEBUG";
+                use secp256k1_sys::secp256k1_ecdh_hash_function_default;
 
-                let mut engine = sha256::Hash::engine();
-                let tag_hash = sha256::Hash::hash(tag.as_bytes());
-                engine.input(&tag_hash.as_ref());
-                engine.input(&tag_hash.as_ref());
-                engine.input(&self.secret_bytes());
-                let hash = sha256::Hash::from_engine(engine);
+                struct Hex16Writer([u8; 32]);
 
-                f.debug_tuple(stringify!($thing)).field(&format_args!("#{:.16}", hash)).finish()
-            }
-        }
+                let mut output = Hex16Writer([0u8; 32]);
+                unsafe {
+                    // SAFETY: this function pointer is an Option<fn> so we need to unwrap it, even
+                    // though we know that the FFI has provided a non-null value for us.
+                    let ecdh_hash = secp256k1_ecdh_hash_function_default.unwrap();
+                    // SAFETY: output points to >= 32 mutable bytes; both inputs are >= 32 bytes
+                    assert!(self.as_ref().len() >= 32);
+                    ecdh_hash(
+                        output.0.as_mut_ptr(),
+                        self.as_ref().as_ptr(),
+                        "a debug-only byte 'y coordinate'".as_ptr(),
+                        core::ptr::null_mut(),
+                    );
+                }
 
-        #[cfg(not(feature = "hashes"))]
-        impl ::core::fmt::Debug for $thing {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                write!(
-                    f,
-                    "<secret key; enable `hashes` feature of `secp256k1` to display fingerprint>"
-                )
+                impl fmt::Debug for Hex16Writer {
+                    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                        for byte in self.0.iter().copied().take(8) {
+                            write!(f, "{:02x}", byte)?;
+                        }
+                        Ok(())
+                    }
+                }
+
+                f.debug_tuple(stringify!($thing)).field(&output).finish()
             }
         }
     };

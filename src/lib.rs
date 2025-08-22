@@ -28,15 +28,22 @@
 //! trigger any assertion failures in the upstream library.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "rand", feature = "hashes", feature = "std"))] {
+//! # #[cfg(all(feature = "rand", feature = "std"))] {
 //! use secp256k1::rand;
 //! use secp256k1::{Secp256k1, Message};
-//! use secp256k1::hashes::{sha256, Hash};
+//!
+//! // Our message to sign. We explicitly obtain a hash and convert it to a
+//! // `Message`. In a real application, we would produce a signature hash
+//! // type, e.g. `bitcoin::LegacySigHash`, which is convertible to `Message`
+//! // and can be passed directly to `sign_ecdsa`.
+//! const HELLO_WORLD_SHA2: [u8; 32] = [
+//!     0x31, 0x5f, 0x5b, 0xdb, 0x76, 0xd0, 0x78, 0xc4, 0x3b, 0x8a, 0xc0, 0x06, 0x4e, 0x4a, 0x01, 0x64,
+//!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
+//! ];
 //!
 //! let secp = Secp256k1::new();
 //! let (secret_key, public_key) = secp.generate_keypair(&mut rand::rng());
-//! let digest = sha256::Hash::hash("Hello World!".as_bytes());
-//! let message = Message::from_digest(digest.to_byte_array());
+//! let message = Message::from_digest(HELLO_WORLD_SHA2);
 //!
 //! let sig = secp.sign_ecdsa(message, &secret_key);
 //! assert!(secp.verify_ecdsa(&sig, message, &public_key).is_ok());
@@ -46,13 +53,17 @@
 //! If the "global-context" feature is enabled you have access to an alternate API.
 //!
 //! ```rust
-//! # #[cfg(all(feature = "global-context", feature = "hashes", feature = "rand", feature = "std"))] {
+//! # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
 //! use secp256k1::{rand, generate_keypair, Message};
-//! use secp256k1::hashes::{sha256, Hash};
+//!
+//! // See previous example regarding this constant.
+//! const HELLO_WORLD_SHA2: [u8; 32] = [
+//!     0x31, 0x5f, 0x5b, 0xdb, 0x76, 0xd0, 0x78, 0xc4, 0x3b, 0x8a, 0xc0, 0x06, 0x4e, 0x4a, 0x01, 0x64,
+//!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
+//! ];
 //!
 //! let (secret_key, public_key) = generate_keypair(&mut rand::rng());
-//! let digest = sha256::Hash::hash("Hello World!".as_bytes());
-//! let message = Message::from_digest(digest.to_byte_array());
+//! let message = Message::from_digest(HELLO_WORLD_SHA2);
 //!
 //! let sig = secret_key.sign_ecdsa(message);
 //! assert!(sig.verify(message, &public_key).is_ok());
@@ -151,9 +162,6 @@ extern crate alloc;
 extern crate core;
 #[cfg(bench)]
 extern crate test;
-
-#[cfg(feature = "hashes")]
-pub extern crate hashes;
 
 #[macro_use]
 mod macros;
