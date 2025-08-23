@@ -1617,9 +1617,9 @@ mod fuzz_dummy {
     /// Checks that pk != 0xffff...ffff and pk[1..32] == pk[33..64]
     unsafe fn test_pk_validate(cx: *const Context, pk: *const PublicKey) -> c_int {
         check_context_flags(cx, 0);
-        if (*pk).0[1..32] != (*pk).0[33..64]
-            || ((*pk).0[32] != 0 && (*pk).0[32] != 0xff)
-            || secp256k1_ec_seckey_verify(cx, (*pk).0[0..32].as_ptr()) == 0
+        if (&*pk).0[1..32] != (&*pk).0[33..64]
+            || ((*pk).0[32] != 0 && (&*pk).0[32] != 0xff)
+            || secp256k1_ec_seckey_verify(cx, (&*pk).0[0..32].as_ptr()) == 0
         {
             0
         } else {
@@ -1627,11 +1627,11 @@ mod fuzz_dummy {
         }
     }
     unsafe fn test_cleanup_pk(pk: *mut PublicKey) {
-        (*pk).0[32..].copy_from_slice(&(*pk).0[..32]);
-        if (*pk).0[32] <= 0x7f {
-            (*pk).0[32] = 0;
+        (&mut *pk).0[32..].copy_from_slice(&(&*pk).0[..32]);
+        if (&*pk).0[32] <= 0x7f {
+            (&mut *pk).0[32] = 0;
         } else {
-            (*pk).0[32] = 0xff;
+            (&mut *pk).0[32] = 0xff;
         }
     }
 
@@ -1648,8 +1648,8 @@ mod fuzz_dummy {
                 if *input != 2 && *input != 3 {
                     0
                 } else {
-                    ptr::copy(input.offset(1), (*pk).0[0..32].as_mut_ptr(), 32);
-                    ptr::copy(input.offset(2), (*pk).0[33..64].as_mut_ptr(), 31);
+                    ptr::copy(input.offset(1), (&mut *pk).0[0..32].as_mut_ptr(), 32);
+                    ptr::copy(input.offset(2), (&mut *pk).0[33..64].as_mut_ptr(), 31);
                     if *input == 3 {
                         (*pk).0[32] = 0xff;
                     } else {
@@ -1661,7 +1661,7 @@ mod fuzz_dummy {
                 if *input != 4 && *input != 6 && *input != 7 {
                     0
                 } else {
-                    ptr::copy(input.offset(1), (*pk).0.as_mut_ptr(), 64);
+                    ptr::copy(input.offset(1), (&mut *pk).0.as_mut_ptr(), 64);
                     test_cleanup_pk(pk);
                     test_pk_validate(cx, pk)
                 },
@@ -1708,7 +1708,7 @@ mod fuzz_dummy {
         if secp256k1_ec_seckey_verify(cx, sk) != 1 {
             return 0;
         }
-        ptr::copy(sk, (*pk).0[0..32].as_mut_ptr(), 32);
+        ptr::copy(sk, (&mut *pk).0[0..32].as_mut_ptr(), 32);
         test_cleanup_pk(pk);
         assert_eq!(test_pk_validate(cx, pk), 1);
         1
@@ -1717,7 +1717,7 @@ mod fuzz_dummy {
     pub unsafe fn secp256k1_ec_pubkey_negate(cx: *const Context, pk: *mut PublicKey) -> c_int {
         check_context_flags(cx, 0);
         assert_eq!(test_pk_validate(cx, pk), 1);
-        if secp256k1_ec_seckey_negate(cx, (*pk).0[..32].as_mut_ptr()) != 1 {
+        if secp256k1_ec_seckey_negate(cx, (&mut *pk).0[..32].as_mut_ptr()) != 1 {
             return 0;
         }
         test_cleanup_pk(pk);
@@ -1733,7 +1733,7 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_VERIFY);
         assert_eq!(test_pk_validate(cx, pk), 1);
-        if secp256k1_ec_seckey_tweak_add(cx, (*pk).0[..32].as_mut_ptr(), tweak) != 1 {
+        if secp256k1_ec_seckey_tweak_add(cx, (&mut *pk).0[..32].as_mut_ptr(), tweak) != 1 {
             return 0;
         }
         test_cleanup_pk(pk);
@@ -1749,7 +1749,7 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, 0);
         assert_eq!(test_pk_validate(cx, pk), 1);
-        if secp256k1_ec_seckey_tweak_mul(cx, (*pk).0[..32].as_mut_ptr(), tweak) != 1 {
+        if secp256k1_ec_seckey_tweak_mul(cx, (&mut *pk).0[..32].as_mut_ptr(), tweak) != 1 {
             return 0;
         }
         test_cleanup_pk(pk);
@@ -1770,8 +1770,8 @@ mod fuzz_dummy {
             assert_eq!(test_pk_validate(cx, *ins.offset(i as isize)), 1);
             if secp256k1_ec_seckey_tweak_add(
                 cx,
-                (*out).0[..32].as_mut_ptr(),
-                (**ins.offset(i as isize)).0[..32].as_ptr(),
+                (&mut *out).0[..32].as_mut_ptr(),
+                (&**ins.offset(i as isize)).0[..32].as_ptr(),
             ) != 1
             {
                 return 0;
@@ -1798,7 +1798,7 @@ mod fuzz_dummy {
         }
 
         let scalar_slice = slice::from_raw_parts(scalar, 32);
-        let pk_slice = &(*point).0[..32];
+        let pk_slice = &(&*point).0[..32];
 
         let mut res_arr = [0u8; 32];
         for i in 0..32 {
@@ -1827,7 +1827,7 @@ mod fuzz_dummy {
         // Actually verify
         let sig_sl = slice::from_raw_parts(sig as *const u8, 64);
         let msg_sl = slice::from_raw_parts(msg32 as *const u8, 32);
-        if &sig_sl[..32] == msg_sl && sig_sl[32..] == (*pk).0[0..32] {
+        if &sig_sl[..32] == msg_sl && sig_sl[32..] == (&*pk).0[0..32] {
             1
         } else {
             0
@@ -1873,7 +1873,7 @@ mod fuzz_dummy {
         // Actually verify
         let sig_sl = slice::from_raw_parts(sig64 as *const u8, 64);
         let msg_sl = slice::from_raw_parts(msg32 as *const u8, msglen);
-        if &sig_sl[..32] == msg_sl && sig_sl[32..] == (*pubkey).0[..32] {
+        if &sig_sl[..32] == msg_sl && sig_sl[32..] == (&*pubkey).0[..32] {
             1
         } else {
             0
@@ -1932,8 +1932,8 @@ mod fuzz_dummy {
         }
 
         let seckey_slice = slice::from_raw_parts(seckey, 32);
-        (*keypair).0[..32].copy_from_slice(seckey_slice);
-        (*keypair).0[32..].copy_from_slice(&pk.0);
+        (&mut *keypair).0[..32].copy_from_slice(seckey_slice);
+        (&mut *keypair).0[32..].copy_from_slice(&pk.0);
         1
     }
 
@@ -1944,8 +1944,8 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, 0);
         let inslice = slice::from_raw_parts(input32, 32);
-        (*pubkey).0[..32].copy_from_slice(inslice);
-        (*pubkey).0[32..].copy_from_slice(inslice);
+        (&mut *pubkey).0[..32].copy_from_slice(inslice);
+        (&mut *pubkey).0[32..].copy_from_slice(inslice);
         test_cleanup_pk(pubkey as *mut PublicKey);
         test_pk_validate(cx, pubkey as *mut PublicKey)
     }
@@ -1957,7 +1957,7 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, 0);
         let outslice = slice::from_raw_parts_mut(output32, 32);
-        outslice.copy_from_slice(&(*pubkey).0[..32]);
+        outslice.copy_from_slice(&(&*pubkey).0[..32]);
         1
     }
 
@@ -1971,7 +1971,7 @@ mod fuzz_dummy {
         if !pk_parity.is_null() {
             *pk_parity = ((*pubkey).0[32] == 0).into();
         }
-        (*xonly_pubkey).0.copy_from_slice(&(*pubkey).0);
+        (*xonly_pubkey).0.copy_from_slice(&(&*pubkey).0);
         assert_eq!(test_pk_validate(cx, pubkey), 1);
         1
     }
@@ -1995,9 +1995,9 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, 0);
         if !pk_parity.is_null() {
-            *pk_parity = ((*keypair).0[64] == 0).into();
+            *pk_parity = ((&*keypair).0[64] == 0).into();
         }
-        (*pubkey).0.copy_from_slice(&(*keypair).0[32..]);
+        (&mut *pubkey).0.copy_from_slice(&(&*keypair).0[32..]);
         1
     }
 
@@ -2008,13 +2008,13 @@ mod fuzz_dummy {
     ) -> c_int {
         check_context_flags(cx, SECP256K1_START_VERIFY);
         let mut pk = PublicKey::new();
-        pk.0.copy_from_slice(&(*keypair).0[32..]);
+        pk.0.copy_from_slice(&(&*keypair).0[32..]);
         let mut sk = [0u8; 32];
-        sk.copy_from_slice(&(*keypair).0[..32]);
+        sk.copy_from_slice(&(&*keypair).0[..32]);
         assert_eq!(secp256k1_ec_pubkey_tweak_add(cx, &mut pk, tweak32), 1);
         assert_eq!(secp256k1_ec_seckey_tweak_add(cx, (&mut sk[..]).as_mut_ptr(), tweak32), 1);
-        (*keypair).0[..32].copy_from_slice(&sk);
-        (*keypair).0[32..].copy_from_slice(&pk.0);
+        (&mut *keypair).0[..32].copy_from_slice(&sk);
+        (&mut *keypair).0[32..].copy_from_slice(&pk.0);
         1
     }
 
