@@ -212,7 +212,7 @@ mod fuzz_dummy {
         if sig_sl[64] >= 4 {
             return 0;
         }
-        // Pull the original pk out of the siganture
+        // Pull the original pk out of the signature
         let mut pk_ser = [0u8; 33];
         pk_ser.copy_from_slice(&sig_sl[32..]);
         pk_ser.swap(0, 32);
