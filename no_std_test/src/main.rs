@@ -51,26 +51,18 @@ use core::panic::PanicInfo;
 
 use secp256k1::ecdh::{self, SharedSecret};
 use secp256k1::ffi::types::AlignedType;
-use secp256k1::rand::{self, RngCore};
+use secp256k1::rand::RngCore;
 use secp256k1::serde::Serialize;
 use secp256k1::*;
-
-use serde_cbor::de;
 use serde_cbor::ser::SliceWrite;
-use serde_cbor::Serializer;
+use serde_cbor::{de, Serializer};
 
-fn abort() -> ! {
-    unsafe { libc::abort() }
-}
+fn abort() -> ! { unsafe { libc::abort() } }
 
 struct FakeRng;
 impl RngCore for FakeRng {
-    fn next_u32(&mut self) -> u32 {
-        57
-    }
-    fn next_u64(&mut self) -> u64 {
-        57
-    }
+    fn next_u32(&mut self) -> u32 { 57 }
+    fn next_u64(&mut self) -> u64 { 57 }
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         for i in dest {
             *i = 57;
@@ -93,9 +85,9 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let sig = secp.sign_ecdsa(message, &secret_key);
     assert!(secp.verify_ecdsa(&sig, message, &public_key).is_ok());
 
-    let rec_sig = secp.sign_ecdsa_recoverable(message, &secret_key);
+    let rec_sig = ecdsa::RecoverableSignature::sign_ecdsa_recoverable(message, &secret_key);
     assert!(secp.verify_ecdsa(&rec_sig.to_standard(), message, &public_key).is_ok());
-    assert_eq!(public_key, secp.recover_ecdsa(message, &rec_sig).unwrap());
+    assert_eq!(public_key, rec_sig.recover_ecdsa(message).unwrap());
     let (rec_id, data) = rec_sig.serialize_compact();
     let new_rec_sig = ecdsa::RecoverableSignature::from_compact(&data, rec_id).unwrap();
     assert_eq!(rec_sig, new_rec_sig);
@@ -133,12 +125,7 @@ struct Print {
 }
 
 impl Print {
-    pub fn new() -> Self {
-        Self {
-            loc: 0,
-            buf: [0u8; 512],
-        }
-    }
+    pub fn new() -> Self { Self { loc: 0, buf: [0u8; 512] } }
 
     pub fn print(&self) {
         unsafe {

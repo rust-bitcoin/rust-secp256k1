@@ -192,12 +192,13 @@ pub use secp256k1_sys as ffi;
 #[cfg(feature = "serde")]
 pub use serde;
 
-#[cfg(feature = "alloc")]
-pub use crate::context::{All, SignOnly, VerifyOnly};
 pub use crate::context::{
-    AllPreallocated, Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
+    rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
+    Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
     VerifyOnlyPreallocated,
 };
+#[cfg(feature = "alloc")]
+pub use crate::context::{All, SignOnly, VerifyOnly};
 use crate::ffi::types::AlignedType;
 use crate::ffi::CPtr;
 pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
@@ -462,6 +463,24 @@ pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, 
     SECP256K1.generate_keypair(rng)
 }
 
+/// Constructor for unit testing. (Calls `generate_keypair` if all
+/// the relevant features are on to get coverage of that functoin.)
+#[cfg(test)]
+#[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
+fn test_random_keypair() -> (key::SecretKey, key::PublicKey) { generate_keypair(&mut rand::rng()) }
+
+/// Constructor for unit testing.
+#[cfg(test)]
+#[cfg(not(all(feature = "global-context", feature = "rand", feature = "std")))]
+fn test_random_keypair() -> (key::SecretKey, key::PublicKey) {
+    let sk = SecretKey::test_random();
+    let pk = with_global_context(
+        |secp: &Secp256k1<AllPreallocated>| key::PublicKey::from_secret_key(secp, &sk),
+        Some(&[0xab; 32]),
+    );
+    (sk, pk)
+}
+
 /// Utility function used to parse hex into a target u8 buffer. Returns
 /// the number of bytes converted or an error if it encounters an invalid
 /// character or unexpected end of string.
@@ -518,6 +537,25 @@ pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
     ret
 }
 
+/// Generate "random" 32 bytes for unit testing purposes.
+#[cfg(test)]
+fn test_random_32_bytes() -> [u8; 32] {
+    // AtomicU64 not available on all platforms we support
+    use core::sync::atomic::{AtomicU32, Ordering};
+
+    const PRIME_1: u32 = 1021283;
+    const PRIME_2: u32 = 3348599;
+    static RNG: AtomicU32 = AtomicU32::new(0);
+
+    let mut ret = [0; 32];
+    for i in 0..8 {
+        let rng = RNG.load(Ordering::Relaxed).wrapping_mul(PRIME_1).wrapping_add(PRIME_2);
+        ret[i * 4..(i + 1) * 4].copy_from_slice(&rng.to_be_bytes());
+        RNG.store(rng, Ordering::Relaxed);
+    }
+    ret
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -529,7 +567,7 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     // In rustc 1.72 this Clippy lint was pulled out of clippy and into rustc, and
     // was made deny-by-default, breaking compilation of this test. Aside from this
     // breaking change, which there is no point in bugging, the rename was done so
@@ -549,7 +587,7 @@ mod tests {
         let sign = unsafe { Secp256k1::from_raw_signing_only(ctx_sign.ctx) };
         let mut vrfy = unsafe { Secp256k1::from_raw_verification_only(ctx_vrfy.ctx) };
 
-        let (sk, pk) = full.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::test_random_keypair();
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
