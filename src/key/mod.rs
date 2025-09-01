@@ -721,7 +721,7 @@ impl Keypair {
         let sk = SecretKey::test_random();
         crate::with_global_context(
             |secp: &Secp256k1<crate::AllPreallocated>| Self::from_secret_key(secp, &sk),
-            Some(&sk.secret_bytes()),
+            Some(&sk.to_secret_bytes()),
         )
     }
 }
@@ -1347,7 +1347,7 @@ impl<'a> Arbitrary<'a> for SecretKey {
             }
             u.fill_buffer(&mut bytes[..])?;
 
-            if let Ok(sk) = SecretKey::from_byte_array(bytes) {
+            if let Ok(sk) = SecretKey::from_secret_bytes(bytes) {
                 return Ok(sk);
             }
         }
@@ -1392,16 +1392,6 @@ mod test {
     use crate::{constants, from_hex, to_hex, Scalar};
 
     #[test]
-    #[allow(deprecated)]
-    fn skey_from_slice() {
-        let sk = SecretKey::from_slice(&[1; 31]);
-        assert_eq!(sk, Err(InvalidSecretKey));
-
-        let sk = SecretKey::from_slice(&[1; 32]);
-        assert!(sk.is_ok());
-    }
-
-    #[test]
     fn pubkey_from_slice() {
         assert_eq!(PublicKey::from_slice(&[]), Err(InvalidPublicKey));
         assert_eq!(PublicKey::from_slice(&[1, 2, 3]), Err(InvalidPublicKey));
@@ -1424,7 +1414,7 @@ mod test {
     #[test]
     fn keypair_slice_round_trip() {
         let (sk1, pk1) = crate::test_random_keypair();
-        assert_eq!(SecretKey::from_byte_array(sk1.secret_bytes()), Ok(sk1));
+        assert_eq!(SecretKey::from_secret_bytes(sk1.to_secret_bytes()), Ok(sk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize()[..]), Ok(pk1));
         assert_eq!(PublicKey::from_slice(&pk1.serialize_uncompressed()[..]), Ok(pk1));
     }
@@ -1443,22 +1433,22 @@ mod test {
     #[rustfmt::skip]
     fn invalid_secret_key() {
         // Zero
-        assert_eq!(SecretKey::from_byte_array([0; 32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_secret_bytes([0; 32]), Err(InvalidSecretKey));
         assert_eq!(
             SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000000"),
             Err(InvalidSecretKey)
         );
         // -1
-        assert_eq!(SecretKey::from_byte_array([0xff; 32]), Err(InvalidSecretKey));
+        assert_eq!(SecretKey::from_secret_bytes([0xff; 32]), Err(InvalidSecretKey));
         // Top of range
-        assert!(SecretKey::from_byte_array([
+        assert!(SecretKey::from_secret_bytes([
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
             0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
             0xBF, 0xD2, 0x5E, 0x8C, 0xD0, 0x36, 0x41, 0x40,
         ]).is_ok());
         // One past top of range
-        assert!(SecretKey::from_byte_array([
+        assert!(SecretKey::from_secret_bytes([
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE,
             0xBA, 0xAE, 0xDC, 0xE6, 0xAF, 0x48, 0xA0, 0x3B,
@@ -1527,30 +1517,6 @@ mod test {
     }
 
     #[test]
-    #[allow(deprecated)]
-    fn test_seckey_from_bad_slice() {
-        // Bad sizes
-        assert_eq!(
-            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE - 1]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(
-            SecretKey::from_slice(&[0; constants::SECRET_KEY_SIZE + 1]),
-            Err(InvalidSecretKey)
-        );
-        // Bad parse
-        assert_eq!(
-            SecretKey::from_slice(&[0xff; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(
-            SecretKey::from_slice(&[0x00; constants::SECRET_KEY_SIZE]),
-            Err(InvalidSecretKey)
-        );
-        assert_eq!(SecretKey::from_slice(&[]), Err(InvalidSecretKey));
-    }
-
-    #[test]
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_debug_output() {
         let s = Secp256k1::new();
@@ -1578,7 +1544,7 @@ mod test {
 
         #[cfg(not(secp256k1_fuzz))]
         let s = Secp256k1::signing_only();
-        let sk = SecretKey::from_byte_array(SK_BYTES).expect("sk");
+        let sk = SecretKey::from_secret_bytes(SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
@@ -1925,7 +1891,7 @@ mod test {
 
         #[cfg(not(secp256k1_fuzz))]
         let s = Secp256k1::new();
-        let sk = SecretKey::from_byte_array(SK_BYTES).unwrap();
+        let sk = SecretKey::from_secret_bytes(SK_BYTES).unwrap();
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
@@ -2064,7 +2030,7 @@ mod test {
         pk_bytes[0] = 0x02; // Use positive Y co-ordinate.
         pk_bytes[1..].clone_from_slice(&PK_BYTES);
 
-        let sk = SecretKey::from_byte_array(SK_BYTES).expect("failed to parse sk bytes");
+        let sk = SecretKey::from_secret_bytes(SK_BYTES).expect("failed to parse sk bytes");
         let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
         let kp = Keypair::from_secret_key(&secp, &sk);
         let xonly =
@@ -2227,7 +2193,7 @@ mod test {
     fn test_keypair_from_str() {
         let keypair = Keypair::test_random();
         let mut buf = [0_u8; constants::SECRET_KEY_SIZE * 2]; // Holds hex digits.
-        let s = to_hex(&keypair.secret_key().secret_bytes(), &mut buf).unwrap();
+        let s = to_hex(&keypair.secret_key().to_secret_bytes(), &mut buf).unwrap();
         let parsed_key = Keypair::from_str(s).unwrap();
         assert_eq!(parsed_key, keypair);
     }
@@ -2240,7 +2206,7 @@ mod test {
 
         serde_test::assert_tokens(&keypair.readable(), &[Token::String(sec_key_str)]);
 
-        let sec_key_bytes = keypair.secret_key().secret_bytes();
+        let sec_key_bytes = keypair.secret_key().to_secret_bytes();
         let tokens = std::iter::once(Token::Tuple { len: 32 })
             .chain(sec_key_bytes.iter().copied().map(Token::U8))
             .chain(std::iter::once(Token::TupleEnd))

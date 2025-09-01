@@ -15,7 +15,7 @@ fn sign_recovery(
     seckey: [u8; 32],
 ) -> Result<ecdsa::RecoverableSignature, Error> {
     let msg = Message::from_digest(msg_digest);
-    let seckey = SecretKey::from_byte_array(seckey)?;
+    let seckey = SecretKey::from_secret_bytes(seckey)?;
     Ok(ecdsa::RecoverableSignature::sign_ecdsa_recoverable(msg, &seckey))
 }
 

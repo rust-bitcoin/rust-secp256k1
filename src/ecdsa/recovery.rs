@@ -170,7 +170,7 @@ impl RecoverableSignature {
         let mut ret = ffi::RecoverableSignature::new();
         // xor the secret key and message together to get a rerandomization seed
         // for timing analysis defense-in-depth
-        let mut rerandomize = sk.secret_bytes();
+        let mut rerandomize = sk.to_secret_bytes();
         for (rera, byte) in rerandomize.iter_mut().zip(msg[..].iter()) {
             *rera ^= *byte;
         }
@@ -272,7 +272,7 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[rustfmt::skip]
     fn sign() {
-        let sk = SecretKey::from_byte_array(ONE).unwrap();
+        let sk = SecretKey::from_secret_bytes(ONE).unwrap();
         let msg = Message::from_digest(ONE);
         let sig = RecoverableSignature::sign_ecdsa_recoverable(msg, &sk);
 
@@ -292,7 +292,7 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]  // fixed sig vectors can't work with fuzz-sigs
     #[rustfmt::skip]
     fn sign_with_noncedata() {
-        let sk = SecretKey::from_byte_array(ONE).unwrap();
+        let sk = SecretKey::from_secret_bytes(ONE).unwrap();
         let noncedata = [42u8; 32];
         let msg = Message::from_digest(ONE);
 

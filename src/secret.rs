@@ -114,7 +114,9 @@ impl SecretKey {
     /// # }
     /// ```
     #[inline]
-    pub fn display_secret(&self) -> DisplaySecret { DisplaySecret { secret: self.secret_bytes() } }
+    pub fn display_secret(&self) -> DisplaySecret {
+        DisplaySecret { secret: self.to_secret_bytes() }
+    }
 }
 
 impl Keypair {

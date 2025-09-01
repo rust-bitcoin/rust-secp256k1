@@ -63,10 +63,11 @@ bytes_rtt_test!(rtt_i, schnorr::Signature);
 macro_rules! secret_bytes_rtt_test {
     ($name: ident, $ty:ty) => {
         fn $name(obj: &$ty) {
-            // FIXME should have to_ prefix and probably as_ variant as well to minimize copies
-            let x = obj.secret_bytes();
-            // FIXME should have a symmetric name to secret_bytes
-            let _ = <$ty>::from_byte_array(x);
+            let x = obj.to_secret_bytes();
+            let y = obj.as_secret_bytes();
+            let z = obj.as_ref();
+            let _ = y == z;
+            let _ = <$ty>::from_secret_bytes(x);
             obj.clone().non_secure_erase();
         }
     };

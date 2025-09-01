@@ -36,7 +36,7 @@ fn sign<C: Signing>(
     seckey: [u8; 32],
 ) -> Result<ecdsa::Signature, Error> {
     let msg = Message::from_digest(msg_digest);
-    let seckey = SecretKey::from_byte_array(seckey)?;
+    let seckey = SecretKey::from_secret_bytes(seckey)?;
     Ok(secp.sign_ecdsa(msg, &seckey))
 }
 

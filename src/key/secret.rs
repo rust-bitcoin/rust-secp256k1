@@ -107,7 +107,7 @@ impl str::FromStr for SecretKey {
     fn from_str(s: &str) -> Result<SecretKey, Error> {
         let mut res = [0u8; constants::SECRET_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_byte_array(res),
+            Ok(constants::SECRET_KEY_SIZE) => SecretKey::from_secret_bytes(res),
             _ => Err(Error::InvalidSecretKey),
         }
     }
@@ -140,21 +140,10 @@ impl SecretKey {
         SecretKey(data)
     }
 
-    /// Converts a 32-byte slice to a secret key.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use secp256k1::SecretKey;
-    /// let sk = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
-    /// ```
-    #[deprecated(since = "0.31.0", note = "Use `from_byte_array` instead.")]
-    #[inline]
-    pub fn from_slice(data: &[u8]) -> Result<SecretKey, Error> {
-        match <[u8; constants::SECRET_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(data),
-            Err(_) => Err(Error::InvalidSecretKey),
-        }
+    /// Converts a 32-byte array to a secret key.
+    #[deprecated(since = "0.32.0", note = "use from_secret_bytes instead")]
+    pub fn from_byte_array(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
+        Self::from_secret_bytes(data)
     }
 
     /// Converts a 32-byte array to a secret key.
@@ -163,10 +152,10 @@ impl SecretKey {
     ///
     /// ```
     /// use secp256k1::SecretKey;
-    /// let sk = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
+    /// let sk = SecretKey::from_secret_bytes([0xcd; 32]).expect("32 bytes, within curve order");
     /// ```
     #[inline]
-    pub fn from_byte_array(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
+    pub fn from_secret_bytes(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<SecretKey, Error> {
         unsafe {
             if ffi::secp256k1_ec_seckey_verify(ffi::secp256k1_context_no_precomp, data.as_c_ptr())
                 == 0
@@ -204,8 +193,17 @@ impl SecretKey {
         SecretKey(sk)
     }
 
+    /// Returns a reference to the secret key as a byte value.
+    #[inline]
+    pub fn as_secret_bytes(&self) -> &[u8; constants::SECRET_KEY_SIZE] { &self.0 }
+
     /// Returns the secret key as a byte value.
     #[inline]
+    pub fn to_secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] { self.0 }
+
+    /// Returns the secret key as a byte value.
+    #[inline]
+    #[deprecated(since = "0.32.0", note = "use to_secret_bytes instead")]
     pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] { self.0 }
 
     /// Negates the secret key.
@@ -306,7 +304,7 @@ impl SecretKey {
     #[cfg(not(all(feature = "rand", feature = "std")))]
     pub fn test_random() -> Self {
         loop {
-            if let Ok(ret) = Self::from_byte_array(crate::test_random_32_bytes()) {
+            if let Ok(ret) = Self::from_secret_bytes(crate::test_random_32_bytes()) {
                 return ret;
             }
         }
@@ -339,7 +337,7 @@ impl<'de> serde::Deserialize<'de> for SecretKey {
         } else {
             let visitor =
                 crate::serde_util::Tuple32Visitor::new("raw 32 bytes SecretKey", |bytes| {
-                    SecretKey::from_byte_array(bytes)
+                    SecretKey::from_secret_bytes(bytes)
                 });
             d.deserialize_tuple(constants::SECRET_KEY_SIZE, visitor)
         }

@@ -80,7 +80,7 @@
 //! # fn compute_hash(_: &[u8]) -> [u8; 32] { [0xab; 32] }
 //!
 //! let secp = Secp256k1::new();
-//! let secret_key = SecretKey::from_slice(&[0xcd; 32]).expect("32 bytes, within curve order");
+//! let secret_key = SecretKey::from_secret_bytes([0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 //! // If the supplied byte slice was *not* the output of a cryptographic hash function this would
 //! // be cryptographically broken. It has been trivially used in the past to execute attacks.
@@ -689,7 +689,7 @@ mod tests {
         // Check that we can produce keys from slices with no precomputation
         let pk_slice = &pk.serialize();
         let new_pk = PublicKey::from_slice(pk_slice).unwrap();
-        let new_sk = SecretKey::from_byte_array(sk.secret_bytes()).unwrap();
+        let new_sk = SecretKey::from_secret_bytes(sk.to_secret_bytes()).unwrap();
         assert_eq!(sk, new_sk);
         assert_eq!(pk, new_pk);
     }
@@ -839,7 +839,7 @@ mod tests {
         wild_keys[1][0] -= 1;
         wild_msgs[1][0] -= 1;
 
-        for key in wild_keys.iter().copied().map(SecretKey::from_byte_array).map(Result::unwrap) {
+        for key in wild_keys.iter().copied().map(SecretKey::from_secret_bytes).map(Result::unwrap) {
             for msg in wild_msgs.into_iter().map(Message::from_digest) {
                 let sig = s.sign_ecdsa(msg, &key);
                 let low_r_sig = s.sign_ecdsa_low_r(msg, &key);
@@ -1011,7 +1011,7 @@ mod tests {
         let s = Secp256k1::new();
 
         let msg = Message::from_digest([1; 32]);
-        let sk = SecretKey::from_byte_array([2; 32]).unwrap();
+        let sk = SecretKey::from_secret_bytes([2; 32]).unwrap();
         let sig = s.sign_ecdsa(msg, &sk);
         static SIG_BYTES: [u8; 71] = [
             48, 69, 2, 33, 0, 157, 11, 173, 87, 103, 25, 211, 42, 231, 107, 237, 179, 76, 119, 72,
@@ -1038,7 +1038,7 @@ mod tests {
     fn test_global_context() {
         use crate::SECP256K1;
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
-        let sk = SecretKey::from_byte_array(sk_data).unwrap();
+        let sk = SecretKey::from_secret_bytes(sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
         let msg = Message::from_digest(msg_data);
 
