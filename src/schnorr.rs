@@ -225,10 +225,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn schnorr_sign_with_aux_rand_verify() {
-        sign_helper(|secp, msg, seckey, rng| {
-            let aux_rand = crate::random_32_bytes(rng);
+        sign_helper((), |secp, msg, seckey, _| {
+            let aux_rand = crate::test_random_32_bytes();
             secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
         })
     }
@@ -236,29 +236,35 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn schnor_sign_with_rng_verify() {
-        sign_helper(|secp, msg, seckey, rng| secp.sign_schnorr_with_rng(msg, seckey, rng))
+        sign_helper(&mut rand::rng(), |secp, msg, seckey, rng| {
+            secp.sign_schnorr_with_rng(msg, seckey, rng)
+        })
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
-    fn schnorr_sign_verify() { sign_helper(|secp, msg, seckey, _| secp.sign_schnorr(msg, seckey)) }
+    #[cfg(all(feature = "rand", feature = "std"))] // sign_schnorr requires "rand"
+    fn schnorr_sign_verify() {
+        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr(msg, seckey))
+    }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
+    #[cfg(feature = "std")]
     fn schnorr_sign_no_aux_rand_verify() {
-        sign_helper(|secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
+        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
     }
 
-    #[cfg(all(feature = "rand", feature = "std"))]
-    fn sign_helper(sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut ThreadRng) -> Signature) {
+    #[cfg(feature = "std")]
+    fn sign_helper<R>(
+        mut rng: R,
+        sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut R) -> Signature,
+    ) {
         let secp = Secp256k1::new();
 
-        let mut rng = rand::rng();
-        let kp = Keypair::new(&secp, &mut rng);
+        let kp = Keypair::test_random();
         let (pk, _parity) = kp.x_only_public_key();
 
         for _ in 0..100 {
-            let msg = crate::random_32_bytes(&mut rand::rng());
+            let msg = crate::test_random_32_bytes();
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
 
@@ -273,11 +279,9 @@ mod tests {
         let secp = Secp256k1::new();
 
         let msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
-        let sk = Keypair::from_seckey_str(
-            &secp,
-            "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF",
-        )
-        .unwrap();
+        let sk =
+            Keypair::from_str("688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF")
+                .unwrap();
         let aux_rand: [u8; 32] =
             hex_32!("02CCE08E913F22A36C5648D6405A2C7C50106E7AA2F1649E381C7F09D16B80AB");
         let expected_sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
@@ -358,10 +362,8 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(feature = "rand", feature = "std"))]
     fn test_pubkey_serialize_roundtrip() {
-        let secp = Secp256k1::new();
-        let kp = Keypair::new(&secp, &mut rand::rng());
+        let kp = Keypair::test_random();
         let (pk, _parity) = kp.x_only_public_key();
 
         let ser = pk.serialize();
@@ -374,7 +376,7 @@ mod tests {
     fn test_xonly_key_extraction() {
         let secp = Secp256k1::new();
         let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
-        let keypair = Keypair::from_seckey_str(&secp, sk_str).unwrap();
+        let keypair = Keypair::from_str(sk_str).unwrap();
         let sk = SecretKey::from_keypair(&keypair);
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = crate::key::PublicKey::from_keypair(&keypair);
@@ -388,14 +390,13 @@ mod tests {
     fn test_pubkey_display_output() {
         #[cfg(not(secp256k1_fuzz))]
         let pk = {
-            let secp = Secp256k1::new();
             static SK_BYTES: [u8; 32] = [
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
                 0x06, 0x07, 0xff, 0xff, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x63, 0x63, 0x63, 0x63,
                 0x63, 0x63, 0x63, 0x63,
             ];
 
-            let kp = Keypair::from_seckey_byte_array(&secp, SK_BYTES).expect("sk");
+            let kp = Keypair::from_seckey_byte_array(SK_BYTES).expect("sk");
 
             // In fuzzing mode secret->public key derivation is different, so
             // hard-code the expected result.
@@ -475,7 +476,7 @@ mod tests {
         let s = Secp256k1::new();
 
         let msg = [1; 32];
-        let keypair = Keypair::from_seckey_byte_array(&s, [2; 32]).unwrap();
+        let keypair = Keypair::from_seckey_byte_array([2; 32]).unwrap();
         let aux = [3u8; 32];
         let sig = s.sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORR_SIGNATURE_SIZE] = [
@@ -708,7 +709,7 @@ mod tests {
         } in vectors
         {
             if let (Some(secret_key), Some(aux_rand)) = (secret_key, aux_rand) {
-                let keypair = Keypair::from_seckey_byte_array(&secp, secret_key).unwrap();
+                let keypair = Keypair::from_seckey_byte_array(secret_key).unwrap();
                 assert_eq!(keypair.x_only_public_key().0.serialize(), public_key);
                 let sig = secp.sign_schnorr_with_aux_rand(&message, &keypair, &aux_rand);
                 assert_eq!(sig.to_byte_array(), signature);
