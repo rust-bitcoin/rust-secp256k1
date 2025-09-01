@@ -135,7 +135,7 @@ where
 }
 
 impl From<crate::SecretKey> for Scalar {
-    fn from(value: crate::SecretKey) -> Self { Scalar(value.secret_bytes()) }
+    fn from(value: crate::SecretKey) -> Self { Scalar(value.to_secret_bytes()) }
 }
 
 /// Error returned when the value of scalar is invalid - larger than the curve order.

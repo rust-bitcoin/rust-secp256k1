@@ -454,16 +454,18 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_pubkey_serialize() {
-        use rand::rngs::mock::StepRng;
+        use rand::SeedableRng as _;
+        use rand_xoshiro::Xoshiro128PlusPlus as SmallRng;
+
         let secp = Secp256k1::new();
-        let kp = Keypair::new(&secp, &mut StepRng::new(1, 1));
+        let kp = Keypair::new(&secp, &mut SmallRng::from_seed([2; 16]));
         let (pk, _parity) = kp.x_only_public_key();
         assert_eq!(
             &pk.serialize()[..],
             &[
-                124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126, 9,
-                181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
-            ][..]
+                235, 200, 214, 152, 58, 148, 189, 127, 234, 11, 121, 32, 156, 24, 104, 237, 193,
+                213, 193, 109, 109, 38, 46, 213, 160, 189, 210, 41, 17, 237, 208, 74
+            ]
         );
     }
 

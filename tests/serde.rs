@@ -73,7 +73,7 @@ static MUSIG_PARTIAL_SIG_BYTES: [u8; 40] = [
 ];
 
 fn secret_key() -> SecretKey {
-    SecretKey::from_byte_array(SK_BYTES).expect("failed to create sk from slice")
+    SecretKey::from_secret_bytes(SK_BYTES).expect("failed to create sk from slice")
 }
 
 // Our current serde serialization implementation is only guaranteed to be fixed
