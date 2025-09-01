@@ -42,7 +42,7 @@ rand = { version = "0.9", default-features = false, optional = true }
 serde = { version = "1.0.103", default-features = false, optional = true }
 
 [dev-dependencies]
-rand_core = "0.9"
+rand_xoshiro = { version = "0.7.0", default-features = false }
 serde_cbor = "0.10.0"
 serde_test = "1.0.19"
 bincode = "1.3.3"

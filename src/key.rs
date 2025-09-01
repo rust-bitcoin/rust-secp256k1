@@ -1709,7 +1709,9 @@ mod test {
     #[cfg(not(secp256k1_fuzz))]
     use hex_lit::hex;
     #[cfg(feature = "rand")]
-    use rand::{self, rngs::mock::StepRng, RngCore};
+    use rand::{self, RngCore, SeedableRng as _};
+    #[cfg(feature = "rand")]
+    use rand_xoshiro::Xoshiro128PlusPlus as SmallRng;
     use serde_test::{Configure, Token};
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -1881,14 +1883,14 @@ mod test {
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_debug_output() {
         let s = Secp256k1::new();
-        let (sk, _) = s.generate_keypair(&mut StepRng::new(1, 1));
+        let (sk, _) = s.generate_keypair(&mut SmallRng::from_seed([0; 16]));
 
-        assert_eq!(&format!("{:?}", sk), "SecretKey(7ad2d060fb2971d6)");
+        assert_eq!(&format!("{:?}", sk), "SecretKey(55f970894288f83a)");
 
         let mut buf = [0u8; constants::SECRET_KEY_SIZE * 2];
         assert_eq!(
             to_hex(&sk[..], &mut buf).unwrap(),
-            "0100000000000000020000000000000003000000000000000400000000000000"
+            "a3da5346582b9273dd4a2bb83bbdfad9c398863cff589b1c4646accc16fde327"
         );
     }
 
@@ -1996,28 +1998,26 @@ mod test {
     }
 
     #[test]
-    // In fuzzing mode the Y coordinate is expected to match the X, so this
-    // test uses invalid public keys.
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(all(feature = "alloc", feature = "rand"))]
     fn test_pubkey_serialize() {
         let s = Secp256k1::new();
-        let (_, pk1) = s.generate_keypair(&mut StepRng::new(1, 1));
+        let (_, pk1) = s.generate_keypair(&mut SmallRng::from_seed([1; 16]));
         assert_eq!(
             &pk1.serialize_uncompressed()[..],
             &[
-                4, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
-                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229, 185, 28, 165,
-                110, 27, 3, 162, 126, 238, 167, 157, 242, 221, 76, 251, 237, 34, 231, 72, 39, 245,
-                3, 191, 64, 111, 170, 117, 103, 82, 28, 102, 163
-            ][..]
+                4, 56, 223, 70, 19, 126, 3, 194, 155, 88, 167, 37, 54, 98, 138, 203, 136, 98, 66,
+                247, 172, 101, 50, 193, 106, 108, 55, 252, 115, 176, 125, 88, 41, 21, 0, 223, 206,
+                246, 198, 43, 80, 189, 247, 183, 48, 90, 209, 30, 195, 64, 214, 36, 109, 251, 121,
+                60, 160, 172, 76, 9, 164, 224, 180, 189, 228
+            ]
         );
         assert_eq!(
             &pk1.serialize()[..],
             &[
-                3, 124, 121, 49, 14, 253, 63, 197, 50, 39, 194, 107, 17, 193, 219, 108, 154, 126,
-                9, 181, 248, 2, 12, 149, 233, 198, 71, 149, 134, 250, 184, 154, 229
-            ][..]
+                2, 56, 223, 70, 19, 126, 3, 194, 155, 88, 167, 37, 54, 98, 138, 203, 136, 98, 66,
+                247, 172, 101, 50, 193, 106, 108, 55, 252, 115, 176, 125, 88, 41
+            ]
         );
     }
 
