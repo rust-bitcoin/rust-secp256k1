@@ -1,12 +1,11 @@
 extern crate secp256k1;
 
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use secp256k1::{PublicKey, SecretKey};
 
 fn main() {
-    let secp = Secp256k1::new();
     let mut rng = rand::rng();
     // First option:
-    let (seckey, pubkey) = secp.generate_keypair(&mut rng);
+    let (seckey, pubkey) = secp256k1::generate_keypair(&mut rng);
 
     assert_eq!(pubkey, PublicKey::from_secret_key(&seckey));
 

@@ -7,10 +7,7 @@ use core::{ops, str};
 use serde::ser::SerializeTuple;
 
 use crate::ffi::CPtr as _;
-use crate::{
-    constants, ffi, from_hex, Error, Keypair, Parity, PublicKey, Scalar, Secp256k1, Signing,
-    XOnlyPublicKey,
-};
+use crate::{constants, ffi, from_hex, Error, Keypair, Parity, PublicKey, Scalar, XOnlyPublicKey};
 #[cfg(feature = "global-context")]
 use crate::{ecdsa, Message, SECP256K1};
 
@@ -193,10 +190,9 @@ impl SecretKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
+    /// use secp256k1::{rand, SecretKey, Keypair};
     ///
-    /// let secp = Secp256k1::new();
-    /// let keypair = Keypair::new(&secp, &mut rand::rng());
+    /// let keypair = Keypair::new(&mut rand::rng());
     /// let secret_key = SecretKey::from_keypair(&keypair);
     /// # }
     /// ```
@@ -286,9 +282,7 @@ impl SecretKey {
     ///
     /// This is equivalent to using [`Keypair::from_secret_key`].
     #[inline]
-    pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> Keypair {
-        Keypair::from_secret_key(secp, self)
-    }
+    pub fn keypair(&self) -> Keypair { Keypair::from_secret_key(self) }
 
     /// Returns the [`PublicKey`] for this [`SecretKey`].
     ///
@@ -300,8 +294,8 @@ impl SecretKey {
     ///
     /// This is equivalent to `XOnlyPublicKey::from_keypair(self.keypair(secp))`.
     #[inline]
-    pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
-        let kp = self.keypair(secp);
+    pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
+        let kp = self.keypair();
         XOnlyPublicKey::from_keypair(&kp)
     }
 

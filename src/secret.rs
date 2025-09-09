@@ -135,7 +135,7 @@ impl Keypair {
     ///
     /// let secp = Secp256k1::new();
     /// let key = SecretKey::from_str("0000000000000000000000000000000000000000000000000000000000000001").unwrap();
-    /// let key = Keypair::from_secret_key(&secp, &key);
+    /// let key = Keypair::from_secret_key(&key);
     /// // Here we explicitly display the secret value:
     /// assert_eq!(
     ///     "0000000000000000000000000000000000000000000000000000000000000001",

@@ -456,8 +456,7 @@ mod tests {
         use rand::SeedableRng as _;
         use rand_xoshiro::Xoshiro128PlusPlus as SmallRng;
 
-        let secp = Secp256k1::new();
-        let kp = Keypair::new(&secp, &mut SmallRng::from_seed([2; 16]));
+        let kp = Keypair::new(&mut SmallRng::from_seed([2; 16]));
         let (pk, _parity) = kp.x_only_public_key();
         assert_eq!(
             &pk.serialize()[..],

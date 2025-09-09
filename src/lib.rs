@@ -42,7 +42,7 @@
 //! ];
 //!
 //! let secp = Secp256k1::new();
-//! let (secret_key, public_key) = secp.generate_keypair(&mut rand::rng());
+//! let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
 //! let message = Message::from_digest(HELLO_WORLD_SHA2);
 //!
 //! let sig = secp.sign_ecdsa(message, &secret_key);
@@ -54,7 +54,7 @@
 //!
 //! ```rust
 //! # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
-//! use secp256k1::{rand, generate_keypair, Message};
+//! use secp256k1::{rand, Message};
 //!
 //! // See previous example regarding this constant.
 //! const HELLO_WORLD_SHA2: [u8; 32] = [
@@ -62,7 +62,7 @@
 //!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
 //! ];
 //!
-//! let (secret_key, public_key) = generate_keypair(&mut rand::rng());
+//! let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
 //! let message = Message::from_digest(HELLO_WORLD_SHA2);
 //!
 //! let sig = secret_key.sign_ecdsa(message);
@@ -447,27 +447,14 @@ impl<C: Context> Secp256k1<C> {
     }
 }
 
-impl<C: Signing> Secp256k1<C> {
-    /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
-    /// [`PublicKey::from_secret_key`].
-    #[inline]
-    #[cfg(feature = "rand")]
-    // TODO: Move this somewhere more meaningful now we don't use the context.
-    pub fn generate_keypair<R: rand::Rng + ?Sized>(
-        &self,
-        rng: &mut R,
-    ) -> (key::SecretKey, key::PublicKey) {
-        let sk = key::SecretKey::new(rng);
-        let pk = key::PublicKey::from_secret_key(&sk);
-        (sk, pk)
-    }
-}
-
-/// Generates a random keypair using the global [`SECP256K1`] context.
+/// Generates a random keypair. Convenience function for [`SecretKey::new`] and
+/// [`PublicKey::from_secret_key`].
 #[inline]
-#[cfg(all(feature = "global-context", feature = "rand"))]
+#[cfg(feature = "rand")]
 pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, key::PublicKey) {
-    SECP256K1.generate_keypair(rng)
+    let sk = key::SecretKey::new(rng);
+    let pk = key::PublicKey::from_secret_key(&sk);
+    (sk, pk)
 }
 
 /// Constructor for unit testing. (Calls `generate_keypair` if all
@@ -658,7 +645,7 @@ mod tests {
         //        drop(buf_vfy); // The buffer can't get dropped before the context.
         //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
 
-        let (sk, pk) = full.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::rng());
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
@@ -680,7 +667,7 @@ mod tests {
         let msg = Message::from_digest(msg);
 
         // Try key generation
-        let (sk, pk) = full.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::rng());
 
         // Try signing
         assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
@@ -708,7 +695,7 @@ mod tests {
             let msg = crate::random_32_bytes(&mut rand::rng());
             let msg = Message::from_digest(msg);
 
-            let (sk, _) = s.generate_keypair(&mut rand::rng());
+            let (sk, _) = crate::generate_keypair(&mut rand::rng());
             let sig1 = s.sign_ecdsa(msg, &sk);
             let der = sig1.serialize_der();
             let sig2 = ecdsa::Signature::from_der(&der[..]).unwrap();
@@ -799,7 +786,7 @@ mod tests {
             let msg = crate::random_32_bytes(&mut rand::rng());
             let msg = Message::from_digest(msg);
 
-            let (sk, pk) = s.generate_keypair(&mut rand::rng());
+            let (sk, pk) = crate::generate_keypair(&mut rand::rng());
             let sig = s.sign_ecdsa(msg, &sk);
             assert_eq!(s.verify_ecdsa(&sig, msg, &pk), Ok(()));
             let noncedata_sig = s.sign_ecdsa_with_noncedata(msg, &sk, &noncedata);
@@ -865,7 +852,7 @@ mod tests {
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
 
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::rng());
 
         let sig = s.sign_ecdsa(msg, &sk);
 

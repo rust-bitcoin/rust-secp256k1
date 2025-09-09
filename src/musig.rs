@@ -1226,7 +1226,7 @@ impl Session {
     ///     msg,
     /// );
     ///
-    /// let keypair = Keypair::from_secret_key(&secp, &sk1);
+    /// let keypair = Keypair::from_secret_key(&sk1);
     /// let partial_sig1 = session.partial_sign(
     ///     &secp,
     ///     sec_nonce1,
@@ -1311,7 +1311,7 @@ impl Session {
     /// let partial_sig1 = session.partial_sign(
     ///     &secp,
     ///     sec_nonce1,
-    ///     &Keypair::from_secret_key(&secp, &sk1),
+    ///     &Keypair::from_secret_key(&sk1),
     ///     &key_agg_cache,
     /// ).unwrap();
     ///
@@ -1319,7 +1319,7 @@ impl Session {
     /// let partial_sig2 = session.partial_sign(
     ///     &secp,
     ///     sec_nonce2,
-    ///     &Keypair::from_secret_key(&secp, &sk2),
+    ///     &Keypair::from_secret_key(&sk2),
     ///     &key_agg_cache,
     /// ).unwrap();
     ///
@@ -1581,10 +1581,10 @@ mod tests {
         let session = Session::new(&secp, &key_agg_cache, agg_nonce, msg);
 
         // Test partial signing
-        let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
+        let keypair1 = Keypair::from_secret_key(&seckey1);
         let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &key_agg_cache);
 
-        let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
+        let keypair2 = Keypair::from_secret_key(&seckey2);
         let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &key_agg_cache);
 
         // Test partial signature verification
@@ -1660,10 +1660,10 @@ mod tests {
         let agg_nonce = AggregatedNonce::new(&secp, &nonces);
         let session = Session::new(&secp, &key_agg_cache, agg_nonce, msg);
 
-        let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
+        let keypair1 = Keypair::from_secret_key(&seckey1);
         let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &key_agg_cache);
 
-        let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
+        let keypair2 = Keypair::from_secret_key(&seckey2);
         let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &key_agg_cache);
 
         // Test signature verification

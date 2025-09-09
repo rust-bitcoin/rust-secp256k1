@@ -10,7 +10,7 @@ fn main() {
     let secp = Secp256k1::new();
     let mut rng = rand::rng();
 
-    let (seckey1, pubkey1) = secp.generate_keypair(&mut rng);
+    let (seckey1, pubkey1) = secp256k1::generate_keypair(&mut rng);
 
     let seckey2 = SecretKey::new(&mut rng);
     let pubkey2 = PublicKey::from_secret_key(&seckey2);
@@ -76,10 +76,10 @@ fn main() {
 
     let session = Session::new(&secp, &musig_key_agg_cache, agg_nonce, msg);
 
-    let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
+    let keypair1 = Keypair::from_secret_key(&seckey1);
     let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &musig_key_agg_cache);
 
-    let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
+    let keypair2 = Keypair::from_secret_key(&seckey2);
     let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &musig_key_agg_cache);
 
     let is_partial_signature_valid =
