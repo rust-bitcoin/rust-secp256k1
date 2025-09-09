@@ -307,15 +307,21 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    pub fn mul_tweak<C: Verification>(
-        mut self,
-        secp: &Secp256k1<C>,
-        other: &Scalar,
-    ) -> Result<PublicKey, Error> {
+    pub fn mul_tweak(mut self, other: &Scalar) -> Result<PublicKey, Error> {
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
-            if ffi::secp256k1_ec_pubkey_tweak_mul(secp.ctx.as_ptr(), &mut self.0, other.as_c_ptr())
-                == 1
-            {
+            let res = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_ec_pubkey_tweak_mul(
+                        secp.ctx.as_ptr(),
+                        &mut self.0,
+                        other.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
+            );
+            if res == 1 {
                 Ok(self)
             } else {
                 Err(Error::InvalidTweak)
@@ -649,21 +655,24 @@ impl Keypair {
     /// let tweak = Scalar::random();
     ///
     /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
-    /// let tweaked = keypair.add_xonly_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// let tweaked = keypair.add_xonly_tweak(&tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
     // TODO: Add checked implementation
     #[inline]
-    pub fn add_xonly_tweak<C: Verification>(
-        mut self,
-        secp: &Secp256k1<C>,
-        tweak: &Scalar,
-    ) -> Result<Keypair, Error> {
+    pub fn add_xonly_tweak(mut self, tweak: &Scalar) -> Result<Keypair, Error> {
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
-            let err = ffi::secp256k1_keypair_xonly_tweak_add(
-                secp.ctx.as_ptr(),
-                &mut self.0,
-                tweak.as_c_ptr(),
+            let err = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_keypair_xonly_tweak_add(
+                        secp.ctx.as_ptr(),
+                        &mut self.0,
+                        tweak.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
             );
             if err != 1 {
                 return Err(Error::InvalidTweak);
@@ -981,32 +990,40 @@ impl XOnlyPublicKey {
     ///
     /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
     /// let (xonly, _parity) = keypair.x_only_public_key();
-    /// let tweaked = xonly.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// let tweaked = xonly.add_tweak(&tweak).expect("Improbable to fail with a randomly generated tweak");
     /// # }
     /// ```
-    pub fn add_tweak<V: Verification>(
-        mut self,
-        secp: &Secp256k1<V>,
-        tweak: &Scalar,
-    ) -> Result<(XOnlyPublicKey, Parity), Error> {
+    pub fn add_tweak(mut self, tweak: &Scalar) -> Result<(XOnlyPublicKey, Parity), Error> {
         let mut pk_parity = 0;
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
-            let mut err = ffi::secp256k1_xonly_pubkey_tweak_add(
-                secp.ctx.as_ptr(),
-                &mut pubkey,
-                self.as_c_ptr(),
-                tweak.as_c_ptr(),
+            let mut err = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_xonly_pubkey_tweak_add(
+                        secp.ctx.as_ptr(),
+                        &mut pubkey,
+                        self.as_c_ptr(),
+                        tweak.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
             );
             if err != 1 {
                 return Err(Error::InvalidTweak);
             }
 
-            err = ffi::secp256k1_xonly_pubkey_from_pubkey(
-                secp.ctx.as_ptr(),
-                &mut self.0,
-                &mut pk_parity,
-                &pubkey,
+            err = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_xonly_pubkey_from_pubkey(
+                        secp.ctx.as_ptr(),
+                        &mut self.0,
+                        &mut pk_parity,
+                        &pubkey,
+                    )
+                },
+                Some(&seed),
             );
             if err == 0 {
                 return Err(Error::InvalidPublicKey);
@@ -1042,25 +1059,31 @@ impl XOnlyPublicKey {
     /// let mut keypair = Keypair::new(&secp, &mut rand::rng());
     /// let (mut public_key, _) = keypair.x_only_public_key();
     /// let original = public_key;
-    /// let (tweaked, parity) = public_key.add_tweak(&secp, &tweak).expect("Improbable to fail with a randomly generated tweak");
-    /// assert!(original.tweak_add_check(&secp, &tweaked, parity, tweak));
+    /// let (tweaked, parity) = public_key.add_tweak(&tweak).expect("Improbable to fail with a randomly generated tweak");
+    /// assert!(original.tweak_add_check(&tweaked, parity, tweak));
     /// # }
     /// ```
-    pub fn tweak_add_check<V: Verification>(
+    pub fn tweak_add_check(
         &self,
-        secp: &Secp256k1<V>,
         tweaked_key: &Self,
         tweaked_parity: Parity,
         tweak: Scalar,
     ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
-            let err = ffi::secp256k1_xonly_pubkey_tweak_add_check(
-                secp.ctx.as_ptr(),
-                tweaked_ser.as_c_ptr(),
-                tweaked_parity.to_i32(),
-                &self.0,
-                tweak.as_c_ptr(),
+            let err = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_xonly_pubkey_tweak_add_check(
+                        secp.ctx.as_ptr(),
+                        tweaked_ser.as_c_ptr(),
+                        tweaked_parity.to_i32(),
+                        &self.0,
+                        tweak.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
             );
 
             err == 1
@@ -1690,8 +1713,6 @@ mod test {
     #[test]
     #[cfg(feature = "std")]
     fn tweak_mul_arbitrary_data() {
-        let s = Secp256k1::new();
-
         let (sk, pk) = crate::test_random_keypair();
         assert_eq!(PublicKey::from_secret_key(&sk), pk); // Sanity check.
 
@@ -1700,7 +1721,7 @@ mod test {
 
             let tweaked_sk = sk.mul_tweak(&tweak).unwrap();
             assert_ne!(sk, tweaked_sk); // Make sure we did something.
-            let tweaked_pk = pk.mul_tweak(&s, &tweak).unwrap();
+            let tweaked_pk = pk.mul_tweak(&tweak).unwrap();
             assert_ne!(pk, tweaked_pk);
             assert_eq!(PublicKey::from_secret_key(&tweaked_sk), tweaked_pk);
         }
@@ -1925,24 +1946,22 @@ mod test {
     #[test]
     #[cfg(feature = "std")]
     fn test_tweak_add_then_tweak_add_check() {
-        let s = Secp256k1::new();
-
         for _ in 0..10 {
             let tweak = Scalar::test_random();
 
             let kp = Keypair::test_random();
             let (xonly, _) = XOnlyPublicKey::from_keypair(&kp);
 
-            let tweaked_kp = kp.add_xonly_tweak(&s, &tweak).expect("keypair tweak add failed");
+            let tweaked_kp = kp.add_xonly_tweak(&tweak).expect("keypair tweak add failed");
             let (tweaked_xonly, parity) =
-                xonly.add_tweak(&s, &tweak).expect("xonly pubkey tweak failed");
+                xonly.add_tweak(&tweak).expect("xonly pubkey tweak failed");
 
             let (want_tweaked_xonly, tweaked_kp_parity) = XOnlyPublicKey::from_keypair(&tweaked_kp);
 
             assert_eq!(tweaked_xonly, want_tweaked_xonly);
             assert_eq!(parity, tweaked_kp_parity);
 
-            assert!(xonly.tweak_add_check(&s, &tweaked_xonly, parity, tweak));
+            assert!(xonly.tweak_add_check(&tweaked_xonly, parity, tweak));
         }
     }
 
