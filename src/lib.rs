@@ -81,7 +81,7 @@
 //!
 //! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_secret_bytes([0xcd; 32]).expect("32 bytes, within curve order");
-//! let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+//! let public_key = PublicKey::from_secret_key(&secret_key);
 //! // If the supplied byte slice was *not* the output of a cryptographic hash function this would
 //! // be cryptographically broken. It has been trivially used in the past to execute attacks.
 //! let message = Message::from_digest(compute_hash(b"CSW is not Satoshi"));
@@ -452,12 +452,13 @@ impl<C: Signing> Secp256k1<C> {
     /// [`PublicKey::from_secret_key`].
     #[inline]
     #[cfg(feature = "rand")]
+    // TODO: Move this somewhere more meaningful now we don't use the context.
     pub fn generate_keypair<R: rand::Rng + ?Sized>(
         &self,
         rng: &mut R,
     ) -> (key::SecretKey, key::PublicKey) {
         let sk = key::SecretKey::new(rng);
-        let pk = key::PublicKey::from_secret_key(self, &sk);
+        let pk = key::PublicKey::from_secret_key(&sk);
         (sk, pk)
     }
 }
@@ -480,10 +481,7 @@ fn test_random_keypair() -> (key::SecretKey, key::PublicKey) { generate_keypair(
 #[cfg(not(all(feature = "global-context", feature = "rand", feature = "std")))]
 fn test_random_keypair() -> (key::SecretKey, key::PublicKey) {
     let sk = SecretKey::test_random();
-    let pk = with_global_context(
-        |secp: &Secp256k1<AllPreallocated>| key::PublicKey::from_secret_key(secp, &sk),
-        Some(&[0xab; 32]),
-    );
+    let pk = key::PublicKey::from_secret_key(&sk);
     (sk, pk)
 }
 
@@ -850,7 +848,7 @@ mod tests {
                 let sig = s.sign_ecdsa(msg, &key);
                 let low_r_sig = s.sign_ecdsa_low_r(msg, &key);
                 let grind_r_sig = s.sign_ecdsa_grind_r(msg, &key, 1);
-                let pk = PublicKey::from_secret_key(&s, &key);
+                let pk = PublicKey::from_secret_key(&key);
                 assert_eq!(s.verify_ecdsa(&sig, msg, &pk), Ok(()));
                 assert_eq!(s.verify_ecdsa(&low_r_sig, msg, &pk), Ok(()));
                 assert_eq!(s.verify_ecdsa(&grind_r_sig, msg, &pk), Ok(()));
@@ -1049,7 +1047,7 @@ mod tests {
         let msg = Message::from_digest(msg_data);
 
         // Check usage as explicit parameter
-        let pk = PublicKey::from_secret_key(SECP256K1, &sk);
+        let pk = PublicKey::from_secret_key(&sk);
 
         // Check usage as self
         let sig = SECP256K1.sign_ecdsa(msg, &sk);

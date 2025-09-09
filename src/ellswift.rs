@@ -138,10 +138,9 @@ impl ElligatorSwift {
     /// # Example
     /// ```
     /// # #[cfg(feature = "alloc")] {
-    ///     use secp256k1::{ellswift::ElligatorSwift, PublicKey, Secp256k1, SecretKey};
-    ///     let secp = Secp256k1::new();
+    ///     use secp256k1::{ellswift::ElligatorSwift, PublicKey, SecretKey};
     ///     let sk = SecretKey::from_secret_bytes([1; 32]).unwrap();
-    ///     let pk = PublicKey::from_secret_key(&secp, &sk);
+    ///     let pk = PublicKey::from_secret_key(&sk);
     ///     let es = ElligatorSwift::from_pubkey(pk);
     /// # }
     ///
@@ -375,9 +374,8 @@ mod tests {
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn test_elligator_swift_rtt() {
         // Test that we can round trip an ElligatorSwift encoding
-        let secp = crate::Secp256k1::new();
         let public_key =
-            PublicKey::from_secret_key(&secp, &SecretKey::from_secret_bytes([1u8; 32]).unwrap());
+            PublicKey::from_secret_key(&SecretKey::from_secret_bytes([1u8; 32]).unwrap());
 
         let ell = ElligatorSwift::from_pubkey(public_key);
         let pk = PublicKey::from_ellswift(ell);
@@ -393,8 +391,7 @@ mod tests {
         let ell =
             ElligatorSwift::from_seckey(&secp, SecretKey::from_secret_bytes(rand32).unwrap(), None);
         let pk = PublicKey::from_ellswift(ell);
-        let expected =
-            PublicKey::from_secret_key(&secp, &SecretKey::from_secret_bytes(priv32).unwrap());
+        let expected = PublicKey::from_secret_key(&SecretKey::from_secret_bytes(priv32).unwrap());
 
         assert_eq!(pk, expected);
     }

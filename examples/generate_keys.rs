@@ -8,9 +8,9 @@ fn main() {
     // First option:
     let (seckey, pubkey) = secp.generate_keypair(&mut rng);
 
-    assert_eq!(pubkey, PublicKey::from_secret_key(&secp, &seckey));
+    assert_eq!(pubkey, PublicKey::from_secret_key(&seckey));
 
     // Second option:
     let seckey = SecretKey::new(&mut rng);
-    let _pubkey = PublicKey::from_secret_key(&secp, &seckey);
+    let _pubkey = PublicKey::from_secret_key(&seckey);
 }

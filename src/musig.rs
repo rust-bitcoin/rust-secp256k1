@@ -170,7 +170,7 @@ impl fmt::Display for InvalidTweakErr {
 /// // The session id must be sampled at random. Read documentation for more details.
 /// let session_secrand = SessionSecretRand::from_rng(&mut rand::rng());
 /// let sk = SecretKey::new(&mut rand::rng());
-/// let pk = PublicKey::from_secret_key(&secp, &sk);
+/// let pk = PublicKey::from_secret_key(&sk);
 ///
 /// // Supply extra auxiliary randomness to prevent misuse(for example, time of day)
 /// let extra_rand : Option<[u8; 32]> = None;
@@ -375,9 +375,9 @@ impl KeyAggCache {
     /// # use secp256k1::musig::KeyAggCache;
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
     /// let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// let _agg_pk = key_agg_cache.agg_pk();
@@ -474,9 +474,9 @@ impl KeyAggCache {
     /// # use secp256k1::musig::KeyAggCache;
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
     /// let mut key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     ///
@@ -535,9 +535,9 @@ impl KeyAggCache {
     /// # use secp256k1::musig::KeyAggCache;
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
     /// let mut key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     ///
@@ -608,9 +608,9 @@ impl KeyAggCache {
     /// # use secp256k1::musig::{KeyAggCache, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
     /// let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
@@ -903,9 +903,9 @@ impl AggregatedNonce {
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
@@ -1064,9 +1064,9 @@ impl Session {
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, Session, SessionSecretRand};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
@@ -1200,9 +1200,9 @@ impl Session {
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand, Session};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
     /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
@@ -1280,9 +1280,9 @@ impl Session {
     /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, AggregatedNonce, Session};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
     /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.

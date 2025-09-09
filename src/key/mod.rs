@@ -39,11 +39,10 @@ use crate::{
 ///
 /// ```
 /// # #[cfg(feature =  "alloc")] {
-/// use secp256k1::{SecretKey, Secp256k1, PublicKey};
+/// use secp256k1::{SecretKey, PublicKey};
 ///
-/// let secp = Secp256k1::new();
 /// let secret_key = SecretKey::from_byte_array([0xcd; 32]).expect("32 bytes, within curve order");
-/// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+/// let public_key = PublicKey::from_secret_key(&secret_key);
 /// # }
 /// ```
 /// [`bincode`]: https://docs.rs/bincode
@@ -108,20 +107,24 @@ impl PublicKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey, PublicKey};
+    /// use secp256k1::{rand, SecretKey, PublicKey};
     ///
-    /// let secp = Secp256k1::new();
     /// let secret_key = SecretKey::new(&mut rand::rng());
-    /// let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+    /// let public_key = PublicKey::from_secret_key(&secret_key);
     /// # }
     /// ```
     #[inline]
-    pub fn from_secret_key<C: Signing>(secp: &Secp256k1<C>, sk: &SecretKey) -> PublicKey {
+    pub fn from_secret_key(sk: &SecretKey) -> PublicKey {
         unsafe {
             let mut pk = ffi::PublicKey::new();
             // We can assume the return value because it's not possible to construct
             // an invalid `SecretKey` without transmute trickery or something.
-            let res = ffi::secp256k1_ec_pubkey_create(secp.ctx.as_ptr(), &mut pk, sk.as_c_ptr());
+            let res = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_ec_pubkey_create(secp.ctx.as_ptr(), &mut pk, sk.as_c_ptr())
+                },
+                Some(&sk.to_secret_bytes()),
+            );
             debug_assert_eq!(res, 1);
             PublicKey(pk)
         }
@@ -130,12 +133,11 @@ impl PublicKey {
     #[inline]
     pub fn from_ellswift(ellswift: ElligatorSwift) -> PublicKey { ElligatorSwift::decode(ellswift) }
 
-    /// Creates a new public key from a [`SecretKey`] and the global [`SECP256K1`] context.
+    /// Creates a new public key from a [`SecretKey`].
     #[inline]
     #[cfg(feature = "global-context")]
-    pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey {
-        PublicKey::from_secret_key(SECP256K1, sk)
-    }
+    #[deprecated(since = "TBD", note = "use from_secret_key instead")]
+    pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey { PublicKey::from_secret_key(sk) }
 
     /// Creates a public key directly from a slice.
     #[inline]
@@ -1296,9 +1298,9 @@ impl<C: Verification> Secp256k1<C> {
     /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
     /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
     /// # let pubkeys = [pub_key1, pub_key2];
     /// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
@@ -1542,14 +1544,12 @@ mod test {
             0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63, 0x63,
         ];
 
-        #[cfg(not(secp256k1_fuzz))]
-        let s = Secp256k1::signing_only();
         let sk = SecretKey::from_secret_bytes(SK_BYTES).expect("sk");
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
         #[cfg(not(secp256k1_fuzz))]
-        let pk = PublicKey::from_secret_key(&s, &sk);
+        let pk = PublicKey::from_secret_key(&sk);
         #[cfg(secp256k1_fuzz)]
         let pk = PublicKey::from_slice(&[
             0x02, 0x18, 0x84, 0x57, 0x81, 0xf6, 0x31, 0xc4, 0x8f, 0x1c, 0x97, 0x09, 0xe2, 0x30,
@@ -1661,10 +1661,8 @@ mod test {
     #[test]
     #[cfg(feature = "std")]
     fn tweak_add_arbitrary_data() {
-        let s = Secp256k1::new();
-
         let (sk, pk) = crate::test_random_keypair();
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
+        assert_eq!(PublicKey::from_secret_key(&sk), pk); // Sanity check.
 
         // TODO: This would be better tested with a _lot_ of different tweaks.
         let tweak = Scalar::test_random();
@@ -1674,7 +1672,7 @@ mod test {
         let tweaked_pk = pk.add_exp_tweak(&tweak).unwrap();
         assert_ne!(pk, tweaked_pk);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+        assert_eq!(PublicKey::from_secret_key(&tweaked_sk), tweaked_pk);
     }
 
     #[test]
@@ -1695,7 +1693,7 @@ mod test {
         let s = Secp256k1::new();
 
         let (sk, pk) = crate::test_random_keypair();
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
+        assert_eq!(PublicKey::from_secret_key(&sk), pk); // Sanity check.
 
         for _ in 0..10 {
             let tweak = Scalar::test_random();
@@ -1704,7 +1702,7 @@ mod test {
             assert_ne!(sk, tweaked_sk); // Make sure we did something.
             let tweaked_pk = pk.mul_tweak(&s, &tweak).unwrap();
             assert_ne!(pk, tweaked_pk);
-            assert_eq!(PublicKey::from_secret_key(&s, &tweaked_sk), tweaked_pk);
+            assert_eq!(PublicKey::from_secret_key(&tweaked_sk), tweaked_pk);
         }
     }
 
@@ -1719,11 +1717,9 @@ mod test {
     #[test]
     #[cfg(feature = "std")]
     fn test_negation() {
-        let s = Secp256k1::new();
-
         let (sk, pk) = crate::test_random_keypair();
 
-        assert_eq!(PublicKey::from_secret_key(&s, &sk), pk); // Sanity check.
+        assert_eq!(PublicKey::from_secret_key(&sk), pk); // Sanity check.
 
         let neg = sk.negate();
         assert_ne!(sk, neg);
@@ -1735,7 +1731,7 @@ mod test {
         let back_pk = neg.negate();
         assert_eq!(pk, back_pk);
 
-        assert_eq!(PublicKey::from_secret_key(&s, &back_sk), pk);
+        assert_eq!(PublicKey::from_secret_key(&back_sk), pk);
     }
 
     #[test]
@@ -1823,8 +1819,6 @@ mod test {
     #[test]
     #[cfg(feature = "std")]
     fn create_pubkey_combine() {
-        let s = Secp256k1::new();
-
         let (sk1, pk1) = crate::test_random_keypair();
         let (sk2, pk2) = crate::test_random_keypair();
 
@@ -1835,7 +1829,7 @@ mod test {
         assert_eq!(sum1, sum2);
 
         let tweaked = sk1.add_tweak(&Scalar::from(sk2)).unwrap();
-        let sksum = PublicKey::from_secret_key(&s, &tweaked);
+        let sksum = PublicKey::from_secret_key(&tweaked);
         assert_eq!(Ok(sksum), sum1);
     }
 
@@ -1889,14 +1883,12 @@ mod test {
         ];
         static PK_STR: &str = "0218845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        #[cfg(not(secp256k1_fuzz))]
-        let s = Secp256k1::new();
         let sk = SecretKey::from_secret_bytes(SK_BYTES).unwrap();
 
         // In fuzzing mode secret->public key derivation is different, so
         // hard-code the expected result.
         #[cfg(not(secp256k1_fuzz))]
-        let pk = PublicKey::from_secret_key(&s, &sk);
+        let pk = PublicKey::from_secret_key(&sk);
         #[cfg(secp256k1_fuzz)]
         let pk = PublicKey::from_slice(&PK_BYTES).expect("pk");
 
@@ -2052,10 +2044,8 @@ mod test {
     #[test]
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn convert_secret_key_to_public_key() {
-        let secp = Secp256k1::new();
-
         let (sk, want, _kp, _xonly) = keys();
-        let got = sk.public_key(&secp);
+        let got = sk.public_key();
 
         assert_eq!(got, want)
     }

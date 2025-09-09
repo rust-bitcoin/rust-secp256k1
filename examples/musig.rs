@@ -13,7 +13,7 @@ fn main() {
     let (seckey1, pubkey1) = secp.generate_keypair(&mut rng);
 
     let seckey2 = SecretKey::new(&mut rng);
-    let pubkey2 = PublicKey::from_secret_key(&secp, &seckey2);
+    let pubkey2 = PublicKey::from_secret_key(&seckey2);
 
     let pubkeys = [pubkey1, pubkey2];
     let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();

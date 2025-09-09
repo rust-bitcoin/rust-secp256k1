@@ -374,13 +374,12 @@ mod tests {
     #[test]
     #[cfg(feature = "alloc")]
     fn test_xonly_key_extraction() {
-        let secp = Secp256k1::new();
         let sk_str = "688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF";
         let keypair = Keypair::from_str(sk_str).unwrap();
         let sk = SecretKey::from_keypair(&keypair);
         assert_eq!(SecretKey::from_str(sk_str).unwrap(), sk);
         let pk = crate::key::PublicKey::from_keypair(&keypair);
-        assert_eq!(crate::key::PublicKey::from_secret_key(&secp, &sk), pk);
+        assert_eq!(crate::key::PublicKey::from_secret_key(&sk), pk);
         let (xpk, _parity) = keypair.x_only_public_key();
         assert_eq!(XOnlyPublicKey::from(pk), xpk);
     }

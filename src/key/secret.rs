@@ -294,9 +294,7 @@ impl SecretKey {
     ///
     /// This is equivalent to using [`PublicKey::from_secret_key`].
     #[inline]
-    pub fn public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> PublicKey {
-        PublicKey::from_secret_key(secp, self)
-    }
+    pub fn public_key(&self) -> PublicKey { PublicKey::from_secret_key(self) }
 
     /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for this [`SecretKey`].
     ///
