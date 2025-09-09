@@ -1,3 +1,25 @@
+# 0.32.0 - 2025-09-09
+
+* Remove the `bitcoin-hashes` feature (and dependency) [#837](https://github.com/rust-bitcoin/rust-secp256k1/pull/837)
+* Introduce `Arbitrary` crate and add `PublicKey` arbitrary impl [#826](https://github.com/rust-bitcoin/rust-secp256k1/pull/826)
+* Add arbitrary impl for types used in `PSBT`s [#828](https://github.com/rust-bitcoin/rust-secp256k1/pull/828)
+* `secp256k1-sys`: Fix lowmemory feature [#799](https://github.com/rust-bitcoin/rust-secp256k1/pull/799)
+* Improve `RecoveryId` conversion functions [#800](https://github.com/rust-bitcoin/rust-secp256k1/pull/800)
+* Explicitly set `RecoveryId` value [#801](https://github.com/rust-bitcoin/rust-secp256k1/pull/801)
+* Introduce new global context API with rerandomization [#806](https://github.com/rust-bitcoin/rust-secp256k1/pull/806)
+
+## Add support for MuSig2
+
+Done as an initial PR [#716](https://github.com/rust-bitcoin/rust-secp256k1/pull/716) then a bunch of follow up PRs:
+
+* #811
+* #794
+* #797
+* #798
+* #802
+* #803
+* #805
+
 # 0.31.0 - 2025-04-21
 
 * Update `rand` to 0.9 [#788](https://github.com/rust-bitcoin/rust-secp256k1/pull/788)
