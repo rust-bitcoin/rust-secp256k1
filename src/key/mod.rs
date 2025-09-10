@@ -10,7 +10,6 @@ use core::{fmt, ptr, str};
 
 #[cfg(feature = "arbitrary")]
 use arbitrary::{Arbitrary, Unstructured};
-use secp256k1_sys::secp256k1_ec_pubkey_sort;
 #[cfg(feature = "serde")]
 use serde::ser::SerializeTuple;
 
@@ -1305,38 +1304,44 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
     }
 }
 
-impl<C: Verification> Secp256k1<C> {
-    /// Sort public keys using lexicographic (of compressed serialization) order.
-    ///
-    /// This is the canonical way to sort public keys for use with Musig2.
-    ///
-    /// Example:
-    ///
-    /// ```rust
-    /// # # [cfg(any(test, feature = "rand-std"))] {
-    /// # use secp256k1::rand::{rng, RngCore};
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey, pubkey_sort};
-    /// # let secp = Secp256k1::new();
-    /// # let sk1 = SecretKey::new(&mut rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
-    /// # let sk2 = SecretKey::new(&mut rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
-    /// #
-    /// # let pubkeys = [pub_key1, pub_key2];
-    /// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
-    /// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
-    /// #
-    /// # secp.sort_pubkeys(pubkeys_ref);
-    /// # }
-    /// ```
-    pub fn sort_pubkeys(&self, pubkeys: &mut [&PublicKey]) {
-        let cx = self.ctx().as_ptr();
-        unsafe {
-            // SAFETY: `PublicKey` has repr(transparent) so we can convert to `ffi::PublicKey`
-            let pubkeys_ptr = pubkeys.as_mut_c_ptr() as *mut *const ffi::PublicKey;
-            if secp256k1_ec_pubkey_sort(cx, pubkeys_ptr, pubkeys.len()) == 0 {
-                unreachable!("Invalid public keys for sorting function")
-            }
+/// Sort public keys using lexicographic (of compressed serialization) order.
+///
+/// This is the canonical way to sort public keys for use with Musig2.
+///
+/// Example:
+///
+/// ```rust
+/// # # [cfg(any(test, feature = "rand-std"))] {
+/// # use secp256k1::rand::{rng, RngCore};
+/// # use secp256k1::{SecretKey, Keypair, PublicKey, pubkey_sort};
+/// # let sk1 = SecretKey::new(&mut rng());
+/// # let pub_key1 = PublicKey::from_secret_key(&sk1);
+/// # let sk2 = SecretKey::new(&mut rng());
+/// # let pub_key2 = PublicKey::from_secret_key(&sk2);
+/// #
+/// # let pubkeys = [pub_key1, pub_key2];
+/// # let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
+/// # let pubkeys_ref = pubkeys_ref.as_mut_slice();
+/// #
+/// # secp256k1::sort_pubkeys(pubkeys_ref);
+/// # }
+/// ```
+pub fn sort_pubkeys(pubkeys: &mut [&PublicKey]) {
+    // We have no seed here but we want rerandomiziation to happen for `rand` users.
+    let seed = [0_u8; 32];
+    unsafe {
+        // SAFETY: `PublicKey` has repr(transparent) so we can convert to `ffi::PublicKey`
+        let pubkeys_ptr = pubkeys.as_mut_c_ptr() as *mut *const ffi::PublicKey;
+
+        let ret = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
+                ffi::secp256k1_ec_pubkey_sort(secp.ctx.as_ptr(), pubkeys_ptr, pubkeys.len())
+            },
+            Some(&seed),
+        );
+
+        if ret == 0 {
+            unreachable!("Invalid public keys for sorting function")
         }
     }
 }

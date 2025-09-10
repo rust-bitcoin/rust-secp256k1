@@ -12,6 +12,8 @@ use core::mem::MaybeUninit;
 use std;
 
 use crate::ffi::{self, CPtr};
+#[cfg(doc)]
+use crate::key;
 use crate::{
     from_hex, schnorr, Error, Keypair, PublicKey, Scalar, Secp256k1, SecretKey, XOnlyPublicKey,
 };
@@ -369,7 +371,7 @@ impl KeyAggCache {
     /// ensures the same resulting `agg_pk` for the same multiset of pubkeys.
     /// This is useful to do before aggregating pubkeys, such that the order of pubkeys
     /// does not affect the combined public key.
-    /// To do this, call [`Secp256k1::sort_pubkeys`].
+    /// To do this, call [`key::sort_pubkeys`].
     ///
     /// # Returns
     ///

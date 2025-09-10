@@ -202,7 +202,9 @@ pub use crate::{
         Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
         VerifyOnlyPreallocated,
     },
-    key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey},
+    key::{
+        sort_pubkeys, InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey,
+    },
     scalar::Scalar,
 };
 
