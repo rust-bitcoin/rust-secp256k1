@@ -266,7 +266,7 @@ mod into_iter {
 
 #[cfg(test)]
 mod tests {
-    use super::{SerializedSignature, MAX_LEN};
+    use super::*;
 
     #[test]
     fn iterator_ops_are_homomorphic() {
