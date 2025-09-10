@@ -416,13 +416,8 @@ impl PublicKey {
     }
 
     /// Checks that `sig` is a valid ECDSA signature for `msg` using this public key.
-    pub fn verify<C: Verification>(
-        &self,
-        secp: &Secp256k1<C>,
-        msg: impl Into<Message>,
-        sig: &ecdsa::Signature,
-    ) -> Result<(), Error> {
-        secp.verify_ecdsa(sig, msg, self)
+    pub fn verify(&self, msg: impl Into<Message>, sig: &ecdsa::Signature) -> Result<(), Error> {
+        ecdsa::verify(sig, msg, self)
     }
 }
 
@@ -1110,11 +1105,10 @@ impl XOnlyPublicKey {
     /// Checks that `sig` is a valid schnorr signature for `msg` using this public key.
     pub fn verify<C: Verification>(
         &self,
-        secp: &Secp256k1<C>,
         msg: &[u8],
         sig: &schnorr::Signature,
     ) -> Result<(), Error> {
-        secp.verify_schnorr(sig, msg, self)
+        schnorr::verify(sig, msg, self)
     }
 }
 

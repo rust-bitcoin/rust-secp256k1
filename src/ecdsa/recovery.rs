@@ -250,7 +250,7 @@ mod tests {
 
     use super::*;
     use crate::constants::ONE;
-    use crate::{Error, Message, Secp256k1, SecretKey};
+    use crate::{ecdsa, Error, Message, Secp256k1, SecretKey};
 
     #[test]
     fn capabilities() {
@@ -313,8 +313,6 @@ mod tests {
     #[test]
     #[cfg(feature = "std")]
     fn sign_and_verify_fail() {
-        let s = Secp256k1::new();
-
         let msg = Message::from_digest(crate::test_random_32_bytes());
         let (sk, pk) = crate::test_random_keypair();
 
@@ -322,7 +320,7 @@ mod tests {
         let sig = sigr.to_standard();
 
         let msg = Message::from_digest(crate::test_random_32_bytes());
-        assert_eq!(s.verify_ecdsa(&sig, msg, &pk), Err(Error::IncorrectSignature));
+        assert_eq!(ecdsa::verify(&sig, msg, &pk), Err(Error::IncorrectSignature));
 
         let recovered_key = sigr.recover_ecdsa(msg).unwrap();
         assert!(recovered_key != pk);

@@ -1021,14 +1021,13 @@ impl AggregatedSignature {
 
     /// Verify the aggregated signature against the aggregate public key and message
     /// before returning the signature.
-    pub fn verify<C: Verification>(
+    pub fn verify(
         self,
-        secp: &Secp256k1<C>,
         aggregate_key: &XOnlyPublicKey,
         message: &[u8],
     ) -> Result<schnorr::Signature, Error> {
         let sig = schnorr::Signature::from_byte_array(self.0);
-        secp.verify_schnorr(&sig, message, aggregate_key)
+        schnorr::verify(&sig, message, aggregate_key)
             .map(|_| sig)
             .map_err(|_| Error::IncorrectSignature)
     }
@@ -1669,23 +1668,23 @@ mod tests {
         // Test signature verification
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign2]);
         let agg_pk = key_agg_cache.agg_pk();
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
+        aggregated_signature.verify(&agg_pk, msg).unwrap();
 
         // Test assume_valid
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap();
 
         // Test with wrong aggregate (repeated sigs)
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap_err();
+        aggregated_signature.verify(&agg_pk, msg).unwrap_err();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap_err();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap_err();
 
         // Test with swapped sigs -- this will work. Unlike keys, sigs are not ordered.
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign2, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
+        aggregated_signature.verify(&agg_pk, msg).unwrap();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap();
     }
 
     #[test]

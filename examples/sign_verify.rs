@@ -15,19 +15,14 @@
 
 extern crate secp256k1;
 
-use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
+use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing};
 
-fn verify<C: Verification>(
-    secp: &Secp256k1<C>,
-    msg_digest: [u8; 32],
-    sig: [u8; 64],
-    pubkey: [u8; 33],
-) -> Result<bool, Error> {
+fn verify(sig: [u8; 64], msg_digest: [u8; 32], pubkey: [u8; 33]) -> Result<bool, Error> {
     let msg = Message::from_digest(msg_digest);
     let sig = ecdsa::Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
-    Ok(secp.verify_ecdsa(&sig, msg, &pubkey).is_ok())
+    Ok(ecdsa::verify(&sig, msg, &pubkey).is_ok())
 }
 
 fn sign<C: Signing>(
@@ -57,5 +52,5 @@ fn main() {
 
     let serialize_sig = signature.serialize_compact();
 
-    assert!(verify(&secp, msg_digest, serialize_sig, pubkey).unwrap());
+    assert!(verify(serialize_sig, msg_digest, pubkey).unwrap());
 }

@@ -96,5 +96,5 @@ fn main() {
 
     let aggregated_signature = session.partial_sig_agg(partial_sigs_ref);
 
-    assert!(aggregated_signature.verify(&secp, &agg_pk, msg).is_ok());
+    assert!(aggregated_signature.verify(&agg_pk, msg).is_ok());
 }

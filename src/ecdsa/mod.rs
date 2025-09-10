@@ -13,11 +13,7 @@ use core::{fmt, ptr, str};
 pub use self::recovery::{RecoverableSignature, RecoveryId};
 pub use self::serialized_signature::SerializedSignature;
 use crate::ffi::CPtr;
-#[cfg(feature = "global-context")]
-use crate::SECP256K1;
-use crate::{
-    ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
-};
+use crate::{ecdsa, ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -190,12 +186,12 @@ impl Signature {
         ret
     }
 
-    /// Verifies an ECDSA signature for `msg` using `pk` and the global [`SECP256K1`] context.
+    /// Verifies an ECDSA signature for `msg` using `pk`.
+    ///
     /// The signature must be normalized or verification will fail (see [`Signature::normalize_s`]).
     #[inline]
-    #[cfg(feature = "global-context")]
     pub fn verify(&self, msg: impl Into<Message>, pk: &PublicKey) -> Result<(), Error> {
-        SECP256K1.verify_ecdsa(self, msg, pk)
+        ecdsa::verify(self, msg, pk)
     }
 }
 
@@ -359,48 +355,48 @@ impl<C: Signing> Secp256k1<C> {
     }
 }
 
-impl<C: Verification> Secp256k1<C> {
-    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
-    /// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
-    /// be used for Bitcoin consensus checking since there may exist signatures
-    /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
-    /// verify-capable context.
-    ///
-    /// ```rust
-    /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// # use secp256k1::{rand, Secp256k1, Message, Error};
-    /// #
-    /// # let secp = Secp256k1::new();
-    /// # let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
-    /// #
-    /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
-    /// let sig = secp.sign_ecdsa(message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Ok(()));
-    ///
-    /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Err(Error::IncorrectSignature));
-    /// # }
-    /// ```
-    #[inline]
-    pub fn verify_ecdsa(
-        &self,
-        sig: &Signature,
-        msg: impl Into<Message>,
-        pk: &PublicKey,
-    ) -> Result<(), Error> {
-        let msg = msg.into();
-        unsafe {
-            if ffi::secp256k1_ecdsa_verify(
-                self.ctx.as_ptr(),
-                sig.as_c_ptr(),
-                msg.as_c_ptr(),
-                pk.as_c_ptr(),
-            ) == 0
-            {
-                Err(Error::IncorrectSignature)
-            } else {
-                Ok(())
-            }
+/// Checks that `sig` is a valid ECDSA signature for `msg` using the public
+/// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
+/// be used for Bitcoin consensus checking since there may exist signatures
+/// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
+/// verify-capable context.
+///
+/// ```rust
+/// # #[cfg(all(feature = "rand", feature = "std"))] {
+/// # use secp256k1::{rand, ecdsa, Secp256k1, Message, Error};
+/// #
+/// # let secp = Secp256k1::new();
+/// # let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
+/// #
+/// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
+/// let sig = secp.sign_ecdsa(message, &secret_key);
+/// assert_eq!(ecdsa::verify(&sig, message, &public_key), Ok(()));
+///
+/// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
+/// assert_eq!(ecdsa::verify(&sig, message, &public_key), Err(Error::IncorrectSignature));
+/// # }
+/// ```
+#[inline]
+pub fn verify(sig: &Signature, msg: impl Into<Message>, pk: &PublicKey) -> Result<(), Error> {
+    let msg = msg.into();
+    // We have no seed here but we want rerandomiziation to happen for `rand` users.
+    let seed = [0_u8; 32];
+    unsafe {
+        let res = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
+                ffi::secp256k1_ecdsa_verify(
+                    secp.ctx.as_ptr(),
+                    sig.as_c_ptr(),
+                    msg.as_c_ptr(),
+                    pk.as_c_ptr(),
+                )
+            },
+            Some(&seed),
+        );
+        if res == 0 {
+            Err(Error::IncorrectSignature)
+        } else {
+            Ok(())
         }
     }
 }

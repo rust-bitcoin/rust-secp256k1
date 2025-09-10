@@ -11,9 +11,7 @@ use secp256k1_sys::SchnorrSigExtraParams;
 
 use crate::ffi::{self, CPtr};
 use crate::key::{Keypair, XOnlyPublicKey};
-#[cfg(feature = "global-context")]
-use crate::SECP256K1;
-use crate::{constants, from_hex, Error, Secp256k1, Signing, Verification};
+use crate::{constants, from_hex, Error, Secp256k1, Signing};
 
 /// Represents a schnorr signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -103,11 +101,11 @@ impl Signature {
     #[inline]
     pub fn as_byte_array(&self) -> &[u8; constants::SCHNORR_SIGNATURE_SIZE] { &self.0 }
 
-    /// Verifies a schnorr signature for `msg` using `pk` and the global [`SECP256K1`] context.
+    /// Verifies a schnorr signature for `msg` using `pk`.
     #[inline]
     #[cfg(feature = "global-context")]
     pub fn verify(&self, msg: &[u8], pk: &XOnlyPublicKey) -> Result<(), Error> {
-        SECP256K1.verify_schnorr(self, msg, pk)
+        verify(self, msg, pk)
     }
 }
 
@@ -174,28 +172,28 @@ impl<C: Signing> Secp256k1<C> {
     }
 }
 
-impl<C: Verification> Secp256k1<C> {
-    /// Verifies a schnorr signature.
-    pub fn verify_schnorr(
-        &self,
-        sig: &Signature,
-        msg: &[u8],
-        pubkey: &XOnlyPublicKey,
-    ) -> Result<(), Error> {
-        unsafe {
-            let ret = ffi::secp256k1_schnorrsig_verify(
-                self.ctx.as_ptr(),
-                sig.as_c_ptr(),
-                msg.as_c_ptr(),
-                msg.len(),
-                pubkey.as_c_ptr(),
-            );
+/// Verifies a schnorr signature.
+pub fn verify(sig: &Signature, msg: &[u8], pubkey: &XOnlyPublicKey) -> Result<(), Error> {
+    // We have no seed here but we want rerandomiziation to happen for `rand` users.
+    let seed = [0_u8; 32];
+   unsafe {
+        let ret = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
+                ffi::secp256k1_schnorrsig_verify(
+                    secp.ctx.as_ptr(),
+                    sig.as_c_ptr(),
+                    msg.as_c_ptr(),
+                    msg.len(),
+                    pubkey.as_c_ptr(),
+                )
+            },
+            Some(&seed),
+        );
 
-            if ret == 1 {
-                Ok(())
-            } else {
-                Err(Error::IncorrectSignature)
-            }
+        if ret == 1 {
+            Ok(())
+        } else {
+            Err(Error::IncorrectSignature)
         }
     }
 }
@@ -268,7 +266,7 @@ mod tests {
 
             let sig = sign(&secp, &msg, &kp, &mut rng);
 
-            assert!(secp.verify_schnorr(&sig, &msg, &pk).is_ok());
+            assert!(verify(&sig, &msg, &pk).is_ok());
         }
     }
 
@@ -295,8 +293,6 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     #[cfg(feature = "alloc")]
     fn schnorr_verify() {
-        let secp = Secp256k1::new();
-
         let msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
         let sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
         let pubkey = XOnlyPublicKey::from_str(
@@ -304,7 +300,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(secp.verify_schnorr(&sig, &msg, &pubkey).is_ok());
+        assert!(verify(&sig, &msg, &pubkey).is_ok());
     }
 
     #[test]
@@ -716,7 +712,7 @@ mod tests {
             }
             let sig = Signature::from_byte_array(signature);
             let is_verified = if let Ok(pubkey) = XOnlyPublicKey::from_byte_array(public_key) {
-                secp.verify_schnorr(&sig, &message, &pubkey).is_ok()
+                verify(&sig, &message, &pubkey).is_ok()
             } else {
                 false
             };
