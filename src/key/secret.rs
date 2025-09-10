@@ -7,9 +7,10 @@ use core::{ops, str};
 use serde::ser::SerializeTuple;
 
 use crate::ffi::CPtr as _;
-use crate::{constants, ffi, from_hex, Error, Keypair, Parity, PublicKey, Scalar, XOnlyPublicKey};
-#[cfg(feature = "global-context")]
-use crate::{ecdsa, Message, SECP256K1};
+use crate::{
+    constants, ecdsa, ffi, from_hex, Error, Keypair, Message, Parity, PublicKey, Scalar,
+    XOnlyPublicKey,
+};
 
 mod encapsulate {
     use crate::constants::SECRET_KEY_SIZE;
@@ -271,12 +272,9 @@ impl SecretKey {
         }
     }
 
-    /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
+    /// Constructs an ECDSA signature for `msg`.
     #[inline]
-    #[cfg(feature = "global-context")]
-    pub fn sign_ecdsa(&self, msg: impl Into<Message>) -> ecdsa::Signature {
-        SECP256K1.sign_ecdsa(msg, self)
-    }
+    pub fn sign_ecdsa(&self, msg: impl Into<Message>) -> ecdsa::Signature { ecdsa::sign(msg, self) }
 
     /// Returns the [`Keypair`] for this [`SecretKey`].
     ///

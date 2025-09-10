@@ -82,7 +82,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
     let public_key = PublicKey::from_secret_key(&secret_key);
     let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
-    let sig = secp.sign_ecdsa(message, &secret_key);
+    let sig = ecdsa::sign(message, &secret_key);
     assert!(ecdsa::verify(&sig, message, &public_key).is_ok());
 
     let rec_sig = ecdsa::RecoverableSignature::sign_ecdsa_recoverable(message, &secret_key);
@@ -109,7 +109,7 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
         let public_key = PublicKey::from_secret_key(&secret_key);
         let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
-        let sig = secp_alloc.sign_ecdsa(message, &secret_key);
+        let sig = ecdsa::sign(message, &secret_key);
         assert!(ecdsa::verify(&sig, message, &public_key).is_ok());
         unsafe { libc::printf("Verified alloc Successfully!\n\0".as_ptr() as _) };
     }

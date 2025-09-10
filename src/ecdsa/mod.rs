@@ -13,7 +13,7 @@ use core::{fmt, ptr, str};
 pub use self::recovery::{RecoverableSignature, RecoveryId};
 pub use self::serialized_signature::SerializedSignature;
 use crate::ffi::CPtr;
-use crate::{ecdsa, ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing};
+use crate::{ecdsa, ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -236,123 +236,122 @@ impl<'de> serde::Deserialize<'de> for Signature {
     }
 }
 
-impl<C: Signing> Secp256k1<C> {
-    fn sign_ecdsa_with_noncedata_pointer(
-        &self,
-        msg: impl Into<Message>,
-        sk: &SecretKey,
-        noncedata: Option<&[u8; 32]>,
-    ) -> Signature {
-        let msg = msg.into();
-        unsafe {
-            let mut ret = ffi::Signature::new();
-            let noncedata_ptr = match noncedata {
-                Some(arr) => arr.as_c_ptr() as *const _,
-                None => ptr::null(),
-            };
-            // We can assume the return value because it's not possible to construct
-            // an invalid signature from a valid `Message` and `SecretKey`
-            assert_eq!(
+fn sign_ecdsa_with_noncedata_pointer(
+    msg: impl Into<Message>,
+    sk: &SecretKey,
+    noncedata: Option<&[u8; 32]>,
+) -> Signature {
+    let msg = msg.into();
+    unsafe {
+        let mut ret = ffi::Signature::new();
+        let noncedata_ptr = match noncedata {
+            Some(arr) => arr.as_c_ptr() as *const _,
+            None => ptr::null(),
+        };
+        // We can assume the return value because it's not possible to construct
+        // an invalid signature from a valid `Message` and `SecretKey`
+        let res = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
                 ffi::secp256k1_ecdsa_sign(
-                    self.ctx.as_ptr(),
+                    secp.ctx.as_ptr(),
                     &mut ret,
                     msg.as_c_ptr(),
                     sk.as_c_ptr(),
                     ffi::secp256k1_nonce_function_rfc6979,
-                    noncedata_ptr
-                ),
-                1
-            );
-            Signature::from(ret)
-        }
-    }
+                    noncedata_ptr,
+                )
+            },
+            Some(&sk.to_secret_bytes()),
+        );
 
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
-    /// Requires a signing-capable context.
-    pub fn sign_ecdsa(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
-        self.sign_ecdsa_with_noncedata_pointer(msg, sk, None)
-    }
+        assert_eq!(res, 1);
 
-    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
-    /// and includes 32 bytes of noncedata in the nonce generation via inclusion in
-    /// one of the hash operations during nonce generation. This is useful when multiple
-    /// signatures are needed for the same Message and SecretKey while still using RFC6979.
-    /// Requires a signing-capable context.
-    pub fn sign_ecdsa_with_noncedata(
-        &self,
-        msg: impl Into<Message>,
-        sk: &SecretKey,
-        noncedata: &[u8; 32],
-    ) -> Signature {
-        self.sign_ecdsa_with_noncedata_pointer(msg, sk, Some(noncedata))
+        Signature::from(ret)
     }
+}
 
-    fn sign_grind_with_check(
-        &self,
-        msg: impl Into<Message>,
-        sk: &SecretKey,
-        check: impl Fn(&ffi::Signature) -> bool,
-    ) -> Signature {
-        let mut entropy_p: *const ffi::types::c_void = ptr::null();
-        let mut counter: u32 = 0;
-        let mut extra_entropy = [0u8; 32];
-        let msg = msg.into();
-        loop {
-            unsafe {
-                let mut ret = ffi::Signature::new();
-                // We can assume the return value because it's not possible to construct
-                // an invalid signature from a valid `Message` and `SecretKey`
-                assert_eq!(
+/// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+/// Requires a signing-capable context.
+pub fn sign(msg: impl Into<Message>, sk: &SecretKey) -> Signature {
+    sign_ecdsa_with_noncedata_pointer(msg, sk, None)
+}
+
+/// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+/// and includes 32 bytes of noncedata in the nonce generation via inclusion in
+/// one of the hash operations during nonce generation. This is useful when multiple
+/// signatures are needed for the same Message and SecretKey while still using RFC6979.
+/// Requires a signing-capable context.
+pub fn sign_with_noncedata(
+    msg: impl Into<Message>,
+    sk: &SecretKey,
+    noncedata: &[u8; 32],
+) -> Signature {
+    sign_ecdsa_with_noncedata_pointer(msg, sk, Some(noncedata))
+}
+
+fn sign_grind_with_check(
+    msg: impl Into<Message>,
+    sk: &SecretKey,
+    check: impl Fn(&ffi::Signature) -> bool,
+) -> Signature {
+    let mut entropy_p: *const ffi::types::c_void = ptr::null();
+    let mut counter: u32 = 0;
+    let mut extra_entropy = [0u8; 32];
+    let msg = msg.into();
+    loop {
+        unsafe {
+            let mut ret = ffi::Signature::new();
+            // We can assume the return value because it's not possible to construct
+            // an invalid signature from a valid `Message` and `SecretKey`
+            let res = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
                     ffi::secp256k1_ecdsa_sign(
-                        self.ctx.as_ptr(),
+                        secp.ctx.as_ptr(),
                         &mut ret,
                         msg.as_c_ptr(),
                         sk.as_c_ptr(),
                         ffi::secp256k1_nonce_function_rfc6979,
-                        entropy_p
-                    ),
-                    1
-                );
-                if check(&ret) {
-                    return Signature::from(ret);
-                }
+                        entropy_p,
+                    )
+                },
+                Some(&sk.to_secret_bytes()),
+            );
+            assert_eq!(res, 1);
 
-                counter += 1;
-                extra_entropy[..4].copy_from_slice(&counter.to_le_bytes());
-                entropy_p = extra_entropy.as_c_ptr().cast::<ffi::types::c_void>();
-
-                // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
-                #[cfg(secp256k1_fuzz)]
+            if check(&ret) {
                 return Signature::from(ret);
             }
+
+            counter += 1;
+            extra_entropy[..4].copy_from_slice(&counter.to_le_bytes());
+            entropy_p = extra_entropy.as_c_ptr().cast::<ffi::types::c_void>();
+
+            // When fuzzing, these checks will usually spinloop forever, so just short-circuit them.
+            #[cfg(secp256k1_fuzz)]
+            return Signature::from(ret);
         }
     }
+}
 
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 - `bytes_to_grind` bytes. The number
-    /// of signing operation performed by this function is exponential in the
-    /// number of bytes grinded.
-    /// Requires a signing capable context.
-    pub fn sign_ecdsa_grind_r(
-        &self,
-        msg: impl Into<Message>,
-        sk: &SecretKey,
-        bytes_to_grind: usize,
-    ) -> Signature {
-        let len_check = |s: &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
-        self.sign_grind_with_check(msg, sk, len_check)
-    }
+/// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+/// and "grinds" the nonce by passing extra entropy if necessary to produce
+/// a signature that is less than 71 - `bytes_to_grind` bytes. The number
+/// of signing operation performed by this function is exponential in the
+/// number of bytes grinded.
+/// Requires a signing capable context.
+pub fn sign_grind_r(msg: impl Into<Message>, sk: &SecretKey, bytes_to_grind: usize) -> Signature {
+    let len_check = |s: &ffi::Signature| der_length_check(s, 71 - bytes_to_grind);
+    sign_grind_with_check(msg, sk, len_check)
+}
 
-    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
-    /// and "grinds" the nonce by passing extra entropy if necessary to produce
-    /// a signature that is less than 71 bytes and compatible with the low r
-    /// signature implementation of bitcoin core. In average, this function
-    /// will perform two signing operations.
-    /// Requires a signing capable context.
-    pub fn sign_ecdsa_low_r(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
-        self.sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
-    }
+/// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+/// and "grinds" the nonce by passing extra entropy if necessary to produce
+/// a signature that is less than 71 bytes and compatible with the low r
+/// signature implementation of bitcoin core. In average, this function
+/// will perform two signing operations.
+/// Requires a signing capable context.
+pub fn sign_low_r(msg: impl Into<Message>, sk: &SecretKey) -> Signature {
+    sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
 }
 
 /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
@@ -363,13 +362,12 @@ impl<C: Signing> Secp256k1<C> {
 ///
 /// ```rust
 /// # #[cfg(all(feature = "rand", feature = "std"))] {
-/// # use secp256k1::{rand, ecdsa, Secp256k1, Message, Error};
+/// # use secp256k1::{rand, ecdsa, Message, Error};
 /// #
-/// # let secp = Secp256k1::new();
 /// # let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
 /// #
 /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
-/// let sig = secp.sign_ecdsa(message, &secret_key);
+/// let sig = ecdsa::sign(message, &secret_key);
 /// assert_eq!(ecdsa::verify(&sig, message, &public_key), Ok(()));
 ///
 /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");

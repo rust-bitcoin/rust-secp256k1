@@ -11,7 +11,7 @@ use secp256k1_sys::SchnorrSigExtraParams;
 
 use crate::ffi::{self, CPtr};
 use crate::key::{Keypair, XOnlyPublicKey};
-use crate::{constants, from_hex, Error, Secp256k1, Signing};
+use crate::{constants, from_hex, Error, Secp256k1};
 
 /// Represents a schnorr signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -109,74 +109,61 @@ impl Signature {
     }
 }
 
-impl<C: Signing> Secp256k1<C> {
-    fn sign_schnorr_helper(
-        &self,
-        msg: &[u8],
-        keypair: &Keypair,
-        nonce_data: *const ffi::types::c_uchar,
-    ) -> Signature {
-        unsafe {
-            let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
-            let extra = SchnorrSigExtraParams::new(None, nonce_data.cast());
-            assert_eq!(
-                1,
+fn sign_helper(msg: &[u8], keypair: &Keypair, nonce_data: *const ffi::types::c_uchar) -> Signature {
+    unsafe {
+        let mut sig = [0u8; constants::SCHNORR_SIGNATURE_SIZE];
+        let extra = SchnorrSigExtraParams::new(None, nonce_data.cast());
+
+        let res = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
                 ffi::secp256k1_schnorrsig_sign_custom(
-                    self.ctx.as_ptr(),
+                    secp.ctx.as_ptr(),
                     sig.as_mut_c_ptr(),
                     msg.as_c_ptr(),
                     msg.len(),
                     keypair.as_c_ptr(),
                     &extra,
                 )
-            );
+            },
+            Some(&keypair.secret_bytes()),
+        );
+        assert_eq!(res, 1);
 
-            Signature(sig)
-        }
+        Signature(sig)
     }
+}
 
-    /// Creates a schnorr signature internally using the [`rand::rngs::ThreadRng`] random number
-    /// generator to generate the auxiliary random data.
-    #[cfg(all(feature = "rand", feature = "std"))]
-    pub fn sign_schnorr(&self, msg: &[u8], keypair: &Keypair) -> Signature {
-        self.sign_schnorr_with_rng(msg, keypair, &mut rand::rng())
-    }
+/// Creates a schnorr signature internally using the [`rand::rngs::ThreadRng`] random number
+/// generator to generate the auxiliary random data.
+#[cfg(all(feature = "rand", feature = "std"))]
+pub fn sign(msg: &[u8], keypair: &Keypair) -> Signature {
+    sign_with_rng(msg, keypair, &mut rand::rng())
+}
 
-    /// Creates a schnorr signature without using any auxiliary random data.
-    pub fn sign_schnorr_no_aux_rand(&self, msg: &[u8], keypair: &Keypair) -> Signature {
-        self.sign_schnorr_helper(msg, keypair, ptr::null())
-    }
+/// Creates a schnorr signature without using any auxiliary random data.
+pub fn sign_no_aux_rand(msg: &[u8], keypair: &Keypair) -> Signature {
+    sign_helper(msg, keypair, ptr::null())
+}
 
-    /// Creates a schnorr signature using the given auxiliary random data.
-    pub fn sign_schnorr_with_aux_rand(
-        &self,
-        msg: &[u8],
-        keypair: &Keypair,
-        aux_rand: &[u8; 32],
-    ) -> Signature {
-        self.sign_schnorr_helper(msg, keypair, aux_rand.as_c_ptr() as *const ffi::types::c_uchar)
-    }
+/// Creates a schnorr signature using the given auxiliary random data.
+pub fn sign_with_aux_rand(msg: &[u8], keypair: &Keypair, aux_rand: &[u8; 32]) -> Signature {
+    sign_helper(msg, keypair, aux_rand.as_c_ptr() as *const ffi::types::c_uchar)
+}
 
-    /// Creates a schnorr signature using the given random number generator to
-    /// generate the auxiliary random data.
-    #[cfg(feature = "rand")]
-    pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
-        &self,
-        msg: &[u8],
-        keypair: &Keypair,
-        rng: &mut R,
-    ) -> Signature {
-        let mut aux = [0u8; 32];
-        rng.fill_bytes(&mut aux);
-        self.sign_schnorr_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_uchar)
-    }
+/// Creates a schnorr signature using the given random number generator to
+/// generate the auxiliary random data.
+#[cfg(feature = "rand")]
+pub fn sign_with_rng<R: Rng + CryptoRng>(msg: &[u8], keypair: &Keypair, rng: &mut R) -> Signature {
+    let mut aux = [0u8; 32];
+    rng.fill_bytes(&mut aux);
+    sign_helper(msg, keypair, aux.as_c_ptr() as *const ffi::types::c_uchar)
 }
 
 /// Verifies a schnorr signature.
 pub fn verify(sig: &Signature, msg: &[u8], pubkey: &XOnlyPublicKey) -> Result<(), Error> {
     // We have no seed here but we want rerandomiziation to happen for `rand` users.
     let seed = [0_u8; 32];
-   unsafe {
+    unsafe {
         let ret = crate::with_global_context(
             |secp: &Secp256k1<crate::AllPreallocated>| {
                 ffi::secp256k1_schnorrsig_verify(
@@ -225,46 +212,35 @@ mod tests {
     #[test]
     #[cfg(feature = "std")]
     fn schnorr_sign_with_aux_rand_verify() {
-        sign_helper((), |secp, msg, seckey, _| {
+        sign_helper((), |msg, seckey, _| {
             let aux_rand = crate::test_random_32_bytes();
-            secp.sign_schnorr_with_aux_rand(msg, seckey, &aux_rand)
+            sign_with_aux_rand(msg, seckey, &aux_rand)
         })
     }
 
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
-    fn schnor_sign_with_rng_verify() {
-        sign_helper(&mut rand::rng(), |secp, msg, seckey, rng| {
-            secp.sign_schnorr_with_rng(msg, seckey, rng)
-        })
-    }
+    fn schnor_sign_with_rng_verify() { sign_helper(&mut rand::rng(), sign_with_rng) }
 
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))] // sign_schnorr requires "rand"
-    fn schnorr_sign_verify() {
-        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr(msg, seckey))
-    }
+    fn schnorr_sign_verify() { sign_helper((), |msg, seckey, _| sign(msg, seckey)) }
 
     #[test]
     #[cfg(feature = "std")]
     fn schnorr_sign_no_aux_rand_verify() {
-        sign_helper((), |secp, msg, seckey, _| secp.sign_schnorr_no_aux_rand(msg, seckey))
+        sign_helper((), |msg, seckey, _| sign_no_aux_rand(msg, seckey))
     }
 
     #[cfg(feature = "std")]
-    fn sign_helper<R>(
-        mut rng: R,
-        sign: fn(&Secp256k1<crate::All>, &[u8], &Keypair, &mut R) -> Signature,
-    ) {
-        let secp = Secp256k1::new();
-
+    fn sign_helper<R>(mut rng: R, sign: fn(&[u8], &Keypair, &mut R) -> Signature) {
         let kp = Keypair::test_random();
         let (pk, _parity) = kp.x_only_public_key();
 
         for _ in 0..100 {
             let msg = crate::test_random_32_bytes();
 
-            let sig = sign(&secp, &msg, &kp, &mut rng);
+            let sig = sign(&msg, &kp, &mut rng);
 
             assert!(verify(&sig, &msg, &pk).is_ok());
         }
@@ -274,8 +250,6 @@ mod tests {
     #[cfg(feature = "alloc")]
     #[cfg(not(secp256k1_fuzz))] // fixed sig vectors can't work with fuzz-sigs
     fn schnorr_sign() {
-        let secp = Secp256k1::new();
-
         let msg = hex_32!("E48441762FB75010B2AA31A512B62B4148AA3FB08EB0765D76B252559064A614");
         let sk =
             Keypair::from_str("688C77BC2D5AAFF5491CF309D4753B732135470D05B7B2CD21ADD0744FE97BEF")
@@ -284,7 +258,7 @@ mod tests {
             hex_32!("02CCE08E913F22A36C5648D6405A2C7C50106E7AA2F1649E381C7F09D16B80AB");
         let expected_sig = Signature::from_str("6470FD1303DDA4FDA717B9837153C24A6EAB377183FC438F939E0ED2B620E9EE5077C4A8B8DCA28963D772A94F5F0DDF598E1C47C137F91933274C7C3EDADCE8").unwrap();
 
-        let sig = secp.sign_schnorr_with_aux_rand(&msg, &sk, &aux_rand);
+        let sig = sign_with_aux_rand(&msg, &sk, &aux_rand);
 
         assert_eq!(expected_sig, sig);
     }
@@ -469,12 +443,10 @@ mod tests {
     fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 
-        let s = Secp256k1::new();
-
         let msg = [1; 32];
         let keypair = Keypair::from_seckey_byte_array([2; 32]).unwrap();
         let aux = [3u8; 32];
-        let sig = s.sign_schnorr_with_aux_rand(&msg, &keypair, &aux);
+        let sig = sign_with_aux_rand(&msg, &keypair, &aux);
         static SIG_BYTES: [u8; constants::SCHNORR_SIGNATURE_SIZE] = [
             0x14, 0xd0, 0xbf, 0x1a, 0x89, 0x53, 0x50, 0x6f, 0xb4, 0x60, 0xf5, 0x8b, 0xe1, 0x41,
             0xaf, 0x76, 0x7f, 0xd1, 0x12, 0x53, 0x5f, 0xb3, 0x92, 0x2e, 0xf2, 0x17, 0x30, 0x8e,
@@ -693,7 +665,6 @@ mod tests {
                 should_fail_verify: false,
             },
         ];
-        let secp = Secp256k1::new();
 
         for TestVector {
             secret_key,
@@ -707,7 +678,7 @@ mod tests {
             if let (Some(secret_key), Some(aux_rand)) = (secret_key, aux_rand) {
                 let keypair = Keypair::from_seckey_byte_array(secret_key).unwrap();
                 assert_eq!(keypair.x_only_public_key().0.serialize(), public_key);
-                let sig = secp.sign_schnorr_with_aux_rand(&message, &keypair, &aux_rand);
+                let sig = sign_with_aux_rand(&message, &keypair, &aux_rand);
                 assert_eq!(sig.to_byte_array(), signature);
             }
             let sig = Signature::from_byte_array(signature);

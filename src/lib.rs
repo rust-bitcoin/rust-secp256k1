@@ -30,7 +30,7 @@
 //! ```rust
 //! # #[cfg(all(feature = "rand", feature = "std"))] {
 //! use secp256k1::rand;
-//! use secp256k1::{ecdsa, Secp256k1, Message};
+//! use secp256k1::{ecdsa, Message};
 //!
 //! // Our message to sign. We explicitly obtain a hash and convert it to a
 //! // `Message`. In a real application, we would produce a signature hash
@@ -41,11 +41,10 @@
 //!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
 //! ];
 //!
-//! let secp = Secp256k1::new();
 //! let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
 //! let message = Message::from_digest(HELLO_WORLD_SHA2);
 //!
-//! let sig = secp.sign_ecdsa(message, &secret_key);
+//! let sig = ecdsa::sign(message, &secret_key);
 //! assert!(ecdsa::verify(&sig, message, &public_key).is_ok());
 //! # }
 //! ```
@@ -76,17 +75,16 @@
 //!
 //! ```rust
 //! # #[cfg(feature = "alloc")] {
-//! use secp256k1::{ecdsa, Secp256k1, Message, SecretKey, PublicKey};
+//! use secp256k1::{ecdsa, Message, SecretKey, PublicKey};
 //! # fn compute_hash(_: &[u8]) -> [u8; 32] { [0xab; 32] }
 //!
-//! let secp = Secp256k1::new();
 //! let secret_key = SecretKey::from_secret_bytes([0xcd; 32]).expect("32 bytes, within curve order");
 //! let public_key = PublicKey::from_secret_key(&secret_key);
 //! // If the supplied byte slice was *not* the output of a cryptographic hash function this would
 //! // be cryptographically broken. It has been trivially used in the past to execute attacks.
 //! let message = Message::from_digest(compute_hash(b"CSW is not Satoshi"));
 //!
-//! let sig = secp.sign_ecdsa(message, &secret_key);
+//! let sig = ecdsa::sign(message, &secret_key);
 //! assert!(ecdsa::verify(&sig, message, &public_key).is_ok());
 //! # }
 //! ```
@@ -579,8 +577,8 @@ mod tests {
         let (sk, pk) = crate::test_random_keypair();
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
-        assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
-        let sig = full.sign_ecdsa(msg, &sk);
+        assert_eq!(ecdsa::sign(msg, &sk), ecdsa::sign(msg, &sk));
+        let sig = ecdsa::sign(msg, &sk);
 
         // Try verifying
         assert!(ecdsa::verify(&sig, msg, &pk).is_ok());
@@ -630,22 +628,11 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn test_preallocation() {
-        use crate::ffi::types::AlignedType;
-
-        let mut buf_ful = vec![AlignedType::zeroed(); Secp256k1::preallocate_size()];
-        let mut buf_sign = vec![AlignedType::zeroed(); Secp256k1::preallocate_signing_size()];
-
-        let full = Secp256k1::preallocated_new(&mut buf_ful).unwrap();
-        let sign = Secp256k1::preallocated_signing_only(&mut buf_sign).unwrap();
-
-        //        drop(buf_vfy); // The buffer can't get dropped before the context.
-        //        println!("{:?}", buf_ful[5]); // Can't even read the data thanks to the borrow checker.
-
         let (sk, pk) = crate::generate_keypair(&mut rand::rng());
         let msg = Message::from_digest([2u8; 32]);
         // Try signing
-        assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
-        let sig = full.sign_ecdsa(msg, &sk);
+        assert_eq!(ecdsa::sign(msg, &sk), ecdsa::sign(msg, &sk));
+        let sig = ecdsa::sign(msg, &sk);
 
         // Try verifying
         assert!(ecdsa::verify(&sig, msg, &pk).is_ok());
@@ -655,9 +642,6 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn capabilities() {
-        let sign = Secp256k1::signing_only();
-        let full = Secp256k1::new();
-
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
 
@@ -665,8 +649,8 @@ mod tests {
         let (sk, pk) = crate::generate_keypair(&mut rand::rng());
 
         // Try signing
-        assert_eq!(sign.sign_ecdsa(msg, &sk), full.sign_ecdsa(msg, &sk));
-        let sig = full.sign_ecdsa(msg, &sk);
+        assert_eq!(ecdsa::sign(msg, &sk), ecdsa::sign(msg, &sk));
+        let sig = ecdsa::sign(msg, &sk);
 
         // Try verifying
         assert!(ecdsa::verify(&sig, msg, &pk).is_ok());
@@ -691,7 +675,7 @@ mod tests {
             let msg = Message::from_digest(msg);
 
             let (sk, _) = crate::generate_keypair(&mut rand::rng());
-            let sig1 = s.sign_ecdsa(msg, &sk);
+            let sig1 = ecdsa::sign(msg, &sk);
             let der = sig1.serialize_der();
             let sig2 = ecdsa::Signature::from_der(&der[..]).unwrap();
             assert_eq!(sig1, sig2);
@@ -782,13 +766,13 @@ mod tests {
             let msg = Message::from_digest(msg);
 
             let (sk, pk) = crate::generate_keypair(&mut rand::rng());
-            let sig = s.sign_ecdsa(msg, &sk);
+            let sig = ecdsa::sign(msg, &sk);
             assert_eq!(ecdsa::verify(&sig, msg, &pk), Ok(()));
-            let noncedata_sig = s.sign_ecdsa_with_noncedata(msg, &sk, &noncedata);
+            let noncedata_sig = ecdsa::sign_with_noncedata(msg, &sk, &noncedata);
             assert_eq!(ecdsa::verify(&noncedata_sig, msg, &pk), Ok(()));
-            let low_r_sig = s.sign_ecdsa_low_r(msg, &sk);
+            let low_r_sig = ecdsa::sign_low_r(msg, &sk);
             assert_eq!(ecdsa::verify(&low_r_sig, msg, &pk), Ok(()));
-            let grind_r_sig = s.sign_ecdsa_grind_r(msg, &sk, 1);
+            let grind_r_sig = ecdsa::sign_grind_r(msg, &sk, 1);
             assert_eq!(ecdsa::verify(&grind_r_sig, msg, &pk), Ok(()));
             let compact = sig.serialize_compact();
             if compact[0] < 0x80 {
@@ -827,9 +811,9 @@ mod tests {
 
         for key in wild_keys.iter().copied().map(SecretKey::from_secret_bytes).map(Result::unwrap) {
             for msg in wild_msgs.into_iter().map(Message::from_digest) {
-                let sig = s.sign_ecdsa(msg, &key);
-                let low_r_sig = s.sign_ecdsa_low_r(msg, &key);
-                let grind_r_sig = s.sign_ecdsa_grind_r(msg, &key, 1);
+                let sig = ecdsa::sign(msg, &key);
+                let low_r_sig = ecdsa::sign_low_r(msg, &key);
+                let grind_r_sig = ecdsa::sign_grind_r(msg, &key, 1);
                 let pk = PublicKey::from_secret_key(&key);
                 assert_eq!(ecdsa::verify(&sig, msg, &pk), Ok(()));
                 assert_eq!(ecdsa::verify(&low_r_sig, msg, &pk), Ok(()));
@@ -849,7 +833,7 @@ mod tests {
 
         let (sk, pk) = crate::generate_keypair(&mut rand::rng());
 
-        let sig = s.sign_ecdsa(msg, &sk);
+        let sig = ecdsa::sign(msg, &sk);
 
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
@@ -914,7 +898,6 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_noncedata() {
-        let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
         let msg = Message::from_digest(msg);
         let noncedata = [42u8; 32];
@@ -924,7 +907,7 @@ mod tests {
         let expected_sig = hex!("24861b3edd4e7da43319c635091405feced6efa4ec99c3c3c35f6c3ba0ed8816116772e84994084db85a6c20589f6a85af569d42275c2a5dd900da5776b99d5d");
         let expected_sig = ecdsa::Signature::from_compact(&expected_sig).unwrap();
 
-        let sig = secp.sign_ecdsa_with_noncedata(msg, &sk, &noncedata);
+        let sig = ecdsa::sign_with_noncedata(msg, &sk, &noncedata);
 
         assert_eq!(expected_sig, sig);
     }
@@ -955,7 +938,6 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_low_r() {
-        let secp = Secp256k1::new();
         let msg = hex!("887d04bb1cf1b1554f1b268dfe62d13064ca67ae45348d50d1392ce2d13418ac");
         let msg = Message::from_digest(msg);
         let sk =
@@ -964,7 +946,7 @@ mod tests {
         let expected_sig = hex!("047dd4d049db02b430d24c41c7925b2725bcd5a85393513bdec04b4dc363632b1054d0180094122b380f4cfa391e6296244da773173e78fc745c1b9c79f7b713");
         let expected_sig = ecdsa::Signature::from_compact(&expected_sig).unwrap();
 
-        let sig = secp.sign_ecdsa_low_r(msg, &sk);
+        let sig = ecdsa::sign_low_r(msg, &sk);
 
         assert_eq!(expected_sig, sig);
     }
@@ -973,7 +955,6 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))] // fuzz-sigs have fixed size/format
     #[cfg(any(feature = "alloc", feature = "std"))]
     fn test_grind_r() {
-        let secp = Secp256k1::new();
         let msg = hex!("ef2d5b9a7c61865a95941d0f04285420560df7e9d76890ac1b8867b12ce43167");
         let msg = Message::from_digest(msg);
         let sk =
@@ -981,7 +962,7 @@ mod tests {
                 .unwrap();
         let expected_sig = ecdsa::Signature::from_str("304302202ffc447100d518c8ba643d11f3e6a83a8640488e7d2537b1954b942408be6ea3021f26e1248dd1e52160c3a38af9769d91a1a806cab5f9d508c103464d3c02d6e1").unwrap();
 
-        let sig = secp.sign_ecdsa_grind_r(msg, &sk, 2);
+        let sig = ecdsa::sign_grind_r(msg, &sk, 2);
 
         assert_eq!(expected_sig, sig);
     }
@@ -993,11 +974,9 @@ mod tests {
     fn test_serde() {
         use serde_test::{assert_tokens, Configure, Token};
 
-        let s = Secp256k1::new();
-
         let msg = Message::from_digest([1; 32]);
         let sk = SecretKey::from_secret_bytes([2; 32]).unwrap();
-        let sig = s.sign_ecdsa(msg, &sk);
+        let sig = ecdsa::sign(msg, &sk);
         static SIG_BYTES: [u8; 71] = [
             48, 69, 2, 33, 0, 157, 11, 173, 87, 103, 25, 211, 42, 231, 107, 237, 179, 76, 119, 72,
             102, 103, 60, 189, 227, 244, 225, 41, 81, 85, 92, 148, 8, 230, 206, 119, 75, 2, 32, 40,
@@ -1021,7 +1000,6 @@ mod tests {
     #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
-        use crate::SECP256K1;
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
         let sk = SecretKey::from_secret_bytes(sk_data).unwrap();
         let msg_data = hex!("a4965ca63b7d8562736ceec36dfa5a11bf426eb65be8ea3f7a49ae363032da0d");
@@ -1031,7 +1009,7 @@ mod tests {
         let pk = PublicKey::from_secret_key(&sk);
 
         // Check usage as self
-        let sig = SECP256K1.sign_ecdsa(msg, &sk);
+        let sig = ecdsa::sign(msg, &sk);
         assert!(ecdsa::verify(&sig, msg, &pk).is_ok());
     }
 }

@@ -19,8 +19,6 @@ use crate::ellswift::ElligatorSwift;
 use crate::ffi::types::c_uint;
 use crate::ffi::{self, CPtr};
 use crate::Error::{self, InvalidPublicKey, InvalidPublicKeySum};
-#[cfg(feature = "global-context")]
-use crate::SECP256K1;
 use crate::{constants, ecdsa, from_hex, schnorr, Message, Scalar, Secp256k1, Verification};
 
 /// Public key - used to verify ECDSA signatures and to do Taproot tweaks.
@@ -712,19 +710,15 @@ impl Keypair {
         XOnlyPublicKey::from_keypair(self)
     }
 
-    /// Constructs a schnorr signature for `msg` using the global [`SECP256K1`] context.
+    /// Constructs a schnorr signature for `msg`.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
-    pub fn sign_schnorr(&self, msg: &[u8]) -> schnorr::Signature {
-        SECP256K1.sign_schnorr(msg, self)
-    }
+    #[cfg(all(feature = "rand", feature = "std"))]
+    pub fn sign_schnorr(&self, msg: &[u8]) -> schnorr::Signature { schnorr::sign(msg, self) }
 
-    /// Constructs a schnorr signature without aux rand for `msg` using the global
-    /// [`SECP256K1`] context.
+    /// Constructs a schnorr signature without aux rand for `msg`.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "std"))]
     pub fn sign_schnorr_no_aux_rand(&self, msg: &[u8]) -> schnorr::Signature {
-        SECP256K1.sign_schnorr_no_aux_rand(msg, self)
+        schnorr::sign_no_aux_rand(msg, self)
     }
 
     /// Attempts to erase the secret within the underlying array.
