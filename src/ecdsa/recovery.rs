@@ -250,7 +250,7 @@ mod tests {
 
     use super::*;
     use crate::constants::ONE;
-    use crate::{ecdsa, Error, Message, Secp256k1, SecretKey};
+    use crate::{ecdsa, Error, Message, SecretKey};
 
     #[test]
     fn capabilities() {
