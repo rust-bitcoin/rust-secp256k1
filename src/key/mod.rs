@@ -1387,7 +1387,7 @@ mod test {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{Keypair, Parity, PublicKey, Secp256k1, SecretKey, XOnlyPublicKey, *};
+    use super::*;
     use crate::Error::{InvalidPublicKey, InvalidSecretKey};
     use crate::{constants, from_hex, to_hex, Scalar};
 

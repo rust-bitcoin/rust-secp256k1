@@ -248,7 +248,7 @@ mod tests {
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    use super::{RecoverableSignature, RecoveryId};
+    use super::*;
     use crate::constants::ONE;
     use crate::{Error, Message, Secp256k1, SecretKey};
 

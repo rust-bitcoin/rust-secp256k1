@@ -1063,7 +1063,7 @@ mod benches {
     use rand::rngs::mock::StepRng;
     use test::{black_box, Bencher};
 
-    use super::{Message, Secp256k1};
+    use super::*;
 
     #[bench]
     pub fn generate(bh: &mut Bencher) {
