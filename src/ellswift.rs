@@ -42,7 +42,7 @@ use core::str::FromStr;
 use ffi::CPtr;
 use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
-use crate::{constants, ffi, from_hex, Error, PublicKey, Secp256k1, SecretKey, Verification};
+use crate::{constants, ffi, from_hex, Error, PublicKey, Secp256k1, SecretKey};
 
 unsafe extern "C" fn hash_callback<F>(
     output: *mut c_uchar,
@@ -109,25 +109,25 @@ impl ElligatorSwift {
     /// # Example
     /// ```
     /// # #[cfg(feature = "alloc")] {
-    ///     use secp256k1::{ellswift::ElligatorSwift, PublicKey, Secp256k1, SecretKey};
-    ///     let secp = Secp256k1::new();
+    ///     use secp256k1::{ellswift::ElligatorSwift, PublicKey, SecretKey};
     ///     let sk = SecretKey::from_secret_bytes([1; 32]).unwrap();
-    ///     let es = ElligatorSwift::from_seckey(&secp, sk, None);
+    ///     let es = ElligatorSwift::from_seckey(sk, None);
     /// # }
     /// ```
-    pub fn from_seckey<C: Verification>(
-        secp: &Secp256k1<C>,
-        sk: SecretKey,
-        aux_rand: Option<[u8; 32]>,
-    ) -> ElligatorSwift {
+    pub fn from_seckey(sk: SecretKey, aux_rand: Option<[u8; 32]>) -> ElligatorSwift {
         let mut es_out = [0u8; constants::ELLSWIFT_ENCODING_SIZE];
         let aux_rand_ptr = aux_rand.as_c_ptr();
         unsafe {
-            let ret = ffi::secp256k1_ellswift_create(
-                secp.ctx().as_ptr(),
-                es_out.as_mut_c_ptr(),
-                sk.as_c_ptr(),
-                aux_rand_ptr,
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_ellswift_create(
+                        secp.ctx().as_ptr(),
+                        es_out.as_mut_c_ptr(),
+                        sk.as_c_ptr(),
+                        aux_rand_ptr,
+                    )
+                },
+                Some(&sk.to_secret_bytes()),
             );
             debug_assert_eq!(ret, 1);
         }
@@ -154,17 +154,15 @@ impl ElligatorSwift {
     /// # #[cfg(feature = "alloc")] {
     ///     use secp256k1::{
     ///         ellswift::{ElligatorSwift, Party},
-    ///         PublicKey, SecretKey, XOnlyPublicKey, Secp256k1,
+    ///         PublicKey, SecretKey, XOnlyPublicKey,
     ///     };
     ///     use core::str::FromStr;
-    ///
-    ///     let secp = Secp256k1::new();
     ///
     ///     let alice_sk = SecretKey::from_str("e714e76bdd67ad9f495683c37934148f4efc25ce3f01652c8a906498339e1f3a").unwrap();
     ///     let bob_sk = SecretKey::from_str("b6c4b0e2f8c4359caf356a618cd1649d18790a1d67f7c2d1e4760e04c785db4f").unwrap();
     ///
-    ///     let alice_es = ElligatorSwift::from_seckey(&secp, alice_sk, None);
-    ///     let bob_es = ElligatorSwift::from_seckey(&secp, bob_sk, None);
+    ///     let alice_es = ElligatorSwift::from_seckey(alice_sk, None);
+    ///     let bob_es = ElligatorSwift::from_seckey(bob_sk, None);
     ///
     ///     let alice_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, alice_sk, Party::Initiator);
     ///     let bob_shared_secret = ElligatorSwift::shared_secret(alice_es, bob_es, bob_sk, Party::Responder);
@@ -385,11 +383,9 @@ mod tests {
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn test_create_elligator_swift_create_rtt() {
         // Test that we can round trip an ElligatorSwift created from a secret key
-        let secp = crate::Secp256k1::new();
         let rand32 = [1u8; 32];
         let priv32 = [1u8; 32];
-        let ell =
-            ElligatorSwift::from_seckey(&secp, SecretKey::from_secret_bytes(rand32).unwrap(), None);
+        let ell = ElligatorSwift::from_seckey(SecretKey::from_secret_bytes(rand32).unwrap(), None);
         let pk = PublicKey::from_ellswift(ell);
         let expected = PublicKey::from_secret_key(&SecretKey::from_secret_bytes(priv32).unwrap());
 
@@ -399,11 +395,9 @@ mod tests {
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn test_xdh_with_custom_hasher() {
         // Test the ECDH with a custom hash function
-        let secp = crate::Secp256k1::new();
         let rand32 = [1u8; 32];
         let priv32 = [2u8; 32];
         let ell = ElligatorSwift::from_seckey(
-            &secp,
             SecretKey::from_secret_bytes(rand32).unwrap(),
             Some(rand32),
         );
