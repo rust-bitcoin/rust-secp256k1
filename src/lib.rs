@@ -174,6 +174,8 @@ mod macros;
 mod secret;
 mod context;
 mod key;
+#[cfg(feature = "serde")]
+mod serde_util;
 
 pub mod constants;
 pub mod ecdh;
@@ -182,8 +184,6 @@ pub mod ellswift;
 pub mod musig;
 pub mod scalar;
 pub mod schnorr;
-#[cfg(feature = "serde")]
-mod serde_util;
 
 use core::marker::PhantomData;
 use core::ptr::NonNull;
