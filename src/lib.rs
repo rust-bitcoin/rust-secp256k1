@@ -163,6 +163,11 @@ extern crate core;
 #[cfg(bench)]
 extern crate test;
 
+#[cfg(feature = "rand")]
+pub extern crate rand;
+#[cfg(feature = "serde")]
+pub extern crate serde;
+
 #[macro_use]
 mod macros;
 #[macro_use]
@@ -186,11 +191,7 @@ use core::{fmt, mem, str};
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 pub use context::global::{self, SECP256K1};
-#[cfg(feature = "rand")]
-pub use rand;
 pub use secp256k1_sys as ffi;
-#[cfg(feature = "serde")]
-pub use serde;
 
 pub use crate::context::{
     rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
