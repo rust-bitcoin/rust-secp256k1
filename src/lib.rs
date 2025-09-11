@@ -189,9 +189,11 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
+#[rustfmt::skip]                // Keep public re-exports separate.
+pub use secp256k1_sys as ffi;
+
 #[cfg(all(feature = "global-context", feature = "std"))]
 pub use context::global::{self, SECP256K1};
-pub use secp256k1_sys as ffi;
 
 pub use crate::context::{
     rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
