@@ -189,6 +189,9 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::{fmt, mem, str};
 
+use crate::ffi::types::AlignedType;
+use crate::ffi::CPtr;
+
 #[rustfmt::skip]                // Keep public re-exports separate.
 pub use secp256k1_sys as ffi;
 
@@ -201,8 +204,6 @@ pub use crate::context::{
 };
 #[cfg(feature = "alloc")]
 pub use crate::context::{All, SignOnly, VerifyOnly};
-use crate::ffi::types::AlignedType;
-use crate::ffi::CPtr;
 pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
 pub use crate::scalar::Scalar;
 
