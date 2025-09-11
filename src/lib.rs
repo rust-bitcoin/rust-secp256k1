@@ -197,15 +197,18 @@ pub use secp256k1_sys as ffi;
 
 #[cfg(all(feature = "global-context", feature = "std"))]
 pub use crate::context::global::{self, SECP256K1};
-pub use crate::context::{
-    rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
-    Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
-    VerifyOnlyPreallocated,
-};
 #[cfg(feature = "alloc")]
 pub use crate::context::{All, SignOnly, VerifyOnly};
-pub use crate::key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey};
-pub use crate::scalar::Scalar;
+#[doc(inline)]
+pub use crate::{
+    context::{
+        rerandomize_global_context, with_global_context, with_raw_global_context, AllPreallocated,
+        Context, PreallocatedContext, SignOnlyPreallocated, Signing, Verification,
+        VerifyOnlyPreallocated,
+    },
+    key::{InvalidParityValue, Keypair, Parity, PublicKey, SecretKey, XOnlyPublicKey},
+    scalar::Scalar,
+};
 
 /// Trait describing something that promises to be a 32-byte uniformly random number.
 ///
