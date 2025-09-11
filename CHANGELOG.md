@@ -1,3 +1,7 @@
+# 0.31.1 - 2025-06-23
+
+* Update deprecation notes with `since` instead of `TBD`.
+
 # 0.31.0 - 2025-04-21
 
 * Update `rand` to 0.9 [#788](https://github.com/rust-bitcoin/rust-secp256k1/pull/788)
