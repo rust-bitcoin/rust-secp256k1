@@ -42,9 +42,8 @@ mod encapsulate {
     ///
     /// ```
     /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey};
+    /// use secp256k1::{rand, SecretKey};
     ///
-    /// let secp = Secp256k1::new();
     /// let secret_key = SecretKey::new(&mut rand::rng());
     /// # }
     /// ```
