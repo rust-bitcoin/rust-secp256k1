@@ -11,6 +11,7 @@ keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.63.0"
+exclude = ["tests", "contrib"]
 
 [package.metadata.docs.rs]
 all-features = true
