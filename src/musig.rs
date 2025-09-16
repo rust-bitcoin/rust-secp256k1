@@ -12,9 +12,10 @@ use core::mem::MaybeUninit;
 use std;
 
 use crate::ffi::{self, CPtr};
+#[cfg(doc)]
+use crate::key;
 use crate::{
-    from_hex, schnorr, Error, Keypair, PublicKey, Scalar, Secp256k1, SecretKey, Signing,
-    Verification, XOnlyPublicKey,
+    from_hex, schnorr, Error, Keypair, PublicKey, Scalar, Secp256k1, SecretKey, XOnlyPublicKey,
 };
 
 /// Serialized size (in bytes) of the aggregated nonce.
@@ -147,7 +148,6 @@ impl fmt::Display for InvalidTweakErr {
 ///
 /// # Arguments:
 ///
-/// * `secp` : [`Secp256k1`] context object initialized for signing
 /// * `session_secrand`: [`SessionSecretRand`] Uniform random identifier for this session. Each call to this
 ///   function must have a UNIQUE `session_secrand`.
 /// * `sec_key`: Optional [`SecretKey`] that we will use to sign to a create partial signature. Provide this
@@ -164,22 +164,20 @@ impl fmt::Display for InvalidTweakErr {
 /// ```rust
 /// # #[cfg(feature = "std")]
 /// # #[cfg(feature = "rand")] {
-/// # use secp256k1::{PublicKey, Secp256k1, SecretKey};
+/// # use secp256k1::{PublicKey, SecretKey};
 /// # use secp256k1::musig::{new_nonce_pair, SessionSecretRand};
-/// # let secp = Secp256k1::new();
 /// // The session id must be sampled at random. Read documentation for more details.
 /// let session_secrand = SessionSecretRand::from_rng(&mut rand::rng());
 /// let sk = SecretKey::new(&mut rand::rng());
-/// let pk = PublicKey::from_secret_key(&secp, &sk);
+/// let pk = PublicKey::from_secret_key(&sk);
 ///
 /// // Supply extra auxiliary randomness to prevent misuse(for example, time of day)
 /// let extra_rand : Option<[u8; 32]> = None;
 ///
-/// let (_sec_nonce, _pub_nonce) = new_nonce_pair(&secp, session_secrand, None, Some(sk), pk, None, None);
+/// let (_sec_nonce, _pub_nonce) = new_nonce_pair(session_secrand, None, Some(sk), pk, None, None);
 /// # }
 /// ```
-pub fn new_nonce_pair<C: Signing>(
-    secp: &Secp256k1<C>,
+pub fn new_nonce_pair(
     mut session_secrand: SessionSecretRand,
     key_agg_cache: Option<&KeyAggCache>,
     sec_key: Option<SecretKey>,
@@ -187,11 +185,23 @@ pub fn new_nonce_pair<C: Signing>(
     msg: Option<&[u8; 32]>,
     extra_rand: Option<[u8; 32]>,
 ) -> (SecretNonce, PublicNonce) {
-    let cx = secp.ctx().as_ptr();
     let extra_ptr = extra_rand.as_ref().map(|e| e.as_ptr()).unwrap_or(core::ptr::null());
     let sk_ptr = sec_key.as_ref().map(|e| e.as_c_ptr()).unwrap_or(core::ptr::null());
     let msg_ptr = msg.as_ref().map(|e| e.as_c_ptr()).unwrap_or(core::ptr::null());
     let cache_ptr = key_agg_cache.map(|e| e.as_ptr()).unwrap_or(core::ptr::null());
+
+    let mut seed = session_secrand.to_byte_array();
+    if let Some(bytes) = sec_key {
+        for (this, that) in seed.iter_mut().zip(bytes.to_secret_bytes().iter()) {
+            *this ^= *that;
+        }
+    }
+    if let Some(bytes) = extra_rand {
+        for (this, that) in seed.iter_mut().zip(bytes.iter()) {
+            *this ^= *that;
+        }
+    }
+
     unsafe {
         // The use of a mutable pointer to `session_secrand`, which is a local variable,
         // may seem concerning/wrong. It is ok: this pointer is only mutable because the
@@ -201,18 +211,25 @@ pub fn new_nonce_pair<C: Signing>(
         // caller or anything.
         let mut sec_nonce = MaybeUninit::<ffi::MusigSecNonce>::uninit();
         let mut pub_nonce = MaybeUninit::<ffi::MusigPubNonce>::uninit();
-        if ffi::secp256k1_musig_nonce_gen(
-            cx,
-            sec_nonce.as_mut_ptr(),
-            pub_nonce.as_mut_ptr(),
-            session_secrand.as_mut_ptr(),
-            sk_ptr,
-            pub_key.as_c_ptr(),
-            msg_ptr,
-            cache_ptr,
-            extra_ptr,
-        ) == 0
-        {
+
+        let ret = crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
+                ffi::secp256k1_musig_nonce_gen(
+                    secp.ctx.as_ptr(),
+                    sec_nonce.as_mut_ptr(),
+                    pub_nonce.as_mut_ptr(),
+                    session_secrand.as_mut_ptr(),
+                    sk_ptr,
+                    pub_key.as_c_ptr(),
+                    msg_ptr,
+                    cache_ptr,
+                    extra_ptr,
+                )
+            },
+            Some(&seed),
+        );
+
+        if ret == 0 {
             // Rust type system guarantees that
             // - input secret key is valid
             // - msg is 32 bytes
@@ -354,7 +371,7 @@ impl KeyAggCache {
     /// ensures the same resulting `agg_pk` for the same multiset of pubkeys.
     /// This is useful to do before aggregating pubkeys, such that the order of pubkeys
     /// does not affect the combined public key.
-    /// To do this, call [`Secp256k1::sort_pubkeys`].
+    /// To do this, call [`key::sort_pubkeys`].
     ///
     /// # Returns
     ///
@@ -371,15 +388,14 @@ impl KeyAggCache {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::KeyAggCache;
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
-    /// let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// let key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     /// let _agg_pk = key_agg_cache.agg_pk();
     /// # }
     /// ```
@@ -387,15 +403,16 @@ impl KeyAggCache {
     /// # Panics
     ///
     /// Panics if an empty slice of pubkeys is provided.
-    pub fn new<C: Verification>(secp: &Secp256k1<C>, pubkeys: &[&PublicKey]) -> Self {
+    pub fn new(pubkeys: &[&PublicKey]) -> Self {
         if pubkeys.is_empty() {
             panic!("Cannot aggregate an empty slice of pubkeys");
         }
 
-        let cx = secp.ctx().as_ptr();
-
         let mut key_agg_cache = MaybeUninit::<ffi::MusigKeyAggCache>::uninit();
         let mut agg_pk = MaybeUninit::<ffi::XOnlyPublicKey>::uninit();
+
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
 
         unsafe {
             let pubkeys_ref = core::slice::from_raw_parts(
@@ -403,14 +420,19 @@ impl KeyAggCache {
                 pubkeys.len(),
             );
 
-            if ffi::secp256k1_musig_pubkey_agg(
-                cx,
-                agg_pk.as_mut_ptr(),
-                key_agg_cache.as_mut_ptr(),
-                pubkeys_ref.as_ptr(),
-                pubkeys_ref.len(),
-            ) == 0
-            {
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_pubkey_agg(
+                        secp.ctx.as_ptr(),
+                        agg_pk.as_mut_ptr(),
+                        key_agg_cache.as_mut_ptr(),
+                        pubkeys_ref.as_ptr(),
+                        pubkeys_ref.len(),
+                    )
+                },
+                Some(&seed),
+            );
+            if ret == 0 {
                 // Returns 0 only if the keys are malformed that never happens in safe rust type system.
                 unreachable!("Invalid XOnlyPublicKey in input pubkeys")
             } else {
@@ -470,36 +492,38 @@ impl KeyAggCache {
     /// # #[cfg(not(secp256k1_fuzz))]
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Scalar, Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{Scalar, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::KeyAggCache;
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
-    /// let mut key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// let mut key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     ///
     /// let tweak: [u8; 32] = *b"this could be a BIP32 tweak....\0";
     /// let tweak = Scalar::from_be_bytes(tweak).unwrap();
-    /// let tweaked_key = key_agg_cache.pubkey_ec_tweak_add(&secp, &tweak).unwrap();
+    /// let tweaked_key = key_agg_cache.pubkey_ec_tweak_add(&tweak).unwrap();
     /// # }
     /// ```
-    pub fn pubkey_ec_tweak_add<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>,
-        tweak: &Scalar,
-    ) -> Result<PublicKey, InvalidTweakErr> {
-        let cx = secp.ctx().as_ptr();
+    pub fn pubkey_ec_tweak_add(&mut self, tweak: &Scalar) -> Result<PublicKey, InvalidTweakErr> {
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
             let mut out = PublicKey::from(ffi::PublicKey::new());
-            if ffi::secp256k1_musig_pubkey_ec_tweak_add(
-                cx,
-                out.as_mut_c_ptr(),
-                self.as_mut_ptr(),
-                tweak.as_c_ptr(),
-            ) == 0
-            {
+
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_pubkey_ec_tweak_add(
+                        secp.ctx.as_ptr(),
+                        out.as_mut_c_ptr(),
+                        self.as_mut_ptr(),
+                        tweak.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
+            );
+            if ret == 0 {
                 Err(InvalidTweakErr)
             } else {
                 self.aggregated_xonly_public_key = out.x_only_public_key().0;
@@ -531,35 +555,37 @@ impl KeyAggCache {
     /// # #[cfg(not(secp256k1_fuzz))]
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Scalar, Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{Scalar, SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::KeyAggCache;
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
-    /// let mut key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// let mut key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     ///
     /// let tweak = Scalar::from_be_bytes(*b"Insecure tweak, Don't use this!!").unwrap(); // tweak could be from tap
-    /// let _x_only_key_tweaked = key_agg_cache.pubkey_xonly_tweak_add(&secp, &tweak).unwrap();
+    /// let _x_only_key_tweaked = key_agg_cache.pubkey_xonly_tweak_add(&tweak).unwrap();
     /// # }
     /// ```
-    pub fn pubkey_xonly_tweak_add<C: Verification>(
-        &mut self,
-        secp: &Secp256k1<C>,
-        tweak: &Scalar,
-    ) -> Result<PublicKey, InvalidTweakErr> {
-        let cx = secp.ctx().as_ptr();
+    pub fn pubkey_xonly_tweak_add(&mut self, tweak: &Scalar) -> Result<PublicKey, InvalidTweakErr> {
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
             let mut out = PublicKey::from(ffi::PublicKey::new());
-            if ffi::secp256k1_musig_pubkey_xonly_tweak_add(
-                cx,
-                out.as_mut_c_ptr(),
-                self.as_mut_ptr(),
-                tweak.as_c_ptr(),
-            ) == 0
-            {
+
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_pubkey_xonly_tweak_add(
+                        secp.ctx.as_ptr(),
+                        out.as_mut_c_ptr(),
+                        self.as_mut_ptr(),
+                        tweak.as_c_ptr(),
+                    )
+                },
+                Some(&seed),
+            );
+            if ret == 0 {
                 Err(InvalidTweakErr)
             } else {
                 self.aggregated_xonly_public_key = out.x_only_public_key().0;
@@ -604,27 +630,25 @@ impl KeyAggCache {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{KeyAggCache, SessionSecretRand};
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     /// #
-    /// let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// let key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     /// let session_secrand = SessionSecretRand::from_rng(&mut rand::rng());
     ///
     /// // Provide the current time for mis-use resistance
     /// let msg = b"Public message we want to sign!!";
     /// let extra_rand : Option<[u8; 32]> = None;
-    /// let (_sec_nonce, _pub_nonce) = key_agg_cache.nonce_gen(&secp, session_secrand, pub_key1, msg, extra_rand);
+    /// let (_sec_nonce, _pub_nonce) = key_agg_cache.nonce_gen(session_secrand, pub_key1, msg, extra_rand);
     /// # }
     /// ```
-    pub fn nonce_gen<C: Signing>(
+    pub fn nonce_gen(
         &self,
-        secp: &Secp256k1<C>,
         session_secrand: SessionSecretRand,
         pub_key: PublicKey,
         msg: &[u8; 32],
@@ -633,7 +657,7 @@ impl KeyAggCache {
         // The secret key here is supplied as NULL. This is okay because we supply the
         // public key and the message.
         // This makes a simple API for the user because it does not require them to pass here.
-        new_nonce_pair(secp, session_secrand, Some(self), None, pub_key, Some(msg), extra_rand)
+        new_nonce_pair(session_secrand, Some(self), None, pub_key, Some(msg), extra_rand)
     }
 
     /// Get a const pointer to the inner KeyAggCache
@@ -899,39 +923,41 @@ impl AggregatedNonce {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand};
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
-    /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// # let key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
     /// let msg = b"Public message we want to sign!!";
     ///
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None);
+    /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pub_key1, msg, None);
     ///
     /// // Signer two does the same: Possibly on a different device
     /// let session_secrand2 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None);
+    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pub_key2, msg, None);
     ///
-    /// let aggnonce = AggregatedNonce::new(&secp, &[&pub_nonce1, &pub_nonce2]);
+    /// let aggnonce = AggregatedNonce::new(&[&pub_nonce1, &pub_nonce2]);
     /// # }
     /// ```
     /// # Panics
     ///
     /// Panics if an empty slice of nonces is provided.
     ///
-    pub fn new<C: Signing>(secp: &Secp256k1<C>, nonces: &[&PublicNonce]) -> Self {
+    pub fn new(nonces: &[&PublicNonce]) -> Self {
         if nonces.is_empty() {
             panic!("Cannot aggregate an empty slice of nonces");
         }
 
         let mut aggnonce = MaybeUninit::<ffi::MusigAggNonce>::uninit();
+
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
 
         unsafe {
             let pubnonces = core::slice::from_raw_parts(
@@ -939,13 +965,18 @@ impl AggregatedNonce {
                 nonces.len(),
             );
 
-            if ffi::secp256k1_musig_nonce_agg(
-                secp.ctx().as_ptr(),
-                aggnonce.as_mut_ptr(),
-                pubnonces.as_ptr(),
-                pubnonces.len(),
-            ) == 0
-            {
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_nonce_agg(
+                        secp.ctx().as_ptr(),
+                        aggnonce.as_mut_ptr(),
+                        pubnonces.as_ptr(),
+                        pubnonces.len(),
+                    )
+                },
+                Some(&seed),
+            );
+            if ret == 0 {
                 // This can only crash if the individual nonces are invalid which is not possible is rust.
                 // Note that even if aggregate nonce is point at infinity, the musig spec sets it as `G`
                 unreachable!("Public key nonces are well-formed and valid in rust typesystem")
@@ -1021,14 +1052,13 @@ impl AggregatedSignature {
 
     /// Verify the aggregated signature against the aggregate public key and message
     /// before returning the signature.
-    pub fn verify<C: Verification>(
+    pub fn verify(
         self,
-        secp: &Secp256k1<C>,
         aggregate_key: &XOnlyPublicKey,
         message: &[u8],
     ) -> Result<schnorr::Signature, Error> {
         let sig = schnorr::Signature::from_byte_array(self.0);
-        secp.verify_schnorr(&sig, message, aggregate_key)
+        schnorr::verify(&sig, message, aggregate_key)
             .map(|_| sig)
             .map_err(|_| Error::IncorrectSignature)
     }
@@ -1060,15 +1090,14 @@ impl Session {
     /// ```rust
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, Session, SessionSecretRand};
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
-    /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// # let key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
     /// let msg = b"Public message we want to sign!!";
@@ -1076,40 +1105,42 @@ impl Session {
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
     /// let extra_rand1 : Option<[u8; 32]> = None;
-    /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, extra_rand1);
+    /// let (_sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pub_key1, msg, extra_rand1);
     ///
     /// // Signer two does the same. Possibly on a different device
     /// let session_secrand2 = SessionSecretRand::from_rng(&mut rand::rng());
     /// let extra_rand2 : Option<[u8; 32]> = None;
-    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, extra_rand2);
+    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pub_key2, msg, extra_rand2);
     ///
-    /// let aggnonce = AggregatedNonce::new(&secp, &[&pub_nonce1, &pub_nonce2]);
+    /// let aggnonce = AggregatedNonce::new(&[&pub_nonce1, &pub_nonce2]);
     ///
     /// let session = Session::new(
-    ///     &secp,
     ///     &key_agg_cache,
     ///     aggnonce,
     ///     msg,
     /// );
     /// # }
     /// ```
-    pub fn new<C: Signing>(
-        secp: &Secp256k1<C>,
-        key_agg_cache: &KeyAggCache,
-        agg_nonce: AggregatedNonce,
-        msg: &[u8; 32],
-    ) -> Self {
+    pub fn new(key_agg_cache: &KeyAggCache, agg_nonce: AggregatedNonce, msg: &[u8; 32]) -> Self {
         let mut session = MaybeUninit::<ffi::MusigSession>::uninit();
 
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
+
         unsafe {
-            if ffi::secp256k1_musig_nonce_process(
-                secp.ctx().as_ptr(),
-                session.as_mut_ptr(),
-                agg_nonce.as_ptr(),
-                msg.as_c_ptr(),
-                key_agg_cache.as_ptr(),
-            ) == 0
-            {
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_nonce_process(
+                        secp.ctx().as_ptr(),
+                        session.as_mut_ptr(),
+                        agg_nonce.as_ptr(),
+                        msg.as_c_ptr(),
+                        key_agg_cache.as_ptr(),
+                    )
+                },
+                Some(&seed),
+            );
+            if ret == 0 {
                 // Only fails on cryptographically unreachable codes or if the args are invalid.
                 // None of which can occur in safe rust.
                 unreachable!("Impossible to construct invalid arguments in safe rust.
@@ -1142,23 +1173,29 @@ impl Session {
     ///
     /// - If the provided [`SecretNonce`] has already been used for signing
     ///
-    pub fn partial_sign<C: Signing>(
+    pub fn partial_sign(
         &self,
-        secp: &Secp256k1<C>,
         mut secnonce: SecretNonce,
         keypair: &Keypair,
         key_agg_cache: &KeyAggCache,
     ) -> PartialSignature {
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
             let mut partial_sig = MaybeUninit::<ffi::MusigPartialSignature>::uninit();
 
-            let res = ffi::secp256k1_musig_partial_sign(
-                secp.ctx().as_ptr(),
-                partial_sig.as_mut_ptr(),
-                secnonce.as_mut_ptr(),
-                keypair.as_c_ptr(),
-                key_agg_cache.as_ptr(),
-                self.as_ptr(),
+            let res = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_partial_sign(
+                        secp.ctx().as_ptr(),
+                        partial_sig.as_mut_ptr(),
+                        secnonce.as_mut_ptr(),
+                        keypair.as_c_ptr(),
+                        key_agg_cache.as_ptr(),
+                        self.as_ptr(),
+                    )
+                },
+                Some(&seed),
             );
 
             assert_eq!(res, 1);
@@ -1196,46 +1233,42 @@ impl Session {
     /// # #[cfg(not(secp256k1_fuzz))]
     /// # #[cfg(feature = "std")]
     /// # #[cfg(feature = "rand")] {
-    /// # use secp256k1::{Secp256k1, SecretKey, Keypair, PublicKey};
+    /// # use secp256k1::{SecretKey, Keypair, PublicKey};
     /// # use secp256k1::musig::{AggregatedNonce, KeyAggCache, SessionSecretRand, Session};
-    /// # let secp = Secp256k1::new();
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
-    /// # let key_agg_cache = KeyAggCache::new(&secp, &[&pub_key1, &pub_key2]);
+    /// # let key_agg_cache = KeyAggCache::new(&[&pub_key1, &pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
     /// let msg = b"Public message we want to sign!!";
     ///
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None);
+    /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pub_key1, msg, None);
     ///
     /// // Signer two does the same. Possibly on a different device
     /// let session_secrand2 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None);
+    /// let (_sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pub_key2, msg, None);
     ///
-    /// let aggnonce = AggregatedNonce::new(&secp, &[&pub_nonce1, &pub_nonce2]);
+    /// let aggnonce = AggregatedNonce::new(&[&pub_nonce1, &pub_nonce2]);
     ///
     /// let session = Session::new(
-    ///     &secp,
     ///     &key_agg_cache,
     ///     aggnonce,
     ///     msg,
     /// );
     ///
-    /// let keypair = Keypair::from_secret_key(&secp, &sk1);
+    /// let keypair = Keypair::from_secret_key(&sk1);
     /// let partial_sig1 = session.partial_sign(
-    ///     &secp,
     ///     sec_nonce1,
     ///     &keypair,
     ///     &key_agg_cache,
     /// );
     ///
     /// assert!(session.partial_verify(
-    ///     &secp,
     ///     &key_agg_cache,
     ///     &partial_sig1,
     ///     &pub_nonce1,
@@ -1243,24 +1276,30 @@ impl Session {
     /// ));
     /// # }
     /// ```
-    pub fn partial_verify<C: Signing>(
+    pub fn partial_verify(
         &self,
-        secp: &Secp256k1<C>,
         key_agg_cache: &KeyAggCache,
         partial_sig: &PartialSignature,
         pub_nonce: &PublicNonce,
         pub_key: PublicKey,
     ) -> bool {
-        let cx = secp.ctx().as_ptr();
+        // We have no seed here but we want rerandomiziation to happen for `rand` users.
+        let seed = [0_u8; 32];
         unsafe {
-            ffi::secp256k1_musig_partial_sig_verify(
-                cx,
-                partial_sig.as_ptr(),
-                pub_nonce.as_ptr(),
-                pub_key.as_c_ptr(),
-                key_agg_cache.as_ptr(),
-                self.as_ptr(),
-            ) == 1
+            let ret = crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_musig_partial_sig_verify(
+                        secp.ctx.as_ptr(),
+                        partial_sig.as_ptr(),
+                        pub_nonce.as_ptr(),
+                        pub_key.as_c_ptr(),
+                        key_agg_cache.as_ptr(),
+                        self.as_ptr(),
+                    )
+                },
+                Some(&seed),
+            );
+            ret == 1
         }
     }
 
@@ -1277,49 +1316,45 @@ impl Session {
     ///
     /// ```rust
     /// # #[cfg(feature = "rand-std")] {
-    /// # use secp256k1::{KeyAggCache, Secp256k1, SecretKey, Keypair, PublicKey, SessionSecretRand, AggregatedNonce, Session};
-    /// # let secp = Secp256k1::new();
+    /// # use secp256k1::{KeyAggCache, SecretKey, Keypair, PublicKey, SessionSecretRand, AggregatedNonce, Session};
     /// # let sk1 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key1 = PublicKey::from_secret_key(&secp, &sk1);
+    /// # let pub_key1 = PublicKey::from_secret_key(&sk1);
     /// # let sk2 = SecretKey::new(&mut rand::rng());
-    /// # let pub_key2 = PublicKey::from_secret_key(&secp, &sk2);
+    /// # let pub_key2 = PublicKey::from_secret_key(&sk2);
     ///
-    /// let key_agg_cache = KeyAggCache::new(&secp, &[pub_key1, pub_key2]);
+    /// let key_agg_cache = KeyAggCache::new(&[pub_key1, pub_key2]);
     /// // The session id must be sampled at random. Read documentation for more details.
     ///
     /// let msg = b"Public message we want to sign!!";
     ///
     /// // Provide the current time for mis-use resistance
     /// let session_secrand1 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pub_key1, msg, None)
+    /// let (mut sec_nonce1, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pub_key1, msg, None)
     ///     .expect("non zero session id");
     ///
     /// // Signer two does the same. Possibly on a different device
     /// let session_secrand2 = SessionSecretRand::from_rng(&mut rand::rng());
-    /// let (mut sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pub_key2, msg, None)
+    /// let (mut sec_nonce2, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pub_key2, msg, None)
     ///     .expect("non zero session id");
     ///
-    /// let aggnonce = AggregatedNonce::new(&secp, &[pub_nonce1, pub_nonce2]);
+    /// let aggnonce = AggregatedNonce::new(&[pub_nonce1, pub_nonce2]);
     ///
     /// let session = Session::new(
-    ///     &secp,
     ///     &key_agg_cache,
     ///     aggnonce,
     ///     msg,
     /// );
     ///
     /// let partial_sig1 = session.partial_sign(
-    ///     &secp,
     ///     sec_nonce1,
-    ///     &Keypair::from_secret_key(&secp, &sk1),
+    ///     &Keypair::from_secret_key(&sk1),
     ///     &key_agg_cache,
     /// ).unwrap();
     ///
     /// // Other party creates the other partial signature
     /// let partial_sig2 = session.partial_sign(
-    ///     &secp,
     ///     sec_nonce2,
-    ///     &Keypair::from_secret_key(&secp, &sk2),
+    ///     &Keypair::from_secret_key(&sk2),
     ///     &key_agg_cache,
     /// ).unwrap();
     ///
@@ -1330,7 +1365,7 @@ impl Session {
     /// let aggregated_signature = session.partial_sig_agg(partial_sigs_ref);
     ///
     /// // Get the final schnorr signature
-    /// assert!(aggregated_signature.verify(&secp, &agg_pk, &msg_bytes).is_ok());
+    /// assert!(aggregated_signature.verify(&agg_pk, &msg_bytes).is_ok());
     /// # }
     /// ```
     ///
@@ -1378,7 +1413,7 @@ mod tests {
     use super::*;
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
-    use crate::{PublicKey, Secp256k1};
+    use crate::PublicKey;
 
     #[test]
     #[cfg(feature = "std")]
@@ -1410,13 +1445,11 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(feature = "std")]
     fn key_agg_cache() {
-        let secp = Secp256k1::new();
-
         let (_seckey1, pubkey1) = crate::test_random_keypair();
         let (_seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
-        let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
+        let key_agg_cache = KeyAggCache::new(&pubkeys);
         let agg_pk = key_agg_cache.agg_pk();
 
         // Test agg_pk_full
@@ -1428,15 +1461,13 @@ mod tests {
     #[cfg(not(secp256k1_fuzz))]
     #[cfg(feature = "std")]
     fn key_agg_cache_tweaking() {
-        let secp = Secp256k1::new();
-
         let (_seckey1, pubkey1) = crate::test_random_keypair();
         let (_seckey2, pubkey2) = crate::test_random_keypair();
 
-        let mut key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
-        let key_agg_cache1 = KeyAggCache::new(&secp, &[&pubkey2, &pubkey1]);
-        let key_agg_cache2 = KeyAggCache::new(&secp, &[&pubkey1, &pubkey1]);
-        let key_agg_cache3 = KeyAggCache::new(&secp, &[&pubkey1, &pubkey1, &pubkey2]);
+        let mut key_agg_cache = KeyAggCache::new(&[&pubkey1, &pubkey2]);
+        let key_agg_cache1 = KeyAggCache::new(&[&pubkey2, &pubkey1]);
+        let key_agg_cache2 = KeyAggCache::new(&[&pubkey1, &pubkey1]);
+        let key_agg_cache3 = KeyAggCache::new(&[&pubkey1, &pubkey1, &pubkey2]);
         assert_ne!(key_agg_cache, key_agg_cache1); // swapped keys DOES mean not equal
         assert_ne!(key_agg_cache, key_agg_cache2); // missing keys
         assert_ne!(key_agg_cache, key_agg_cache3); // repeated key
@@ -1448,49 +1479,44 @@ mod tests {
         // Test EC tweaking
         let plain_tweak: [u8; 32] = *b"this could be a BIP32 tweak....\0";
         let plain_tweak = Scalar::from_be_bytes(plain_tweak).unwrap();
-        let tweaked_key = key_agg_cache.pubkey_ec_tweak_add(&secp, &plain_tweak).unwrap();
+        let tweaked_key = key_agg_cache.pubkey_ec_tweak_add(&plain_tweak).unwrap();
         assert_ne!(key_agg_cache.agg_pk(), original_agg_pk);
         assert_eq!(key_agg_cache.agg_pk(), tweaked_key.x_only_public_key().0);
 
         // Test xonly tweaking
         let xonly_tweak: [u8; 32] = *b"this could be a Taproot tweak..\0";
         let xonly_tweak = Scalar::from_be_bytes(xonly_tweak).unwrap();
-        let tweaked_agg_pk = key_agg_cache.pubkey_xonly_tweak_add(&secp, &xonly_tweak).unwrap();
+        let tweaked_agg_pk = key_agg_cache.pubkey_xonly_tweak_add(&xonly_tweak).unwrap();
         assert_eq!(key_agg_cache.agg_pk(), tweaked_agg_pk.x_only_public_key().0);
     }
 
     #[test]
     #[cfg(feature = "std")]
     #[should_panic(expected = "Cannot aggregate an empty slice of pubkeys")]
-    fn key_agg_cache_empty_panic() {
-        let secp = Secp256k1::new();
-        let _ = KeyAggCache::new(&secp, &[]);
-    }
+    fn key_agg_cache_empty_panic() { let _ = KeyAggCache::new(&[]); }
 
     #[test]
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
     fn nonce_generation() {
-        let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
         let (_seckey1, pubkey1) = crate::test_random_keypair();
         let (seckey2, pubkey2) = crate::test_random_keypair();
 
-        let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
+        let key_agg_cache = KeyAggCache::new(&[&pubkey1, &pubkey2]);
 
         let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         // Test nonce generation with KeyAggCache
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (_sec_nonce1, pub_nonce1) =
-            key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
+            key_agg_cache.nonce_gen(session_secrand1, pubkey1, msg, None);
 
         // Test direct nonce generation
         let session_secrand2 = SessionSecretRand::from_rng(&mut rng);
         let extra_rand = Some([42u8; 32]);
         let (_sec_nonce2, _pub_nonce2) = new_nonce_pair(
-            &secp,
             session_secrand2,
             Some(&key_agg_cache),
             Some(seckey2),
@@ -1509,27 +1535,26 @@ mod tests {
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
     fn aggregated_nonce() {
-        let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
         let (_seckey1, pubkey1) = crate::test_random_keypair();
         let (_seckey2, pubkey2) = crate::test_random_keypair();
 
-        let key_agg_cache = KeyAggCache::new(&secp, &[&pubkey1, &pubkey2]);
+        let key_agg_cache = KeyAggCache::new(&[&pubkey1, &pubkey2]);
 
         let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
-        let (_, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
+        let (_, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pubkey1, msg, None);
 
         let session_secrand2 = SessionSecretRand::from_rng(&mut rng);
-        let (_, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pubkey2, msg, None);
+        let (_, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pubkey2, msg, None);
 
         // Test AggregatedNonce creation
-        let agg_nonce = AggregatedNonce::new(&secp, &[&pub_nonce1, &pub_nonce2]);
-        let agg_nonce1 = AggregatedNonce::new(&secp, &[&pub_nonce2, &pub_nonce1]);
-        let agg_nonce2 = AggregatedNonce::new(&secp, &[&pub_nonce2, &pub_nonce2]);
-        let agg_nonce3 = AggregatedNonce::new(&secp, &[&pub_nonce2, &pub_nonce2]);
+        let agg_nonce = AggregatedNonce::new(&[&pub_nonce1, &pub_nonce2]);
+        let agg_nonce1 = AggregatedNonce::new(&[&pub_nonce2, &pub_nonce1]);
+        let agg_nonce2 = AggregatedNonce::new(&[&pub_nonce2, &pub_nonce2]);
+        let agg_nonce3 = AggregatedNonce::new(&[&pub_nonce2, &pub_nonce2]);
         assert_eq!(agg_nonce, agg_nonce1); // swapped nonces
         assert_ne!(agg_nonce, agg_nonce2); // repeated/different nonces
         assert_ne!(agg_nonce, agg_nonce3); // repeated nonce but still both nonces present
@@ -1545,9 +1570,8 @@ mod tests {
     #[cfg(feature = "std")]
     #[should_panic(expected = "Cannot aggregate an empty slice of nonces")]
     fn aggregated_nonce_empty_panic() {
-        let secp = Secp256k1::new();
         let empty_nonces: Vec<&PublicNonce> = vec![];
-        let _agg_nonce = AggregatedNonce::new(&secp, &empty_nonces);
+        let _agg_nonce = AggregatedNonce::new(&empty_nonces);
     }
 
     #[test]
@@ -1555,75 +1579,44 @@ mod tests {
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
     fn session_and_partial_signing() {
-        let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
         let (seckey1, pubkey1) = crate::test_random_keypair();
         let (seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
-        let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
+        let key_agg_cache = KeyAggCache::new(&pubkeys);
 
         let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce1, pub_nonce1) =
-            key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
+            key_agg_cache.nonce_gen(session_secrand1, pubkey1, msg, None);
 
         let session_secrand2 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce2, pub_nonce2) =
-            key_agg_cache.nonce_gen(&secp, session_secrand2, pubkey2, msg, None);
+            key_agg_cache.nonce_gen(session_secrand2, pubkey2, msg, None);
 
         let nonces = [&pub_nonce1, &pub_nonce2];
-        let agg_nonce = AggregatedNonce::new(&secp, &nonces);
+        let agg_nonce = AggregatedNonce::new(&nonces);
 
         // Test Session creation
-        let session = Session::new(&secp, &key_agg_cache, agg_nonce, msg);
+        let session = Session::new(&key_agg_cache, agg_nonce, msg);
 
         // Test partial signing
-        let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
-        let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &key_agg_cache);
+        let keypair1 = Keypair::from_secret_key(&seckey1);
+        let partial_sign1 = session.partial_sign(sec_nonce1, &keypair1, &key_agg_cache);
 
-        let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
-        let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &key_agg_cache);
+        let keypair2 = Keypair::from_secret_key(&seckey2);
+        let partial_sign2 = session.partial_sign(sec_nonce2, &keypair2, &key_agg_cache);
 
         // Test partial signature verification
-        assert!(session.partial_verify(
-            &secp,
-            &key_agg_cache,
-            &partial_sign1,
-            &pub_nonce1,
-            pubkey1
-        ));
-        assert!(session.partial_verify(
-            &secp,
-            &key_agg_cache,
-            &partial_sign2,
-            &pub_nonce2,
-            pubkey2
-        ));
+        assert!(session.partial_verify(&key_agg_cache, &partial_sign1, &pub_nonce1, pubkey1));
+        assert!(session.partial_verify(&key_agg_cache, &partial_sign2, &pub_nonce2, pubkey2));
         // Test that they are invalid if you switch keys
-        assert!(!session.partial_verify(
-            &secp,
-            &key_agg_cache,
-            &partial_sign2,
-            &pub_nonce2,
-            pubkey1
-        ));
-        assert!(!session.partial_verify(
-            &secp,
-            &key_agg_cache,
-            &partial_sign2,
-            &pub_nonce1,
-            pubkey2
-        ));
-        assert!(!session.partial_verify(
-            &secp,
-            &key_agg_cache,
-            &partial_sign2,
-            &pub_nonce1,
-            pubkey1
-        ));
+        assert!(!session.partial_verify(&key_agg_cache, &partial_sign2, &pub_nonce2, pubkey1));
+        assert!(!session.partial_verify(&key_agg_cache, &partial_sign2, &pub_nonce1, pubkey2));
+        assert!(!session.partial_verify(&key_agg_cache, &partial_sign2, &pub_nonce1, pubkey1));
 
         // Test PartialSignature serialization/deserialization
         let serialized_partial_sig = partial_sign1.serialize();
@@ -1637,55 +1630,54 @@ mod tests {
     #[cfg(feature = "std")]
     #[cfg(feature = "rand")]
     fn signature_aggregation_and_verification() {
-        let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
         let (seckey1, pubkey1) = crate::test_random_keypair();
         let (seckey2, pubkey2) = crate::test_random_keypair();
 
         let pubkeys = [&pubkey1, &pubkey2];
-        let key_agg_cache = KeyAggCache::new(&secp, &pubkeys);
+        let key_agg_cache = KeyAggCache::new(&pubkeys);
 
         let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce1, pub_nonce1) =
-            key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
+            key_agg_cache.nonce_gen(session_secrand1, pubkey1, msg, None);
 
         let session_secrand2 = SessionSecretRand::from_rng(&mut rng);
         let (sec_nonce2, pub_nonce2) =
-            key_agg_cache.nonce_gen(&secp, session_secrand2, pubkey2, msg, None);
+            key_agg_cache.nonce_gen(session_secrand2, pubkey2, msg, None);
 
         let nonces = [&pub_nonce1, &pub_nonce2];
-        let agg_nonce = AggregatedNonce::new(&secp, &nonces);
-        let session = Session::new(&secp, &key_agg_cache, agg_nonce, msg);
+        let agg_nonce = AggregatedNonce::new(&nonces);
+        let session = Session::new(&key_agg_cache, agg_nonce, msg);
 
-        let keypair1 = Keypair::from_secret_key(&secp, &seckey1);
-        let partial_sign1 = session.partial_sign(&secp, sec_nonce1, &keypair1, &key_agg_cache);
+        let keypair1 = Keypair::from_secret_key(&seckey1);
+        let partial_sign1 = session.partial_sign(sec_nonce1, &keypair1, &key_agg_cache);
 
-        let keypair2 = Keypair::from_secret_key(&secp, &seckey2);
-        let partial_sign2 = session.partial_sign(&secp, sec_nonce2, &keypair2, &key_agg_cache);
+        let keypair2 = Keypair::from_secret_key(&seckey2);
+        let partial_sign2 = session.partial_sign(sec_nonce2, &keypair2, &key_agg_cache);
 
         // Test signature verification
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign2]);
         let agg_pk = key_agg_cache.agg_pk();
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
+        aggregated_signature.verify(&agg_pk, msg).unwrap();
 
         // Test assume_valid
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap();
 
         // Test with wrong aggregate (repeated sigs)
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign1, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap_err();
+        aggregated_signature.verify(&agg_pk, msg).unwrap_err();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap_err();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap_err();
 
         // Test with swapped sigs -- this will work. Unlike keys, sigs are not ordered.
         let aggregated_signature = session.partial_sig_agg(&[&partial_sign2, &partial_sign1]);
-        aggregated_signature.verify(&secp, &agg_pk, msg).unwrap();
+        aggregated_signature.verify(&agg_pk, msg).unwrap();
         let schnorr_sig = aggregated_signature.assume_valid();
-        secp.verify_schnorr(&schnorr_sig, msg, &agg_pk).unwrap();
+        schnorr::verify(&schnorr_sig, msg, &agg_pk).unwrap();
     }
 
     #[test]
@@ -1693,7 +1685,6 @@ mod tests {
     #[cfg(feature = "rand")]
     #[should_panic(expected = "Cannot aggregate an empty slice of partial signatures")]
     fn partial_sig_agg_empty_panic() {
-        let secp = Secp256k1::new();
         let mut rng = rand::rng();
 
         let (_seckey1, pubkey1) = crate::test_random_keypair();
@@ -1703,18 +1694,18 @@ mod tests {
         let mut pubkeys_ref: Vec<&PublicKey> = pubkeys.iter().collect();
         let pubkeys_ref = pubkeys_ref.as_mut_slice();
 
-        let key_agg_cache = KeyAggCache::new(&secp, pubkeys_ref);
+        let key_agg_cache = KeyAggCache::new(pubkeys_ref);
         let msg: &[u8; 32] = b"This message is exactly 32 bytes";
 
         let session_secrand1 = SessionSecretRand::from_rng(&mut rng);
-        let (_, pub_nonce1) = key_agg_cache.nonce_gen(&secp, session_secrand1, pubkey1, msg, None);
+        let (_, pub_nonce1) = key_agg_cache.nonce_gen(session_secrand1, pubkey1, msg, None);
         let session_secrand2 = SessionSecretRand::from_rng(&mut rng);
-        let (_, pub_nonce2) = key_agg_cache.nonce_gen(&secp, session_secrand2, pubkey2, msg, None);
+        let (_, pub_nonce2) = key_agg_cache.nonce_gen(session_secrand2, pubkey2, msg, None);
 
         let nonces = [pub_nonce1, pub_nonce2];
         let nonces_ref: Vec<&PublicNonce> = nonces.iter().collect();
-        let agg_nonce = AggregatedNonce::new(&secp, &nonces_ref);
-        let session = Session::new(&secp, &key_agg_cache, agg_nonce, msg);
+        let agg_nonce = AggregatedNonce::new(&nonces_ref);
+        let session = Session::new(&key_agg_cache, agg_nonce, msg);
 
         let _agg_sig = session.partial_sig_agg(&[]);
     }

@@ -15,34 +15,23 @@
 
 extern crate secp256k1;
 
-use secp256k1::{ecdsa, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification};
+use secp256k1::{ecdsa, Error, Message, PublicKey, SecretKey};
 
-fn verify<C: Verification>(
-    secp: &Secp256k1<C>,
-    msg_digest: [u8; 32],
-    sig: [u8; 64],
-    pubkey: [u8; 33],
-) -> Result<bool, Error> {
+fn verify(sig: [u8; 64], msg_digest: [u8; 32], pubkey: [u8; 33]) -> Result<bool, Error> {
     let msg = Message::from_digest(msg_digest);
     let sig = ecdsa::Signature::from_compact(&sig)?;
     let pubkey = PublicKey::from_slice(&pubkey)?;
 
-    Ok(secp.verify_ecdsa(&sig, msg, &pubkey).is_ok())
+    Ok(ecdsa::verify(&sig, msg, &pubkey).is_ok())
 }
 
-fn sign<C: Signing>(
-    secp: &Secp256k1<C>,
-    msg_digest: [u8; 32],
-    seckey: [u8; 32],
-) -> Result<ecdsa::Signature, Error> {
+fn sign(msg_digest: [u8; 32], seckey: [u8; 32]) -> Result<ecdsa::Signature, Error> {
     let msg = Message::from_digest(msg_digest);
     let seckey = SecretKey::from_secret_bytes(seckey)?;
-    Ok(secp.sign_ecdsa(msg, &seckey))
+    Ok(ecdsa::sign(msg, &seckey))
 }
 
 fn main() {
-    let secp = Secp256k1::new();
-
     let seckey = [
         59, 148, 11, 85, 134, 130, 61, 253, 2, 174, 59, 70, 27, 180, 51, 107, 94, 203, 174, 253,
         102, 39, 170, 146, 46, 252, 4, 143, 236, 12, 136, 28,
@@ -53,9 +42,9 @@ fn main() {
     ];
     let msg_digest = *b"this must be secure hash output.";
 
-    let signature = sign(&secp, msg_digest, seckey).unwrap();
+    let signature = sign(msg_digest, seckey).unwrap();
 
     let serialize_sig = signature.serialize_compact();
 
-    assert!(verify(&secp, msg_digest, serialize_sig, pubkey).unwrap());
+    assert!(verify(serialize_sig, msg_digest, pubkey).unwrap());
 }

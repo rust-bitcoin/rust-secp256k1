@@ -8,11 +8,9 @@ use serde::ser::SerializeTuple;
 
 use crate::ffi::CPtr as _;
 use crate::{
-    constants, ffi, from_hex, Error, Keypair, Parity, PublicKey, Scalar, Secp256k1, Signing,
+    constants, ecdsa, ffi, from_hex, Error, Keypair, Message, Parity, PublicKey, Scalar,
     XOnlyPublicKey,
 };
-#[cfg(feature = "global-context")]
-use crate::{ecdsa, Message, SECP256K1};
 
 mod encapsulate {
     use crate::constants::SECRET_KEY_SIZE;
@@ -42,9 +40,8 @@ mod encapsulate {
     ///
     /// ```
     /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey};
+    /// use secp256k1::{rand, SecretKey};
     ///
-    /// let secp = Secp256k1::new();
     /// let secret_key = SecretKey::new(&mut rand::rng());
     /// # }
     /// ```
@@ -194,10 +191,9 @@ impl SecretKey {
     ///
     /// ```
     /// # #[cfg(all(feature = "rand", feature = "std"))] {
-    /// use secp256k1::{rand, Secp256k1, SecretKey, Keypair};
+    /// use secp256k1::{rand, SecretKey, Keypair};
     ///
-    /// let secp = Secp256k1::new();
-    /// let keypair = Keypair::new(&secp, &mut rand::rng());
+    /// let keypair = Keypair::new(&mut rand::rng());
     /// let secret_key = SecretKey::from_keypair(&keypair);
     /// # }
     /// ```
@@ -276,35 +272,28 @@ impl SecretKey {
         }
     }
 
-    /// Constructs an ECDSA signature for `msg` using the global [`SECP256K1`] context.
+    /// Constructs an ECDSA signature for `msg`.
     #[inline]
-    #[cfg(feature = "global-context")]
-    pub fn sign_ecdsa(&self, msg: impl Into<Message>) -> ecdsa::Signature {
-        SECP256K1.sign_ecdsa(msg, self)
-    }
+    pub fn sign_ecdsa(&self, msg: impl Into<Message>) -> ecdsa::Signature { ecdsa::sign(msg, self) }
 
     /// Returns the [`Keypair`] for this [`SecretKey`].
     ///
     /// This is equivalent to using [`Keypair::from_secret_key`].
     #[inline]
-    pub fn keypair<C: Signing>(&self, secp: &Secp256k1<C>) -> Keypair {
-        Keypair::from_secret_key(secp, self)
-    }
+    pub fn keypair(&self) -> Keypair { Keypair::from_secret_key(self) }
 
     /// Returns the [`PublicKey`] for this [`SecretKey`].
     ///
     /// This is equivalent to using [`PublicKey::from_secret_key`].
     #[inline]
-    pub fn public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> PublicKey {
-        PublicKey::from_secret_key(secp, self)
-    }
+    pub fn public_key(&self) -> PublicKey { PublicKey::from_secret_key(self) }
 
     /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for this [`SecretKey`].
     ///
     /// This is equivalent to `XOnlyPublicKey::from_keypair(self.keypair(secp))`.
     #[inline]
-    pub fn x_only_public_key<C: Signing>(&self, secp: &Secp256k1<C>) -> (XOnlyPublicKey, Parity) {
-        let kp = self.keypair(secp);
+    pub fn x_only_public_key(&self) -> (XOnlyPublicKey, Parity) {
+        let kp = self.keypair();
         XOnlyPublicKey::from_keypair(&kp)
     }
 
