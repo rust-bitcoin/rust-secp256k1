@@ -302,8 +302,6 @@ impl PublicKey {
     /// Returns an error if the resulting key would be invalid.
     #[inline]
     pub fn mul_tweak(mut self, other: &Scalar) -> Result<PublicKey, Error> {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let res = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -313,7 +311,7 @@ impl PublicKey {
                         other.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if res == 1 {
                 Ok(self)
@@ -668,8 +666,6 @@ impl Keypair {
     // TODO: Add checked implementation
     #[inline]
     pub fn add_xonly_tweak(mut self, tweak: &Scalar) -> Result<Keypair, Error> {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let err = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -679,7 +675,7 @@ impl Keypair {
                         tweak.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if err != 1 {
                 return Err(Error::InvalidTweak);
@@ -993,8 +989,6 @@ impl XOnlyPublicKey {
     /// ```
     pub fn add_tweak(mut self, tweak: &Scalar) -> Result<(XOnlyPublicKey, Parity), Error> {
         let mut pk_parity = 0;
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let mut pubkey = ffi::PublicKey::new();
             let mut err = crate::with_global_context(
@@ -1006,7 +1000,7 @@ impl XOnlyPublicKey {
                         tweak.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if err != 1 {
                 return Err(Error::InvalidTweak);
@@ -1021,7 +1015,7 @@ impl XOnlyPublicKey {
                         &pubkey,
                     )
                 },
-                Some(&seed),
+                None,
             );
             if err == 0 {
                 return Err(Error::InvalidPublicKey);
@@ -1067,8 +1061,6 @@ impl XOnlyPublicKey {
         tweak: Scalar,
     ) -> bool {
         let tweaked_ser = tweaked_key.serialize();
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let err = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -1080,7 +1072,7 @@ impl XOnlyPublicKey {
                         tweak.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
 
             err == 1
@@ -1327,8 +1319,6 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
 /// # }
 /// ```
 pub fn sort_pubkeys(pubkeys: &mut [&PublicKey]) {
-    // We have no seed here but we want rerandomiziation to happen for `rand` users.
-    let seed = [0_u8; 32];
     unsafe {
         // SAFETY: `PublicKey` has repr(transparent) so we can convert to `ffi::PublicKey`
         let pubkeys_ptr = pubkeys.as_mut_c_ptr() as *mut *const ffi::PublicKey;
@@ -1337,7 +1327,7 @@ pub fn sort_pubkeys(pubkeys: &mut [&PublicKey]) {
             |secp: &Secp256k1<crate::AllPreallocated>| {
                 ffi::secp256k1_ec_pubkey_sort(secp.ctx.as_ptr(), pubkeys_ptr, pubkeys.len())
             },
-            Some(&seed),
+            None,
         );
 
         if ret == 0 {

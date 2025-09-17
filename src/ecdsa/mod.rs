@@ -377,8 +377,6 @@ pub fn sign_low_r(msg: impl Into<Message>, sk: &SecretKey) -> Signature {
 #[inline]
 pub fn verify(sig: &Signature, msg: impl Into<Message>, pk: &PublicKey) -> Result<(), Error> {
     let msg = msg.into();
-    // We have no seed here but we want rerandomiziation to happen for `rand` users.
-    let seed = [0_u8; 32];
     unsafe {
         let res = crate::with_global_context(
             |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -389,7 +387,7 @@ pub fn verify(sig: &Signature, msg: impl Into<Message>, pk: &PublicKey) -> Resul
                     pk.as_c_ptr(),
                 )
             },
-            Some(&seed),
+            None,
         );
         if res == 0 {
             Err(Error::IncorrectSignature)
