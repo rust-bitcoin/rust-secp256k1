@@ -411,9 +411,6 @@ impl KeyAggCache {
         let mut key_agg_cache = MaybeUninit::<ffi::MusigKeyAggCache>::uninit();
         let mut agg_pk = MaybeUninit::<ffi::XOnlyPublicKey>::uninit();
 
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
-
         unsafe {
             let pubkeys_ref = core::slice::from_raw_parts(
                 pubkeys.as_c_ptr() as *const *const ffi::PublicKey,
@@ -430,7 +427,7 @@ impl KeyAggCache {
                         pubkeys_ref.len(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if ret == 0 {
                 // Returns 0 only if the keys are malformed that never happens in safe rust type system.
@@ -507,8 +504,6 @@ impl KeyAggCache {
     /// # }
     /// ```
     pub fn pubkey_ec_tweak_add(&mut self, tweak: &Scalar) -> Result<PublicKey, InvalidTweakErr> {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let mut out = PublicKey::from(ffi::PublicKey::new());
 
@@ -521,7 +516,7 @@ impl KeyAggCache {
                         tweak.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if ret == 0 {
                 Err(InvalidTweakErr)
@@ -569,8 +564,6 @@ impl KeyAggCache {
     /// # }
     /// ```
     pub fn pubkey_xonly_tweak_add(&mut self, tweak: &Scalar) -> Result<PublicKey, InvalidTweakErr> {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let mut out = PublicKey::from(ffi::PublicKey::new());
 
@@ -583,7 +576,7 @@ impl KeyAggCache {
                         tweak.as_c_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if ret == 0 {
                 Err(InvalidTweakErr)
@@ -956,9 +949,6 @@ impl AggregatedNonce {
 
         let mut aggnonce = MaybeUninit::<ffi::MusigAggNonce>::uninit();
 
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
-
         unsafe {
             let pubnonces = core::slice::from_raw_parts(
                 nonces.as_c_ptr() as *const *const ffi::MusigPubNonce,
@@ -974,7 +964,7 @@ impl AggregatedNonce {
                         pubnonces.len(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if ret == 0 {
                 // This can only crash if the individual nonces are invalid which is not possible is rust.
@@ -1124,9 +1114,6 @@ impl Session {
     pub fn new(key_agg_cache: &KeyAggCache, agg_nonce: AggregatedNonce, msg: &[u8; 32]) -> Self {
         let mut session = MaybeUninit::<ffi::MusigSession>::uninit();
 
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
-
         unsafe {
             let ret = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -1138,7 +1125,7 @@ impl Session {
                         key_agg_cache.as_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             if ret == 0 {
                 // Only fails on cryptographically unreachable codes or if the args are invalid.
@@ -1179,8 +1166,6 @@ impl Session {
         keypair: &Keypair,
         key_agg_cache: &KeyAggCache,
     ) -> PartialSignature {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let mut partial_sig = MaybeUninit::<ffi::MusigPartialSignature>::uninit();
 
@@ -1195,7 +1180,7 @@ impl Session {
                         self.as_ptr(),
                     )
                 },
-                Some(&seed),
+                Some(&keypair.secret_bytes()),
             );
 
             assert_eq!(res, 1);
@@ -1283,8 +1268,6 @@ impl Session {
         pub_nonce: &PublicNonce,
         pub_key: PublicKey,
     ) -> bool {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let ret = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -1297,7 +1280,7 @@ impl Session {
                         self.as_ptr(),
                     )
                 },
-                Some(&seed),
+                None,
             );
             ret == 1
         }

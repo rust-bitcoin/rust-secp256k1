@@ -161,8 +161,6 @@ pub fn sign_with_rng<R: Rng + CryptoRng>(msg: &[u8], keypair: &Keypair, rng: &mu
 
 /// Verifies a schnorr signature.
 pub fn verify(sig: &Signature, msg: &[u8], pubkey: &XOnlyPublicKey) -> Result<(), Error> {
-    // We have no seed here but we want rerandomiziation to happen for `rand` users.
-    let seed = [0_u8; 32];
     unsafe {
         let ret = crate::with_global_context(
             |secp: &Secp256k1<crate::AllPreallocated>| {
@@ -174,7 +172,7 @@ pub fn verify(sig: &Signature, msg: &[u8], pubkey: &XOnlyPublicKey) -> Result<()
                     pubkey.as_c_ptr(),
                 )
             },
-            Some(&seed),
+            None,
         );
 
         if ret == 1 {
