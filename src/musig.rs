@@ -1179,8 +1179,6 @@ impl Session {
         keypair: &Keypair,
         key_agg_cache: &KeyAggCache,
     ) -> PartialSignature {
-        // We have no seed here but we want rerandomiziation to happen for `rand` users.
-        let seed = [0_u8; 32];
         unsafe {
             let mut partial_sig = MaybeUninit::<ffi::MusigPartialSignature>::uninit();
 
@@ -1195,7 +1193,7 @@ impl Session {
                         self.as_ptr(),
                     )
                 },
-                Some(&seed),
+                Some(&keypair.secret_bytes()),
             );
 
             assert_eq!(res, 1);
