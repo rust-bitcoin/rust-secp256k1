@@ -4,7 +4,6 @@ version = "0.31.1"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
-homepage = "https://github.com/rust-bitcoin/rust-secp256k1/"
 repository = "https://github.com/rust-bitcoin/rust-secp256k1/"
 documentation = "https://docs.rs/secp256k1/"
 description = "Rust wrapper library for Pieter Wuille's `libsecp256k1`. Implements ECDSA and BIP 340 signatures for the SECG elliptic curve group secp256k1 and related utilities."
@@ -12,10 +11,7 @@ keywords = [ "crypto", "ECDSA", "secp256k1", "libsecp256k1", "bitcoin" ]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.63.0"
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+exclude = ["tests", "contrib"]
 
 [features]
 default = ["std"]
@@ -47,6 +43,10 @@ serde_cbor = "0.10.0"
 serde_test = "1.0.19"
 bincode = "1.3.3"
 hex_lit = "0.1.1"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [target.wasm32-unknown-unknown.dev-dependencies]
 wasm-bindgen-test = "0.3"
