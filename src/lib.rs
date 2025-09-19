@@ -208,22 +208,6 @@ pub use crate::{
     scalar::Scalar,
 };
 
-/// Trait describing something that promises to be a 32-byte uniformly random number.
-///
-/// In particular, anything implementing this trait must have negligible probability
-/// of being zero, overflowing the group order, or equalling any specific value.
-///
-/// Since version 0.29 this has been deprecated; users should instead implement
-/// `Into<Message>` for types that satisfy these properties.
-#[deprecated(
-    since = "0.29.0",
-    note = "Please see v0.29.0 rust-secp256k1/CHANGELOG.md for suggestion"
-)]
-pub trait ThirtyTwoByteHash {
-    /// Converts the object into a 32-byte array
-    fn into_32(self) -> [u8; 32];
-}
-
 /// A (hashed) message input to an ECDSA signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Message([u8; constants::MESSAGE_SIZE]);
@@ -231,19 +215,6 @@ impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
 impl_pretty_debug!(Message);
 
 impl Message {
-    /// Creates a [`Message`] from a 32 byte slice `digest`.
-    ///
-    /// Converts a `MESSAGE_SIZE`-byte slice to a message object. **WARNING:** the slice has to be a
-    /// cryptographically secure hash of the actual message that's going to be signed. Otherwise
-    /// the result of signing isn't a
-    /// [secure signature](https://twitter.com/pwuille/status/1063582706288586752).
-    #[inline]
-    #[deprecated(since = "0.28.0", note = "use from_digest instead")]
-    pub fn from_slice(digest: &[u8]) -> Result<Message, Error> {
-        #[allow(deprecated)]
-        Message::from_digest_slice(digest)
-    }
-
     /// Creates a [`Message`] from a `digest`.
     ///
     /// The `digest` array has to be a cryptographically secure hash of the actual message that's
@@ -273,12 +244,6 @@ impl Message {
     pub fn from_digest_slice(digest: &[u8]) -> Result<Message, Error> {
         Ok(Message::from_digest(digest.try_into().map_err(|_| Error::InvalidMessage)?))
     }
-}
-
-#[allow(deprecated)]
-impl<T: ThirtyTwoByteHash> From<T> for Message {
-    /// Converts a 32-byte hash directly to a message without error paths.
-    fn from(t: T) -> Message { Message(t.into_32()) }
 }
 
 impl fmt::LowerHex for Message {

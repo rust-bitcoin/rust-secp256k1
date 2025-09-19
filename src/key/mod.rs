@@ -83,19 +83,6 @@ impl str::FromStr for PublicKey {
 }
 
 impl PublicKey {
-    /// Obtains a raw const pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::PublicKey { self.as_c_ptr() }
-
-    /// Obtains a raw mutable pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(
-        since = "0.25.0",
-        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
-    )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::PublicKey { self.as_mut_c_ptr() }
-
     /// Creates a new public key from a [`SecretKey`].
     ///
     /// # Examples
@@ -497,19 +484,6 @@ pub struct Keypair(ffi::Keypair);
 impl_fast_comparisons!(Keypair);
 
 impl Keypair {
-    /// Obtains a raw const pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::Keypair { self.as_c_ptr() }
-
-    /// Obtains a raw mutable pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(
-        since = "0.25.0",
-        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
-    )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::Keypair { self.as_mut_c_ptr() }
-
     /// Creates a [`Keypair`] directly from a Secp256k1 secret key.
     #[inline]
     pub fn from_secret_key(sk: &SecretKey) -> Keypair {
@@ -873,19 +847,6 @@ impl str::FromStr for XOnlyPublicKey {
 }
 
 impl XOnlyPublicKey {
-    /// Obtains a raw const pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::XOnlyPublicKey { self.as_c_ptr() }
-
-    /// Obtains a raw mutable pointer suitable for use with FFI functions.
-    #[inline]
-    #[deprecated(
-        since = "0.25.0",
-        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
-    )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::XOnlyPublicKey { self.as_mut_c_ptr() }
-
     /// Returns the [`XOnlyPublicKey`] (and its [`Parity`]) for `keypair`.
     #[inline]
     pub fn from_keypair(keypair: &Keypair) -> (XOnlyPublicKey, Parity) {

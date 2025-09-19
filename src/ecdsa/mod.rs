@@ -141,19 +141,6 @@ impl Signature {
         }
     }
 
-    /// Obtains a raw pointer suitable for use with FFI functions
-    #[inline]
-    #[deprecated(since = "0.25.0", note = "Use Self::as_c_ptr if you need to access the FFI layer")]
-    pub fn as_ptr(&self) -> *const ffi::Signature { self.as_c_ptr() }
-
-    /// Obtains a raw mutable pointer suitable for use with FFI functions
-    #[inline]
-    #[deprecated(
-        since = "0.25.0",
-        note = "Use Self::as_mut_c_ptr if you need to access the FFI layer"
-    )]
-    pub fn as_mut_ptr(&mut self) -> *mut ffi::Signature { self.as_mut_c_ptr() }
-
     #[inline]
     /// Serializes the signature in DER format
     pub fn serialize_der(&self) -> SerializedSignature {

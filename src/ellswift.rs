@@ -279,24 +279,6 @@ impl ElligatorSwiftSharedSecret {
     pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
 }
 
-/// Represents which party we are in the ECDH.
-///
-/// Here `A` is the initiator and `B` is the responder.
-///
-/// this context, "we" means the party that possesses the secret key passed to
-/// [`ElligatorSwift::shared_secret`].
-///
-/// This distinction is important because the different parties compute different
-/// hashes of the shared secret.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[deprecated(since = "0.30.0", note = "Use `Party` instead.")]
-pub enum ElligatorSwiftParty {
-    /// We are the initiator of the ECDH
-    A,
-    /// We are the responder of the ECDH
-    B,
-}
-
 /// Represents the two parties in ECDH
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Party {
@@ -304,16 +286,6 @@ pub enum Party {
     Initiator,
     /// The party that responds to the initiator's communications
     Responder,
-}
-
-#[allow(deprecated)]
-impl From<ElligatorSwiftParty> for Party {
-    fn from(value: ElligatorSwiftParty) -> Self {
-        match value {
-            ElligatorSwiftParty::A => Party::Initiator,
-            ElligatorSwiftParty::B => Party::Responder,
-        }
-    }
 }
 
 impl Party {
