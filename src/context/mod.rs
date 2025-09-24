@@ -17,45 +17,9 @@ mod internal;
 #[cfg(not(feature = "std"))]
 mod spinlock;
 
-pub use internal::{rerandomize_global_context, with_global_context, with_raw_global_context};
-
-#[cfg(all(feature = "global-context", feature = "std"))]
-/// Module implementing a singleton pattern for a global `Secp256k1` context.
-pub mod global {
-
-    use std::ops::Deref;
-    use std::sync::Once;
-
-    use crate::{All, Secp256k1};
-
-    /// Proxy struct for global `SECP256K1` context.
-    #[derive(Debug, Copy, Clone)]
-    pub struct GlobalContext {
-        __private: (),
-    }
-
-    /// A global static context to avoid repeatedly creating contexts.
-    ///
-    /// If `rand` and `std` feature is enabled, context will have been randomized using
-    /// `rng`.
-    pub static SECP256K1: &GlobalContext = &GlobalContext { __private: () };
-
-    impl Deref for GlobalContext {
-        type Target = Secp256k1<All>;
-
-        #[allow(unused_mut)] // Unused when `rand` + `std` is not enabled.
-        #[allow(static_mut_refs)] // The "proper" way to do this is with OnceLock (MSRV 1.70) or LazyLock (MSRV 1.80)
-                                  // See https://doc.rust-lang.org/nightly/edition-guide/rust-2024/static-mut-references.html
-        fn deref(&self) -> &Self::Target {
-            static ONCE: Once = Once::new();
-            static mut CONTEXT: Option<Secp256k1<All>> = None;
-            ONCE.call_once(|| unsafe {
-                CONTEXT = Some(Secp256k1::new());
-            });
-            unsafe { CONTEXT.as_ref().unwrap() }
-        }
-    }
-}
+pub use internal::{
+    rerandomize_global_context, with_global_context, with_raw_global_context, SECP256K1,
+};
 
 /// A trait for all kinds of contexts that lets you define the exact flags and a function to
 /// deallocate memory. It isn't possible to implement this for types outside this crate.
@@ -213,12 +177,7 @@ mod alloc_only {
                 phantom: PhantomData,
             };
 
-            #[cfg(all(
-                not(target_arch = "wasm32"),
-                feature = "rand",
-                feature = "std",
-                not(feature = "global-context-less-secure")
-            ))]
+            #[cfg(all(not(target_arch = "wasm32"), feature = "rand", feature = "std",))]
             {
                 ctx.randomize(&mut rand::rng());
             }

@@ -115,12 +115,6 @@ impl PublicKey {
     #[inline]
     pub fn from_ellswift(ellswift: ElligatorSwift) -> PublicKey { ElligatorSwift::decode(ellswift) }
 
-    /// Creates a new public key from a [`SecretKey`].
-    #[inline]
-    #[cfg(feature = "global-context")]
-    #[deprecated(since = "TBD", note = "use from_secret_key instead")]
-    pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey { PublicKey::from_secret_key(sk) }
-
     /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
@@ -460,7 +454,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 ///
 /// # Serde support
 ///
-/// Implements de/serialization with the `serde` and `global-context` features enabled. Serializes
+/// Implements de/serialization with the `serde` and feature enabled. Serializes
 /// the secret bytes only. We treat the byte value as a tuple of 32 `u8`s for non-human-readable
 /// formats. This representation is optimal for some formats (e.g. [`bincode`]) however other
 /// formats may be less optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
@@ -552,16 +546,6 @@ impl Keypair {
     #[deprecated(note = "use FromStr or parse instead")]
     pub fn from_seckey_str(s: &str) -> Result<Self, Error> { s.parse() }
 
-    /// Creates a [`Keypair`] directly from a secret key string.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number is an invalid scalar.
-    #[inline]
-    #[deprecated(note = "use FromStr or parse instead")]
-    pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> { s.parse() }
-
     /// Generates a new random key pair.
     /// # Examples
     ///
@@ -606,7 +590,7 @@ impl Keypair {
 
     /// Generates a new random secret key.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[deprecated(since = "TBD", note = "use Keypair::new instead")]
     pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> Keypair { Keypair::new(rng) }
 
@@ -1939,13 +1923,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
+    #[cfg(feature = "serde")]
     fn test_serde_keypair() {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{assert_tokens, Configure, Token};
 
         use crate::key::Keypair;
-        use crate::SECP256K1;
 
         #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [
@@ -2115,7 +2098,7 @@ mod test {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
+    #[cfg(feature = "serde")]
     fn test_serde_x_only_pubkey() {
         use serde_test::{assert_tokens, Configure, Token};
 
