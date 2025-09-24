@@ -177,12 +177,7 @@ mod alloc_only {
                 phantom: PhantomData,
             };
 
-            #[cfg(all(
-                not(target_arch = "wasm32"),
-                feature = "rand",
-                feature = "std",
-                not(feature = "global-context-less-secure")
-            ))]
+            #[cfg(all(not(target_arch = "wasm32"), feature = "rand", feature = "std",))]
             {
                 ctx.randomize(&mut rand::rng());
             }

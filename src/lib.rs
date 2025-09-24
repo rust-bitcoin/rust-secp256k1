@@ -49,26 +49,6 @@
 //! # }
 //! ```
 //!
-//! If the "global-context" feature is enabled you have access to an alternate API.
-//!
-//! ```rust
-//! # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
-//! use secp256k1::{rand, Message};
-//!
-//! // See previous example regarding this constant.
-//! const HELLO_WORLD_SHA2: [u8; 32] = [
-//!     0x31, 0x5f, 0x5b, 0xdb, 0x76, 0xd0, 0x78, 0xc4, 0x3b, 0x8a, 0xc0, 0x06, 0x4e, 0x4a, 0x01, 0x64,
-//!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
-//! ];
-//!
-//! let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
-//! let message = Message::from_digest(HELLO_WORLD_SHA2);
-//!
-//! let sig = secret_key.sign_ecdsa(message);
-//! assert!(sig.verify(message, &public_key).is_ok());
-//! # }
-//! ```
-//!
 //! The above code requires `rust-secp256k1` to be compiled with the `rand`, `hashes`, and `std`
 //! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
@@ -139,7 +119,6 @@
 //! * `hashes` - use the `hashes` library.
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
-//! * `global-context` - enable use of global secp256k1 context (implies `std`).
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
 //!   **Important**: `serde` encoding is **not** the same as consensus encoding!
 //!
@@ -422,12 +401,12 @@ pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, 
 /// Constructor for unit testing. (Calls `generate_keypair` if all
 /// the relevant features are on to get coverage of that functoin.)
 #[cfg(test)]
-#[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
+#[cfg(all(feature = "rand", feature = "std"))]
 fn test_random_keypair() -> (key::SecretKey, key::PublicKey) { generate_keypair(&mut rand::rng()) }
 
 /// Constructor for unit testing.
 #[cfg(test)]
-#[cfg(not(all(feature = "global-context", feature = "rand", feature = "std")))]
+#[cfg(not(all(feature = "rand", feature = "std")))]
 fn test_random_keypair() -> (key::SecretKey, key::PublicKey) {
     let sk = SecretKey::test_random();
     let pk = key::PublicKey::from_secret_key(&sk);
@@ -963,7 +942,6 @@ mod tests {
         assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
     }
 
-    #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");

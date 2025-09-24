@@ -128,7 +128,6 @@ impl RecoverableSignature {
     /// Determines the public key for which this [`Signature`] is valid for `msg`. Requires a
     /// verify-capable context.
     #[inline]
-    #[cfg(feature = "global-context")]
     pub fn recover(&self, msg: impl Into<Message>) -> Result<key::PublicKey, Error> {
         self.recover_ecdsa(msg)
     }

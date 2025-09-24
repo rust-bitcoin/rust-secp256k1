@@ -103,7 +103,6 @@ impl Signature {
 
     /// Verifies a schnorr signature for `msg` using `pk`.
     #[inline]
-    #[cfg(feature = "global-context")]
     pub fn verify(&self, msg: &[u8], pk: &XOnlyPublicKey) -> Result<(), Error> {
         verify(self, msg, pk)
     }

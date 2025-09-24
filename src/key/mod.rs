@@ -117,7 +117,6 @@ impl PublicKey {
 
     /// Creates a new public key from a [`SecretKey`].
     #[inline]
-    #[cfg(feature = "global-context")]
     #[deprecated(since = "TBD", note = "use from_secret_key instead")]
     pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey { PublicKey::from_secret_key(sk) }
 
@@ -460,7 +459,7 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 ///
 /// # Serde support
 ///
-/// Implements de/serialization with the `serde` and `global-context` features enabled. Serializes
+/// Implements de/serialization with the `serde` and feature enabled. Serializes
 /// the secret bytes only. We treat the byte value as a tuple of 32 `u8`s for non-human-readable
 /// formats. This representation is optimal for some formats (e.g. [`bincode`]) however other
 /// formats may be less optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
@@ -606,7 +605,7 @@ impl Keypair {
 
     /// Generates a new random secret key.
     #[inline]
-    #[cfg(all(feature = "global-context", feature = "rand"))]
+    #[cfg(feature = "rand")]
     #[deprecated(since = "TBD", note = "use Keypair::new instead")]
     pub fn new_global<R: ::rand::Rng + ?Sized>(rng: &mut R) -> Keypair { Keypair::new(rng) }
 
@@ -1939,7 +1938,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
+    #[cfg(feature = "serde")]
     fn test_serde_keypair() {
         use serde::{Deserialize, Deserializer, Serialize, Serializer};
         use serde_test::{assert_tokens, Configure, Token};
@@ -2114,7 +2113,7 @@ mod test {
 
     #[test]
     #[cfg(not(secp256k1_fuzz))]
-    #[cfg(all(feature = "global-context", feature = "serde"))]
+    #[cfg(feature = "serde")]
     fn test_serde_x_only_pubkey() {
         use serde_test::{assert_tokens, Configure, Token};
 
