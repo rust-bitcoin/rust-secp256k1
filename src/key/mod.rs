@@ -1940,7 +1940,6 @@ mod test {
         use serde_test::{assert_tokens, Configure, Token};
 
         use crate::key::Keypair;
-        use crate::SECP256K1;
 
         #[rustfmt::skip]
         static SK_BYTES: [u8; 32] = [

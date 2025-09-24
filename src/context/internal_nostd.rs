@@ -73,7 +73,8 @@ mod self_contained_context {
 // because we need a const constructor.)
 pub(super) use self_contained_context::SelfContainedContext;
 
-static SECP256K1: SpinLock<SelfContainedContext> = SpinLock::<SelfContainedContext>::new();
+/// A global static context to avoid repeatedly creating contexts.
+pub static SECP256K1: SpinLock<SelfContainedContext> = SpinLock::<SelfContainedContext>::new();
 
 /// Borrows the global context and does some operation on it.
 ///
