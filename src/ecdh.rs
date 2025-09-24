@@ -55,7 +55,12 @@ impl SharedSecret {
 
     /// Returns the shared secret as a byte value.
     #[inline]
-    pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] { self.0 }
+    pub fn to_secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] { self.0 }
+
+    /// Returns the shared secret as a byte value.
+    #[deprecated(since = "TBD", note = "Use `to_secret_bytes` instead.")]
+    #[inline]
+    pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] { self.to_secret_bytes() }
 
     /// Creates a shared secret from `bytes` array.
     #[inline]
