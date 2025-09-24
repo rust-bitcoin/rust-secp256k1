@@ -43,6 +43,10 @@ impl SpinLock<SelfContainedContext> {
     }
 }
 
+impl Default for SpinLock<SelfContainedContext> {
+    fn default() -> Self { Self::new() }
+}
+
 #[cfg(test)]
 impl SpinLock<u64> {
     pub const fn new(v: u64) -> Self {
