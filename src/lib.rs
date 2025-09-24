@@ -191,8 +191,7 @@ use crate::ffi::CPtr;
 #[rustfmt::skip]                // Keep public re-exports separate.
 pub use secp256k1_sys as ffi;
 
-#[cfg(all(feature = "global-context", feature = "std"))]
-pub use crate::context::global::{self, SECP256K1};
+pub use crate::context::SECP256K1;
 #[cfg(feature = "alloc")]
 pub use crate::context::{All, SignOnly, VerifyOnly};
 #[doc(inline)]

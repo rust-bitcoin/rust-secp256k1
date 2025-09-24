@@ -10,7 +10,10 @@ use secp256k1_sys as ffi;
 use crate::{All, Context, Secp256k1};
 
 thread_local! {
-    static SECP256K1: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
+    /// A global static context to avoid repeatedly creating contexts.
+    ///
+    /// If `rand` feature is enabled, context will have been randomized using `rng`.
+    pub static SECP256K1: RefCell<Secp256k1<All>> = RefCell::new(Secp256k1::new());
 }
 
 /// Borrows the global context and does some operation on it.
