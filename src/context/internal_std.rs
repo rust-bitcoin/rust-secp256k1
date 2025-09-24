@@ -15,8 +15,13 @@ thread_local! {
 
 /// Borrows the global context and does some operation on it.
 ///
-/// If provided, after the operation is complete, [`rerandomize_global_context`]
-/// is called on the context. If you have some random data available,
+/// If `rerandomize_seed` is provided, then [`rerandomize_global_context`] is called on the context
+/// after the operation. This argument should be provided alongside any operation that uses secret
+/// data (e.g. signing, but not verification). If you have random data available, it should be
+/// provided here; it will be mixed with the current random state as well as the system RNG if it is
+/// available. If you do not have any random data, it is fine to provide all zeros, or a counter, or
+/// a weak source of entropy. This is a defense-in-depth measure to protect against side-channel
+/// attacks, and anything helps (and nothing will hurt).
 pub fn with_global_context<T, Ctx: Context, F: FnOnce(&Secp256k1<Ctx>) -> T>(
     f: F,
     rerandomize_seed: Option<&[u8; 32]>,
@@ -32,8 +37,13 @@ pub fn with_global_context<T, Ctx: Context, F: FnOnce(&Secp256k1<Ctx>) -> T>(
 
 /// Borrows the global context as a raw pointer and does some operation on it.
 ///
-/// If provided, after the operation is complete, [`rerandomize_global_context`]
-/// is called on the context. If you have some random data available,
+/// If `rerandomize_seed` is provided, then [`rerandomize_global_context`] is called on the context
+/// after the operation. This argument should be provided alongside any operation that uses secret
+/// data (e.g. signing, but not verification). If you have random data available, it should be
+/// provided here; it will be mixed with the current random state as well as the system RNG if it is
+/// available. If you do not have any random data, it is fine to provide all zeros, or a counter, or
+/// a weak source of entropy. This is a defense-in-depth measure to protect against side-channel
+/// attacks, and anything helps (and nothing will hurt).
 pub fn with_raw_global_context<T, F: FnOnce(NonNull<ffi::Context>) -> T>(
     f: F,
     rerandomize_seed: Option<&[u8; 32]>,
