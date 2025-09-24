@@ -115,11 +115,6 @@ impl PublicKey {
     #[inline]
     pub fn from_ellswift(ellswift: ElligatorSwift) -> PublicKey { ElligatorSwift::decode(ellswift) }
 
-    /// Creates a new public key from a [`SecretKey`].
-    #[inline]
-    #[deprecated(since = "TBD", note = "use from_secret_key instead")]
-    pub fn from_secret_key_global(sk: &SecretKey) -> PublicKey { PublicKey::from_secret_key(sk) }
-
     /// Creates a public key directly from a slice.
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<PublicKey, Error> {
@@ -550,16 +545,6 @@ impl Keypair {
     #[inline]
     #[deprecated(note = "use FromStr or parse instead")]
     pub fn from_seckey_str(s: &str) -> Result<Self, Error> { s.parse() }
-
-    /// Creates a [`Keypair`] directly from a secret key string.
-    ///
-    /// # Errors
-    ///
-    /// [`Error::InvalidSecretKey`] if the string does not consist of exactly 64 hex characters,
-    /// or if the encoded number is an invalid scalar.
-    #[inline]
-    #[deprecated(note = "use FromStr or parse instead")]
-    pub fn from_seckey_str_global(s: &str) -> Result<Keypair, Error> { s.parse() }
 
     /// Generates a new random key pair.
     /// # Examples
