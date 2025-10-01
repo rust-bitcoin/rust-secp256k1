@@ -17,6 +17,7 @@ mod self_contained_context {
     const MAX_PREALLOC_SIZE: usize = 16; // measured at 208 bytes on Andrew's 64-bit system
 
     /// A secp256k1 context object which can be allocated on the stack or in static storage.
+    #[derive(Debug)]
     pub struct SelfContainedContext(
         [MaybeUninit<AlignedType>; MAX_PREALLOC_SIZE],
         Option<NonNull<ffi::Context>>,
