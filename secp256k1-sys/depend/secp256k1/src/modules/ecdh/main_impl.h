@@ -12,27 +12,27 @@
 
 static int ecdh_hash_function_sha256(unsigned char *output, const unsigned char *x32, const unsigned char *y32, void *data) {
     unsigned char version = (y32[31] & 0x01) | 0x02;
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
     (void)data;
 
-    rustsecp256k1_v0_11_sha256_initialize(&sha);
-    rustsecp256k1_v0_11_sha256_write(&sha, &version, 1);
-    rustsecp256k1_v0_11_sha256_write(&sha, x32, 32);
-    rustsecp256k1_v0_11_sha256_finalize(&sha, output);
-    rustsecp256k1_v0_11_sha256_clear(&sha);
+    rustsecp256k1_v0_12_sha256_initialize(&sha);
+    rustsecp256k1_v0_12_sha256_write(&sha, &version, 1);
+    rustsecp256k1_v0_12_sha256_write(&sha, x32, 32);
+    rustsecp256k1_v0_12_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_12_sha256_clear(&sha);
 
     return 1;
 }
 
-const rustsecp256k1_v0_11_ecdh_hash_function rustsecp256k1_v0_11_ecdh_hash_function_sha256 = ecdh_hash_function_sha256;
-const rustsecp256k1_v0_11_ecdh_hash_function rustsecp256k1_v0_11_ecdh_hash_function_default = ecdh_hash_function_sha256;
+const rustsecp256k1_v0_12_ecdh_hash_function rustsecp256k1_v0_12_ecdh_hash_function_sha256 = ecdh_hash_function_sha256;
+const rustsecp256k1_v0_12_ecdh_hash_function rustsecp256k1_v0_12_ecdh_hash_function_default = ecdh_hash_function_sha256;
 
-int rustsecp256k1_v0_11_ecdh(const rustsecp256k1_v0_11_context* ctx, unsigned char *output, const rustsecp256k1_v0_11_pubkey *point, const unsigned char *scalar, rustsecp256k1_v0_11_ecdh_hash_function hashfp, void *data) {
+int rustsecp256k1_v0_12_ecdh(const rustsecp256k1_v0_12_context* ctx, unsigned char *output, const rustsecp256k1_v0_12_pubkey *point, const unsigned char *scalar, rustsecp256k1_v0_12_ecdh_hash_function hashfp, void *data) {
     int ret = 0;
     int overflow = 0;
-    rustsecp256k1_v0_11_gej res;
-    rustsecp256k1_v0_11_ge pt;
-    rustsecp256k1_v0_11_scalar s;
+    rustsecp256k1_v0_12_gej res;
+    rustsecp256k1_v0_12_ge pt;
+    rustsecp256k1_v0_12_scalar s;
     unsigned char x[32];
     unsigned char y[32];
 
@@ -42,31 +42,31 @@ int rustsecp256k1_v0_11_ecdh(const rustsecp256k1_v0_11_context* ctx, unsigned ch
     ARG_CHECK(scalar != NULL);
 
     if (hashfp == NULL) {
-        hashfp = rustsecp256k1_v0_11_ecdh_hash_function_default;
+        hashfp = rustsecp256k1_v0_12_ecdh_hash_function_default;
     }
 
-    rustsecp256k1_v0_11_pubkey_load(ctx, &pt, point);
-    rustsecp256k1_v0_11_scalar_set_b32(&s, scalar, &overflow);
+    rustsecp256k1_v0_12_pubkey_load(ctx, &pt, point);
+    rustsecp256k1_v0_12_scalar_set_b32(&s, scalar, &overflow);
 
-    overflow |= rustsecp256k1_v0_11_scalar_is_zero(&s);
-    rustsecp256k1_v0_11_scalar_cmov(&s, &rustsecp256k1_v0_11_scalar_one, overflow);
+    overflow |= rustsecp256k1_v0_12_scalar_is_zero(&s);
+    rustsecp256k1_v0_12_scalar_cmov(&s, &rustsecp256k1_v0_12_scalar_one, overflow);
 
-    rustsecp256k1_v0_11_ecmult_const(&res, &pt, &s);
-    rustsecp256k1_v0_11_ge_set_gej(&pt, &res);
+    rustsecp256k1_v0_12_ecmult_const(&res, &pt, &s);
+    rustsecp256k1_v0_12_ge_set_gej(&pt, &res);
 
     /* Compute a hash of the point */
-    rustsecp256k1_v0_11_fe_normalize(&pt.x);
-    rustsecp256k1_v0_11_fe_normalize(&pt.y);
-    rustsecp256k1_v0_11_fe_get_b32(x, &pt.x);
-    rustsecp256k1_v0_11_fe_get_b32(y, &pt.y);
+    rustsecp256k1_v0_12_fe_normalize(&pt.x);
+    rustsecp256k1_v0_12_fe_normalize(&pt.y);
+    rustsecp256k1_v0_12_fe_get_b32(x, &pt.x);
+    rustsecp256k1_v0_12_fe_get_b32(y, &pt.y);
 
     ret = hashfp(output, x, y, data);
 
-    rustsecp256k1_v0_11_memclear(x, sizeof(x));
-    rustsecp256k1_v0_11_memclear(y, sizeof(y));
-    rustsecp256k1_v0_11_scalar_clear(&s);
-    rustsecp256k1_v0_11_ge_clear(&pt);
-    rustsecp256k1_v0_11_gej_clear(&res);
+    rustsecp256k1_v0_12_memclear(x, sizeof(x));
+    rustsecp256k1_v0_12_memclear(y, sizeof(y));
+    rustsecp256k1_v0_12_scalar_clear(&s);
+    rustsecp256k1_v0_12_ge_clear(&pt);
+    rustsecp256k1_v0_12_gej_clear(&res);
 
     return !!ret & !overflow;
 }

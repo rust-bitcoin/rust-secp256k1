@@ -29,8 +29,8 @@ static void print_table(FILE* fp, int blocks, int teeth) {
     int outer;
     size_t inner;
 
-    rustsecp256k1_v0_11_ge_storage* table = checked_malloc(&default_error_callback, blocks * points * sizeof(rustsecp256k1_v0_11_ge_storage));
-    rustsecp256k1_v0_11_ecmult_gen_compute_table(table, &rustsecp256k1_v0_11_ge_const_g, blocks, teeth, spacing);
+    rustsecp256k1_v0_12_ge_storage* table = checked_malloc(&default_error_callback, blocks * points * sizeof(rustsecp256k1_v0_12_ge_storage));
+    rustsecp256k1_v0_12_ecmult_gen_compute_table(table, &rustsecp256k1_v0_12_ge_const_g, blocks, teeth, spacing);
 
     fprintf(fp, "#elif (COMB_BLOCKS == %d) && (COMB_TEETH == %d) && (COMB_SPACING == %d)\n", blocks, teeth, spacing);
     for (outer = 0; outer != blocks; outer++) {
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     fprintf(fp, "#endif /* EXHAUSTIVE_TEST_ORDER */\n");
     fprintf(fp, "#define S(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) SECP256K1_GE_STORAGE_CONST(0x##a##u,0x##b##u,0x##c##u,0x##d##u,0x##e##u,0x##f##u,0x##g##u,0x##h##u,0x##i##u,0x##j##u,0x##k##u,0x##l##u,0x##m##u,0x##n##u,0x##o##u,0x##p##u)\n");
 
-    fprintf(fp, "const rustsecp256k1_v0_11_ge_storage rustsecp256k1_v0_11_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS] = {\n");
+    fprintf(fp, "const rustsecp256k1_v0_12_ge_storage rustsecp256k1_v0_12_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS] = {\n");
     fprintf(fp, "#if 0\n");
     for (config = 0; config < sizeof(CONFIGS) / sizeof(*CONFIGS); ++config) {
         print_table(fp, CONFIGS[config][0], CONFIGS[config][1]);

@@ -45,13 +45,13 @@ extern "C" {
  * For mathematical background about the scheme, see the doc/ellswift.md file.
  */
 
-/** A pointer to a function used by rustsecp256k1_v0_11_ellswift_xdh to hash the shared X
+/** A pointer to a function used by rustsecp256k1_v0_12_ellswift_xdh to hash the shared X
  *  coordinate along with the encoded public keys to a uniform shared secret.
  *
  *  Returns: 1 if a shared secret was successfully computed.
- *           0 will cause rustsecp256k1_v0_11_ellswift_xdh to fail and return 0.
+ *           0 will cause rustsecp256k1_v0_12_ellswift_xdh to fail and return 0.
  *           Other return values are not allowed, and the behaviour of
- *           rustsecp256k1_v0_11_ellswift_xdh is undefined for other return values.
+ *           rustsecp256k1_v0_12_ellswift_xdh is undefined for other return values.
  *  Out:     output:     pointer to an array to be filled by the function
  *  In:      x32:        pointer to the 32-byte serialized X coordinate
  *                       of the resulting shared point (will not be NULL)
@@ -61,7 +61,7 @@ extern "C" {
  *                       (will not be NULL)
  *           data:       arbitrary data pointer that is passed through
  */
-typedef int (*rustsecp256k1_v0_11_ellswift_xdh_hash_function)(
+typedef int (*rustsecp256k1_v0_12_ellswift_xdh_hash_function)(
     unsigned char *output,
     const unsigned char *x32,
     const unsigned char *ell_a64,
@@ -69,25 +69,25 @@ typedef int (*rustsecp256k1_v0_11_ellswift_xdh_hash_function)(
     void *data
 );
 
-/** An implementation of an rustsecp256k1_v0_11_ellswift_xdh_hash_function which uses
+/** An implementation of an rustsecp256k1_v0_12_ellswift_xdh_hash_function which uses
  *  SHA256(prefix64 || ell_a64 || ell_b64 || x32), where prefix64 is the 64-byte
  *  array pointed to by data. */
-SECP256K1_API const rustsecp256k1_v0_11_ellswift_xdh_hash_function rustsecp256k1_v0_11_ellswift_xdh_hash_function_prefix;
+SECP256K1_API const rustsecp256k1_v0_12_ellswift_xdh_hash_function rustsecp256k1_v0_12_ellswift_xdh_hash_function_prefix;
 
-/** An implementation of an rustsecp256k1_v0_11_ellswift_xdh_hash_function compatible with
+/** An implementation of an rustsecp256k1_v0_12_ellswift_xdh_hash_function compatible with
  *  BIP324. It returns H_tag(ell_a64 || ell_b64 || x32), where H_tag is the
  *  BIP340 tagged hash function with tag "bip324_ellswift_xonly_ecdh". Equivalent
- *  to rustsecp256k1_v0_11_ellswift_xdh_hash_function_prefix with prefix64 set to
+ *  to rustsecp256k1_v0_12_ellswift_xdh_hash_function_prefix with prefix64 set to
  *  SHA256("bip324_ellswift_xonly_ecdh")||SHA256("bip324_ellswift_xonly_ecdh").
  *  The data argument is ignored. */
-SECP256K1_API const rustsecp256k1_v0_11_ellswift_xdh_hash_function rustsecp256k1_v0_11_ellswift_xdh_hash_function_bip324;
+SECP256K1_API const rustsecp256k1_v0_12_ellswift_xdh_hash_function rustsecp256k1_v0_12_ellswift_xdh_hash_function_bip324;
 
 /** Construct a 64-byte ElligatorSwift encoding of a given pubkey.
  *
  *  Returns: 1 always.
  *  Args:    ctx:        pointer to a context object
  *  Out:     ell64:      pointer to a 64-byte array to be filled
- *  In:      pubkey:     pointer to a rustsecp256k1_v0_11_pubkey containing an
+ *  In:      pubkey:     pointer to a rustsecp256k1_v0_12_pubkey containing an
  *                       initialized public key
  *           rnd32:      pointer to 32 bytes of randomness
  *
@@ -104,10 +104,10 @@ SECP256K1_API const rustsecp256k1_v0_11_ellswift_xdh_hash_function rustsecp256k1
  *
  * This function runs in variable time.
  */
-SECP256K1_API int rustsecp256k1_v0_11_ellswift_encode(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API int rustsecp256k1_v0_12_ellswift_encode(
+    const rustsecp256k1_v0_12_context *ctx,
     unsigned char *ell64,
-    const rustsecp256k1_v0_11_pubkey *pubkey,
+    const rustsecp256k1_v0_12_pubkey *pubkey,
     const unsigned char *rnd32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
@@ -115,14 +115,14 @@ SECP256K1_API int rustsecp256k1_v0_11_ellswift_encode(
  *
  *  Returns: always 1
  *  Args:    ctx:        pointer to a context object
- *  Out:     pubkey:     pointer to a rustsecp256k1_v0_11_pubkey that will be filled
+ *  Out:     pubkey:     pointer to a rustsecp256k1_v0_12_pubkey that will be filled
  *  In:      ell64:      pointer to a 64-byte array to decode
  *
  * This function runs in variable time.
  */
-SECP256K1_API int rustsecp256k1_v0_11_ellswift_decode(
-    const rustsecp256k1_v0_11_context *ctx,
-    rustsecp256k1_v0_11_pubkey *pubkey,
+SECP256K1_API int rustsecp256k1_v0_12_ellswift_decode(
+    const rustsecp256k1_v0_12_context *ctx,
+    rustsecp256k1_v0_12_pubkey *pubkey,
     const unsigned char *ell64
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
@@ -141,18 +141,18 @@ SECP256K1_API int rustsecp256k1_v0_11_ellswift_decode(
  * It is recommended that auxrnd32 contains 32 uniformly random bytes, though
  * it is optional (and does result in encodings that are indistinguishable from
  * uniform even without any auxrnd32). It differs from the (mandatory) rnd32
- * argument to rustsecp256k1_v0_11_ellswift_encode in this regard.
+ * argument to rustsecp256k1_v0_12_ellswift_encode in this regard.
  *
- * This function can be used instead of calling rustsecp256k1_v0_11_ec_pubkey_create
- * followed by rustsecp256k1_v0_11_ellswift_encode. It is safer, as it uses the secret
+ * This function can be used instead of calling rustsecp256k1_v0_12_ec_pubkey_create
+ * followed by rustsecp256k1_v0_12_ellswift_encode. It is safer, as it uses the secret
  * key as entropy for the encoding (supplemented with auxrnd32, if provided).
  *
- * Like rustsecp256k1_v0_11_ellswift_encode, this function does not guarantee that the
+ * Like rustsecp256k1_v0_12_ellswift_encode, this function does not guarantee that the
  * computed encoding is stable across versions of the library, even if all
  * arguments (including auxrnd32) are the same.
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_11_ellswift_create(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_12_ellswift_create(
+    const rustsecp256k1_v0_12_context *ctx,
     unsigned char *ell64,
     const unsigned char *seckey32,
     const unsigned char *auxrnd32
@@ -182,14 +182,14 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_11_ellswift_crea
  * This function is more efficient than decoding the public keys, and performing
  * ECDH on them.
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_11_ellswift_xdh(
-  const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_12_ellswift_xdh(
+  const rustsecp256k1_v0_12_context *ctx,
   unsigned char *output,
   const unsigned char *ell_a64,
   const unsigned char *ell_b64,
   const unsigned char *seckey32,
   int party,
-  rustsecp256k1_v0_11_ellswift_xdh_hash_function hashfp,
+  rustsecp256k1_v0_12_ellswift_xdh_hash_function hashfp,
   void *data
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(7);
 

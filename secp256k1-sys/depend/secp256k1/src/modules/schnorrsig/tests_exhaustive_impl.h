@@ -58,12 +58,12 @@ static const unsigned char invalid_pubkey_bytes[][32] = {
 
 #define NUM_INVALID_KEYS (sizeof(invalid_pubkey_bytes) / sizeof(invalid_pubkey_bytes[0]))
 
-static int rustsecp256k1_v0_11_hardened_nonce_function_smallint(unsigned char *nonce32, const unsigned char *msg,
+static int rustsecp256k1_v0_12_hardened_nonce_function_smallint(unsigned char *nonce32, const unsigned char *msg,
                                                       size_t msglen,
                                                       const unsigned char *key32, const unsigned char *xonly_pk32,
                                                       const unsigned char *algo, size_t algolen,
                                                       void* data) {
-    rustsecp256k1_v0_11_scalar s;
+    rustsecp256k1_v0_12_scalar s;
     int *idata = data;
     (void)msg;
     (void)msglen;
@@ -71,12 +71,12 @@ static int rustsecp256k1_v0_11_hardened_nonce_function_smallint(unsigned char *n
     (void)xonly_pk32;
     (void)algo;
     (void)algolen;
-    rustsecp256k1_v0_11_scalar_set_int(&s, *idata);
-    rustsecp256k1_v0_11_scalar_get_b32(nonce32, &s);
+    rustsecp256k1_v0_12_scalar_set_int(&s, *idata);
+    rustsecp256k1_v0_12_scalar_get_b32(nonce32, &s);
     return 1;
 }
 
-static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_11_context *ctx, const rustsecp256k1_v0_11_xonly_pubkey* pubkeys, unsigned char (*xonly_pubkey_bytes)[32], const int* parities) {
+static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_12_context *ctx, const rustsecp256k1_v0_12_xonly_pubkey* pubkeys, unsigned char (*xonly_pubkey_bytes)[32], const int* parities) {
     int d;
     uint64_t iter = 0;
     /* Iterate over the possible public keys to verify against (through their corresponding DL d). */
@@ -102,10 +102,10 @@ static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_11_context 
             }
             /* Randomly generate messages until all challenges have been hit. */
             while (e_count_done < EXHAUSTIVE_TEST_ORDER) {
-                rustsecp256k1_v0_11_scalar e;
+                rustsecp256k1_v0_12_scalar e;
                 unsigned char msg32[32];
                 testrand256(msg32);
-                rustsecp256k1_v0_11_schnorrsig_challenge(&e, sig64, msg32, sizeof(msg32), pk32);
+                rustsecp256k1_v0_12_schnorrsig_challenge(&e, sig64, msg32, sizeof(msg32), pk32);
                 /* Only do work if we hit a challenge we haven't tried before. */
                 if (!e_done[e]) {
                     /* Iterate over the possible valid last 32 bytes in the signature.
@@ -116,14 +116,14 @@ static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_11_context 
                         int expect_valid, valid;
                         if (s <= EXHAUSTIVE_TEST_ORDER) {
                             memset(sig64 + 32, 0, 32);
-                            rustsecp256k1_v0_11_write_be32(sig64 + 60, s);
+                            rustsecp256k1_v0_12_write_be32(sig64 + 60, s);
                             expect_valid = actual_k != -1 && s != EXHAUSTIVE_TEST_ORDER &&
                                            (s == (actual_k + actual_d * e) % EXHAUSTIVE_TEST_ORDER);
                         } else {
                             testrand256(sig64 + 32);
                             expect_valid = 0;
                         }
-                        valid = rustsecp256k1_v0_11_schnorrsig_verify(ctx, sig64, msg32, sizeof(msg32), &pubkeys[d - 1]);
+                        valid = rustsecp256k1_v0_12_schnorrsig_verify(ctx, sig64, msg32, sizeof(msg32), &pubkeys[d - 1]);
                         CHECK(valid == expect_valid);
                         count_valid += valid;
                     }
@@ -138,10 +138,10 @@ static void test_exhaustive_schnorrsig_verify(const rustsecp256k1_v0_11_context 
     }
 }
 
-static void test_exhaustive_schnorrsig_sign(const rustsecp256k1_v0_11_context *ctx, unsigned char (*xonly_pubkey_bytes)[32], const rustsecp256k1_v0_11_keypair* keypairs, const int* parities) {
+static void test_exhaustive_schnorrsig_sign(const rustsecp256k1_v0_12_context *ctx, unsigned char (*xonly_pubkey_bytes)[32], const rustsecp256k1_v0_12_keypair* keypairs, const int* parities) {
     int d, k;
     uint64_t iter = 0;
-    rustsecp256k1_v0_11_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
+    rustsecp256k1_v0_12_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
 
     /* Loop over keys. */
     for (d = 1; d < EXHAUSTIVE_TEST_ORDER; ++d) {
@@ -155,25 +155,25 @@ static void test_exhaustive_schnorrsig_sign(const rustsecp256k1_v0_11_context *c
             unsigned char sig64[64];
             int actual_k = k;
             if (skip_section(&iter)) continue;
-            extraparams.noncefp = rustsecp256k1_v0_11_hardened_nonce_function_smallint;
+            extraparams.noncefp = rustsecp256k1_v0_12_hardened_nonce_function_smallint;
             extraparams.ndata = &k;
             if (parities[k - 1]) actual_k = EXHAUSTIVE_TEST_ORDER - k;
             /* Generate random messages until all challenges have been tried. */
             while (e_count_done < EXHAUSTIVE_TEST_ORDER) {
-                rustsecp256k1_v0_11_scalar e;
+                rustsecp256k1_v0_12_scalar e;
                 testrand256(msg32);
-                rustsecp256k1_v0_11_schnorrsig_challenge(&e, xonly_pubkey_bytes[k - 1], msg32, sizeof(msg32), xonly_pubkey_bytes[d - 1]);
+                rustsecp256k1_v0_12_schnorrsig_challenge(&e, xonly_pubkey_bytes[k - 1], msg32, sizeof(msg32), xonly_pubkey_bytes[d - 1]);
                 /* Only do work if we hit a challenge we haven't tried before. */
                 if (!e_done[e]) {
-                    rustsecp256k1_v0_11_scalar expected_s = (actual_k + e * actual_d) % EXHAUSTIVE_TEST_ORDER;
+                    rustsecp256k1_v0_12_scalar expected_s = (actual_k + e * actual_d) % EXHAUSTIVE_TEST_ORDER;
                     unsigned char expected_s_bytes[32];
-                    rustsecp256k1_v0_11_scalar_get_b32(expected_s_bytes, &expected_s);
+                    rustsecp256k1_v0_12_scalar_get_b32(expected_s_bytes, &expected_s);
                     /* Invoke the real function to construct a signature. */
-                    CHECK(rustsecp256k1_v0_11_schnorrsig_sign_custom(ctx, sig64, msg32, sizeof(msg32), &keypairs[d - 1], &extraparams));
+                    CHECK(rustsecp256k1_v0_12_schnorrsig_sign_custom(ctx, sig64, msg32, sizeof(msg32), &keypairs[d - 1], &extraparams));
                     /* The first 32 bytes must match the xonly pubkey for the specified k. */
-                    CHECK(rustsecp256k1_v0_11_memcmp_var(sig64, xonly_pubkey_bytes[k - 1], 32) == 0);
+                    CHECK(rustsecp256k1_v0_12_memcmp_var(sig64, xonly_pubkey_bytes[k - 1], 32) == 0);
                     /* The last 32 bytes must match the expected s value. */
-                    CHECK(rustsecp256k1_v0_11_memcmp_var(sig64 + 32, expected_s_bytes, 32) == 0);
+                    CHECK(rustsecp256k1_v0_12_memcmp_var(sig64 + 32, expected_s_bytes, 32) == 0);
                     /* Don't retry other messages that result in the same challenge. */
                     e_done[e] = 1;
                     ++e_count_done;
@@ -183,28 +183,28 @@ static void test_exhaustive_schnorrsig_sign(const rustsecp256k1_v0_11_context *c
     }
 }
 
-static void test_exhaustive_schnorrsig(const rustsecp256k1_v0_11_context *ctx) {
-    rustsecp256k1_v0_11_keypair keypair[EXHAUSTIVE_TEST_ORDER - 1];
-    rustsecp256k1_v0_11_xonly_pubkey xonly_pubkey[EXHAUSTIVE_TEST_ORDER - 1];
+static void test_exhaustive_schnorrsig(const rustsecp256k1_v0_12_context *ctx) {
+    rustsecp256k1_v0_12_keypair keypair[EXHAUSTIVE_TEST_ORDER - 1];
+    rustsecp256k1_v0_12_xonly_pubkey xonly_pubkey[EXHAUSTIVE_TEST_ORDER - 1];
     int parity[EXHAUSTIVE_TEST_ORDER - 1];
     unsigned char xonly_pubkey_bytes[EXHAUSTIVE_TEST_ORDER - 1][32];
     unsigned i;
 
     /* Verify that all invalid_pubkey_bytes are actually invalid. */
     for (i = 0; i < NUM_INVALID_KEYS; ++i) {
-        rustsecp256k1_v0_11_xonly_pubkey pk;
-        CHECK(!rustsecp256k1_v0_11_xonly_pubkey_parse(ctx, &pk, invalid_pubkey_bytes[i]));
+        rustsecp256k1_v0_12_xonly_pubkey pk;
+        CHECK(!rustsecp256k1_v0_12_xonly_pubkey_parse(ctx, &pk, invalid_pubkey_bytes[i]));
     }
 
     /* Construct keypairs and xonly-pubkeys for the entire group. */
     for (i = 1; i < EXHAUSTIVE_TEST_ORDER; ++i) {
-        rustsecp256k1_v0_11_scalar scalar_i;
+        rustsecp256k1_v0_12_scalar scalar_i;
         unsigned char buf[32];
-        rustsecp256k1_v0_11_scalar_set_int(&scalar_i, i);
-        rustsecp256k1_v0_11_scalar_get_b32(buf, &scalar_i);
-        CHECK(rustsecp256k1_v0_11_keypair_create(ctx, &keypair[i - 1], buf));
-        CHECK(rustsecp256k1_v0_11_keypair_xonly_pub(ctx, &xonly_pubkey[i - 1], &parity[i - 1], &keypair[i - 1]));
-        CHECK(rustsecp256k1_v0_11_xonly_pubkey_serialize(ctx, xonly_pubkey_bytes[i - 1], &xonly_pubkey[i - 1]));
+        rustsecp256k1_v0_12_scalar_set_int(&scalar_i, i);
+        rustsecp256k1_v0_12_scalar_get_b32(buf, &scalar_i);
+        CHECK(rustsecp256k1_v0_12_keypair_create(ctx, &keypair[i - 1], buf));
+        CHECK(rustsecp256k1_v0_12_keypair_xonly_pub(ctx, &xonly_pubkey[i - 1], &parity[i - 1], &keypair[i - 1]));
+        CHECK(rustsecp256k1_v0_12_xonly_pubkey_serialize(ctx, xonly_pubkey_bytes[i - 1], &xonly_pubkey[i - 1]));
     }
 
     test_exhaustive_schnorrsig_sign(ctx, xonly_pubkey_bytes, keypair, parity);

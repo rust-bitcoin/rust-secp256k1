@@ -41,11 +41,11 @@
  *
  *  'pre' must be an array of size ECMULT_CONST_TABLE_SIZE.
  */
-static void rustsecp256k1_v0_11_ecmult_const_odd_multiples_table_globalz(rustsecp256k1_v0_11_ge *pre, rustsecp256k1_v0_11_fe *globalz, const rustsecp256k1_v0_11_gej *a) {
-    rustsecp256k1_v0_11_fe zr[ECMULT_CONST_TABLE_SIZE];
+static void rustsecp256k1_v0_12_ecmult_const_odd_multiples_table_globalz(rustsecp256k1_v0_12_ge *pre, rustsecp256k1_v0_12_fe *globalz, const rustsecp256k1_v0_12_gej *a) {
+    rustsecp256k1_v0_12_fe zr[ECMULT_CONST_TABLE_SIZE];
 
-    rustsecp256k1_v0_11_ecmult_odd_multiples_table(ECMULT_CONST_TABLE_SIZE, pre, zr, globalz, a);
-    rustsecp256k1_v0_11_ge_table_set_globalz(ECMULT_CONST_TABLE_SIZE, pre, zr);
+    rustsecp256k1_v0_12_ecmult_odd_multiples_table(ECMULT_CONST_TABLE_SIZE, pre, zr, globalz, a);
+    rustsecp256k1_v0_12_ge_table_set_globalz(ECMULT_CONST_TABLE_SIZE, pre, zr);
 }
 
 /* Given a table 'pre' with odd multiples of a point, put in r the signed-bit multiplication of n with that point.
@@ -84,7 +84,7 @@ static void rustsecp256k1_v0_11_ecmult_const_odd_multiples_table_globalz(rustsec
      *                = sum((1 - n[i]) * 2^i, i=0..l-2)
      */ \
     unsigned int index = ((unsigned int)(-negative) ^ n) & ((1U << (ECMULT_CONST_GROUP_SIZE - 1)) - 1U); \
-    rustsecp256k1_v0_11_fe neg_y; \
+    rustsecp256k1_v0_12_fe neg_y; \
     VERIFY_CHECK((n) < (1U << ECMULT_CONST_GROUP_SIZE)); \
     VERIFY_CHECK(index < (1U << (ECMULT_CONST_GROUP_SIZE - 1))); \
     /* Unconditionally set r->x = (pre)[m].x. r->y = (pre)[m].y. because it's either the correct one
@@ -94,34 +94,34 @@ static void rustsecp256k1_v0_11_ecmult_const_odd_multiples_table_globalz(rustsec
     for (m = 1; m < ECMULT_CONST_TABLE_SIZE; m++) { \
         /* This loop is used to avoid secret data in array indices. See
          * the comment in ecmult_gen_impl.h for rationale. */ \
-        rustsecp256k1_v0_11_fe_cmov(&(r)->x, &(pre)[m].x, m == index); \
-        rustsecp256k1_v0_11_fe_cmov(&(r)->y, &(pre)[m].y, m == index); \
+        rustsecp256k1_v0_12_fe_cmov(&(r)->x, &(pre)[m].x, m == index); \
+        rustsecp256k1_v0_12_fe_cmov(&(r)->y, &(pre)[m].y, m == index); \
     } \
     (r)->infinity = 0; \
-    rustsecp256k1_v0_11_fe_negate(&neg_y, &(r)->y, 1); \
-    rustsecp256k1_v0_11_fe_cmov(&(r)->y, &neg_y, negative); \
+    rustsecp256k1_v0_12_fe_negate(&neg_y, &(r)->y, 1); \
+    rustsecp256k1_v0_12_fe_cmov(&(r)->y, &neg_y, negative); \
 } while(0)
 
-/* For K as defined in the comment of rustsecp256k1_v0_11_ecmult_const, we have several precomputed
+/* For K as defined in the comment of rustsecp256k1_v0_12_ecmult_const, we have several precomputed
  * formulas/constants.
  * - in exhaustive test mode, we give an explicit expression to compute it at compile time: */
 #ifdef EXHAUSTIVE_TEST_ORDER
-static const rustsecp256k1_v0_11_scalar rustsecp256k1_v0_11_ecmult_const_K = ((SECP256K1_SCALAR_CONST(0, 0, 0, (1U << (ECMULT_CONST_BITS - 128)) - 2U, 0, 0, 0, 0) + EXHAUSTIVE_TEST_ORDER - 1U) * (1U + EXHAUSTIVE_TEST_LAMBDA)) % EXHAUSTIVE_TEST_ORDER;
+static const rustsecp256k1_v0_12_scalar rustsecp256k1_v0_12_ecmult_const_K = ((SECP256K1_SCALAR_CONST(0, 0, 0, (1U << (ECMULT_CONST_BITS - 128)) - 2U, 0, 0, 0, 0) + EXHAUSTIVE_TEST_ORDER - 1U) * (1U + EXHAUSTIVE_TEST_LAMBDA)) % EXHAUSTIVE_TEST_ORDER;
 /* - for the real secp256k1 group we have constants for various ECMULT_CONST_BITS values. */
 #elif ECMULT_CONST_BITS == 129
 /* For GROUP_SIZE = 1,3. */
-static const rustsecp256k1_v0_11_scalar rustsecp256k1_v0_11_ecmult_const_K = SECP256K1_SCALAR_CONST(0xac9c52b3ul, 0x3fa3cf1ful, 0x5ad9e3fdul, 0x77ed9ba4ul, 0xa880b9fcul, 0x8ec739c2ul, 0xe0cfc810ul, 0xb51283ceul);
+static const rustsecp256k1_v0_12_scalar rustsecp256k1_v0_12_ecmult_const_K = SECP256K1_SCALAR_CONST(0xac9c52b3ul, 0x3fa3cf1ful, 0x5ad9e3fdul, 0x77ed9ba4ul, 0xa880b9fcul, 0x8ec739c2ul, 0xe0cfc810ul, 0xb51283ceul);
 #elif ECMULT_CONST_BITS == 130
 /* For GROUP_SIZE = 2,5. */
-static const rustsecp256k1_v0_11_scalar rustsecp256k1_v0_11_ecmult_const_K = SECP256K1_SCALAR_CONST(0xa4e88a7dul, 0xcb13034eul, 0xc2bdd6bful, 0x7c118d6bul, 0x589ae848ul, 0x26ba29e4ul, 0xb5c2c1dcul, 0xde9798d9ul);
+static const rustsecp256k1_v0_12_scalar rustsecp256k1_v0_12_ecmult_const_K = SECP256K1_SCALAR_CONST(0xa4e88a7dul, 0xcb13034eul, 0xc2bdd6bful, 0x7c118d6bul, 0x589ae848ul, 0x26ba29e4ul, 0xb5c2c1dcul, 0xde9798d9ul);
 #elif ECMULT_CONST_BITS == 132
 /* For GROUP_SIZE = 4,6 */
-static const rustsecp256k1_v0_11_scalar rustsecp256k1_v0_11_ecmult_const_K = SECP256K1_SCALAR_CONST(0x76b1d93dul, 0x0fae3c6bul, 0x3215874bul, 0x94e93813ul, 0x7937fe0dul, 0xb66bcaaful, 0xb3749ca5ul, 0xd7b6171bul);
+static const rustsecp256k1_v0_12_scalar rustsecp256k1_v0_12_ecmult_const_K = SECP256K1_SCALAR_CONST(0x76b1d93dul, 0x0fae3c6bul, 0x3215874bul, 0x94e93813ul, 0x7937fe0dul, 0xb66bcaaful, 0xb3749ca5ul, 0xd7b6171bul);
 #else
 #  error "Unknown ECMULT_CONST_BITS"
 #endif
 
-static void rustsecp256k1_v0_11_ecmult_const(rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_ge *a, const rustsecp256k1_v0_11_scalar *q) {
+static void rustsecp256k1_v0_12_ecmult_const(rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_ge *a, const rustsecp256k1_v0_12_scalar *q) {
     /* The approach below combines the signed-digit logic from Mike Hamburg's
      * "Fast and compact elliptic-curve cryptography" (https://eprint.iacr.org/2012/309)
      * Section 3.3, with the GLV endomorphism.
@@ -142,7 +142,7 @@ static void rustsecp256k1_v0_11_ecmult_const(rustsecp256k1_v0_11_gej *r, const r
      * It is appealing to try to combine this with the GLV optimization: the idea that a scalar
      * s can be written as s1 + lambda*s2, where lambda is a curve-specific constant such that
      * lambda*A is easy to compute, and where s1 and s2 are small. In particular we have the
-     * rustsecp256k1_v0_11_scalar_split_lambda function which performs such a split with the resulting s1
+     * rustsecp256k1_v0_12_scalar_split_lambda function which performs such a split with the resulting s1
      * and s2 in range (-2^128, 2^128) mod n. This does work, but is uninteresting:
      *
      *   To compute q*A:
@@ -189,33 +189,33 @@ static void rustsecp256k1_v0_11_ecmult_const(rustsecp256k1_v0_11_gej *r, const r
      */
 
     /* The offset to add to s1 and s2 to make them non-negative. Equal to 2^128. */
-    static const rustsecp256k1_v0_11_scalar S_OFFSET = SECP256K1_SCALAR_CONST(0, 0, 0, 1, 0, 0, 0, 0);
-    rustsecp256k1_v0_11_scalar s, v1, v2;
-    rustsecp256k1_v0_11_ge pre_a[ECMULT_CONST_TABLE_SIZE];
-    rustsecp256k1_v0_11_ge pre_a_lam[ECMULT_CONST_TABLE_SIZE];
-    rustsecp256k1_v0_11_fe global_z;
+    static const rustsecp256k1_v0_12_scalar S_OFFSET = SECP256K1_SCALAR_CONST(0, 0, 0, 1, 0, 0, 0, 0);
+    rustsecp256k1_v0_12_scalar s, v1, v2;
+    rustsecp256k1_v0_12_ge pre_a[ECMULT_CONST_TABLE_SIZE];
+    rustsecp256k1_v0_12_ge pre_a_lam[ECMULT_CONST_TABLE_SIZE];
+    rustsecp256k1_v0_12_fe global_z;
     int group, i;
 
     /* We're allowed to be non-constant time in the point, and the code below (in particular,
-     * rustsecp256k1_v0_11_ecmult_const_odd_multiples_table_globalz) cannot deal with infinity in a
+     * rustsecp256k1_v0_12_ecmult_const_odd_multiples_table_globalz) cannot deal with infinity in a
      * constant-time manner anyway. */
-    if (rustsecp256k1_v0_11_ge_is_infinity(a)) {
-        rustsecp256k1_v0_11_gej_set_infinity(r);
+    if (rustsecp256k1_v0_12_ge_is_infinity(a)) {
+        rustsecp256k1_v0_12_gej_set_infinity(r);
         return;
     }
 
     /* Compute v1 and v2. */
-    rustsecp256k1_v0_11_scalar_add(&s, q, &rustsecp256k1_v0_11_ecmult_const_K);
-    rustsecp256k1_v0_11_scalar_half(&s, &s);
-    rustsecp256k1_v0_11_scalar_split_lambda(&v1, &v2, &s);
-    rustsecp256k1_v0_11_scalar_add(&v1, &v1, &S_OFFSET);
-    rustsecp256k1_v0_11_scalar_add(&v2, &v2, &S_OFFSET);
+    rustsecp256k1_v0_12_scalar_add(&s, q, &rustsecp256k1_v0_12_ecmult_const_K);
+    rustsecp256k1_v0_12_scalar_half(&s, &s);
+    rustsecp256k1_v0_12_scalar_split_lambda(&v1, &v2, &s);
+    rustsecp256k1_v0_12_scalar_add(&v1, &v1, &S_OFFSET);
+    rustsecp256k1_v0_12_scalar_add(&v2, &v2, &S_OFFSET);
 
 #ifdef VERIFY
     /* Verify that v1 and v2 are in range [0, 2^129-1]. */
     for (i = 129; i < 256; ++i) {
-        VERIFY_CHECK(rustsecp256k1_v0_11_scalar_get_bits_limb32(&v1, i, 1) == 0);
-        VERIFY_CHECK(rustsecp256k1_v0_11_scalar_get_bits_limb32(&v2, i, 1) == 0);
+        VERIFY_CHECK(rustsecp256k1_v0_12_scalar_get_bits_limb32(&v1, i, 1) == 0);
+        VERIFY_CHECK(rustsecp256k1_v0_12_scalar_get_bits_limb32(&v2, i, 1) == 0);
     }
 #endif
 
@@ -225,10 +225,10 @@ static void rustsecp256k1_v0_11_ecmult_const(rustsecp256k1_v0_11_gej *r, const r
      * that the Z coordinate was 1, use affine addition formulae, and correct
      * the Z coordinate of the result once at the end.
      */
-    rustsecp256k1_v0_11_gej_set_ge(r, a);
-    rustsecp256k1_v0_11_ecmult_const_odd_multiples_table_globalz(pre_a, &global_z, r);
+    rustsecp256k1_v0_12_gej_set_ge(r, a);
+    rustsecp256k1_v0_12_ecmult_const_odd_multiples_table_globalz(pre_a, &global_z, r);
     for (i = 0; i < ECMULT_CONST_TABLE_SIZE; i++) {
-        rustsecp256k1_v0_11_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
+        rustsecp256k1_v0_12_ge_mul_lambda(&pre_a_lam[i], &pre_a[i]);
     }
 
     /* Next, we compute r = C_l(v1, A) + C_l(v2, lambda*A).
@@ -243,31 +243,31 @@ static void rustsecp256k1_v0_11_ecmult_const(rustsecp256k1_v0_11_gej *r, const r
      */
     for (group = ECMULT_CONST_GROUPS - 1; group >= 0; --group) {
         /* Using the _var get_bits function is ok here, since it's only variable in offset and count, not in the scalar. */
-        unsigned int bits1 = rustsecp256k1_v0_11_scalar_get_bits_var(&v1, group * ECMULT_CONST_GROUP_SIZE, ECMULT_CONST_GROUP_SIZE);
-        unsigned int bits2 = rustsecp256k1_v0_11_scalar_get_bits_var(&v2, group * ECMULT_CONST_GROUP_SIZE, ECMULT_CONST_GROUP_SIZE);
-        rustsecp256k1_v0_11_ge t;
+        unsigned int bits1 = rustsecp256k1_v0_12_scalar_get_bits_var(&v1, group * ECMULT_CONST_GROUP_SIZE, ECMULT_CONST_GROUP_SIZE);
+        unsigned int bits2 = rustsecp256k1_v0_12_scalar_get_bits_var(&v2, group * ECMULT_CONST_GROUP_SIZE, ECMULT_CONST_GROUP_SIZE);
+        rustsecp256k1_v0_12_ge t;
         int j;
 
         ECMULT_CONST_TABLE_GET_GE(&t, pre_a, bits1);
         if (group == ECMULT_CONST_GROUPS - 1) {
             /* Directly set r in the first iteration. */
-            rustsecp256k1_v0_11_gej_set_ge(r, &t);
+            rustsecp256k1_v0_12_gej_set_ge(r, &t);
         } else {
             /* Shift the result so far up. */
             for (j = 0; j < ECMULT_CONST_GROUP_SIZE; ++j) {
-                rustsecp256k1_v0_11_gej_double(r, r);
+                rustsecp256k1_v0_12_gej_double(r, r);
             }
-            rustsecp256k1_v0_11_gej_add_ge(r, r, &t);
+            rustsecp256k1_v0_12_gej_add_ge(r, r, &t);
         }
         ECMULT_CONST_TABLE_GET_GE(&t, pre_a_lam, bits2);
-        rustsecp256k1_v0_11_gej_add_ge(r, r, &t);
+        rustsecp256k1_v0_12_gej_add_ge(r, r, &t);
     }
 
     /* Map the result back to the secp256k1 curve from the isomorphic curve. */
-    rustsecp256k1_v0_11_fe_mul(&r->z, &r->z, &global_z);
+    rustsecp256k1_v0_12_fe_mul(&r->z, &r->z, &global_z);
 }
 
-static int rustsecp256k1_v0_11_ecmult_const_xonly(rustsecp256k1_v0_11_fe* r, const rustsecp256k1_v0_11_fe *n, const rustsecp256k1_v0_11_fe *d, const rustsecp256k1_v0_11_scalar *q, int known_on_curve) {
+static int rustsecp256k1_v0_12_ecmult_const_xonly(rustsecp256k1_v0_12_fe* r, const rustsecp256k1_v0_12_fe *n, const rustsecp256k1_v0_12_fe *d, const rustsecp256k1_v0_12_scalar *q, int known_on_curve) {
 
     /* This algorithm is a generalization of Peter Dettman's technique for
      * avoiding the square root in a random-basepoint x-only multiplication
@@ -338,21 +338,21 @@ static int rustsecp256k1_v0_11_ecmult_const_xonly(rustsecp256k1_v0_11_fe* r, con
      * is needed anywhere in this computation.
      */
 
-    rustsecp256k1_v0_11_fe g, i;
-    rustsecp256k1_v0_11_ge p;
-    rustsecp256k1_v0_11_gej rj;
+    rustsecp256k1_v0_12_fe g, i;
+    rustsecp256k1_v0_12_ge p;
+    rustsecp256k1_v0_12_gej rj;
 
     /* Compute g = (n^3 + B*d^3). */
-    rustsecp256k1_v0_11_fe_sqr(&g, n);
-    rustsecp256k1_v0_11_fe_mul(&g, &g, n);
+    rustsecp256k1_v0_12_fe_sqr(&g, n);
+    rustsecp256k1_v0_12_fe_mul(&g, &g, n);
     if (d) {
-        rustsecp256k1_v0_11_fe b;
-        VERIFY_CHECK(!rustsecp256k1_v0_11_fe_normalizes_to_zero(d));
-        rustsecp256k1_v0_11_fe_sqr(&b, d);
+        rustsecp256k1_v0_12_fe b;
+        VERIFY_CHECK(!rustsecp256k1_v0_12_fe_normalizes_to_zero(d));
+        rustsecp256k1_v0_12_fe_sqr(&b, d);
         VERIFY_CHECK(SECP256K1_B <= 8); /* magnitude of b will be <= 8 after the next call */
-        rustsecp256k1_v0_11_fe_mul_int(&b, SECP256K1_B);
-        rustsecp256k1_v0_11_fe_mul(&b, &b, d);
-        rustsecp256k1_v0_11_fe_add(&g, &b);
+        rustsecp256k1_v0_12_fe_mul_int(&b, SECP256K1_B);
+        rustsecp256k1_v0_12_fe_mul(&b, &b, d);
+        rustsecp256k1_v0_12_fe_add(&g, &b);
         if (!known_on_curve) {
             /* We need to determine whether (n/d)^3 + 7 is square.
              *
@@ -361,37 +361,37 @@ static int rustsecp256k1_v0_11_ecmult_const_xonly(rustsecp256k1_v0_11_fe* r, con
              * <=> is_square((n^3 + 7*d^3) * d)
              * <=> is_square(g * d)
              */
-            rustsecp256k1_v0_11_fe c;
-            rustsecp256k1_v0_11_fe_mul(&c, &g, d);
-            if (!rustsecp256k1_v0_11_fe_is_square_var(&c)) return 0;
+            rustsecp256k1_v0_12_fe c;
+            rustsecp256k1_v0_12_fe_mul(&c, &g, d);
+            if (!rustsecp256k1_v0_12_fe_is_square_var(&c)) return 0;
         }
     } else {
-        rustsecp256k1_v0_11_fe_add_int(&g, SECP256K1_B);
+        rustsecp256k1_v0_12_fe_add_int(&g, SECP256K1_B);
         if (!known_on_curve) {
             /* g at this point equals x^3 + 7. Test if it is square. */
-            if (!rustsecp256k1_v0_11_fe_is_square_var(&g)) return 0;
+            if (!rustsecp256k1_v0_12_fe_is_square_var(&g)) return 0;
         }
     }
 
     /* Compute base point P = (n*g, g^2), the effective affine version of (n*g, g^2, v), which has
      * corresponding affine X coordinate n/d. */
-    rustsecp256k1_v0_11_fe_mul(&p.x, &g, n);
-    rustsecp256k1_v0_11_fe_sqr(&p.y, &g);
+    rustsecp256k1_v0_12_fe_mul(&p.x, &g, n);
+    rustsecp256k1_v0_12_fe_sqr(&p.y, &g);
     p.infinity = 0;
 
     /* Perform x-only EC multiplication of P with q. */
-    VERIFY_CHECK(!rustsecp256k1_v0_11_scalar_is_zero(q));
-    rustsecp256k1_v0_11_ecmult_const(&rj, &p, q);
-    VERIFY_CHECK(!rustsecp256k1_v0_11_gej_is_infinity(&rj));
+    VERIFY_CHECK(!rustsecp256k1_v0_12_scalar_is_zero(q));
+    rustsecp256k1_v0_12_ecmult_const(&rj, &p, q);
+    VERIFY_CHECK(!rustsecp256k1_v0_12_gej_is_infinity(&rj));
 
     /* The resulting (X, Y, Z) point on the effective-affine isomorphic curve corresponds to
      * (X, Y, Z*v) on the secp256k1 curve. The affine version of that has X coordinate
      * (X / (Z^2*d*g)). */
-    rustsecp256k1_v0_11_fe_sqr(&i, &rj.z);
-    rustsecp256k1_v0_11_fe_mul(&i, &i, &g);
-    if (d) rustsecp256k1_v0_11_fe_mul(&i, &i, d);
-    rustsecp256k1_v0_11_fe_inv(&i, &i);
-    rustsecp256k1_v0_11_fe_mul(r, &rj.x, &i);
+    rustsecp256k1_v0_12_fe_sqr(&i, &rj.z);
+    rustsecp256k1_v0_12_fe_mul(&i, &i, &g);
+    if (d) rustsecp256k1_v0_12_fe_mul(&i, &i, d);
+    rustsecp256k1_v0_12_fe_inv(&i, &i);
+    rustsecp256k1_v0_12_fe_mul(r, &rj.x, &i);
 
     return 1;
 }

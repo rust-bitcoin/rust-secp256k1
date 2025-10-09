@@ -10,7 +10,7 @@
 #include "main_impl.h"
 #include "../../../include/secp256k1_recovery.h"
 
-static void test_exhaustive_recovery_sign(const rustsecp256k1_v0_11_context *ctx, const rustsecp256k1_v0_11_ge *group) {
+static void test_exhaustive_recovery_sign(const rustsecp256k1_v0_12_context *ctx, const rustsecp256k1_v0_12_ge *group) {
     int i, j, k;
     uint64_t iter = 0;
 
@@ -20,23 +20,23 @@ static void test_exhaustive_recovery_sign(const rustsecp256k1_v0_11_context *ctx
             if (skip_section(&iter)) continue;
             for (k = 1; k < EXHAUSTIVE_TEST_ORDER; k++) {  /* nonce */
                 const int starting_k = k;
-                rustsecp256k1_v0_11_fe r_dot_y_normalized;
-                rustsecp256k1_v0_11_ecdsa_recoverable_signature rsig;
-                rustsecp256k1_v0_11_ecdsa_signature sig;
-                rustsecp256k1_v0_11_scalar sk, msg, r, s, expected_r;
+                rustsecp256k1_v0_12_fe r_dot_y_normalized;
+                rustsecp256k1_v0_12_ecdsa_recoverable_signature rsig;
+                rustsecp256k1_v0_12_ecdsa_signature sig;
+                rustsecp256k1_v0_12_scalar sk, msg, r, s, expected_r;
                 unsigned char sk32[32], msg32[32];
                 int expected_recid;
                 int recid;
                 int overflow;
-                rustsecp256k1_v0_11_scalar_set_int(&msg, i);
-                rustsecp256k1_v0_11_scalar_set_int(&sk, j);
-                rustsecp256k1_v0_11_scalar_get_b32(sk32, &sk);
-                rustsecp256k1_v0_11_scalar_get_b32(msg32, &msg);
+                rustsecp256k1_v0_12_scalar_set_int(&msg, i);
+                rustsecp256k1_v0_12_scalar_set_int(&sk, j);
+                rustsecp256k1_v0_12_scalar_get_b32(sk32, &sk);
+                rustsecp256k1_v0_12_scalar_get_b32(msg32, &msg);
 
-                rustsecp256k1_v0_11_ecdsa_sign_recoverable(ctx, &rsig, msg32, sk32, rustsecp256k1_v0_11_nonce_function_smallint, &k);
+                rustsecp256k1_v0_12_ecdsa_sign_recoverable(ctx, &rsig, msg32, sk32, rustsecp256k1_v0_12_nonce_function_smallint, &k);
 
                 /* Check directly */
-                rustsecp256k1_v0_11_ecdsa_recoverable_signature_load(ctx, &r, &s, &recid, &rsig);
+                rustsecp256k1_v0_12_ecdsa_recoverable_signature_load(ctx, &r, &s, &recid, &rsig);
                 r_from_k(&expected_r, group, k, &overflow);
                 CHECK(r == expected_r);
                 CHECK((k * s) % EXHAUSTIVE_TEST_ORDER == (i + r * j) % EXHAUSTIVE_TEST_ORDER ||
@@ -49,18 +49,18 @@ static void test_exhaustive_recovery_sign(const rustsecp256k1_v0_11_context *ctx
                  * in the real group. */
                 expected_recid = overflow ? 2 : 0;
                 r_dot_y_normalized = group[k].y;
-                rustsecp256k1_v0_11_fe_normalize(&r_dot_y_normalized);
+                rustsecp256k1_v0_12_fe_normalize(&r_dot_y_normalized);
                 /* Also the recovery id is flipped depending if we hit the low-s branch */
                 if ((k * s) % EXHAUSTIVE_TEST_ORDER == (i + r * j) % EXHAUSTIVE_TEST_ORDER) {
-                    expected_recid |= rustsecp256k1_v0_11_fe_is_odd(&r_dot_y_normalized);
+                    expected_recid |= rustsecp256k1_v0_12_fe_is_odd(&r_dot_y_normalized);
                 } else {
-                    expected_recid |= !rustsecp256k1_v0_11_fe_is_odd(&r_dot_y_normalized);
+                    expected_recid |= !rustsecp256k1_v0_12_fe_is_odd(&r_dot_y_normalized);
                 }
                 CHECK(recid == expected_recid);
 
                 /* Convert to a standard sig then check */
-                rustsecp256k1_v0_11_ecdsa_recoverable_signature_convert(ctx, &sig, &rsig);
-                rustsecp256k1_v0_11_ecdsa_signature_load(ctx, &r, &s, &sig);
+                rustsecp256k1_v0_12_ecdsa_recoverable_signature_convert(ctx, &sig, &rsig);
+                rustsecp256k1_v0_12_ecdsa_signature_load(ctx, &r, &s, &sig);
                 /* Note that we compute expected_r *after* signing -- this is important
                  * because our nonce-computing function function might change k during
                  * signing. */
@@ -78,7 +78,7 @@ static void test_exhaustive_recovery_sign(const rustsecp256k1_v0_11_context *ctx
     }
 }
 
-static void test_exhaustive_recovery_verify(const rustsecp256k1_v0_11_context *ctx, const rustsecp256k1_v0_11_ge *group) {
+static void test_exhaustive_recovery_verify(const rustsecp256k1_v0_12_context *ctx, const rustsecp256k1_v0_12_ge *group) {
     /* This is essentially a copy of test_exhaustive_verify, with recovery added */
     int s, r, msg, key;
     uint64_t iter = 0;
@@ -86,41 +86,41 @@ static void test_exhaustive_recovery_verify(const rustsecp256k1_v0_11_context *c
         for (r = 1; r < EXHAUSTIVE_TEST_ORDER; r++) {
             for (msg = 1; msg < EXHAUSTIVE_TEST_ORDER; msg++) {
                 for (key = 1; key < EXHAUSTIVE_TEST_ORDER; key++) {
-                    rustsecp256k1_v0_11_ge nonconst_ge;
-                    rustsecp256k1_v0_11_ecdsa_recoverable_signature rsig;
-                    rustsecp256k1_v0_11_ecdsa_signature sig;
-                    rustsecp256k1_v0_11_pubkey pk;
-                    rustsecp256k1_v0_11_scalar sk_s, msg_s, r_s, s_s;
-                    rustsecp256k1_v0_11_scalar s_times_k_s, msg_plus_r_times_sk_s;
+                    rustsecp256k1_v0_12_ge nonconst_ge;
+                    rustsecp256k1_v0_12_ecdsa_recoverable_signature rsig;
+                    rustsecp256k1_v0_12_ecdsa_signature sig;
+                    rustsecp256k1_v0_12_pubkey pk;
+                    rustsecp256k1_v0_12_scalar sk_s, msg_s, r_s, s_s;
+                    rustsecp256k1_v0_12_scalar s_times_k_s, msg_plus_r_times_sk_s;
                     int recid = 0;
                     int k, should_verify;
                     unsigned char msg32[32];
 
                     if (skip_section(&iter)) continue;
 
-                    rustsecp256k1_v0_11_scalar_set_int(&s_s, s);
-                    rustsecp256k1_v0_11_scalar_set_int(&r_s, r);
-                    rustsecp256k1_v0_11_scalar_set_int(&msg_s, msg);
-                    rustsecp256k1_v0_11_scalar_set_int(&sk_s, key);
-                    rustsecp256k1_v0_11_scalar_get_b32(msg32, &msg_s);
+                    rustsecp256k1_v0_12_scalar_set_int(&s_s, s);
+                    rustsecp256k1_v0_12_scalar_set_int(&r_s, r);
+                    rustsecp256k1_v0_12_scalar_set_int(&msg_s, msg);
+                    rustsecp256k1_v0_12_scalar_set_int(&sk_s, key);
+                    rustsecp256k1_v0_12_scalar_get_b32(msg32, &msg_s);
 
                     /* Verify by hand */
                     /* Run through every k value that gives us this r and check that *one* works.
                      * Note there could be none, there could be multiple, ECDSA is weird. */
                     should_verify = 0;
                     for (k = 0; k < EXHAUSTIVE_TEST_ORDER; k++) {
-                        rustsecp256k1_v0_11_scalar check_x_s;
+                        rustsecp256k1_v0_12_scalar check_x_s;
                         r_from_k(&check_x_s, group, k, NULL);
                         if (r_s == check_x_s) {
-                            rustsecp256k1_v0_11_scalar_set_int(&s_times_k_s, k);
-                            rustsecp256k1_v0_11_scalar_mul(&s_times_k_s, &s_times_k_s, &s_s);
-                            rustsecp256k1_v0_11_scalar_mul(&msg_plus_r_times_sk_s, &r_s, &sk_s);
-                            rustsecp256k1_v0_11_scalar_add(&msg_plus_r_times_sk_s, &msg_plus_r_times_sk_s, &msg_s);
-                            should_verify |= rustsecp256k1_v0_11_scalar_eq(&s_times_k_s, &msg_plus_r_times_sk_s);
+                            rustsecp256k1_v0_12_scalar_set_int(&s_times_k_s, k);
+                            rustsecp256k1_v0_12_scalar_mul(&s_times_k_s, &s_times_k_s, &s_s);
+                            rustsecp256k1_v0_12_scalar_mul(&msg_plus_r_times_sk_s, &r_s, &sk_s);
+                            rustsecp256k1_v0_12_scalar_add(&msg_plus_r_times_sk_s, &msg_plus_r_times_sk_s, &msg_s);
+                            should_verify |= rustsecp256k1_v0_12_scalar_eq(&s_times_k_s, &msg_plus_r_times_sk_s);
                         }
                     }
                     /* nb we have a "high s" rule */
-                    should_verify &= !rustsecp256k1_v0_11_scalar_is_high(&s_s);
+                    should_verify &= !rustsecp256k1_v0_12_scalar_is_high(&s_s);
 
                     /* We would like to try recovering the pubkey and checking that it matches,
                      * but pubkey recovery is impossible in the exhaustive tests (the reason
@@ -128,19 +128,19 @@ static void test_exhaustive_recovery_verify(const rustsecp256k1_v0_11_context *c
                      * overlap between the sets, so there are no valid signatures). */
 
                     /* Verify by converting to a standard signature and calling verify */
-                    rustsecp256k1_v0_11_ecdsa_recoverable_signature_save(&rsig, &r_s, &s_s, recid);
-                    rustsecp256k1_v0_11_ecdsa_recoverable_signature_convert(ctx, &sig, &rsig);
+                    rustsecp256k1_v0_12_ecdsa_recoverable_signature_save(&rsig, &r_s, &s_s, recid);
+                    rustsecp256k1_v0_12_ecdsa_recoverable_signature_convert(ctx, &sig, &rsig);
                     memcpy(&nonconst_ge, &group[sk_s], sizeof(nonconst_ge));
-                    rustsecp256k1_v0_11_pubkey_save(&pk, &nonconst_ge);
+                    rustsecp256k1_v0_12_pubkey_save(&pk, &nonconst_ge);
                     CHECK(should_verify ==
-                          rustsecp256k1_v0_11_ecdsa_verify(ctx, &sig, msg32, &pk));
+                          rustsecp256k1_v0_12_ecdsa_verify(ctx, &sig, msg32, &pk));
                 }
             }
         }
     }
 }
 
-static void test_exhaustive_recovery(const rustsecp256k1_v0_11_context *ctx, const rustsecp256k1_v0_11_ge *group) {
+static void test_exhaustive_recovery(const rustsecp256k1_v0_12_context *ctx, const rustsecp256k1_v0_12_ge *group) {
     test_exhaustive_recovery_sign(ctx, group);
     test_exhaustive_recovery_verify(ctx, group);
 }

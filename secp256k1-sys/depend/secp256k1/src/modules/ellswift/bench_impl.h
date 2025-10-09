@@ -9,8 +9,8 @@
 #include "../../../include/secp256k1_ellswift.h"
 
 typedef struct {
-    rustsecp256k1_v0_11_context *ctx;
-    rustsecp256k1_v0_11_pubkey point[256];
+    rustsecp256k1_v0_12_context *ctx;
+    rustsecp256k1_v0_12_pubkey point[256];
     unsigned char rnd64[64];
 } bench_ellswift_data;
 
@@ -30,12 +30,12 @@ static void bench_ellswift_setup(void *arg) {
     memcpy(data->rnd64, init, 64);
     for (i = 0; i < 256; ++i) {
         int j;
-        CHECK(rustsecp256k1_v0_11_ellswift_decode(data->ctx, &data->point[i], data->rnd64));
+        CHECK(rustsecp256k1_v0_12_ellswift_decode(data->ctx, &data->point[i], data->rnd64));
         for (j = 0; j < 64; ++j) {
             data->rnd64[j] += 1;
         }
     }
-    CHECK(rustsecp256k1_v0_11_ellswift_encode(data->ctx, data->rnd64, &data->point[255], init + 16));
+    CHECK(rustsecp256k1_v0_12_ellswift_encode(data->ctx, data->rnd64, &data->point[255], init + 16));
 }
 
 static void bench_ellswift_encode(void *arg, int iters) {
@@ -43,7 +43,7 @@ static void bench_ellswift_encode(void *arg, int iters) {
     bench_ellswift_data *data = (bench_ellswift_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        CHECK(rustsecp256k1_v0_11_ellswift_encode(data->ctx, data->rnd64, &data->point[i & 255], data->rnd64 + 16));
+        CHECK(rustsecp256k1_v0_12_ellswift_encode(data->ctx, data->rnd64, &data->point[i & 255], data->rnd64 + 16));
     }
 }
 
@@ -53,21 +53,21 @@ static void bench_ellswift_create(void *arg, int iters) {
 
     for (i = 0; i < iters; i++) {
         unsigned char buf[64];
-        CHECK(rustsecp256k1_v0_11_ellswift_create(data->ctx, buf, data->rnd64, data->rnd64 + 32));
+        CHECK(rustsecp256k1_v0_12_ellswift_create(data->ctx, buf, data->rnd64, data->rnd64 + 32));
         memcpy(data->rnd64, buf, 64);
     }
 }
 
 static void bench_ellswift_decode(void *arg, int iters) {
     int i;
-    rustsecp256k1_v0_11_pubkey out;
+    rustsecp256k1_v0_12_pubkey out;
     size_t len;
     bench_ellswift_data *data = (bench_ellswift_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        CHECK(rustsecp256k1_v0_11_ellswift_decode(data->ctx, &out, data->rnd64) == 1);
+        CHECK(rustsecp256k1_v0_12_ellswift_decode(data->ctx, &out, data->rnd64) == 1);
         len = 33;
-        CHECK(rustsecp256k1_v0_11_ec_pubkey_serialize(data->ctx, data->rnd64 + (i % 32), &len, &out, SECP256K1_EC_COMPRESSED));
+        CHECK(rustsecp256k1_v0_12_ec_pubkey_serialize(data->ctx, data->rnd64 + (i % 32), &len, &out, SECP256K1_EC_COMPRESSED));
     }
 }
 
@@ -77,13 +77,13 @@ static void bench_ellswift_xdh(void *arg, int iters) {
 
     for (i = 0; i < iters; i++) {
         int party = i & 1;
-        CHECK(rustsecp256k1_v0_11_ellswift_xdh(data->ctx,
+        CHECK(rustsecp256k1_v0_12_ellswift_xdh(data->ctx,
                                      data->rnd64 + (i % 33),
                                      data->rnd64,
                                      data->rnd64,
                                      data->rnd64 + ((i + 16) % 33),
                                      party,
-                                     rustsecp256k1_v0_11_ellswift_xdh_hash_function_bip324,
+                                     rustsecp256k1_v0_12_ellswift_xdh_hash_function_bip324,
                                      NULL) == 1);
     }
 }
@@ -93,14 +93,14 @@ void run_ellswift_bench(int iters, int argc, char **argv) {
     int d = argc == 1;
 
     /* create a context with signing capabilities */
-    data.ctx = rustsecp256k1_v0_11_context_create(SECP256K1_CONTEXT_NONE);
+    data.ctx = rustsecp256k1_v0_12_context_create(SECP256K1_CONTEXT_NONE);
 
     if (d || have_flag(argc, argv, "ellswift") || have_flag(argc, argv, "encode") || have_flag(argc, argv, "ellswift_encode")) run_benchmark("ellswift_encode", bench_ellswift_encode, bench_ellswift_setup, NULL, &data, 10, iters);
     if (d || have_flag(argc, argv, "ellswift") || have_flag(argc, argv, "decode") || have_flag(argc, argv, "ellswift_decode")) run_benchmark("ellswift_decode", bench_ellswift_decode, bench_ellswift_setup, NULL, &data, 10, iters);
     if (d || have_flag(argc, argv, "ellswift") || have_flag(argc, argv, "keygen") || have_flag(argc, argv, "ellswift_keygen")) run_benchmark("ellswift_keygen", bench_ellswift_create, bench_ellswift_setup, NULL, &data, 10, iters);
     if (d || have_flag(argc, argv, "ellswift") || have_flag(argc, argv, "ecdh") || have_flag(argc, argv, "ellswift_ecdh")) run_benchmark("ellswift_ecdh", bench_ellswift_xdh, bench_ellswift_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_11_context_destroy(data.ctx);
+    rustsecp256k1_v0_12_context_destroy(data.ctx);
 }
 
 #endif

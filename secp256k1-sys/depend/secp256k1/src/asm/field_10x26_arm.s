@@ -27,9 +27,9 @@ Note:
 	.set field_not_M, 0xfc000000	@ ~M = ~0x3ffffff
 
 	.align	2
-	.global rustsecp256k1_v0_11_fe_mul_inner
-	.type	rustsecp256k1_v0_11_fe_mul_inner, %function
-	.hidden rustsecp256k1_v0_11_fe_mul_inner
+	.global rustsecp256k1_v0_12_fe_mul_inner
+	.type	rustsecp256k1_v0_12_fe_mul_inner, %function
+	.hidden rustsecp256k1_v0_12_fe_mul_inner
 	@ Arguments:
 	@  r0  r      Restrict: can overlap with a, not with b
 	@  r1  a
@@ -37,7 +37,7 @@ Note:
 	@ Stack (total 4+10*4 = 44)
 	@  sp + #0        saved 'r' pointer
 	@  sp + #4 + 4*X  t0,t1,t2,t3,t4,t5,t6,t7,u8,t9
-rustsecp256k1_v0_11_fe_mul_inner:
+rustsecp256k1_v0_12_fe_mul_inner:
 	stmfd	sp!, {r4, r5, r6, r7, r8, r9, r10, r11, r14}
 	sub	sp, sp, #48			@ frame=44 + alignment
 	str     r0, [sp, #0]			@ save result address, we need it only at the end
@@ -512,19 +512,19 @@ rustsecp256k1_v0_11_fe_mul_inner:
 
 	add	sp, sp, #48
 	ldmfd	sp!, {r4, r5, r6, r7, r8, r9, r10, r11, pc}
-	.size	rustsecp256k1_v0_11_fe_mul_inner, .-rustsecp256k1_v0_11_fe_mul_inner
+	.size	rustsecp256k1_v0_12_fe_mul_inner, .-rustsecp256k1_v0_12_fe_mul_inner
 
 	.align	2
-	.global rustsecp256k1_v0_11_fe_sqr_inner
-	.type	rustsecp256k1_v0_11_fe_sqr_inner, %function
-	.hidden rustsecp256k1_v0_11_fe_sqr_inner
+	.global rustsecp256k1_v0_12_fe_sqr_inner
+	.type	rustsecp256k1_v0_12_fe_sqr_inner, %function
+	.hidden rustsecp256k1_v0_12_fe_sqr_inner
 	@ Arguments:
 	@  r0  r	 Can overlap with a
 	@  r1  a
 	@ Stack (total 4+10*4 = 44)
 	@  sp + #0        saved 'r' pointer
 	@  sp + #4 + 4*X  t0,t1,t2,t3,t4,t5,t6,t7,u8,t9
-rustsecp256k1_v0_11_fe_sqr_inner:
+rustsecp256k1_v0_12_fe_sqr_inner:
 	stmfd	sp!, {r4, r5, r6, r7, r8, r9, r10, r11, r14}
 	sub	sp, sp, #48			@ frame=44 + alignment
 	str     r0, [sp, #0]			@ save result address, we need it only at the end
@@ -911,6 +911,6 @@ rustsecp256k1_v0_11_fe_sqr_inner:
 
 	add	sp, sp, #48
 	ldmfd	sp!, {r4, r5, r6, r7, r8, r9, r10, r11, pc}
-	.size	rustsecp256k1_v0_11_fe_sqr_inner, .-rustsecp256k1_v0_11_fe_sqr_inner
+	.size	rustsecp256k1_v0_12_fe_sqr_inner, .-rustsecp256k1_v0_12_fe_sqr_inner
 
 	.section .note.GNU-stack,"",%progbits
