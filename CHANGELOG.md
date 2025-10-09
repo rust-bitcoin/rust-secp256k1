@@ -1,3 +1,37 @@
+# 0.32.0 - 2025-10-02
+
+### Remove `Secp256k1` from public API functions
+
+This one is massive, we came up with an solution to the global context
+that works in both std and no-std environments. With this release you
+don't have to create and pass in a context object in all the APIs - BOOM!
+
+* Introduce new global context API with rerandomization [#806](https://github.com/rust-bitcoin/rust-secp256k1/pull/806)
+* Remove context from the API [#844](https://github.com/rust-bitcoin/rust-secp256k1/pull/844)
+* Fix rerandomization seed usage [#855](https://github.com/rust-bitcoin/rust-secp256k1/pull/855)
+
+And we also did:
+
+* Remove the `bitcoin-hashes` feature (and dependency) [#837](https://github.com/rust-bitcoin/rust-secp256k1/pull/837)
+* Introduce `Arbitrary` crate and add `PublicKey` arbitrary impl [#826](https://github.com/rust-bitcoin/rust-secp256k1/pull/826)
+* Add arbitrary impl for types used in `PSBT`s [#828](https://github.com/rust-bitcoin/rust-secp256k1/pull/828)
+* `secp256k1-sys`: Fix lowmemory feature [#799](https://github.com/rust-bitcoin/rust-secp256k1/pull/799)
+* Improve `RecoveryId` conversion functions [#800](https://github.com/rust-bitcoin/rust-secp256k1/pull/800)
+* Explicitly set `RecoveryId` value [#801](https://github.com/rust-bitcoin/rust-secp256k1/pull/801)
+* Rename `secret_bytes` to `to_secret_bytes` (in `Keypair` and `ecdh::SharedSecret`) [#863](https://github.com/rust-bitcoin/rust-secp256k1/pull/863)
+
+## Add support for MuSig2
+
+Done as an initial PR [#716](https://github.com/rust-bitcoin/rust-secp256k1/pull/716) then a bunch of follow up PRs:
+
+* [#811](https://github.com/rust-bitcoin/rust-secp256k1/pull/811)
+* [#794](https://github.com/rust-bitcoin/rust-secp256k1/pull/794)
+* [#797](https://github.com/rust-bitcoin/rust-secp256k1/pull/797)
+* [#798](https://github.com/rust-bitcoin/rust-secp256k1/pull/798)
+* [#802](https://github.com/rust-bitcoin/rust-secp256k1/pull/802)
+* [#803](https://github.com/rust-bitcoin/rust-secp256k1/pull/803)
+* [#805](https://github.com/rust-bitcoin/rust-secp256k1/pull/805)
+
 # 0.31.1 - 2025-06-23
 
 * Update deprecation notes with `since` instead of `TBD`.
