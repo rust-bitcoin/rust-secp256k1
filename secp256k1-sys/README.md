@@ -4,8 +4,8 @@
   <p>
     <a href="https://crates.io/crates/secp256k1-sys"><img alt="Crate Info" src="https://img.shields.io/crates/v/secp256k1-sys.svg"/></a>
     <a href="https://github.com/rust-bitcoin/rust-secp256k1/blob/master/LICENSE"><img alt="CC0 1.0 Universal Licensed" src="https://img.shields.io/badge/license-CC0--1.0-blue.svg"/></a>
-    <a href="https://docs.rs/secp256k1"><img alt="API Docs" src="https://img.shields.io/badge/docs.rs-secp256k1-green"/></a>
-    <a href="https://blog.rust-lang.org/2021/11/01/Rust-1.56.1"><img alt="Rustc Version 1.56.1+" src="https://img.shields.io/badge/rustc-1.56.1%2B-lightgrey.svg"/></a>
+    <a href="https://docs.rs/secp256k1-sys"><img alt="API Docs" src="https://img.shields.io/badge/docs.rs-secp256k1--sys-green"/></a>
+    <a href="https://blog.rust-lang.org/2022/08/11/Rust-1.63.0/"><img alt="Rustc Version 1.63.0+" src="https://img.shields.io/badge/rustc-1.63.0%2B-lightgrey.svg"/></a>
   </p>
 </div>
 
