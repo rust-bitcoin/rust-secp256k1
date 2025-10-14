@@ -9,7 +9,7 @@ function(add_example name)
     $<$<PLATFORM_ID:Windows>:bcrypt>
   )
   set(test_name ${name}_example)
-  add_test(NAME rustsecp256k1_v0_11_${test_name} COMMAND ${target_name})
+  add_test(NAME rustsecp256k1_v0_12_${test_name} COMMAND ${target_name})
 endfunction()
 
 add_example(ecdsa)

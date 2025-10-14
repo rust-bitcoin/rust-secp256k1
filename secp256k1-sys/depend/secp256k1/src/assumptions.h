@@ -24,7 +24,7 @@
 __attribute__((__unavailable__("Don't call this function. It only exists because STATIC_ASSERT cannot be used outside a function.")))
 # endif
 #endif
-static void rustsecp256k1_v0_11_assumption_checker(void) {
+static void rustsecp256k1_v0_12_assumption_checker(void) {
     /* Bytes are 8 bits. */
     STATIC_ASSERT(CHAR_BIT == 8);
 

@@ -13,77 +13,77 @@
 #  endif
 
 /* Construct an unsigned 128-bit value from a high and a low 64-bit value. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_load(rustsecp256k1_v0_11_uint128 *r, uint64_t hi, uint64_t lo);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_load(rustsecp256k1_v0_12_uint128 *r, uint64_t hi, uint64_t lo);
 
 /* Multiply two unsigned 64-bit values a and b and write the result to r. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_mul(rustsecp256k1_v0_11_uint128 *r, uint64_t a, uint64_t b);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_mul(rustsecp256k1_v0_12_uint128 *r, uint64_t a, uint64_t b);
 
 /* Multiply two unsigned 64-bit values a and b and add the result to r.
  * The final result is taken modulo 2^128.
  */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_accum_mul(rustsecp256k1_v0_11_uint128 *r, uint64_t a, uint64_t b);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_accum_mul(rustsecp256k1_v0_12_uint128 *r, uint64_t a, uint64_t b);
 
 /* Add an unsigned 64-bit value a to r.
  * The final result is taken modulo 2^128.
  */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_accum_u64(rustsecp256k1_v0_11_uint128 *r, uint64_t a);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_accum_u64(rustsecp256k1_v0_12_uint128 *r, uint64_t a);
 
 /* Unsigned (logical) right shift.
  * Non-constant time in n.
  */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_rshift(rustsecp256k1_v0_11_uint128 *r, unsigned int n);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_rshift(rustsecp256k1_v0_12_uint128 *r, unsigned int n);
 
 /* Return the low 64-bits of a 128-bit value as an unsigned 64-bit value. */
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_u128_to_u64(const rustsecp256k1_v0_11_uint128 *a);
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_u128_to_u64(const rustsecp256k1_v0_12_uint128 *a);
 
 /* Return the high 64-bits of a 128-bit value as an unsigned 64-bit value. */
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_u128_hi_u64(const rustsecp256k1_v0_11_uint128 *a);
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_u128_hi_u64(const rustsecp256k1_v0_12_uint128 *a);
 
 /* Write an unsigned 64-bit value to r. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_from_u64(rustsecp256k1_v0_11_uint128 *r, uint64_t a);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_from_u64(rustsecp256k1_v0_12_uint128 *r, uint64_t a);
 
 /* Tests if r is strictly less than to 2^n.
  * n must be strictly less than 128.
  */
-static SECP256K1_INLINE int rustsecp256k1_v0_11_u128_check_bits(const rustsecp256k1_v0_11_uint128 *r, unsigned int n);
+static SECP256K1_INLINE int rustsecp256k1_v0_12_u128_check_bits(const rustsecp256k1_v0_12_uint128 *r, unsigned int n);
 
 /* Construct an signed 128-bit value from a high and a low 64-bit value. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_load(rustsecp256k1_v0_11_int128 *r, int64_t hi, uint64_t lo);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_load(rustsecp256k1_v0_12_int128 *r, int64_t hi, uint64_t lo);
 
 /* Multiply two signed 64-bit values a and b and write the result to r. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_mul(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_mul(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b);
 
 /* Multiply two signed 64-bit values a and b and add the result to r.
  * Overflow or underflow from the addition is undefined behaviour.
  */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_accum_mul(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_accum_mul(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b);
 
 /* Compute a*d - b*c from signed 64-bit values and write the result to r. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_det(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b, int64_t c, int64_t d);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_det(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b, int64_t c, int64_t d);
 
 /* Signed (arithmetic) right shift.
  * Non-constant time in b.
  */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_rshift(rustsecp256k1_v0_11_int128 *r, unsigned int b);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_rshift(rustsecp256k1_v0_12_int128 *r, unsigned int b);
 
 /* Return the input value modulo 2^64. */
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_i128_to_u64(const rustsecp256k1_v0_11_int128 *a);
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_i128_to_u64(const rustsecp256k1_v0_12_int128 *a);
 
 /* Return the value as a signed 64-bit value.
  * Requires the input to be between INT64_MIN and INT64_MAX.
  */
-static SECP256K1_INLINE int64_t rustsecp256k1_v0_11_i128_to_i64(const rustsecp256k1_v0_11_int128 *a);
+static SECP256K1_INLINE int64_t rustsecp256k1_v0_12_i128_to_i64(const rustsecp256k1_v0_12_int128 *a);
 
 /* Write a signed 64-bit value to r. */
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_from_i64(rustsecp256k1_v0_11_int128 *r, int64_t a);
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_from_i64(rustsecp256k1_v0_12_int128 *r, int64_t a);
 
 /* Compare two 128-bit values for equality. */
-static SECP256K1_INLINE int rustsecp256k1_v0_11_i128_eq_var(const rustsecp256k1_v0_11_int128 *a, const rustsecp256k1_v0_11_int128 *b);
+static SECP256K1_INLINE int rustsecp256k1_v0_12_i128_eq_var(const rustsecp256k1_v0_12_int128 *a, const rustsecp256k1_v0_12_int128 *b);
 
 /* Tests if r is equal to sign*2^n (sign must be 1 or -1).
  * n must be strictly less than 127.
  */
-static SECP256K1_INLINE int rustsecp256k1_v0_11_i128_check_pow2(const rustsecp256k1_v0_11_int128 *r, unsigned int n, int sign);
+static SECP256K1_INLINE int rustsecp256k1_v0_12_i128_check_pow2(const rustsecp256k1_v0_12_int128 *r, unsigned int n, int sign);
 
 #endif
 

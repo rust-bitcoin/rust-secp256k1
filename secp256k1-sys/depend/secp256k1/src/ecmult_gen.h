@@ -25,7 +25,7 @@
  * COMB_SPACING * COMB_TEETH consecutive bits in the input.
  *
  * The size of the precomputed table is COMB_BLOCKS * (1 << (COMB_TEETH - 1))
- * rustsecp256k1_v0_11_ge_storages.
+ * rustsecp256k1_v0_12_ge_storages.
  *
  * The number of point additions equals COMB_BLOCKS * COMB_SPACING. Each point
  * addition involves a cmov from (1 << (COMB_TEETH - 1)) table entries and a
@@ -35,7 +35,7 @@
 
 #if defined(EXHAUSTIVE_TEST_ORDER)
 /* We need to control these values for exhaustive tests because
- * the table cannot have infinities in them (rustsecp256k1_v0_11_ge_storage
+ * the table cannot have infinities in them (rustsecp256k1_v0_12_ge_storage
  * doesn't support infinities) */
 #  undef COMB_BLOCKS
 #  undef COMB_TEETH
@@ -124,20 +124,20 @@ typedef struct {
      *
      * This expression lets us use scalar blinding and optimize the comb precomputation. See
      * ecmult_gen_impl.h for more details. */
-    rustsecp256k1_v0_11_scalar scalar_offset;
-    rustsecp256k1_v0_11_ge ge_offset;
+    rustsecp256k1_v0_12_scalar scalar_offset;
+    rustsecp256k1_v0_12_ge ge_offset;
 
     /* Factor used for projective blinding. This value is used to rescale the Z
      * coordinate of the first table lookup. */
-    rustsecp256k1_v0_11_fe proj_blind;
-} rustsecp256k1_v0_11_ecmult_gen_context;
+    rustsecp256k1_v0_12_fe proj_blind;
+} rustsecp256k1_v0_12_ecmult_gen_context;
 
-static void rustsecp256k1_v0_11_ecmult_gen_context_build(rustsecp256k1_v0_11_ecmult_gen_context* ctx);
-static void rustsecp256k1_v0_11_ecmult_gen_context_clear(rustsecp256k1_v0_11_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_12_ecmult_gen_context_build(rustsecp256k1_v0_12_ecmult_gen_context* ctx);
+static void rustsecp256k1_v0_12_ecmult_gen_context_clear(rustsecp256k1_v0_12_ecmult_gen_context* ctx);
 
 /** Multiply with the generator: R = a*G */
-static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_context* ctx, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *a);
+static void rustsecp256k1_v0_12_ecmult_gen(const rustsecp256k1_v0_12_ecmult_gen_context* ctx, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *a);
 
-static void rustsecp256k1_v0_11_ecmult_gen_blind(rustsecp256k1_v0_11_ecmult_gen_context *ctx, const unsigned char *seed32);
+static void rustsecp256k1_v0_12_ecmult_gen_blind(rustsecp256k1_v0_12_ecmult_gen_context *ctx, const unsigned char *seed32);
 
 #endif /* SECP256K1_ECMULT_GEN_H */

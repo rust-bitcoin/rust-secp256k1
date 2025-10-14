@@ -15,7 +15,7 @@
 #include "field_5x52_int128_impl.h"
 
 #ifdef VERIFY
-static void rustsecp256k1_v0_11_fe_impl_verify(const rustsecp256k1_v0_11_fe *a) {
+static void rustsecp256k1_v0_12_fe_impl_verify(const rustsecp256k1_v0_12_fe *a) {
     const uint64_t *d = a->n;
     int m = a->normalized ? 1 : 2 * a->magnitude;
    /* secp256k1 'p' value defined in "Standards for Efficient Cryptography" (SEC2) 2.7.1. */
@@ -32,7 +32,7 @@ static void rustsecp256k1_v0_11_fe_impl_verify(const rustsecp256k1_v0_11_fe *a) 
 }
 #endif
 
-static void rustsecp256k1_v0_11_fe_impl_get_bounds(rustsecp256k1_v0_11_fe *r, int m) {
+static void rustsecp256k1_v0_12_fe_impl_get_bounds(rustsecp256k1_v0_12_fe *r, int m) {
     r->n[0] = 0xFFFFFFFFFFFFFULL * 2 * m;
     r->n[1] = 0xFFFFFFFFFFFFFULL * 2 * m;
     r->n[2] = 0xFFFFFFFFFFFFFULL * 2 * m;
@@ -40,7 +40,7 @@ static void rustsecp256k1_v0_11_fe_impl_get_bounds(rustsecp256k1_v0_11_fe *r, in
     r->n[4] = 0x0FFFFFFFFFFFFULL * 2 * m;
 }
 
-static void rustsecp256k1_v0_11_fe_impl_normalize(rustsecp256k1_v0_11_fe *r) {
+static void rustsecp256k1_v0_12_fe_impl_normalize(rustsecp256k1_v0_12_fe *r) {
     uint64_t t0 = r->n[0], t1 = r->n[1], t2 = r->n[2], t3 = r->n[3], t4 = r->n[4];
 
     /* Reduce t4 at the start so there will be at most a single carry from the first pass */
@@ -77,7 +77,7 @@ static void rustsecp256k1_v0_11_fe_impl_normalize(rustsecp256k1_v0_11_fe *r) {
     r->n[0] = t0; r->n[1] = t1; r->n[2] = t2; r->n[3] = t3; r->n[4] = t4;
 }
 
-static void rustsecp256k1_v0_11_fe_impl_normalize_weak(rustsecp256k1_v0_11_fe *r) {
+static void rustsecp256k1_v0_12_fe_impl_normalize_weak(rustsecp256k1_v0_12_fe *r) {
     uint64_t t0 = r->n[0], t1 = r->n[1], t2 = r->n[2], t3 = r->n[3], t4 = r->n[4];
 
     /* Reduce t4 at the start so there will be at most a single carry from the first pass */
@@ -96,7 +96,7 @@ static void rustsecp256k1_v0_11_fe_impl_normalize_weak(rustsecp256k1_v0_11_fe *r
     r->n[0] = t0; r->n[1] = t1; r->n[2] = t2; r->n[3] = t3; r->n[4] = t4;
 }
 
-static void rustsecp256k1_v0_11_fe_impl_normalize_var(rustsecp256k1_v0_11_fe *r) {
+static void rustsecp256k1_v0_12_fe_impl_normalize_var(rustsecp256k1_v0_12_fe *r) {
     uint64_t t0 = r->n[0], t1 = r->n[1], t2 = r->n[2], t3 = r->n[3], t4 = r->n[4];
 
     /* Reduce t4 at the start so there will be at most a single carry from the first pass */
@@ -134,7 +134,7 @@ static void rustsecp256k1_v0_11_fe_impl_normalize_var(rustsecp256k1_v0_11_fe *r)
     r->n[0] = t0; r->n[1] = t1; r->n[2] = t2; r->n[3] = t3; r->n[4] = t4;
 }
 
-static int rustsecp256k1_v0_11_fe_impl_normalizes_to_zero(const rustsecp256k1_v0_11_fe *r) {
+static int rustsecp256k1_v0_12_fe_impl_normalizes_to_zero(const rustsecp256k1_v0_12_fe *r) {
     uint64_t t0 = r->n[0], t1 = r->n[1], t2 = r->n[2], t3 = r->n[3], t4 = r->n[4];
 
     /* z0 tracks a possible raw value of 0, z1 tracks a possible raw value of P */
@@ -157,7 +157,7 @@ static int rustsecp256k1_v0_11_fe_impl_normalizes_to_zero(const rustsecp256k1_v0
     return (z0 == 0) | (z1 == 0xFFFFFFFFFFFFFULL);
 }
 
-static int rustsecp256k1_v0_11_fe_impl_normalizes_to_zero_var(const rustsecp256k1_v0_11_fe *r) {
+static int rustsecp256k1_v0_12_fe_impl_normalizes_to_zero_var(const rustsecp256k1_v0_12_fe *r) {
     uint64_t t0, t1, t2, t3, t4;
     uint64_t z0, z1;
     uint64_t x;
@@ -198,21 +198,21 @@ static int rustsecp256k1_v0_11_fe_impl_normalizes_to_zero_var(const rustsecp256k
     return (z0 == 0) | (z1 == 0xFFFFFFFFFFFFFULL);
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_set_int(rustsecp256k1_v0_11_fe *r, int a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_set_int(rustsecp256k1_v0_12_fe *r, int a) {
     r->n[0] = a;
     r->n[1] = r->n[2] = r->n[3] = r->n[4] = 0;
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_11_fe_impl_is_zero(const rustsecp256k1_v0_11_fe *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_12_fe_impl_is_zero(const rustsecp256k1_v0_12_fe *a) {
     const uint64_t *t = a->n;
     return (t[0] | t[1] | t[2] | t[3] | t[4]) == 0;
 }
 
-SECP256K1_INLINE static int rustsecp256k1_v0_11_fe_impl_is_odd(const rustsecp256k1_v0_11_fe *a) {
+SECP256K1_INLINE static int rustsecp256k1_v0_12_fe_impl_is_odd(const rustsecp256k1_v0_12_fe *a) {
     return a->n[0] & 1;
 }
 
-static int rustsecp256k1_v0_11_fe_impl_cmp_var(const rustsecp256k1_v0_11_fe *a, const rustsecp256k1_v0_11_fe *b) {
+static int rustsecp256k1_v0_12_fe_impl_cmp_var(const rustsecp256k1_v0_12_fe *a, const rustsecp256k1_v0_12_fe *b) {
     int i;
     for (i = 4; i >= 0; i--) {
         if (a->n[i] > b->n[i]) {
@@ -225,7 +225,7 @@ static int rustsecp256k1_v0_11_fe_impl_cmp_var(const rustsecp256k1_v0_11_fe *a, 
     return 0;
 }
 
-static void rustsecp256k1_v0_11_fe_impl_set_b32_mod(rustsecp256k1_v0_11_fe *r, const unsigned char *a) {
+static void rustsecp256k1_v0_12_fe_impl_set_b32_mod(rustsecp256k1_v0_12_fe *r, const unsigned char *a) {
     r->n[0] = (uint64_t)a[31]
             | ((uint64_t)a[30] << 8)
             | ((uint64_t)a[29] << 16)
@@ -262,13 +262,13 @@ static void rustsecp256k1_v0_11_fe_impl_set_b32_mod(rustsecp256k1_v0_11_fe *r, c
             | ((uint64_t)a[0] << 40);
 }
 
-static int rustsecp256k1_v0_11_fe_impl_set_b32_limit(rustsecp256k1_v0_11_fe *r, const unsigned char *a) {
-    rustsecp256k1_v0_11_fe_impl_set_b32_mod(r, a);
+static int rustsecp256k1_v0_12_fe_impl_set_b32_limit(rustsecp256k1_v0_12_fe *r, const unsigned char *a) {
+    rustsecp256k1_v0_12_fe_impl_set_b32_mod(r, a);
     return !((r->n[4] == 0x0FFFFFFFFFFFFULL) & ((r->n[3] & r->n[2] & r->n[1]) == 0xFFFFFFFFFFFFFULL) & (r->n[0] >= 0xFFFFEFFFFFC2FULL));
 }
 
 /** Convert a field element to a 32-byte big endian value. Requires the input to be normalized */
-static void rustsecp256k1_v0_11_fe_impl_get_b32(unsigned char *r, const rustsecp256k1_v0_11_fe *a) {
+static void rustsecp256k1_v0_12_fe_impl_get_b32(unsigned char *r, const rustsecp256k1_v0_12_fe *a) {
     r[0] = (a->n[4] >> 40) & 0xFF;
     r[1] = (a->n[4] >> 32) & 0xFF;
     r[2] = (a->n[4] >> 24) & 0xFF;
@@ -303,7 +303,7 @@ static void rustsecp256k1_v0_11_fe_impl_get_b32(unsigned char *r, const rustsecp
     r[31] = a->n[0] & 0xFF;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_negate_unchecked(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *a, int m) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_negate_unchecked(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *a, int m) {
     /* For all legal values of m (0..31), the following properties hold: */
     VERIFY_CHECK(0xFFFFEFFFFFC2FULL * 2 * (m + 1) >= 0xFFFFFFFFFFFFFULL * 2 * m);
     VERIFY_CHECK(0xFFFFFFFFFFFFFULL * 2 * (m + 1) >= 0xFFFFFFFFFFFFFULL * 2 * m);
@@ -318,7 +318,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_negate_unchecked(rustse
     r->n[4] = 0x0FFFFFFFFFFFFULL * 2 * (m + 1) - a->n[4];
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_mul_int_unchecked(rustsecp256k1_v0_11_fe *r, int a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_mul_int_unchecked(rustsecp256k1_v0_12_fe *r, int a) {
     r->n[0] *= a;
     r->n[1] *= a;
     r->n[2] *= a;
@@ -326,11 +326,11 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_mul_int_unchecked(rusts
     r->n[4] *= a;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_add_int(rustsecp256k1_v0_11_fe *r, int a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_add_int(rustsecp256k1_v0_12_fe *r, int a) {
     r->n[0] += a;
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_add(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *a) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_add(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *a) {
     r->n[0] += a->n[0];
     r->n[1] += a->n[1];
     r->n[2] += a->n[2];
@@ -338,15 +338,15 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_add(rustsecp256k1_v0_11
     r->n[4] += a->n[4];
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_mul(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *a, const rustsecp256k1_v0_11_fe * SECP256K1_RESTRICT b) {
-    rustsecp256k1_v0_11_fe_mul_inner(r->n, a->n, b->n);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_mul(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *a, const rustsecp256k1_v0_12_fe * SECP256K1_RESTRICT b) {
+    rustsecp256k1_v0_12_fe_mul_inner(r->n, a->n, b->n);
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_sqr(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *a) {
-    rustsecp256k1_v0_11_fe_sqr_inner(r->n, a->n);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_sqr(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *a) {
+    rustsecp256k1_v0_12_fe_sqr_inner(r->n, a->n);
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_cmov(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *a, int flag) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_fe_impl_cmov(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *a, int flag) {
     uint64_t mask0, mask1;
     volatile int vflag = flag;
     SECP256K1_CHECKMEM_CHECK_VERIFY(r->n, sizeof(r->n));
@@ -359,7 +359,7 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_fe_impl_cmov(rustsecp256k1_v0_1
     r->n[4] = (r->n[4] & mask0) | (a->n[4] & mask1);
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_impl_half(rustsecp256k1_v0_11_fe *r) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_fe_impl_half(rustsecp256k1_v0_12_fe *r) {
     uint64_t t0 = r->n[0], t1 = r->n[1], t2 = r->n[2], t3 = r->n[3], t4 = r->n[4];
     uint64_t one = (uint64_t)1;
     uint64_t mask = -(t0 & one) >> 12;
@@ -413,7 +413,7 @@ static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_impl_half(rustsecp256k1_v0_1
      */
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_storage_cmov(rustsecp256k1_v0_11_fe_storage *r, const rustsecp256k1_v0_11_fe_storage *a, int flag) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_fe_storage_cmov(rustsecp256k1_v0_12_fe_storage *r, const rustsecp256k1_v0_12_fe_storage *a, int flag) {
     uint64_t mask0, mask1;
     volatile int vflag = flag;
     SECP256K1_CHECKMEM_CHECK_VERIFY(r->n, sizeof(r->n));
@@ -425,14 +425,14 @@ static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_storage_cmov(rustsecp256k1_v
     r->n[3] = (r->n[3] & mask0) | (a->n[3] & mask1);
 }
 
-static void rustsecp256k1_v0_11_fe_impl_to_storage(rustsecp256k1_v0_11_fe_storage *r, const rustsecp256k1_v0_11_fe *a) {
+static void rustsecp256k1_v0_12_fe_impl_to_storage(rustsecp256k1_v0_12_fe_storage *r, const rustsecp256k1_v0_12_fe *a) {
     r->n[0] = a->n[0] | a->n[1] << 52;
     r->n[1] = a->n[1] >> 12 | a->n[2] << 40;
     r->n[2] = a->n[2] >> 24 | a->n[3] << 28;
     r->n[3] = a->n[3] >> 36 | a->n[4] << 16;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_impl_from_storage(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe_storage *a) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_fe_impl_from_storage(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe_storage *a) {
     r->n[0] = a->n[0] & 0xFFFFFFFFFFFFFULL;
     r->n[1] = a->n[0] >> 52 | ((a->n[1] << 12) & 0xFFFFFFFFFFFFFULL);
     r->n[2] = a->n[1] >> 40 | ((a->n[2] << 24) & 0xFFFFFFFFFFFFFULL);
@@ -440,11 +440,11 @@ static SECP256K1_INLINE void rustsecp256k1_v0_11_fe_impl_from_storage(rustsecp25
     r->n[4] = a->n[3] >> 16;
 }
 
-static void rustsecp256k1_v0_11_fe_from_signed62(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_modinv64_signed62 *a) {
+static void rustsecp256k1_v0_12_fe_from_signed62(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_modinv64_signed62 *a) {
     const uint64_t M52 = UINT64_MAX >> 12;
     const uint64_t a0 = a->v[0], a1 = a->v[1], a2 = a->v[2], a3 = a->v[3], a4 = a->v[4];
 
-    /* The output from rustsecp256k1_v0_11_modinv64{_var} should be normalized to range [0,modulus), and
+    /* The output from rustsecp256k1_v0_12_modinv64{_var} should be normalized to range [0,modulus), and
      * have limbs in [0,2^62). The modulus is < 2^256, so the top limb must be below 2^(256-62*4).
      */
     VERIFY_CHECK(a0 >> 62 == 0);
@@ -460,7 +460,7 @@ static void rustsecp256k1_v0_11_fe_from_signed62(rustsecp256k1_v0_11_fe *r, cons
     r->n[4] = (a3 >> 22 | a4 << 40);
 }
 
-static void rustsecp256k1_v0_11_fe_to_signed62(rustsecp256k1_v0_11_modinv64_signed62 *r, const rustsecp256k1_v0_11_fe *a) {
+static void rustsecp256k1_v0_12_fe_to_signed62(rustsecp256k1_v0_12_modinv64_signed62 *r, const rustsecp256k1_v0_12_fe *a) {
     const uint64_t M62 = UINT64_MAX >> 2;
     const uint64_t a0 = a->n[0], a1 = a->n[1], a2 = a->n[2], a3 = a->n[3], a4 = a->n[4];
 
@@ -471,48 +471,48 @@ static void rustsecp256k1_v0_11_fe_to_signed62(rustsecp256k1_v0_11_modinv64_sign
     r->v[4] =  a4 >> 40;
 }
 
-static const rustsecp256k1_v0_11_modinv64_modinfo rustsecp256k1_v0_11_const_modinfo_fe = {
+static const rustsecp256k1_v0_12_modinv64_modinfo rustsecp256k1_v0_12_const_modinfo_fe = {
     {{-0x1000003D1LL, 0, 0, 0, 256}},
     0x27C7F6E22DDACACFLL
 };
 
-static void rustsecp256k1_v0_11_fe_impl_inv(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *x) {
-    rustsecp256k1_v0_11_fe tmp = *x;
-    rustsecp256k1_v0_11_modinv64_signed62 s;
+static void rustsecp256k1_v0_12_fe_impl_inv(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *x) {
+    rustsecp256k1_v0_12_fe tmp = *x;
+    rustsecp256k1_v0_12_modinv64_signed62 s;
 
-    rustsecp256k1_v0_11_fe_normalize(&tmp);
-    rustsecp256k1_v0_11_fe_to_signed62(&s, &tmp);
-    rustsecp256k1_v0_11_modinv64(&s, &rustsecp256k1_v0_11_const_modinfo_fe);
-    rustsecp256k1_v0_11_fe_from_signed62(r, &s);
+    rustsecp256k1_v0_12_fe_normalize(&tmp);
+    rustsecp256k1_v0_12_fe_to_signed62(&s, &tmp);
+    rustsecp256k1_v0_12_modinv64(&s, &rustsecp256k1_v0_12_const_modinfo_fe);
+    rustsecp256k1_v0_12_fe_from_signed62(r, &s);
 }
 
-static void rustsecp256k1_v0_11_fe_impl_inv_var(rustsecp256k1_v0_11_fe *r, const rustsecp256k1_v0_11_fe *x) {
-    rustsecp256k1_v0_11_fe tmp = *x;
-    rustsecp256k1_v0_11_modinv64_signed62 s;
+static void rustsecp256k1_v0_12_fe_impl_inv_var(rustsecp256k1_v0_12_fe *r, const rustsecp256k1_v0_12_fe *x) {
+    rustsecp256k1_v0_12_fe tmp = *x;
+    rustsecp256k1_v0_12_modinv64_signed62 s;
 
-    rustsecp256k1_v0_11_fe_normalize_var(&tmp);
-    rustsecp256k1_v0_11_fe_to_signed62(&s, &tmp);
-    rustsecp256k1_v0_11_modinv64_var(&s, &rustsecp256k1_v0_11_const_modinfo_fe);
-    rustsecp256k1_v0_11_fe_from_signed62(r, &s);
+    rustsecp256k1_v0_12_fe_normalize_var(&tmp);
+    rustsecp256k1_v0_12_fe_to_signed62(&s, &tmp);
+    rustsecp256k1_v0_12_modinv64_var(&s, &rustsecp256k1_v0_12_const_modinfo_fe);
+    rustsecp256k1_v0_12_fe_from_signed62(r, &s);
 }
 
-static int rustsecp256k1_v0_11_fe_impl_is_square_var(const rustsecp256k1_v0_11_fe *x) {
-    rustsecp256k1_v0_11_fe tmp;
-    rustsecp256k1_v0_11_modinv64_signed62 s;
+static int rustsecp256k1_v0_12_fe_impl_is_square_var(const rustsecp256k1_v0_12_fe *x) {
+    rustsecp256k1_v0_12_fe tmp;
+    rustsecp256k1_v0_12_modinv64_signed62 s;
     int jac, ret;
 
     tmp = *x;
-    rustsecp256k1_v0_11_fe_normalize_var(&tmp);
-    /* rustsecp256k1_v0_11_jacobi64_maybe_var cannot deal with input 0. */
-    if (rustsecp256k1_v0_11_fe_is_zero(&tmp)) return 1;
-    rustsecp256k1_v0_11_fe_to_signed62(&s, &tmp);
-    jac = rustsecp256k1_v0_11_jacobi64_maybe_var(&s, &rustsecp256k1_v0_11_const_modinfo_fe);
+    rustsecp256k1_v0_12_fe_normalize_var(&tmp);
+    /* rustsecp256k1_v0_12_jacobi64_maybe_var cannot deal with input 0. */
+    if (rustsecp256k1_v0_12_fe_is_zero(&tmp)) return 1;
+    rustsecp256k1_v0_12_fe_to_signed62(&s, &tmp);
+    jac = rustsecp256k1_v0_12_jacobi64_maybe_var(&s, &rustsecp256k1_v0_12_const_modinfo_fe);
     if (jac == 0) {
-        /* rustsecp256k1_v0_11_jacobi64_maybe_var failed to compute the Jacobi symbol. Fall back
+        /* rustsecp256k1_v0_12_jacobi64_maybe_var failed to compute the Jacobi symbol. Fall back
          * to computing a square root. This should be extremely rare with random
          * input (except in VERIFY mode, where a lower iteration count is used). */
-        rustsecp256k1_v0_11_fe dummy;
-        ret = rustsecp256k1_v0_11_fe_sqrt(&dummy, &tmp);
+        rustsecp256k1_v0_12_fe dummy;
+        ret = rustsecp256k1_v0_12_fe_sqrt(&dummy, &tmp);
     } else {
         ret = jac >= 0;
     }

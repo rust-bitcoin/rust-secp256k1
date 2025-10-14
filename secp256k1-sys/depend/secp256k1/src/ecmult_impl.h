@@ -33,8 +33,8 @@
 /** Larger values for ECMULT_WINDOW_SIZE result in possibly better
  *  performance at the cost of an exponentially larger precomputed
  *  table. The exact table size is
- *      (1 << (WINDOW_G - 2)) * sizeof(rustsecp256k1_v0_11_ge_storage)  bytes,
- *  where sizeof(rustsecp256k1_v0_11_ge_storage) is typically 64 bytes but can
+ *      (1 << (WINDOW_G - 2)) * sizeof(rustsecp256k1_v0_12_ge_storage)  bytes,
+ *  where sizeof(rustsecp256k1_v0_12_ge_storage) is typically 64 bytes but can
  *  be larger due to platform-specific padding and alignment.
  *  Two tables of this size are used (due to the endomorphism
  *  optimization).
@@ -70,14 +70,14 @@
  *  Lastly the zr[0] value, which isn't used above, is set so that:
  *  - a.z = z(pre_a[0]) / zr[0]
  */
-static void rustsecp256k1_v0_11_ecmult_odd_multiples_table(int n, rustsecp256k1_v0_11_ge *pre_a, rustsecp256k1_v0_11_fe *zr, rustsecp256k1_v0_11_fe *z, const rustsecp256k1_v0_11_gej *a) {
-    rustsecp256k1_v0_11_gej d, ai;
-    rustsecp256k1_v0_11_ge d_ge;
+static void rustsecp256k1_v0_12_ecmult_odd_multiples_table(int n, rustsecp256k1_v0_12_ge *pre_a, rustsecp256k1_v0_12_fe *zr, rustsecp256k1_v0_12_fe *z, const rustsecp256k1_v0_12_gej *a) {
+    rustsecp256k1_v0_12_gej d, ai;
+    rustsecp256k1_v0_12_ge d_ge;
     int i;
 
     VERIFY_CHECK(!a->infinity);
 
-    rustsecp256k1_v0_11_gej_double_var(&d, a, NULL);
+    rustsecp256k1_v0_12_gej_double_var(&d, a, NULL);
 
     /*
      * Perform the additions using an isomorphic curve Y^2 = X^3 + 7*C^6 where C := d.z.
@@ -90,11 +90,11 @@ static void rustsecp256k1_v0_11_ecmult_odd_multiples_table(int n, rustsecp256k1_
      *
      * The group addition functions work correctly on these isomorphic curves.
      * In particular phi(d) is easy to represent in affine coordinates under this isomorphism.
-     * This lets us use the faster rustsecp256k1_v0_11_gej_add_ge_var group addition function that we wouldn't be able to use otherwise.
+     * This lets us use the faster rustsecp256k1_v0_12_gej_add_ge_var group addition function that we wouldn't be able to use otherwise.
      */
-    rustsecp256k1_v0_11_ge_set_xy(&d_ge, &d.x, &d.y);
-    rustsecp256k1_v0_11_ge_set_gej_zinv(&pre_a[0], a, &d.z);
-    rustsecp256k1_v0_11_gej_set_ge(&ai, &pre_a[0]);
+    rustsecp256k1_v0_12_ge_set_xy(&d_ge, &d.x, &d.y);
+    rustsecp256k1_v0_12_ge_set_gej_zinv(&pre_a[0], a, &d.z);
+    rustsecp256k1_v0_12_gej_set_ge(&ai, &pre_a[0]);
     ai.z = a->z;
 
     /* pre_a[0] is the point (a.x*C^2, a.y*C^3, a.z*C) which is equivalent to a.
@@ -103,18 +103,18 @@ static void rustsecp256k1_v0_11_ecmult_odd_multiples_table(int n, rustsecp256k1_
     zr[0] = d.z;
 
     for (i = 1; i < n; i++) {
-        rustsecp256k1_v0_11_gej_add_ge_var(&ai, &ai, &d_ge, &zr[i]);
-        rustsecp256k1_v0_11_ge_set_xy(&pre_a[i], &ai.x, &ai.y);
+        rustsecp256k1_v0_12_gej_add_ge_var(&ai, &ai, &d_ge, &zr[i]);
+        rustsecp256k1_v0_12_ge_set_xy(&pre_a[i], &ai.x, &ai.y);
     }
 
     /* Multiply the last z-coordinate by C to undo the isomorphism.
      * Since the z-coordinates of the pre_a values are implied by the zr array of z-coordinate ratios,
      * undoing the isomorphism here undoes the isomorphism for all pre_a values.
      */
-    rustsecp256k1_v0_11_fe_mul(z, &ai.z, &d.z);
+    rustsecp256k1_v0_12_fe_mul(z, &ai.z, &d.z);
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_verify(int n, int w) {
+SECP256K1_INLINE static void rustsecp256k1_v0_12_ecmult_table_verify(int n, int w) {
     (void)n;
     (void)w;
     VERIFY_CHECK(((n) & 1) == 1);
@@ -122,33 +122,33 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_verify(int n, int 
     VERIFY_CHECK((n) <=  ((1 << ((w)-1)) - 1));
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_get_ge(rustsecp256k1_v0_11_ge *r, const rustsecp256k1_v0_11_ge *pre, int n, int w) {
-    rustsecp256k1_v0_11_ecmult_table_verify(n,w);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_ecmult_table_get_ge(rustsecp256k1_v0_12_ge *r, const rustsecp256k1_v0_12_ge *pre, int n, int w) {
+    rustsecp256k1_v0_12_ecmult_table_verify(n,w);
     if (n > 0) {
         *r = pre[(n-1)/2];
     } else {
         *r = pre[(-n-1)/2];
-        rustsecp256k1_v0_11_fe_negate(&(r->y), &(r->y), 1);
+        rustsecp256k1_v0_12_fe_negate(&(r->y), &(r->y), 1);
     }
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_get_ge_lambda(rustsecp256k1_v0_11_ge *r, const rustsecp256k1_v0_11_ge *pre, const rustsecp256k1_v0_11_fe *x, int n, int w) {
-    rustsecp256k1_v0_11_ecmult_table_verify(n,w);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_ecmult_table_get_ge_lambda(rustsecp256k1_v0_12_ge *r, const rustsecp256k1_v0_12_ge *pre, const rustsecp256k1_v0_12_fe *x, int n, int w) {
+    rustsecp256k1_v0_12_ecmult_table_verify(n,w);
     if (n > 0) {
-        rustsecp256k1_v0_11_ge_set_xy(r, &x[(n-1)/2], &pre[(n-1)/2].y);
+        rustsecp256k1_v0_12_ge_set_xy(r, &x[(n-1)/2], &pre[(n-1)/2].y);
     } else {
-        rustsecp256k1_v0_11_ge_set_xy(r, &x[(-n-1)/2], &pre[(-n-1)/2].y);
-        rustsecp256k1_v0_11_fe_negate(&(r->y), &(r->y), 1);
+        rustsecp256k1_v0_12_ge_set_xy(r, &x[(-n-1)/2], &pre[(-n-1)/2].y);
+        rustsecp256k1_v0_12_fe_negate(&(r->y), &(r->y), 1);
     }
 }
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_get_ge_storage(rustsecp256k1_v0_11_ge *r, const rustsecp256k1_v0_11_ge_storage *pre, int n, int w) {
-    rustsecp256k1_v0_11_ecmult_table_verify(n,w);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_ecmult_table_get_ge_storage(rustsecp256k1_v0_12_ge *r, const rustsecp256k1_v0_12_ge_storage *pre, int n, int w) {
+    rustsecp256k1_v0_12_ecmult_table_verify(n,w);
     if (n > 0) {
-        rustsecp256k1_v0_11_ge_from_storage(r, &pre[(n-1)/2]);
+        rustsecp256k1_v0_12_ge_from_storage(r, &pre[(n-1)/2]);
     } else {
-        rustsecp256k1_v0_11_ge_from_storage(r, &pre[(-n-1)/2]);
-        rustsecp256k1_v0_11_fe_negate(&(r->y), &(r->y), 1);
+        rustsecp256k1_v0_12_ge_from_storage(r, &pre[(-n-1)/2]);
+        rustsecp256k1_v0_12_fe_negate(&(r->y), &(r->y), 1);
     }
 }
 
@@ -159,8 +159,8 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_table_get_ge_storage(rus
  *  - the number of set values in wnaf is returned. This number is at most 256, and at most one more
  *    than the number of bits in the (absolute value) of the input.
  */
-static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256k1_v0_11_scalar *a, int w) {
-    rustsecp256k1_v0_11_scalar s;
+static int rustsecp256k1_v0_12_ecmult_wnaf(int *wnaf, int len, const rustsecp256k1_v0_12_scalar *a, int w) {
+    rustsecp256k1_v0_12_scalar s;
     int last_set_bit = -1;
     int bit = 0;
     int sign = 1;
@@ -176,8 +176,8 @@ static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256
     }
 
     s = *a;
-    if (rustsecp256k1_v0_11_scalar_get_bits_limb32(&s, 255, 1)) {
-        rustsecp256k1_v0_11_scalar_negate(&s, &s);
+    if (rustsecp256k1_v0_12_scalar_get_bits_limb32(&s, 255, 1)) {
+        rustsecp256k1_v0_12_scalar_negate(&s, &s);
         sign = -1;
     }
 
@@ -185,7 +185,7 @@ static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256
     while (bit < len) {
         int now;
         int word;
-        if (rustsecp256k1_v0_11_scalar_get_bits_limb32(&s, bit, 1) == (unsigned int)carry) {
+        if (rustsecp256k1_v0_12_scalar_get_bits_limb32(&s, bit, 1) == (unsigned int)carry) {
             bit++;
             continue;
         }
@@ -195,7 +195,7 @@ static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256
             now = len - bit;
         }
 
-        word = rustsecp256k1_v0_11_scalar_get_bits_var(&s, bit, now) + carry;
+        word = rustsecp256k1_v0_12_scalar_get_bits_var(&s, bit, now) + carry;
 
         carry = (word >> (w-1)) & 1;
         word -= carry << w;
@@ -212,7 +212,7 @@ static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256
         VERIFY_CHECK(carry == 0);
 
         while (verify_bit < 256) {
-            VERIFY_CHECK(rustsecp256k1_v0_11_scalar_get_bits_limb32(&s, verify_bit, 1) == 0);
+            VERIFY_CHECK(rustsecp256k1_v0_12_scalar_get_bits_limb32(&s, verify_bit, 1) == 0);
             verify_bit++;
         }
     }
@@ -220,25 +220,25 @@ static int rustsecp256k1_v0_11_ecmult_wnaf(int *wnaf, int len, const rustsecp256
     return last_set_bit + 1;
 }
 
-struct rustsecp256k1_v0_11_strauss_point_state {
+struct rustsecp256k1_v0_12_strauss_point_state {
     int wnaf_na_1[129];
     int wnaf_na_lam[129];
     int bits_na_1;
     int bits_na_lam;
 };
 
-struct rustsecp256k1_v0_11_strauss_state {
+struct rustsecp256k1_v0_12_strauss_state {
     /* aux is used to hold z-ratios, and then used to hold pre_a[i].x * BETA values. */
-    rustsecp256k1_v0_11_fe* aux;
-    rustsecp256k1_v0_11_ge* pre_a;
-    struct rustsecp256k1_v0_11_strauss_point_state* ps;
+    rustsecp256k1_v0_12_fe* aux;
+    rustsecp256k1_v0_12_ge* pre_a;
+    struct rustsecp256k1_v0_12_strauss_point_state* ps;
 };
 
-static void rustsecp256k1_v0_11_ecmult_strauss_wnaf(const struct rustsecp256k1_v0_11_strauss_state *state, rustsecp256k1_v0_11_gej *r, size_t num, const rustsecp256k1_v0_11_gej *a, const rustsecp256k1_v0_11_scalar *na, const rustsecp256k1_v0_11_scalar *ng) {
-    rustsecp256k1_v0_11_ge tmpa;
-    rustsecp256k1_v0_11_fe Z;
+static void rustsecp256k1_v0_12_ecmult_strauss_wnaf(const struct rustsecp256k1_v0_12_strauss_state *state, rustsecp256k1_v0_12_gej *r, size_t num, const rustsecp256k1_v0_12_gej *a, const rustsecp256k1_v0_12_scalar *na, const rustsecp256k1_v0_12_scalar *ng) {
+    rustsecp256k1_v0_12_ge tmpa;
+    rustsecp256k1_v0_12_fe Z;
     /* Split G factors. */
-    rustsecp256k1_v0_11_scalar ng_1, ng_128;
+    rustsecp256k1_v0_12_scalar ng_1, ng_128;
     int wnaf_ng_1[129];
     int bits_ng_1 = 0;
     int wnaf_ng_128[129];
@@ -248,19 +248,19 @@ static void rustsecp256k1_v0_11_ecmult_strauss_wnaf(const struct rustsecp256k1_v
     size_t np;
     size_t no = 0;
 
-    rustsecp256k1_v0_11_fe_set_int(&Z, 1);
+    rustsecp256k1_v0_12_fe_set_int(&Z, 1);
     for (np = 0; np < num; ++np) {
-        rustsecp256k1_v0_11_gej tmp;
-        rustsecp256k1_v0_11_scalar na_1, na_lam;
-        if (rustsecp256k1_v0_11_scalar_is_zero(&na[np]) || rustsecp256k1_v0_11_gej_is_infinity(&a[np])) {
+        rustsecp256k1_v0_12_gej tmp;
+        rustsecp256k1_v0_12_scalar na_1, na_lam;
+        if (rustsecp256k1_v0_12_scalar_is_zero(&na[np]) || rustsecp256k1_v0_12_gej_is_infinity(&a[np])) {
             continue;
         }
         /* split na into na_1 and na_lam (where na = na_1 + na_lam*lambda, and na_1 and na_lam are ~128 bit) */
-        rustsecp256k1_v0_11_scalar_split_lambda(&na_1, &na_lam, &na[np]);
+        rustsecp256k1_v0_12_scalar_split_lambda(&na_1, &na_lam, &na[np]);
 
         /* build wnaf representation for na_1 and na_lam. */
-        state->ps[no].bits_na_1   = rustsecp256k1_v0_11_ecmult_wnaf(state->ps[no].wnaf_na_1,   129, &na_1,   WINDOW_A);
-        state->ps[no].bits_na_lam = rustsecp256k1_v0_11_ecmult_wnaf(state->ps[no].wnaf_na_lam, 129, &na_lam, WINDOW_A);
+        state->ps[no].bits_na_1   = rustsecp256k1_v0_12_ecmult_wnaf(state->ps[no].wnaf_na_1,   129, &na_1,   WINDOW_A);
+        state->ps[no].bits_na_lam = rustsecp256k1_v0_12_ecmult_wnaf(state->ps[no].wnaf_na_lam, 129, &na_lam, WINDOW_A);
         VERIFY_CHECK(state->ps[no].bits_na_1 <= 129);
         VERIFY_CHECK(state->ps[no].bits_na_lam <= 129);
         if (state->ps[no].bits_na_1 > bits) {
@@ -277,37 +277,37 @@ static void rustsecp256k1_v0_11_ecmult_strauss_wnaf(const struct rustsecp256k1_v
          * the Z coordinate of the result once at the end.
          * The exception is the precomputed G table points, which are actually
          * affine. Compared to the base used for other points, they have a Z ratio
-         * of 1/Z, so we can use rustsecp256k1_v0_11_gej_add_zinv_var, which uses the same
+         * of 1/Z, so we can use rustsecp256k1_v0_12_gej_add_zinv_var, which uses the same
          * isomorphism to efficiently add with a known Z inverse.
          */
         tmp = a[np];
         if (no) {
-            rustsecp256k1_v0_11_gej_rescale(&tmp, &Z);
+            rustsecp256k1_v0_12_gej_rescale(&tmp, &Z);
         }
-        rustsecp256k1_v0_11_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), state->pre_a + no * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), &Z, &tmp);
-        if (no) rustsecp256k1_v0_11_fe_mul(state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), &(a[np].z));
+        rustsecp256k1_v0_12_ecmult_odd_multiples_table(ECMULT_TABLE_SIZE(WINDOW_A), state->pre_a + no * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), &Z, &tmp);
+        if (no) rustsecp256k1_v0_12_fe_mul(state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + no * ECMULT_TABLE_SIZE(WINDOW_A), &(a[np].z));
 
         ++no;
     }
 
     /* Bring them to the same Z denominator. */
     if (no) {
-        rustsecp256k1_v0_11_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A) * no, state->pre_a, state->aux);
+        rustsecp256k1_v0_12_ge_table_set_globalz(ECMULT_TABLE_SIZE(WINDOW_A) * no, state->pre_a, state->aux);
     }
 
     for (np = 0; np < no; ++np) {
         for (i = 0; i < ECMULT_TABLE_SIZE(WINDOW_A); i++) {
-            rustsecp256k1_v0_11_fe_mul(&state->aux[np * ECMULT_TABLE_SIZE(WINDOW_A) + i], &state->pre_a[np * ECMULT_TABLE_SIZE(WINDOW_A) + i].x, &rustsecp256k1_v0_11_const_beta);
+            rustsecp256k1_v0_12_fe_mul(&state->aux[np * ECMULT_TABLE_SIZE(WINDOW_A) + i], &state->pre_a[np * ECMULT_TABLE_SIZE(WINDOW_A) + i].x, &rustsecp256k1_v0_12_const_beta);
         }
     }
 
     if (ng) {
         /* split ng into ng_1 and ng_128 (where gn = gn_1 + gn_128*2^128, and gn_1 and gn_128 are ~128 bit) */
-        rustsecp256k1_v0_11_scalar_split_128(&ng_1, &ng_128, ng);
+        rustsecp256k1_v0_12_scalar_split_128(&ng_1, &ng_128, ng);
 
         /* Build wnaf representation for ng_1 and ng_128 */
-        bits_ng_1   = rustsecp256k1_v0_11_ecmult_wnaf(wnaf_ng_1,   129, &ng_1,   WINDOW_G);
-        bits_ng_128 = rustsecp256k1_v0_11_ecmult_wnaf(wnaf_ng_128, 129, &ng_128, WINDOW_G);
+        bits_ng_1   = rustsecp256k1_v0_12_ecmult_wnaf(wnaf_ng_1,   129, &ng_1,   WINDOW_G);
+        bits_ng_128 = rustsecp256k1_v0_12_ecmult_wnaf(wnaf_ng_128, 129, &ng_128, WINDOW_G);
         if (bits_ng_1 > bits) {
             bits = bits_ng_1;
         }
@@ -316,61 +316,61 @@ static void rustsecp256k1_v0_11_ecmult_strauss_wnaf(const struct rustsecp256k1_v
         }
     }
 
-    rustsecp256k1_v0_11_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
 
     for (i = bits - 1; i >= 0; i--) {
         int n;
-        rustsecp256k1_v0_11_gej_double_var(r, r, NULL);
+        rustsecp256k1_v0_12_gej_double_var(r, r, NULL);
         for (np = 0; np < no; ++np) {
             if (i < state->ps[np].bits_na_1 && (n = state->ps[np].wnaf_na_1[i])) {
-                rustsecp256k1_v0_11_ecmult_table_get_ge(&tmpa, state->pre_a + np * ECMULT_TABLE_SIZE(WINDOW_A), n, WINDOW_A);
-                rustsecp256k1_v0_11_gej_add_ge_var(r, r, &tmpa, NULL);
+                rustsecp256k1_v0_12_ecmult_table_get_ge(&tmpa, state->pre_a + np * ECMULT_TABLE_SIZE(WINDOW_A), n, WINDOW_A);
+                rustsecp256k1_v0_12_gej_add_ge_var(r, r, &tmpa, NULL);
             }
             if (i < state->ps[np].bits_na_lam && (n = state->ps[np].wnaf_na_lam[i])) {
-                rustsecp256k1_v0_11_ecmult_table_get_ge_lambda(&tmpa, state->pre_a + np * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + np * ECMULT_TABLE_SIZE(WINDOW_A), n, WINDOW_A);
-                rustsecp256k1_v0_11_gej_add_ge_var(r, r, &tmpa, NULL);
+                rustsecp256k1_v0_12_ecmult_table_get_ge_lambda(&tmpa, state->pre_a + np * ECMULT_TABLE_SIZE(WINDOW_A), state->aux + np * ECMULT_TABLE_SIZE(WINDOW_A), n, WINDOW_A);
+                rustsecp256k1_v0_12_gej_add_ge_var(r, r, &tmpa, NULL);
             }
         }
         if (i < bits_ng_1 && (n = wnaf_ng_1[i])) {
-            rustsecp256k1_v0_11_ecmult_table_get_ge_storage(&tmpa, rustsecp256k1_v0_11_pre_g, n, WINDOW_G);
-            rustsecp256k1_v0_11_gej_add_zinv_var(r, r, &tmpa, &Z);
+            rustsecp256k1_v0_12_ecmult_table_get_ge_storage(&tmpa, rustsecp256k1_v0_12_pre_g, n, WINDOW_G);
+            rustsecp256k1_v0_12_gej_add_zinv_var(r, r, &tmpa, &Z);
         }
         if (i < bits_ng_128 && (n = wnaf_ng_128[i])) {
-            rustsecp256k1_v0_11_ecmult_table_get_ge_storage(&tmpa, rustsecp256k1_v0_11_pre_g_128, n, WINDOW_G);
-            rustsecp256k1_v0_11_gej_add_zinv_var(r, r, &tmpa, &Z);
+            rustsecp256k1_v0_12_ecmult_table_get_ge_storage(&tmpa, rustsecp256k1_v0_12_pre_g_128, n, WINDOW_G);
+            rustsecp256k1_v0_12_gej_add_zinv_var(r, r, &tmpa, &Z);
         }
     }
 
     if (!r->infinity) {
-        rustsecp256k1_v0_11_fe_mul(&r->z, &r->z, &Z);
+        rustsecp256k1_v0_12_fe_mul(&r->z, &r->z, &Z);
     }
 }
 
-static void rustsecp256k1_v0_11_ecmult(rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_gej *a, const rustsecp256k1_v0_11_scalar *na, const rustsecp256k1_v0_11_scalar *ng) {
-    rustsecp256k1_v0_11_fe aux[ECMULT_TABLE_SIZE(WINDOW_A)];
-    rustsecp256k1_v0_11_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
-    struct rustsecp256k1_v0_11_strauss_point_state ps[1];
-    struct rustsecp256k1_v0_11_strauss_state state;
+static void rustsecp256k1_v0_12_ecmult(rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_gej *a, const rustsecp256k1_v0_12_scalar *na, const rustsecp256k1_v0_12_scalar *ng) {
+    rustsecp256k1_v0_12_fe aux[ECMULT_TABLE_SIZE(WINDOW_A)];
+    rustsecp256k1_v0_12_ge pre_a[ECMULT_TABLE_SIZE(WINDOW_A)];
+    struct rustsecp256k1_v0_12_strauss_point_state ps[1];
+    struct rustsecp256k1_v0_12_strauss_state state;
 
     state.aux = aux;
     state.pre_a = pre_a;
     state.ps = ps;
-    rustsecp256k1_v0_11_ecmult_strauss_wnaf(&state, r, 1, a, na, ng);
+    rustsecp256k1_v0_12_ecmult_strauss_wnaf(&state, r, 1, a, na, ng);
 }
 
-static size_t rustsecp256k1_v0_11_strauss_scratch_size(size_t n_points) {
-    static const size_t point_size = (sizeof(rustsecp256k1_v0_11_ge) + sizeof(rustsecp256k1_v0_11_fe)) * ECMULT_TABLE_SIZE(WINDOW_A) + sizeof(struct rustsecp256k1_v0_11_strauss_point_state) + sizeof(rustsecp256k1_v0_11_gej) + sizeof(rustsecp256k1_v0_11_scalar);
+static size_t rustsecp256k1_v0_12_strauss_scratch_size(size_t n_points) {
+    static const size_t point_size = (sizeof(rustsecp256k1_v0_12_ge) + sizeof(rustsecp256k1_v0_12_fe)) * ECMULT_TABLE_SIZE(WINDOW_A) + sizeof(struct rustsecp256k1_v0_12_strauss_point_state) + sizeof(rustsecp256k1_v0_12_gej) + sizeof(rustsecp256k1_v0_12_scalar);
     return n_points*point_size;
 }
 
-static int rustsecp256k1_v0_11_ecmult_strauss_batch(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n_points, size_t cb_offset) {
-    rustsecp256k1_v0_11_gej* points;
-    rustsecp256k1_v0_11_scalar* scalars;
-    struct rustsecp256k1_v0_11_strauss_state state;
+static int rustsecp256k1_v0_12_ecmult_strauss_batch(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n_points, size_t cb_offset) {
+    rustsecp256k1_v0_12_gej* points;
+    rustsecp256k1_v0_12_scalar* scalars;
+    struct rustsecp256k1_v0_12_strauss_state state;
     size_t i;
-    const size_t scratch_checkpoint = rustsecp256k1_v0_11_scratch_checkpoint(error_callback, scratch);
+    const size_t scratch_checkpoint = rustsecp256k1_v0_12_scratch_checkpoint(error_callback, scratch);
 
-    rustsecp256k1_v0_11_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
     if (inp_g_sc == NULL && n_points == 0) {
         return 1;
     }
@@ -378,37 +378,37 @@ static int rustsecp256k1_v0_11_ecmult_strauss_batch(const rustsecp256k1_v0_11_ca
     /* We allocate STRAUSS_SCRATCH_OBJECTS objects on the scratch space. If these
      * allocations change, make sure to update the STRAUSS_SCRATCH_OBJECTS
      * constant and strauss_scratch_size accordingly. */
-    points = (rustsecp256k1_v0_11_gej*)rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, n_points * sizeof(rustsecp256k1_v0_11_gej));
-    scalars = (rustsecp256k1_v0_11_scalar*)rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, n_points * sizeof(rustsecp256k1_v0_11_scalar));
-    state.aux = (rustsecp256k1_v0_11_fe*)rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, n_points * ECMULT_TABLE_SIZE(WINDOW_A) * sizeof(rustsecp256k1_v0_11_fe));
-    state.pre_a = (rustsecp256k1_v0_11_ge*)rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, n_points * ECMULT_TABLE_SIZE(WINDOW_A) * sizeof(rustsecp256k1_v0_11_ge));
-    state.ps = (struct rustsecp256k1_v0_11_strauss_point_state*)rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, n_points * sizeof(struct rustsecp256k1_v0_11_strauss_point_state));
+    points = (rustsecp256k1_v0_12_gej*)rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, n_points * sizeof(rustsecp256k1_v0_12_gej));
+    scalars = (rustsecp256k1_v0_12_scalar*)rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, n_points * sizeof(rustsecp256k1_v0_12_scalar));
+    state.aux = (rustsecp256k1_v0_12_fe*)rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, n_points * ECMULT_TABLE_SIZE(WINDOW_A) * sizeof(rustsecp256k1_v0_12_fe));
+    state.pre_a = (rustsecp256k1_v0_12_ge*)rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, n_points * ECMULT_TABLE_SIZE(WINDOW_A) * sizeof(rustsecp256k1_v0_12_ge));
+    state.ps = (struct rustsecp256k1_v0_12_strauss_point_state*)rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, n_points * sizeof(struct rustsecp256k1_v0_12_strauss_point_state));
 
     if (points == NULL || scalars == NULL || state.aux == NULL || state.pre_a == NULL || state.ps == NULL) {
-        rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+        rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
         return 0;
     }
 
     for (i = 0; i < n_points; i++) {
-        rustsecp256k1_v0_11_ge point;
+        rustsecp256k1_v0_12_ge point;
         if (!cb(&scalars[i], &point, i+cb_offset, cbdata)) {
-            rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+            rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
             return 0;
         }
-        rustsecp256k1_v0_11_gej_set_ge(&points[i], &point);
+        rustsecp256k1_v0_12_gej_set_ge(&points[i], &point);
     }
-    rustsecp256k1_v0_11_ecmult_strauss_wnaf(&state, r, n_points, points, scalars, inp_g_sc);
-    rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+    rustsecp256k1_v0_12_ecmult_strauss_wnaf(&state, r, n_points, points, scalars, inp_g_sc);
+    rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
     return 1;
 }
 
-/* Wrapper for rustsecp256k1_v0_11_ecmult_multi_func interface */
-static int rustsecp256k1_v0_11_ecmult_strauss_batch_single(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n) {
-    return rustsecp256k1_v0_11_ecmult_strauss_batch(error_callback, scratch, r, inp_g_sc, cb, cbdata, n, 0);
+/* Wrapper for rustsecp256k1_v0_12_ecmult_multi_func interface */
+static int rustsecp256k1_v0_12_ecmult_strauss_batch_single(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n) {
+    return rustsecp256k1_v0_12_ecmult_strauss_batch(error_callback, scratch, r, inp_g_sc, cb, cbdata, n, 0);
 }
 
-static size_t rustsecp256k1_v0_11_strauss_max_points(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch) {
-    return rustsecp256k1_v0_11_scratch_max_allocation(error_callback, scratch, STRAUSS_SCRATCH_OBJECTS) / rustsecp256k1_v0_11_strauss_scratch_size(1);
+static size_t rustsecp256k1_v0_12_strauss_max_points(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch) {
+    return rustsecp256k1_v0_12_scratch_max_allocation(error_callback, scratch, STRAUSS_SCRATCH_OBJECTS) / rustsecp256k1_v0_12_strauss_scratch_size(1);
 }
 
 /** Convert a number to WNAF notation.
@@ -418,25 +418,25 @@ static size_t rustsecp256k1_v0_11_strauss_max_points(const rustsecp256k1_v0_11_c
  *  - the number of words set is always WNAF_SIZE(w)
  *  - the returned skew is 0 or 1
  */
-static int rustsecp256k1_v0_11_wnaf_fixed(int *wnaf, const rustsecp256k1_v0_11_scalar *s, int w) {
+static int rustsecp256k1_v0_12_wnaf_fixed(int *wnaf, const rustsecp256k1_v0_12_scalar *s, int w) {
     int skew = 0;
     int pos;
     int max_pos;
     int last_w;
-    const rustsecp256k1_v0_11_scalar *work = s;
+    const rustsecp256k1_v0_12_scalar *work = s;
 
-    if (rustsecp256k1_v0_11_scalar_is_zero(s)) {
+    if (rustsecp256k1_v0_12_scalar_is_zero(s)) {
         for (pos = 0; pos < WNAF_SIZE(w); pos++) {
             wnaf[pos] = 0;
         }
         return 0;
     }
 
-    if (rustsecp256k1_v0_11_scalar_is_even(s)) {
+    if (rustsecp256k1_v0_12_scalar_is_even(s)) {
         skew = 1;
     }
 
-    wnaf[0] = rustsecp256k1_v0_11_scalar_get_bits_var(work, 0, w) + skew;
+    wnaf[0] = rustsecp256k1_v0_12_scalar_get_bits_var(work, 0, w) + skew;
     /* Compute last window size. Relevant when window size doesn't divide the
      * number of bits in the scalar */
     last_w = WNAF_BITS - (WNAF_SIZE(w) - 1) * w;
@@ -444,7 +444,7 @@ static int rustsecp256k1_v0_11_wnaf_fixed(int *wnaf, const rustsecp256k1_v0_11_s
     /* Store the position of the first nonzero word in max_pos to allow
      * skipping leading zeros when calculating the wnaf. */
     for (pos = WNAF_SIZE(w) - 1; pos > 0; pos--) {
-        int val = rustsecp256k1_v0_11_scalar_get_bits_var(work, pos * w, pos == WNAF_SIZE(w)-1 ? last_w : w);
+        int val = rustsecp256k1_v0_12_scalar_get_bits_var(work, pos * w, pos == WNAF_SIZE(w)-1 ? last_w : w);
         if(val != 0) {
             break;
         }
@@ -454,7 +454,7 @@ static int rustsecp256k1_v0_11_wnaf_fixed(int *wnaf, const rustsecp256k1_v0_11_s
     pos = 1;
 
     while (pos <= max_pos) {
-        int val = rustsecp256k1_v0_11_scalar_get_bits_var(work, pos * w, pos == WNAF_SIZE(w)-1 ? last_w : w);
+        int val = rustsecp256k1_v0_12_scalar_get_bits_var(work, pos * w, pos == WNAF_SIZE(w)-1 ? last_w : w);
         if ((val & 1) == 0) {
             wnaf[pos - 1] -= (1 << w);
             wnaf[pos] = (val + 1);
@@ -480,14 +480,14 @@ static int rustsecp256k1_v0_11_wnaf_fixed(int *wnaf, const rustsecp256k1_v0_11_s
     return skew;
 }
 
-struct rustsecp256k1_v0_11_pippenger_point_state {
+struct rustsecp256k1_v0_12_pippenger_point_state {
     int skew_na;
     size_t input_pos;
 };
 
-struct rustsecp256k1_v0_11_pippenger_state {
+struct rustsecp256k1_v0_12_pippenger_state {
     int *wnaf_na;
-    struct rustsecp256k1_v0_11_pippenger_point_state* ps;
+    struct rustsecp256k1_v0_12_pippenger_point_state* ps;
 };
 
 /*
@@ -497,7 +497,7 @@ struct rustsecp256k1_v0_11_pippenger_state {
  * to the point's wnaf[i]. Second, the buckets are added together such that
  * r += 1*bucket[0] + 3*bucket[1] + 5*bucket[2] + ...
  */
-static int rustsecp256k1_v0_11_ecmult_pippenger_wnaf(rustsecp256k1_v0_11_gej *buckets, int bucket_window, struct rustsecp256k1_v0_11_pippenger_state *state, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *sc, const rustsecp256k1_v0_11_ge *pt, size_t num) {
+static int rustsecp256k1_v0_12_ecmult_pippenger_wnaf(rustsecp256k1_v0_12_gej *buckets, int bucket_window, struct rustsecp256k1_v0_12_pippenger_state *state, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *sc, const rustsecp256k1_v0_12_ge *pt, size_t num) {
     size_t n_wnaf = WNAF_SIZE(bucket_window+1);
     size_t np;
     size_t no = 0;
@@ -505,55 +505,55 @@ static int rustsecp256k1_v0_11_ecmult_pippenger_wnaf(rustsecp256k1_v0_11_gej *bu
     int j;
 
     for (np = 0; np < num; ++np) {
-        if (rustsecp256k1_v0_11_scalar_is_zero(&sc[np]) || rustsecp256k1_v0_11_ge_is_infinity(&pt[np])) {
+        if (rustsecp256k1_v0_12_scalar_is_zero(&sc[np]) || rustsecp256k1_v0_12_ge_is_infinity(&pt[np])) {
             continue;
         }
         state->ps[no].input_pos = np;
-        state->ps[no].skew_na = rustsecp256k1_v0_11_wnaf_fixed(&state->wnaf_na[no*n_wnaf], &sc[np], bucket_window+1);
+        state->ps[no].skew_na = rustsecp256k1_v0_12_wnaf_fixed(&state->wnaf_na[no*n_wnaf], &sc[np], bucket_window+1);
         no++;
     }
-    rustsecp256k1_v0_11_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
 
     if (no == 0) {
         return 1;
     }
 
     for (i = n_wnaf - 1; i >= 0; i--) {
-        rustsecp256k1_v0_11_gej running_sum;
+        rustsecp256k1_v0_12_gej running_sum;
 
         for(j = 0; j < ECMULT_TABLE_SIZE(bucket_window+2); j++) {
-            rustsecp256k1_v0_11_gej_set_infinity(&buckets[j]);
+            rustsecp256k1_v0_12_gej_set_infinity(&buckets[j]);
         }
 
         for (np = 0; np < no; ++np) {
             int n = state->wnaf_na[np*n_wnaf + i];
-            struct rustsecp256k1_v0_11_pippenger_point_state point_state = state->ps[np];
-            rustsecp256k1_v0_11_ge tmp;
+            struct rustsecp256k1_v0_12_pippenger_point_state point_state = state->ps[np];
+            rustsecp256k1_v0_12_ge tmp;
             int idx;
 
             if (i == 0) {
                 /* correct for wnaf skew */
                 int skew = point_state.skew_na;
                 if (skew) {
-                    rustsecp256k1_v0_11_ge_neg(&tmp, &pt[point_state.input_pos]);
-                    rustsecp256k1_v0_11_gej_add_ge_var(&buckets[0], &buckets[0], &tmp, NULL);
+                    rustsecp256k1_v0_12_ge_neg(&tmp, &pt[point_state.input_pos]);
+                    rustsecp256k1_v0_12_gej_add_ge_var(&buckets[0], &buckets[0], &tmp, NULL);
                 }
             }
             if (n > 0) {
                 idx = (n - 1)/2;
-                rustsecp256k1_v0_11_gej_add_ge_var(&buckets[idx], &buckets[idx], &pt[point_state.input_pos], NULL);
+                rustsecp256k1_v0_12_gej_add_ge_var(&buckets[idx], &buckets[idx], &pt[point_state.input_pos], NULL);
             } else if (n < 0) {
                 idx = -(n + 1)/2;
-                rustsecp256k1_v0_11_ge_neg(&tmp, &pt[point_state.input_pos]);
-                rustsecp256k1_v0_11_gej_add_ge_var(&buckets[idx], &buckets[idx], &tmp, NULL);
+                rustsecp256k1_v0_12_ge_neg(&tmp, &pt[point_state.input_pos]);
+                rustsecp256k1_v0_12_gej_add_ge_var(&buckets[idx], &buckets[idx], &tmp, NULL);
             }
         }
 
         for(j = 0; j < bucket_window; j++) {
-            rustsecp256k1_v0_11_gej_double_var(r, r, NULL);
+            rustsecp256k1_v0_12_gej_double_var(r, r, NULL);
         }
 
-        rustsecp256k1_v0_11_gej_set_infinity(&running_sum);
+        rustsecp256k1_v0_12_gej_set_infinity(&running_sum);
         /* Accumulate the sum: bucket[0] + 3*bucket[1] + 5*bucket[2] + 7*bucket[3] + ...
          *                   = bucket[0] +   bucket[1] +   bucket[2] +   bucket[3] + ...
          *                   +         2 *  (bucket[1] + 2*bucket[2] + 3*bucket[3] + ...)
@@ -563,13 +563,13 @@ static int rustsecp256k1_v0_11_ecmult_pippenger_wnaf(rustsecp256k1_v0_11_gej *bu
          * The doubling is done implicitly by deferring the final window doubling (of 'r').
          */
         for(j = ECMULT_TABLE_SIZE(bucket_window+2) - 1; j > 0; j--) {
-            rustsecp256k1_v0_11_gej_add_var(&running_sum, &running_sum, &buckets[j], NULL);
-            rustsecp256k1_v0_11_gej_add_var(r, r, &running_sum, NULL);
+            rustsecp256k1_v0_12_gej_add_var(&running_sum, &running_sum, &buckets[j], NULL);
+            rustsecp256k1_v0_12_gej_add_var(r, r, &running_sum, NULL);
         }
 
-        rustsecp256k1_v0_11_gej_add_var(&running_sum, &running_sum, &buckets[0], NULL);
-        rustsecp256k1_v0_11_gej_double_var(r, r, NULL);
-        rustsecp256k1_v0_11_gej_add_var(r, r, &running_sum, NULL);
+        rustsecp256k1_v0_12_gej_add_var(&running_sum, &running_sum, &buckets[0], NULL);
+        rustsecp256k1_v0_12_gej_double_var(r, r, NULL);
+        rustsecp256k1_v0_12_gej_add_var(r, r, &running_sum, NULL);
     }
     return 1;
 }
@@ -578,7 +578,7 @@ static int rustsecp256k1_v0_11_ecmult_pippenger_wnaf(rustsecp256k1_v0_11_gej *bu
  * Returns optimal bucket_window (number of bits of a scalar represented by a
  * set of buckets) for a given number of points.
  */
-static int rustsecp256k1_v0_11_pippenger_bucket_window(size_t n) {
+static int rustsecp256k1_v0_12_pippenger_bucket_window(size_t n) {
     if (n <= 1) {
         return 1;
     } else if (n <= 4) {
@@ -607,7 +607,7 @@ static int rustsecp256k1_v0_11_pippenger_bucket_window(size_t n) {
 /**
  * Returns the maximum optimal number of points for a bucket_window.
  */
-static size_t rustsecp256k1_v0_11_pippenger_bucket_window_inv(int bucket_window) {
+static size_t rustsecp256k1_v0_12_pippenger_bucket_window_inv(int bucket_window) {
     switch(bucket_window) {
         case 1: return 1;
         case 2: return 4;
@@ -626,18 +626,18 @@ static size_t rustsecp256k1_v0_11_pippenger_bucket_window_inv(int bucket_window)
 }
 
 
-SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_endo_split(rustsecp256k1_v0_11_scalar *s1, rustsecp256k1_v0_11_scalar *s2, rustsecp256k1_v0_11_ge *p1, rustsecp256k1_v0_11_ge *p2) {
-    rustsecp256k1_v0_11_scalar tmp = *s1;
-    rustsecp256k1_v0_11_scalar_split_lambda(s1, s2, &tmp);
-    rustsecp256k1_v0_11_ge_mul_lambda(p2, p1);
+SECP256K1_INLINE static void rustsecp256k1_v0_12_ecmult_endo_split(rustsecp256k1_v0_12_scalar *s1, rustsecp256k1_v0_12_scalar *s2, rustsecp256k1_v0_12_ge *p1, rustsecp256k1_v0_12_ge *p2) {
+    rustsecp256k1_v0_12_scalar tmp = *s1;
+    rustsecp256k1_v0_12_scalar_split_lambda(s1, s2, &tmp);
+    rustsecp256k1_v0_12_ge_mul_lambda(p2, p1);
 
-    if (rustsecp256k1_v0_11_scalar_is_high(s1)) {
-        rustsecp256k1_v0_11_scalar_negate(s1, s1);
-        rustsecp256k1_v0_11_ge_neg(p1, p1);
+    if (rustsecp256k1_v0_12_scalar_is_high(s1)) {
+        rustsecp256k1_v0_12_scalar_negate(s1, s1);
+        rustsecp256k1_v0_12_ge_neg(p1, p1);
     }
-    if (rustsecp256k1_v0_11_scalar_is_high(s2)) {
-        rustsecp256k1_v0_11_scalar_negate(s2, s2);
-        rustsecp256k1_v0_11_ge_neg(p2, p2);
+    if (rustsecp256k1_v0_12_scalar_is_high(s2)) {
+        rustsecp256k1_v0_12_scalar_negate(s2, s2);
+        rustsecp256k1_v0_12_ge_neg(p2, p2);
     }
 }
 
@@ -645,78 +645,78 @@ SECP256K1_INLINE static void rustsecp256k1_v0_11_ecmult_endo_split(rustsecp256k1
  * Returns the scratch size required for a given number of points (excluding
  * base point G) without considering alignment.
  */
-static size_t rustsecp256k1_v0_11_pippenger_scratch_size(size_t n_points, int bucket_window) {
+static size_t rustsecp256k1_v0_12_pippenger_scratch_size(size_t n_points, int bucket_window) {
     size_t entries = 2*n_points + 2;
-    size_t entry_size = sizeof(rustsecp256k1_v0_11_ge) + sizeof(rustsecp256k1_v0_11_scalar) + sizeof(struct rustsecp256k1_v0_11_pippenger_point_state) + (WNAF_SIZE(bucket_window+1)+1)*sizeof(int);
-    return (sizeof(rustsecp256k1_v0_11_gej) << bucket_window) + sizeof(struct rustsecp256k1_v0_11_pippenger_state) + entries * entry_size;
+    size_t entry_size = sizeof(rustsecp256k1_v0_12_ge) + sizeof(rustsecp256k1_v0_12_scalar) + sizeof(struct rustsecp256k1_v0_12_pippenger_point_state) + (WNAF_SIZE(bucket_window+1)+1)*sizeof(int);
+    return (sizeof(rustsecp256k1_v0_12_gej) << bucket_window) + sizeof(struct rustsecp256k1_v0_12_pippenger_state) + entries * entry_size;
 }
 
-static int rustsecp256k1_v0_11_ecmult_pippenger_batch(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n_points, size_t cb_offset) {
-    const size_t scratch_checkpoint = rustsecp256k1_v0_11_scratch_checkpoint(error_callback, scratch);
+static int rustsecp256k1_v0_12_ecmult_pippenger_batch(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n_points, size_t cb_offset) {
+    const size_t scratch_checkpoint = rustsecp256k1_v0_12_scratch_checkpoint(error_callback, scratch);
     /* Use 2(n+1) with the endomorphism, when calculating batch
      * sizes. The reason for +1 is that we add the G scalar to the list of
      * other scalars. */
     size_t entries = 2*n_points + 2;
-    rustsecp256k1_v0_11_ge *points;
-    rustsecp256k1_v0_11_scalar *scalars;
-    rustsecp256k1_v0_11_gej *buckets;
-    struct rustsecp256k1_v0_11_pippenger_state *state_space;
+    rustsecp256k1_v0_12_ge *points;
+    rustsecp256k1_v0_12_scalar *scalars;
+    rustsecp256k1_v0_12_gej *buckets;
+    struct rustsecp256k1_v0_12_pippenger_state *state_space;
     size_t idx = 0;
     size_t point_idx = 0;
     int bucket_window;
 
-    rustsecp256k1_v0_11_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
     if (inp_g_sc == NULL && n_points == 0) {
         return 1;
     }
-    bucket_window = rustsecp256k1_v0_11_pippenger_bucket_window(n_points);
+    bucket_window = rustsecp256k1_v0_12_pippenger_bucket_window(n_points);
 
     /* We allocate PIPPENGER_SCRATCH_OBJECTS objects on the scratch space. If
      * these allocations change, make sure to update the
      * PIPPENGER_SCRATCH_OBJECTS constant and pippenger_scratch_size
      * accordingly. */
-    points = (rustsecp256k1_v0_11_ge *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, entries * sizeof(*points));
-    scalars = (rustsecp256k1_v0_11_scalar *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, entries * sizeof(*scalars));
-    state_space = (struct rustsecp256k1_v0_11_pippenger_state *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, sizeof(*state_space));
+    points = (rustsecp256k1_v0_12_ge *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, entries * sizeof(*points));
+    scalars = (rustsecp256k1_v0_12_scalar *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, entries * sizeof(*scalars));
+    state_space = (struct rustsecp256k1_v0_12_pippenger_state *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, sizeof(*state_space));
     if (points == NULL || scalars == NULL || state_space == NULL) {
-        rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+        rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
         return 0;
     }
-    state_space->ps = (struct rustsecp256k1_v0_11_pippenger_point_state *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, entries * sizeof(*state_space->ps));
-    state_space->wnaf_na = (int *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, entries*(WNAF_SIZE(bucket_window+1)) * sizeof(int));
-    buckets = (rustsecp256k1_v0_11_gej *) rustsecp256k1_v0_11_scratch_alloc(error_callback, scratch, ((size_t)1 << bucket_window) * sizeof(*buckets));
+    state_space->ps = (struct rustsecp256k1_v0_12_pippenger_point_state *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, entries * sizeof(*state_space->ps));
+    state_space->wnaf_na = (int *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, entries*(WNAF_SIZE(bucket_window+1)) * sizeof(int));
+    buckets = (rustsecp256k1_v0_12_gej *) rustsecp256k1_v0_12_scratch_alloc(error_callback, scratch, ((size_t)1 << bucket_window) * sizeof(*buckets));
     if (state_space->ps == NULL || state_space->wnaf_na == NULL || buckets == NULL) {
-        rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+        rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
         return 0;
     }
 
     if (inp_g_sc != NULL) {
         scalars[0] = *inp_g_sc;
-        points[0] = rustsecp256k1_v0_11_ge_const_g;
+        points[0] = rustsecp256k1_v0_12_ge_const_g;
         idx++;
-        rustsecp256k1_v0_11_ecmult_endo_split(&scalars[0], &scalars[1], &points[0], &points[1]);
+        rustsecp256k1_v0_12_ecmult_endo_split(&scalars[0], &scalars[1], &points[0], &points[1]);
         idx++;
     }
 
     while (point_idx < n_points) {
         if (!cb(&scalars[idx], &points[idx], point_idx + cb_offset, cbdata)) {
-            rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+            rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
             return 0;
         }
         idx++;
-        rustsecp256k1_v0_11_ecmult_endo_split(&scalars[idx - 1], &scalars[idx], &points[idx - 1], &points[idx]);
+        rustsecp256k1_v0_12_ecmult_endo_split(&scalars[idx - 1], &scalars[idx], &points[idx - 1], &points[idx]);
         idx++;
         point_idx++;
     }
 
-    rustsecp256k1_v0_11_ecmult_pippenger_wnaf(buckets, bucket_window, state_space, r, scalars, points, idx);
-    rustsecp256k1_v0_11_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
+    rustsecp256k1_v0_12_ecmult_pippenger_wnaf(buckets, bucket_window, state_space, r, scalars, points, idx);
+    rustsecp256k1_v0_12_scratch_apply_checkpoint(error_callback, scratch, scratch_checkpoint);
     return 1;
 }
 
-/* Wrapper for rustsecp256k1_v0_11_ecmult_multi_func interface */
-static int rustsecp256k1_v0_11_ecmult_pippenger_batch_single(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n) {
-    return rustsecp256k1_v0_11_ecmult_pippenger_batch(error_callback, scratch, r, inp_g_sc, cb, cbdata, n, 0);
+/* Wrapper for rustsecp256k1_v0_12_ecmult_multi_func interface */
+static int rustsecp256k1_v0_12_ecmult_pippenger_batch_single(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n) {
+    return rustsecp256k1_v0_12_ecmult_pippenger_batch(error_callback, scratch, r, inp_g_sc, cb, cbdata, n, 0);
 }
 
 /**
@@ -724,20 +724,20 @@ static int rustsecp256k1_v0_11_ecmult_pippenger_batch_single(const rustsecp256k1
  * a given scratch space. The function ensures that fewer points may also be
  * used.
  */
-static size_t rustsecp256k1_v0_11_pippenger_max_points(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch) {
-    size_t max_alloc = rustsecp256k1_v0_11_scratch_max_allocation(error_callback, scratch, PIPPENGER_SCRATCH_OBJECTS);
+static size_t rustsecp256k1_v0_12_pippenger_max_points(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch) {
+    size_t max_alloc = rustsecp256k1_v0_12_scratch_max_allocation(error_callback, scratch, PIPPENGER_SCRATCH_OBJECTS);
     int bucket_window;
     size_t res = 0;
 
     for (bucket_window = 1; bucket_window <= PIPPENGER_MAX_BUCKET_WINDOW; bucket_window++) {
         size_t n_points;
-        size_t max_points = rustsecp256k1_v0_11_pippenger_bucket_window_inv(bucket_window);
+        size_t max_points = rustsecp256k1_v0_12_pippenger_bucket_window_inv(bucket_window);
         size_t space_for_points;
         size_t space_overhead;
-        size_t entry_size = sizeof(rustsecp256k1_v0_11_ge) + sizeof(rustsecp256k1_v0_11_scalar) + sizeof(struct rustsecp256k1_v0_11_pippenger_point_state) + (WNAF_SIZE(bucket_window+1)+1)*sizeof(int);
+        size_t entry_size = sizeof(rustsecp256k1_v0_12_ge) + sizeof(rustsecp256k1_v0_12_scalar) + sizeof(struct rustsecp256k1_v0_12_pippenger_point_state) + (WNAF_SIZE(bucket_window+1)+1)*sizeof(int);
 
         entry_size = 2*entry_size;
-        space_overhead = (sizeof(rustsecp256k1_v0_11_gej) << bucket_window) + entry_size + sizeof(struct rustsecp256k1_v0_11_pippenger_state);
+        space_overhead = (sizeof(rustsecp256k1_v0_12_gej) << bucket_window) + entry_size + sizeof(struct rustsecp256k1_v0_12_pippenger_state);
         if (space_overhead > max_alloc) {
             break;
         }
@@ -760,32 +760,32 @@ static size_t rustsecp256k1_v0_11_pippenger_max_points(const rustsecp256k1_v0_11
 
 /* Computes ecmult_multi by simply multiplying and adding each point. Does not
  * require a scratch space */
-static int rustsecp256k1_v0_11_ecmult_multi_simple_var(rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n_points) {
+static int rustsecp256k1_v0_12_ecmult_multi_simple_var(rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n_points) {
     size_t point_idx;
-    rustsecp256k1_v0_11_gej tmpj;
+    rustsecp256k1_v0_12_gej tmpj;
 
-    rustsecp256k1_v0_11_gej_set_infinity(r);
-    rustsecp256k1_v0_11_gej_set_infinity(&tmpj);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(&tmpj);
     /* r = inp_g_sc*G */
-    rustsecp256k1_v0_11_ecmult(r, &tmpj, &rustsecp256k1_v0_11_scalar_zero, inp_g_sc);
+    rustsecp256k1_v0_12_ecmult(r, &tmpj, &rustsecp256k1_v0_12_scalar_zero, inp_g_sc);
     for (point_idx = 0; point_idx < n_points; point_idx++) {
-        rustsecp256k1_v0_11_ge point;
-        rustsecp256k1_v0_11_gej pointj;
-        rustsecp256k1_v0_11_scalar scalar;
+        rustsecp256k1_v0_12_ge point;
+        rustsecp256k1_v0_12_gej pointj;
+        rustsecp256k1_v0_12_scalar scalar;
         if (!cb(&scalar, &point, point_idx, cbdata)) {
             return 0;
         }
         /* r += scalar*point */
-        rustsecp256k1_v0_11_gej_set_ge(&pointj, &point);
-        rustsecp256k1_v0_11_ecmult(&tmpj, &pointj, &scalar, NULL);
-        rustsecp256k1_v0_11_gej_add_var(r, r, &tmpj, NULL);
+        rustsecp256k1_v0_12_gej_set_ge(&pointj, &point);
+        rustsecp256k1_v0_12_ecmult(&tmpj, &pointj, &scalar, NULL);
+        rustsecp256k1_v0_12_gej_add_var(r, r, &tmpj, NULL);
     }
     return 1;
 }
 
 /* Compute the number of batches and the batch size given the maximum batch size and the
  * total number of points */
-static int rustsecp256k1_v0_11_ecmult_multi_batch_size_helper(size_t *n_batches, size_t *n_batch_points, size_t max_n_batch_points, size_t n) {
+static int rustsecp256k1_v0_12_ecmult_multi_batch_size_helper(size_t *n_batches, size_t *n_batch_points, size_t max_n_batch_points, size_t n) {
     if (max_n_batch_points == 0) {
         return 0;
     }
@@ -803,48 +803,48 @@ static int rustsecp256k1_v0_11_ecmult_multi_batch_size_helper(size_t *n_batches,
     return 1;
 }
 
-typedef int (*rustsecp256k1_v0_11_ecmult_multi_func)(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch*, rustsecp256k1_v0_11_gej*, const rustsecp256k1_v0_11_scalar*, rustsecp256k1_v0_11_ecmult_multi_callback cb, void*, size_t);
-static int rustsecp256k1_v0_11_ecmult_multi_var(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch *scratch, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *inp_g_sc, rustsecp256k1_v0_11_ecmult_multi_callback cb, void *cbdata, size_t n) {
+typedef int (*rustsecp256k1_v0_12_ecmult_multi_func)(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch*, rustsecp256k1_v0_12_gej*, const rustsecp256k1_v0_12_scalar*, rustsecp256k1_v0_12_ecmult_multi_callback cb, void*, size_t);
+static int rustsecp256k1_v0_12_ecmult_multi_var(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n) {
     size_t i;
 
-    int (*f)(const rustsecp256k1_v0_11_callback* error_callback, rustsecp256k1_v0_11_scratch*, rustsecp256k1_v0_11_gej*, const rustsecp256k1_v0_11_scalar*, rustsecp256k1_v0_11_ecmult_multi_callback cb, void*, size_t, size_t);
+    int (*f)(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch*, rustsecp256k1_v0_12_gej*, const rustsecp256k1_v0_12_scalar*, rustsecp256k1_v0_12_ecmult_multi_callback cb, void*, size_t, size_t);
     size_t n_batches;
     size_t n_batch_points;
 
-    rustsecp256k1_v0_11_gej_set_infinity(r);
+    rustsecp256k1_v0_12_gej_set_infinity(r);
     if (inp_g_sc == NULL && n == 0) {
         return 1;
     } else if (n == 0) {
-        rustsecp256k1_v0_11_ecmult(r, r, &rustsecp256k1_v0_11_scalar_zero, inp_g_sc);
+        rustsecp256k1_v0_12_ecmult(r, r, &rustsecp256k1_v0_12_scalar_zero, inp_g_sc);
         return 1;
     }
     if (scratch == NULL) {
-        return rustsecp256k1_v0_11_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
+        return rustsecp256k1_v0_12_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
     }
 
     /* Compute the batch sizes for Pippenger's algorithm given a scratch space. If it's greater than
      * a threshold use Pippenger's algorithm. Otherwise use Strauss' algorithm.
      * As a first step check if there's enough space for Pippenger's algo (which requires less space
      * than Strauss' algo) and if not, use the simple algorithm. */
-    if (!rustsecp256k1_v0_11_ecmult_multi_batch_size_helper(&n_batches, &n_batch_points, rustsecp256k1_v0_11_pippenger_max_points(error_callback, scratch), n)) {
-        return rustsecp256k1_v0_11_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
+    if (!rustsecp256k1_v0_12_ecmult_multi_batch_size_helper(&n_batches, &n_batch_points, rustsecp256k1_v0_12_pippenger_max_points(error_callback, scratch), n)) {
+        return rustsecp256k1_v0_12_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
     }
     if (n_batch_points >= ECMULT_PIPPENGER_THRESHOLD) {
-        f = rustsecp256k1_v0_11_ecmult_pippenger_batch;
+        f = rustsecp256k1_v0_12_ecmult_pippenger_batch;
     } else {
-        if (!rustsecp256k1_v0_11_ecmult_multi_batch_size_helper(&n_batches, &n_batch_points, rustsecp256k1_v0_11_strauss_max_points(error_callback, scratch), n)) {
-            return rustsecp256k1_v0_11_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
+        if (!rustsecp256k1_v0_12_ecmult_multi_batch_size_helper(&n_batches, &n_batch_points, rustsecp256k1_v0_12_strauss_max_points(error_callback, scratch), n)) {
+            return rustsecp256k1_v0_12_ecmult_multi_simple_var(r, inp_g_sc, cb, cbdata, n);
         }
-        f = rustsecp256k1_v0_11_ecmult_strauss_batch;
+        f = rustsecp256k1_v0_12_ecmult_strauss_batch;
     }
     for(i = 0; i < n_batches; i++) {
         size_t nbp = n < n_batch_points ? n : n_batch_points;
         size_t offset = n_batch_points*i;
-        rustsecp256k1_v0_11_gej tmp;
+        rustsecp256k1_v0_12_gej tmp;
         if (!f(error_callback, scratch, &tmp, i == 0 ? inp_g_sc : NULL, cb, cbdata, nbp, offset)) {
             return 0;
         }
-        rustsecp256k1_v0_11_gej_add_var(r, r, &tmp, NULL);
+        rustsecp256k1_v0_12_gej_add_var(r, r, &tmp, NULL);
         n -= nbp;
     }
     return 1;

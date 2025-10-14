@@ -5,8 +5,8 @@ import sys
 load("group_prover.sage")
 load("weierstrass_prover.sage")
 
-def formula_rustsecp256k1_v0_11_gej_double_var(a):
-  """libsecp256k1's rustsecp256k1_v0_11_gej_double_var, used by various addition functions"""
+def formula_rustsecp256k1_v0_12_gej_double_var(a):
+  """libsecp256k1's rustsecp256k1_v0_12_gej_double_var, used by various addition functions"""
   rz = a.Z * a.Y
   s = a.Y^2
   l = a.X^2
@@ -24,8 +24,8 @@ def formula_rustsecp256k1_v0_11_gej_double_var(a):
   ry = -ry
   return jacobianpoint(rx, ry, rz)
 
-def formula_rustsecp256k1_v0_11_gej_add_var(branch, a, b):
-  """libsecp256k1's rustsecp256k1_v0_11_gej_add_var"""
+def formula_rustsecp256k1_v0_12_gej_add_var(branch, a, b):
+  """libsecp256k1's rustsecp256k1_v0_12_gej_add_var"""
   if branch == 0:
     return (constraints(), constraints(nonzero={a.Infinity : 'a_infinite'}), b)
   if branch == 1:
@@ -43,7 +43,7 @@ def formula_rustsecp256k1_v0_11_gej_add_var(branch, a, b):
   i = -s2
   i = i + s1
   if branch == 2:
-    r = formula_rustsecp256k1_v0_11_gej_double_var(a)
+    r = formula_rustsecp256k1_v0_12_gej_double_var(a)
     return (constraints(), constraints(zero={h : 'h=0', i : 'i=0', a.Infinity : 'a_finite', b.Infinity : 'b_finite'}), r)
   if branch == 3:
     return (constraints(), constraints(zero={h : 'h=0', a.Infinity : 'a_finite', b.Infinity : 'b_finite'}, nonzero={i : 'i!=0'}), point_at_infinity())
@@ -63,8 +63,8 @@ def formula_rustsecp256k1_v0_11_gej_add_var(branch, a, b):
   ry = ry + h3
   return (constraints(), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite'}, nonzero={h : 'h!=0'}), jacobianpoint(rx, ry, rz))
 
-def formula_rustsecp256k1_v0_11_gej_add_ge_var(branch, a, b):
-  """libsecp256k1's rustsecp256k1_v0_11_gej_add_ge_var, which assume bz==1"""
+def formula_rustsecp256k1_v0_12_gej_add_ge_var(branch, a, b):
+  """libsecp256k1's rustsecp256k1_v0_12_gej_add_ge_var, which assume bz==1"""
   if branch == 0:
     return (constraints(zero={b.Z - 1 : 'b.z=1'}), constraints(nonzero={a.Infinity : 'a_infinite'}), b)
   if branch == 1:
@@ -80,7 +80,7 @@ def formula_rustsecp256k1_v0_11_gej_add_ge_var(branch, a, b):
   i = -s2
   i = i + s1
   if (branch == 2):
-    r = formula_rustsecp256k1_v0_11_gej_double_var(a)
+    r = formula_rustsecp256k1_v0_12_gej_double_var(a)
     return (constraints(zero={b.Z - 1 : 'b.z=1'}), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite', h : 'h=0', i : 'i=0'}), r)
   if (branch == 3):
     return (constraints(zero={b.Z - 1 : 'b.z=1'}), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite', h : 'h=0'}, nonzero={i : 'i!=0'}), point_at_infinity())
@@ -99,8 +99,8 @@ def formula_rustsecp256k1_v0_11_gej_add_ge_var(branch, a, b):
   ry = ry + h3
   return (constraints(zero={b.Z - 1 : 'b.z=1'}), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite'}, nonzero={h : 'h!=0'}), jacobianpoint(rx, ry, rz))
 
-def formula_rustsecp256k1_v0_11_gej_add_zinv_var(branch, a, b):
-  """libsecp256k1's rustsecp256k1_v0_11_gej_add_zinv_var"""
+def formula_rustsecp256k1_v0_12_gej_add_zinv_var(branch, a, b):
+  """libsecp256k1's rustsecp256k1_v0_12_gej_add_zinv_var"""
   bzinv = b.Z^(-1)
   if branch == 0:
     rinf = b.Infinity
@@ -124,7 +124,7 @@ def formula_rustsecp256k1_v0_11_gej_add_zinv_var(branch, a, b):
   i = -s2
   i = i + s1
   if branch == 2:
-    r = formula_rustsecp256k1_v0_11_gej_double_var(a)
+    r = formula_rustsecp256k1_v0_12_gej_double_var(a)
     return (constraints(), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite', h : 'h=0', i : 'i=0'}), r)
   if branch == 3:
     return (constraints(), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite', h : 'h=0'}, nonzero={i : 'i!=0'}), point_at_infinity())
@@ -143,8 +143,8 @@ def formula_rustsecp256k1_v0_11_gej_add_zinv_var(branch, a, b):
   ry = ry + h3
   return (constraints(), constraints(zero={a.Infinity : 'a_finite', b.Infinity : 'b_finite'}, nonzero={h : 'h!=0'}), jacobianpoint(rx, ry, rz))
 
-def formula_rustsecp256k1_v0_11_gej_add_ge(branch, a, b):
-  """libsecp256k1's rustsecp256k1_v0_11_gej_add_ge"""
+def formula_rustsecp256k1_v0_12_gej_add_ge(branch, a, b):
+  """libsecp256k1's rustsecp256k1_v0_12_gej_add_ge"""
   zeroes = {}
   nonzeroes = {}
   a_infinity = False
@@ -205,8 +205,8 @@ def formula_rustsecp256k1_v0_11_gej_add_ge(branch, a, b):
     nonzeroes.update({rz : 'r.z != 0'})
   return (constraints(zero={b.Z - 1 : 'b.z=1', b.Infinity : 'b_finite'}), constraints(zero=zeroes, nonzero=nonzeroes), jacobianpoint(rx, ry, rz))
 
-def formula_rustsecp256k1_v0_11_gej_add_ge_old(branch, a, b):
-  """libsecp256k1's old rustsecp256k1_v0_11_gej_add_ge, which fails when ay+by=0 but ax!=bx"""
+def formula_rustsecp256k1_v0_12_gej_add_ge_old(branch, a, b):
+  """libsecp256k1's old rustsecp256k1_v0_12_gej_add_ge, which fails when ay+by=0 but ax!=bx"""
   a_infinity = (branch & 1) != 0
   zero = {}
   nonzero = {}
@@ -269,17 +269,17 @@ def formula_rustsecp256k1_v0_11_gej_add_ge_old(branch, a, b):
 
 if __name__ == "__main__":
   success = True
-  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_var)
-  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_ge_var)
-  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_zinv_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_zinv_var)
-  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge", 0, 7, 8, formula_rustsecp256k1_v0_11_gej_add_ge)
-  success = success & (not check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge_old [should fail]", 0, 7, 4, formula_rustsecp256k1_v0_11_gej_add_ge_old))
+  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_var)
+  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_ge_var)
+  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_zinv_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_zinv_var)
+  success = success & check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge", 0, 7, 8, formula_rustsecp256k1_v0_12_gej_add_ge)
+  success = success & (not check_symbolic_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge_old [should fail]", 0, 7, 4, formula_rustsecp256k1_v0_12_gej_add_ge_old))
 
   if len(sys.argv) >= 2 and sys.argv[1] == "--exhaustive":
-    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_var, 43)
-    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_ge_var, 43)
-    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_zinv_var", 0, 7, 5, formula_rustsecp256k1_v0_11_gej_add_zinv_var, 43)
-    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge", 0, 7, 8, formula_rustsecp256k1_v0_11_gej_add_ge, 43)
-    success = success & (not check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_11_gej_add_ge_old [should fail]", 0, 7, 4, formula_rustsecp256k1_v0_11_gej_add_ge_old, 43))
+    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_var, 43)
+    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_ge_var, 43)
+    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_zinv_var", 0, 7, 5, formula_rustsecp256k1_v0_12_gej_add_zinv_var, 43)
+    success = success & check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge", 0, 7, 8, formula_rustsecp256k1_v0_12_gej_add_ge, 43)
+    success = success & (not check_exhaustive_jacobian_weierstrass("rustsecp256k1_v0_12_gej_add_ge_old [should fail]", 0, 7, 4, formula_rustsecp256k1_v0_12_gej_add_ge_old, 43))
 
   sys.exit(int(not success))

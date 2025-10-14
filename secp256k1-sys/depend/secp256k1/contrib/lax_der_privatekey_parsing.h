@@ -43,7 +43,7 @@ extern "C" {
 /** Export a private key in DER format.
  *
  *  Returns: 1 if the private key was valid.
- *  Args: ctx:        pointer to a context object (not rustsecp256k1_v0_11_context_static).
+ *  Args: ctx:        pointer to a context object (not rustsecp256k1_v0_12_context_static).
  *  Out: privkey:     pointer to an array for storing the private key in BER.
  *                    Should have space for 279 bytes, and cannot be NULL.
  *       privkeylen:  Pointer to an int where the length of the private key in
@@ -57,10 +57,10 @@ extern "C" {
  *  simple 32-byte private keys are sufficient.
  *
  *  Note that this function does not guarantee correct DER output. It is
- *  guaranteed to be parsable by rustsecp256k1_v0_11_ec_privkey_import_der
+ *  guaranteed to be parsable by rustsecp256k1_v0_12_ec_privkey_import_der
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
-    const rustsecp256k1_v0_11_context* ctx,
+    const rustsecp256k1_v0_12_context* ctx,
     unsigned char *privkey,
     size_t *privkeylen,
     const unsigned char *seckey,
@@ -82,7 +82,7 @@ SECP256K1_WARN_UNUSED_RESULT int ec_privkey_export_der(
  * key.
  */
 SECP256K1_WARN_UNUSED_RESULT int ec_privkey_import_der(
-    const rustsecp256k1_v0_11_context* ctx,
+    const rustsecp256k1_v0_12_context* ctx,
     unsigned char *seckey,
     const unsigned char *privkey,
     size_t privkeylen

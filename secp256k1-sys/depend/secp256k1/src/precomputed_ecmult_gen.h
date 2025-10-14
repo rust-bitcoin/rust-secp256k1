@@ -14,9 +14,9 @@ extern "C" {
 #include "group.h"
 #include "ecmult_gen.h"
 #ifdef EXHAUSTIVE_TEST_ORDER
-static rustsecp256k1_v0_11_ge_storage rustsecp256k1_v0_11_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS];
+static rustsecp256k1_v0_12_ge_storage rustsecp256k1_v0_12_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS];
 #else
-extern const rustsecp256k1_v0_11_ge_storage rustsecp256k1_v0_11_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS];
+extern const rustsecp256k1_v0_12_ge_storage rustsecp256k1_v0_12_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS];
 #endif /* defined(EXHAUSTIVE_TEST_ORDER) */
 
 #ifdef __cplusplus

@@ -16,24 +16,24 @@
 #include "ecdsa.h"
 
 /** Group order for secp256k1 defined as 'n' in "Standards for Efficient Cryptography" (SEC2) 2.7.1
- *  $ sage -c 'load("rustsecp256k1_v0_11_params.sage"); print(hex(N))'
+ *  $ sage -c 'load("rustsecp256k1_v0_12_params.sage"); print(hex(N))'
  *  0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
  */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ecdsa_const_order_as_fe = SECP256K1_FE_CONST(
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ecdsa_const_order_as_fe = SECP256K1_FE_CONST(
     0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, 0xFFFFFFFEUL,
     0xBAAEDCE6UL, 0xAF48A03BUL, 0xBFD25E8CUL, 0xD0364141UL
 );
 
 /** Difference between field and order, values 'p' and 'n' values defined in
  *  "Standards for Efficient Cryptography" (SEC2) 2.7.1.
- *  $ sage -c 'load("rustsecp256k1_v0_11_params.sage"); print(hex(P-N))'
+ *  $ sage -c 'load("rustsecp256k1_v0_12_params.sage"); print(hex(P-N))'
  *  0x14551231950b75fc4402da1722fc9baee
  */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ecdsa_const_p_minus_order = SECP256K1_FE_CONST(
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ecdsa_const_p_minus_order = SECP256K1_FE_CONST(
     0, 0, 0, 1, 0x45512319UL, 0x50B75FC4UL, 0x402DA172UL, 0x2FC9BAEEUL
 );
 
-static int rustsecp256k1_v0_11_der_read_len(size_t *len, const unsigned char **sigp, const unsigned char *sigend) {
+static int rustsecp256k1_v0_12_der_read_len(size_t *len, const unsigned char **sigp, const unsigned char *sigend) {
     size_t lenleft;
     unsigned char b1;
     VERIFY_CHECK(len != NULL);
@@ -87,7 +87,7 @@ static int rustsecp256k1_v0_11_der_read_len(size_t *len, const unsigned char **s
     return 1;
 }
 
-static int rustsecp256k1_v0_11_der_parse_integer(rustsecp256k1_v0_11_scalar *r, const unsigned char **sig, const unsigned char *sigend) {
+static int rustsecp256k1_v0_12_der_parse_integer(rustsecp256k1_v0_12_scalar *r, const unsigned char **sig, const unsigned char *sigend) {
     int overflow = 0;
     unsigned char ra[32] = {0};
     size_t rlen;
@@ -97,7 +97,7 @@ static int rustsecp256k1_v0_11_der_parse_integer(rustsecp256k1_v0_11_scalar *r, 
         return 0;
     }
     (*sig)++;
-    if (rustsecp256k1_v0_11_der_read_len(&rlen, sig, sigend) == 0) {
+    if (rustsecp256k1_v0_12_der_read_len(&rlen, sig, sigend) == 0) {
         return 0;
     }
     if (rlen == 0 || rlen > (size_t)(sigend - *sig)) {
@@ -129,23 +129,23 @@ static int rustsecp256k1_v0_11_der_parse_integer(rustsecp256k1_v0_11_scalar *r, 
     }
     if (!overflow) {
         if (rlen) memcpy(ra + 32 - rlen, *sig, rlen);
-        rustsecp256k1_v0_11_scalar_set_b32(r, ra, &overflow);
+        rustsecp256k1_v0_12_scalar_set_b32(r, ra, &overflow);
     }
     if (overflow) {
-        rustsecp256k1_v0_11_scalar_set_int(r, 0);
+        rustsecp256k1_v0_12_scalar_set_int(r, 0);
     }
     (*sig) += rlen;
     return 1;
 }
 
-static int rustsecp256k1_v0_11_ecdsa_sig_parse(rustsecp256k1_v0_11_scalar *rr, rustsecp256k1_v0_11_scalar *rs, const unsigned char *sig, size_t size) {
+static int rustsecp256k1_v0_12_ecdsa_sig_parse(rustsecp256k1_v0_12_scalar *rr, rustsecp256k1_v0_12_scalar *rs, const unsigned char *sig, size_t size) {
     const unsigned char *sigend = sig + size;
     size_t rlen;
     if (sig == sigend || *(sig++) != 0x30) {
         /* The encoding doesn't start with a constructed sequence (X.690-0207 8.9.1). */
         return 0;
     }
-    if (rustsecp256k1_v0_11_der_read_len(&rlen, &sig, sigend) == 0) {
+    if (rustsecp256k1_v0_12_der_read_len(&rlen, &sig, sigend) == 0) {
         return 0;
     }
     if (rlen != (size_t)(sigend - sig)) {
@@ -153,10 +153,10 @@ static int rustsecp256k1_v0_11_ecdsa_sig_parse(rustsecp256k1_v0_11_scalar *rr, r
         return 0;
     }
 
-    if (!rustsecp256k1_v0_11_der_parse_integer(rr, &sig, sigend)) {
+    if (!rustsecp256k1_v0_12_der_parse_integer(rr, &sig, sigend)) {
         return 0;
     }
-    if (!rustsecp256k1_v0_11_der_parse_integer(rs, &sig, sigend)) {
+    if (!rustsecp256k1_v0_12_der_parse_integer(rs, &sig, sigend)) {
         return 0;
     }
 
@@ -168,12 +168,12 @@ static int rustsecp256k1_v0_11_ecdsa_sig_parse(rustsecp256k1_v0_11_scalar *rr, r
     return 1;
 }
 
-static int rustsecp256k1_v0_11_ecdsa_sig_serialize(unsigned char *sig, size_t *size, const rustsecp256k1_v0_11_scalar* ar, const rustsecp256k1_v0_11_scalar* as) {
+static int rustsecp256k1_v0_12_ecdsa_sig_serialize(unsigned char *sig, size_t *size, const rustsecp256k1_v0_12_scalar* ar, const rustsecp256k1_v0_12_scalar* as) {
     unsigned char r[33] = {0}, s[33] = {0};
     unsigned char *rp = r, *sp = s;
     size_t lenR = 33, lenS = 33;
-    rustsecp256k1_v0_11_scalar_get_b32(&r[1], ar);
-    rustsecp256k1_v0_11_scalar_get_b32(&s[1], as);
+    rustsecp256k1_v0_12_scalar_get_b32(&r[1], ar);
+    rustsecp256k1_v0_12_scalar_get_b32(&s[1], as);
     while (lenR > 1 && rp[0] == 0 && rp[1] < 0x80) { lenR--; rp++; }
     while (lenS > 1 && sp[0] == 0 && sp[1] < 0x80) { lenS--; sp++; }
     if (*size < 6+lenS+lenR) {
@@ -192,43 +192,43 @@ static int rustsecp256k1_v0_11_ecdsa_sig_serialize(unsigned char *sig, size_t *s
     return 1;
 }
 
-static int rustsecp256k1_v0_11_ecdsa_sig_verify(const rustsecp256k1_v0_11_scalar *sigr, const rustsecp256k1_v0_11_scalar *sigs, const rustsecp256k1_v0_11_ge *pubkey, const rustsecp256k1_v0_11_scalar *message) {
+static int rustsecp256k1_v0_12_ecdsa_sig_verify(const rustsecp256k1_v0_12_scalar *sigr, const rustsecp256k1_v0_12_scalar *sigs, const rustsecp256k1_v0_12_ge *pubkey, const rustsecp256k1_v0_12_scalar *message) {
     unsigned char c[32];
-    rustsecp256k1_v0_11_scalar sn, u1, u2;
+    rustsecp256k1_v0_12_scalar sn, u1, u2;
 #if !defined(EXHAUSTIVE_TEST_ORDER)
-    rustsecp256k1_v0_11_fe xr;
+    rustsecp256k1_v0_12_fe xr;
 #endif
-    rustsecp256k1_v0_11_gej pubkeyj;
-    rustsecp256k1_v0_11_gej pr;
+    rustsecp256k1_v0_12_gej pubkeyj;
+    rustsecp256k1_v0_12_gej pr;
 
-    if (rustsecp256k1_v0_11_scalar_is_zero(sigr) || rustsecp256k1_v0_11_scalar_is_zero(sigs)) {
+    if (rustsecp256k1_v0_12_scalar_is_zero(sigr) || rustsecp256k1_v0_12_scalar_is_zero(sigs)) {
         return 0;
     }
 
-    rustsecp256k1_v0_11_scalar_inverse_var(&sn, sigs);
-    rustsecp256k1_v0_11_scalar_mul(&u1, &sn, message);
-    rustsecp256k1_v0_11_scalar_mul(&u2, &sn, sigr);
-    rustsecp256k1_v0_11_gej_set_ge(&pubkeyj, pubkey);
-    rustsecp256k1_v0_11_ecmult(&pr, &pubkeyj, &u2, &u1);
-    if (rustsecp256k1_v0_11_gej_is_infinity(&pr)) {
+    rustsecp256k1_v0_12_scalar_inverse_var(&sn, sigs);
+    rustsecp256k1_v0_12_scalar_mul(&u1, &sn, message);
+    rustsecp256k1_v0_12_scalar_mul(&u2, &sn, sigr);
+    rustsecp256k1_v0_12_gej_set_ge(&pubkeyj, pubkey);
+    rustsecp256k1_v0_12_ecmult(&pr, &pubkeyj, &u2, &u1);
+    if (rustsecp256k1_v0_12_gej_is_infinity(&pr)) {
         return 0;
     }
 
 #if defined(EXHAUSTIVE_TEST_ORDER)
 {
-    rustsecp256k1_v0_11_scalar computed_r;
-    rustsecp256k1_v0_11_ge pr_ge;
-    rustsecp256k1_v0_11_ge_set_gej(&pr_ge, &pr);
-    rustsecp256k1_v0_11_fe_normalize(&pr_ge.x);
+    rustsecp256k1_v0_12_scalar computed_r;
+    rustsecp256k1_v0_12_ge pr_ge;
+    rustsecp256k1_v0_12_ge_set_gej(&pr_ge, &pr);
+    rustsecp256k1_v0_12_fe_normalize(&pr_ge.x);
 
-    rustsecp256k1_v0_11_fe_get_b32(c, &pr_ge.x);
-    rustsecp256k1_v0_11_scalar_set_b32(&computed_r, c, NULL);
-    return rustsecp256k1_v0_11_scalar_eq(sigr, &computed_r);
+    rustsecp256k1_v0_12_fe_get_b32(c, &pr_ge.x);
+    rustsecp256k1_v0_12_scalar_set_b32(&computed_r, c, NULL);
+    return rustsecp256k1_v0_12_scalar_eq(sigr, &computed_r);
 }
 #else
-    rustsecp256k1_v0_11_scalar_get_b32(c, sigr);
+    rustsecp256k1_v0_12_scalar_get_b32(c, sigr);
     /* we can ignore the fe_set_b32_limit return value, because we know the input is in range */
-    (void)rustsecp256k1_v0_11_fe_set_b32_limit(&xr, c);
+    (void)rustsecp256k1_v0_12_fe_set_b32_limit(&xr, c);
 
     /** We now have the recomputed R point in pr, and its claimed x coordinate (modulo n)
      *  in xr. Naively, we would extract the x coordinate from pr (requiring a inversion modulo p),
@@ -244,18 +244,18 @@ static int rustsecp256k1_v0_11_ecdsa_sig_verify(const rustsecp256k1_v0_11_scalar
      *    <=> (xr * pr.z^2 mod p == pr.x) || (xr + n < p && (xr + n) * pr.z^2 mod p == pr.x)
      *
      *  Thus, we can avoid the inversion, but we have to check both cases separately.
-     *  rustsecp256k1_v0_11_gej_eq_x implements the (xr * pr.z^2 mod p == pr.x) test.
+     *  rustsecp256k1_v0_12_gej_eq_x implements the (xr * pr.z^2 mod p == pr.x) test.
      */
-    if (rustsecp256k1_v0_11_gej_eq_x_var(&xr, &pr)) {
+    if (rustsecp256k1_v0_12_gej_eq_x_var(&xr, &pr)) {
         /* xr * pr.z^2 mod p == pr.x, so the signature is valid. */
         return 1;
     }
-    if (rustsecp256k1_v0_11_fe_cmp_var(&xr, &rustsecp256k1_v0_11_ecdsa_const_p_minus_order) >= 0) {
+    if (rustsecp256k1_v0_12_fe_cmp_var(&xr, &rustsecp256k1_v0_12_ecdsa_const_p_minus_order) >= 0) {
         /* xr + n >= p, so we can skip testing the second case. */
         return 0;
     }
-    rustsecp256k1_v0_11_fe_add(&xr, &rustsecp256k1_v0_11_ecdsa_const_order_as_fe);
-    if (rustsecp256k1_v0_11_gej_eq_x_var(&xr, &pr)) {
+    rustsecp256k1_v0_12_fe_add(&xr, &rustsecp256k1_v0_12_ecdsa_const_order_as_fe);
+    if (rustsecp256k1_v0_12_gej_eq_x_var(&xr, &pr)) {
         /* (xr + n) * pr.z^2 mod p == pr.x, so the signature is valid. */
         return 1;
     }
@@ -263,42 +263,42 @@ static int rustsecp256k1_v0_11_ecdsa_sig_verify(const rustsecp256k1_v0_11_scalar
 #endif
 }
 
-static int rustsecp256k1_v0_11_ecdsa_sig_sign(const rustsecp256k1_v0_11_ecmult_gen_context *ctx, rustsecp256k1_v0_11_scalar *sigr, rustsecp256k1_v0_11_scalar *sigs, const rustsecp256k1_v0_11_scalar *seckey, const rustsecp256k1_v0_11_scalar *message, const rustsecp256k1_v0_11_scalar *nonce, int *recid) {
+static int rustsecp256k1_v0_12_ecdsa_sig_sign(const rustsecp256k1_v0_12_ecmult_gen_context *ctx, rustsecp256k1_v0_12_scalar *sigr, rustsecp256k1_v0_12_scalar *sigs, const rustsecp256k1_v0_12_scalar *seckey, const rustsecp256k1_v0_12_scalar *message, const rustsecp256k1_v0_12_scalar *nonce, int *recid) {
     unsigned char b[32];
-    rustsecp256k1_v0_11_gej rp;
-    rustsecp256k1_v0_11_ge r;
-    rustsecp256k1_v0_11_scalar n;
+    rustsecp256k1_v0_12_gej rp;
+    rustsecp256k1_v0_12_ge r;
+    rustsecp256k1_v0_12_scalar n;
     int overflow = 0;
     int high;
 
-    rustsecp256k1_v0_11_ecmult_gen(ctx, &rp, nonce);
-    rustsecp256k1_v0_11_ge_set_gej(&r, &rp);
-    rustsecp256k1_v0_11_fe_normalize(&r.x);
-    rustsecp256k1_v0_11_fe_normalize(&r.y);
-    rustsecp256k1_v0_11_fe_get_b32(b, &r.x);
-    rustsecp256k1_v0_11_scalar_set_b32(sigr, b, &overflow);
+    rustsecp256k1_v0_12_ecmult_gen(ctx, &rp, nonce);
+    rustsecp256k1_v0_12_ge_set_gej(&r, &rp);
+    rustsecp256k1_v0_12_fe_normalize(&r.x);
+    rustsecp256k1_v0_12_fe_normalize(&r.y);
+    rustsecp256k1_v0_12_fe_get_b32(b, &r.x);
+    rustsecp256k1_v0_12_scalar_set_b32(sigr, b, &overflow);
     if (recid) {
         /* The overflow condition is cryptographically unreachable as hitting it requires finding the discrete log
          * of some P where P.x >= order, and only 1 in about 2^127 points meet this criteria.
          */
-        *recid = (overflow << 1) | rustsecp256k1_v0_11_fe_is_odd(&r.y);
+        *recid = (overflow << 1) | rustsecp256k1_v0_12_fe_is_odd(&r.y);
     }
-    rustsecp256k1_v0_11_scalar_mul(&n, sigr, seckey);
-    rustsecp256k1_v0_11_scalar_add(&n, &n, message);
-    rustsecp256k1_v0_11_scalar_inverse(sigs, nonce);
-    rustsecp256k1_v0_11_scalar_mul(sigs, sigs, &n);
-    rustsecp256k1_v0_11_scalar_clear(&n);
-    rustsecp256k1_v0_11_gej_clear(&rp);
-    rustsecp256k1_v0_11_ge_clear(&r);
-    high = rustsecp256k1_v0_11_scalar_is_high(sigs);
-    rustsecp256k1_v0_11_scalar_cond_negate(sigs, high);
+    rustsecp256k1_v0_12_scalar_mul(&n, sigr, seckey);
+    rustsecp256k1_v0_12_scalar_add(&n, &n, message);
+    rustsecp256k1_v0_12_scalar_inverse(sigs, nonce);
+    rustsecp256k1_v0_12_scalar_mul(sigs, sigs, &n);
+    rustsecp256k1_v0_12_scalar_clear(&n);
+    rustsecp256k1_v0_12_gej_clear(&rp);
+    rustsecp256k1_v0_12_ge_clear(&r);
+    high = rustsecp256k1_v0_12_scalar_is_high(sigs);
+    rustsecp256k1_v0_12_scalar_cond_negate(sigs, high);
     if (recid) {
         *recid ^= high;
     }
     /* P.x = order is on the curve, so technically sig->r could end up being zero, which would be an invalid signature.
      * This is cryptographically unreachable as hitting it requires finding the discrete log of P.x = N.
      */
-    return (int)(!rustsecp256k1_v0_11_scalar_is_zero(sigr)) & (int)(!rustsecp256k1_v0_11_scalar_is_zero(sigs));
+    return (int)(!rustsecp256k1_v0_12_scalar_is_zero(sigr)) & (int)(!rustsecp256k1_v0_12_scalar_is_zero(sigs));
 }
 
 #endif /* SECP256K1_ECDSA_IMPL_H */

@@ -21,10 +21,10 @@
  */
 
 #ifdef VERIFY
-static const rustsecp256k1_v0_11_modinv32_signed30 SECP256K1_SIGNED30_ONE = {{1}};
+static const rustsecp256k1_v0_12_modinv32_signed30 SECP256K1_SIGNED30_ONE = {{1}};
 
 /* Compute a*factor and put it in r. All but the top limb in r will be in range [0,2^30). */
-static void rustsecp256k1_v0_11_modinv32_mul_30(rustsecp256k1_v0_11_modinv32_signed30 *r, const rustsecp256k1_v0_11_modinv32_signed30 *a, int alen, int32_t factor) {
+static void rustsecp256k1_v0_12_modinv32_mul_30(rustsecp256k1_v0_12_modinv32_signed30 *r, const rustsecp256k1_v0_12_modinv32_signed30 *a, int alen, int32_t factor) {
     const int32_t M30 = (int32_t)(UINT32_MAX >> 2);
     int64_t c = 0;
     int i;
@@ -38,11 +38,11 @@ static void rustsecp256k1_v0_11_modinv32_mul_30(rustsecp256k1_v0_11_modinv32_sig
 }
 
 /* Return -1 for a<b*factor, 0 for a==b*factor, 1 for a>b*factor. A consists of alen limbs; b has 9. */
-static int rustsecp256k1_v0_11_modinv32_mul_cmp_30(const rustsecp256k1_v0_11_modinv32_signed30 *a, int alen, const rustsecp256k1_v0_11_modinv32_signed30 *b, int32_t factor) {
+static int rustsecp256k1_v0_12_modinv32_mul_cmp_30(const rustsecp256k1_v0_12_modinv32_signed30 *a, int alen, const rustsecp256k1_v0_12_modinv32_signed30 *b, int32_t factor) {
     int i;
-    rustsecp256k1_v0_11_modinv32_signed30 am, bm;
-    rustsecp256k1_v0_11_modinv32_mul_30(&am, a, alen, 1); /* Normalize all but the top limb of a. */
-    rustsecp256k1_v0_11_modinv32_mul_30(&bm, b, 9, factor);
+    rustsecp256k1_v0_12_modinv32_signed30 am, bm;
+    rustsecp256k1_v0_12_modinv32_mul_30(&am, a, alen, 1); /* Normalize all but the top limb of a. */
+    rustsecp256k1_v0_12_modinv32_mul_30(&bm, b, 9, factor);
     for (i = 0; i < 8; ++i) {
         /* Verify that all but the top limb of a and b are normalized. */
         VERIFY_CHECK(am.v[i] >> 30 == 0);
@@ -60,7 +60,7 @@ static int rustsecp256k1_v0_11_modinv32_mul_cmp_30(const rustsecp256k1_v0_11_mod
  * to it to bring it to range [0,modulus). If sign < 0, the input will also be negated in the
  * process. The input must have limbs in range (-2^30,2^30). The output will have limbs in range
  * [0,2^30). */
-static void rustsecp256k1_v0_11_modinv32_normalize_30(rustsecp256k1_v0_11_modinv32_signed30 *r, int32_t sign, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo) {
+static void rustsecp256k1_v0_12_modinv32_normalize_30(rustsecp256k1_v0_12_modinv32_signed30 *r, int32_t sign, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo) {
     const int32_t M30 = (int32_t)(UINT32_MAX >> 2);
     int32_t r0 = r->v[0], r1 = r->v[1], r2 = r->v[2], r3 = r->v[3], r4 = r->v[4],
             r5 = r->v[5], r6 = r->v[6], r7 = r->v[7], r8 = r->v[8];
@@ -73,8 +73,8 @@ static void rustsecp256k1_v0_11_modinv32_normalize_30(rustsecp256k1_v0_11_modinv
         VERIFY_CHECK(r->v[i] >= -M30);
         VERIFY_CHECK(r->v[i] <= M30);
     }
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, -2) > 0); /* r > -2*modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 1) < 0); /* r < modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, -2) > 0); /* r > -2*modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 1) < 0); /* r < modulus */
 #endif
 
     /* In a first step, add the modulus if the input is negative, and then negate if requested.
@@ -153,8 +153,8 @@ static void rustsecp256k1_v0_11_modinv32_normalize_30(rustsecp256k1_v0_11_modinv
     VERIFY_CHECK(r6 >> 30 == 0);
     VERIFY_CHECK(r7 >> 30 == 0);
     VERIFY_CHECK(r8 >> 30 == 0);
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 0) >= 0); /* r >= 0 */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 1) < 0); /* r < modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 0) >= 0); /* r >= 0 */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(r, 9, &modinfo->modulus, 1) < 0); /* r < modulus */
 }
 
 /* Data type for transition matrices (see section 3 of explanation).
@@ -164,7 +164,7 @@ static void rustsecp256k1_v0_11_modinv32_normalize_30(rustsecp256k1_v0_11_modinv
  */
 typedef struct {
     int32_t u, v, q, r;
-} rustsecp256k1_v0_11_modinv32_trans2x2;
+} rustsecp256k1_v0_12_modinv32_trans2x2;
 
 /* Compute the transition matrix and zeta for 30 divsteps.
  *
@@ -176,7 +176,7 @@ typedef struct {
  *
  * Implements the divsteps_n_matrix function from the explanation.
  */
-static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30(int32_t zeta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_11_modinv32_trans2x2 *t) {
+static int32_t rustsecp256k1_v0_12_modinv32_divsteps_30(int32_t zeta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_12_modinv32_trans2x2 *t) {
     /* u,v,q,r are the elements of the transformation matrix being built up,
      * starting with the identity matrix. Semantically they are signed integers
      * in range [-2^30,2^30], but here represented as unsigned mod 2^32. This
@@ -233,8 +233,8 @@ static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30(int32_t zeta, uint32_t f
     return zeta;
 }
 
-/* rustsecp256k1_v0_11_modinv32_inv256[i] = -(2*i+1)^-1 (mod 256) */
-static const uint8_t rustsecp256k1_v0_11_modinv32_inv256[128] = {
+/* rustsecp256k1_v0_12_modinv32_inv256[i] = -(2*i+1)^-1 (mod 256) */
+static const uint8_t rustsecp256k1_v0_12_modinv32_inv256[128] = {
     0xFF, 0x55, 0x33, 0x49, 0xC7, 0x5D, 0x3B, 0x11, 0x0F, 0xE5, 0xC3, 0x59,
     0xD7, 0xED, 0xCB, 0x21, 0x1F, 0x75, 0x53, 0x69, 0xE7, 0x7D, 0x5B, 0x31,
     0x2F, 0x05, 0xE3, 0x79, 0xF7, 0x0D, 0xEB, 0x41, 0x3F, 0x95, 0x73, 0x89,
@@ -258,8 +258,8 @@ static const uint8_t rustsecp256k1_v0_11_modinv32_inv256[128] = {
  *
  * Implements the divsteps_n_matrix_var function from the explanation.
  */
-static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30_var(int32_t eta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_11_modinv32_trans2x2 *t) {
-    /* Transformation matrix; see comments in rustsecp256k1_v0_11_modinv32_divsteps_30. */
+static int32_t rustsecp256k1_v0_12_modinv32_divsteps_30_var(int32_t eta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_12_modinv32_trans2x2 *t) {
+    /* Transformation matrix; see comments in rustsecp256k1_v0_12_modinv32_divsteps_30. */
     uint32_t u = 1, v = 0, q = 0, r = 1;
     uint32_t f = f0, g = g0, m;
     uint16_t w;
@@ -267,7 +267,7 @@ static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30_var(int32_t eta, uint32_
 
     for (;;) {
         /* Use a sentinel bit to count zeros only up to i. */
-        zeros = rustsecp256k1_v0_11_ctz32_var(g | (UINT32_MAX << i));
+        zeros = rustsecp256k1_v0_12_ctz32_var(g | (UINT32_MAX << i));
         /* Perform zeros divsteps at once; they all just divide g by two. */
         g >>= zeros;
         u <<= zeros;
@@ -298,7 +298,7 @@ static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30_var(int32_t eta, uint32_
         VERIFY_CHECK(limit > 0 && limit <= 30);
         m = (UINT32_MAX >> (32 - limit)) & 255U;
         /* Find what multiple of f must be added to g to cancel its bottom min(limit, 8) bits. */
-        w = (g * rustsecp256k1_v0_11_modinv32_inv256[(f >> 1) & 127]) & m;
+        w = (g * rustsecp256k1_v0_12_modinv32_inv256[(f >> 1) & 127]) & m;
         /* Do so. */
         g += f * w;
         q += u * w;
@@ -331,7 +331,7 @@ static int32_t rustsecp256k1_v0_11_modinv32_divsteps_30_var(int32_t eta, uint32_
  *               change, but are meaningless.
  * Return: final eta
  */
-static int32_t rustsecp256k1_v0_11_modinv32_posdivsteps_30_var(int32_t eta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_11_modinv32_trans2x2 *t, int *jacp) {
+static int32_t rustsecp256k1_v0_12_modinv32_posdivsteps_30_var(int32_t eta, uint32_t f0, uint32_t g0, rustsecp256k1_v0_12_modinv32_trans2x2 *t, int *jacp) {
     /* Transformation matrix. */
     uint32_t u = 1, v = 0, q = 0, r = 1;
     uint32_t f = f0, g = g0, m;
@@ -341,7 +341,7 @@ static int32_t rustsecp256k1_v0_11_modinv32_posdivsteps_30_var(int32_t eta, uint
 
     for (;;) {
         /* Use a sentinel bit to count zeros only up to i. */
-        zeros = rustsecp256k1_v0_11_ctz32_var(g | (UINT32_MAX << i));
+        zeros = rustsecp256k1_v0_12_ctz32_var(g | (UINT32_MAX << i));
         /* Perform zeros divsteps at once; they all just divide g by two. */
         g >>= zeros;
         u <<= zeros;
@@ -376,7 +376,7 @@ static int32_t rustsecp256k1_v0_11_modinv32_posdivsteps_30_var(int32_t eta, uint
         VERIFY_CHECK(limit > 0 && limit <= 30);
         m = (UINT32_MAX >> (32 - limit)) & 255U;
         /* Find what multiple of f must be added to g to cancel its bottom min(limit, 8) bits. */
-        w = (g * rustsecp256k1_v0_11_modinv32_inv256[(f >> 1) & 127]) & m;
+        w = (g * rustsecp256k1_v0_12_modinv32_inv256[(f >> 1) & 127]) & m;
         /* Do so. */
         g += f * w;
         q += u * w;
@@ -405,16 +405,16 @@ static int32_t rustsecp256k1_v0_11_modinv32_posdivsteps_30_var(int32_t eta, uint
  *
  * This implements the update_de function from the explanation.
  */
-static void rustsecp256k1_v0_11_modinv32_update_de_30(rustsecp256k1_v0_11_modinv32_signed30 *d, rustsecp256k1_v0_11_modinv32_signed30 *e, const rustsecp256k1_v0_11_modinv32_trans2x2 *t, const rustsecp256k1_v0_11_modinv32_modinfo* modinfo) {
+static void rustsecp256k1_v0_12_modinv32_update_de_30(rustsecp256k1_v0_12_modinv32_signed30 *d, rustsecp256k1_v0_12_modinv32_signed30 *e, const rustsecp256k1_v0_12_modinv32_trans2x2 *t, const rustsecp256k1_v0_12_modinv32_modinfo* modinfo) {
     const int32_t M30 = (int32_t)(UINT32_MAX >> 2);
     const int32_t u = t->u, v = t->v, q = t->q, r = t->r;
     int32_t di, ei, md, me, sd, se;
     int64_t cd, ce;
     int i;
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, -2) > 0); /* d > -2*modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, 1) < 0);  /* d <    modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, -2) > 0); /* e > -2*modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, 1) < 0);  /* e <    modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, -2) > 0); /* d > -2*modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, 1) < 0);  /* d <    modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, -2) > 0); /* e > -2*modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, 1) < 0);  /* e <    modulus */
     VERIFY_CHECK(labs(u) <= (M30 + 1 - labs(v))); /* |u|+|v| <= 2^30 */
     VERIFY_CHECK(labs(q) <= (M30 + 1 - labs(r))); /* |q|+|r| <= 2^30 */
 
@@ -453,17 +453,17 @@ static void rustsecp256k1_v0_11_modinv32_update_de_30(rustsecp256k1_v0_11_modinv
     d->v[8] = (int32_t)cd;
     e->v[8] = (int32_t)ce;
 
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, -2) > 0); /* d > -2*modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, 1) < 0);  /* d <    modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, -2) > 0); /* e > -2*modulus */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, 1) < 0);  /* e <    modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, -2) > 0); /* d > -2*modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(d, 9, &modinfo->modulus, 1) < 0);  /* d <    modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, -2) > 0); /* e > -2*modulus */
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(e, 9, &modinfo->modulus, 1) < 0);  /* e <    modulus */
 }
 
 /* Compute (t/2^30) * [f, g], where t is a transition matrix for 30 divsteps.
  *
  * This implements the update_fg function from the explanation.
  */
-static void rustsecp256k1_v0_11_modinv32_update_fg_30(rustsecp256k1_v0_11_modinv32_signed30 *f, rustsecp256k1_v0_11_modinv32_signed30 *g, const rustsecp256k1_v0_11_modinv32_trans2x2 *t) {
+static void rustsecp256k1_v0_12_modinv32_update_fg_30(rustsecp256k1_v0_12_modinv32_signed30 *f, rustsecp256k1_v0_12_modinv32_signed30 *g, const rustsecp256k1_v0_12_modinv32_trans2x2 *t) {
     const int32_t M30 = (int32_t)(UINT32_MAX >> 2);
     const int32_t u = t->u, v = t->v, q = t->q, r = t->r;
     int32_t fi, gi;
@@ -498,7 +498,7 @@ static void rustsecp256k1_v0_11_modinv32_update_fg_30(rustsecp256k1_v0_11_modinv
  *
  * This implements the update_fg function from the explanation in modinv64_impl.h.
  */
-static void rustsecp256k1_v0_11_modinv32_update_fg_30_var(int len, rustsecp256k1_v0_11_modinv32_signed30 *f, rustsecp256k1_v0_11_modinv32_signed30 *g, const rustsecp256k1_v0_11_modinv32_trans2x2 *t) {
+static void rustsecp256k1_v0_12_modinv32_update_fg_30_var(int len, rustsecp256k1_v0_12_modinv32_signed30 *f, rustsecp256k1_v0_12_modinv32_signed30 *g, const rustsecp256k1_v0_12_modinv32_trans2x2 *t) {
     const int32_t M30 = (int32_t)(UINT32_MAX >> 2);
     const int32_t u = t->u, v = t->v, q = t->q, r = t->r;
     int32_t fi, gi;
@@ -529,34 +529,34 @@ static void rustsecp256k1_v0_11_modinv32_update_fg_30_var(int len, rustsecp256k1
 }
 
 /* Compute the inverse of x modulo modinfo->modulus, and replace x with it (constant time in x). */
-static void rustsecp256k1_v0_11_modinv32(rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo) {
+static void rustsecp256k1_v0_12_modinv32(rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo) {
     /* Start with d=0, e=1, f=modulus, g=x, zeta=-1. */
-    rustsecp256k1_v0_11_modinv32_signed30 d = {{0}};
-    rustsecp256k1_v0_11_modinv32_signed30 e = {{1}};
-    rustsecp256k1_v0_11_modinv32_signed30 f = modinfo->modulus;
-    rustsecp256k1_v0_11_modinv32_signed30 g = *x;
+    rustsecp256k1_v0_12_modinv32_signed30 d = {{0}};
+    rustsecp256k1_v0_12_modinv32_signed30 e = {{1}};
+    rustsecp256k1_v0_12_modinv32_signed30 f = modinfo->modulus;
+    rustsecp256k1_v0_12_modinv32_signed30 g = *x;
     int i;
     int32_t zeta = -1; /* zeta = -(delta+1/2); delta is initially 1/2. */
 
     /* Do 20 iterations of 30 divsteps each = 600 divsteps. 590 suffices for 256-bit inputs. */
     for (i = 0; i < 20; ++i) {
         /* Compute transition matrix and new zeta after 30 divsteps. */
-        rustsecp256k1_v0_11_modinv32_trans2x2 t;
-        zeta = rustsecp256k1_v0_11_modinv32_divsteps_30(zeta, f.v[0], g.v[0], &t);
+        rustsecp256k1_v0_12_modinv32_trans2x2 t;
+        zeta = rustsecp256k1_v0_12_modinv32_divsteps_30(zeta, f.v[0], g.v[0], &t);
         /* Update d,e using that transition matrix. */
-        rustsecp256k1_v0_11_modinv32_update_de_30(&d, &e, &t, modinfo);
+        rustsecp256k1_v0_12_modinv32_update_de_30(&d, &e, &t, modinfo);
         /* Update f,g using that transition matrix. */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, -1) > 0); /* f > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, -1) > 0); /* g > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, 1) < 0);  /* g <  modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, -1) > 0); /* f > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, -1) > 0); /* g > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, 1) < 0);  /* g <  modulus */
 
-        rustsecp256k1_v0_11_modinv32_update_fg_30(&f, &g, &t);
+        rustsecp256k1_v0_12_modinv32_update_fg_30(&f, &g, &t);
 
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, -1) > 0); /* f > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, -1) > 0); /* g > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, 1) < 0);  /* g <  modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, -1) > 0); /* f > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, -1) > 0); /* g > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, 9, &modinfo->modulus, 1) < 0);  /* g <  modulus */
     }
 
     /* At this point sufficient iterations have been performed that g must have reached 0
@@ -564,26 +564,26 @@ static void rustsecp256k1_v0_11_modinv32(rustsecp256k1_v0_11_modinv32_signed30 *
      * values i.e. +/- 1, and d now contains +/- the modular inverse. */
 
     /* g == 0 */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, 9, &SECP256K1_SIGNED30_ONE, 0) == 0);
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, 9, &SECP256K1_SIGNED30_ONE, 0) == 0);
     /* |f| == 1, or (x == 0 and d == 0 and f == modulus) */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &SECP256K1_SIGNED30_ONE, -1) == 0 ||
-                 rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &SECP256K1_SIGNED30_ONE, 1) == 0 ||
-                 (rustsecp256k1_v0_11_modinv32_mul_cmp_30(x, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
-                  rustsecp256k1_v0_11_modinv32_mul_cmp_30(&d, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
-                  rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) == 0));
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &SECP256K1_SIGNED30_ONE, -1) == 0 ||
+                 rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &SECP256K1_SIGNED30_ONE, 1) == 0 ||
+                 (rustsecp256k1_v0_12_modinv32_mul_cmp_30(x, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
+                  rustsecp256k1_v0_12_modinv32_mul_cmp_30(&d, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
+                  rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, 9, &modinfo->modulus, 1) == 0));
 
     /* Optionally negate d, normalize to [0,modulus), and return it. */
-    rustsecp256k1_v0_11_modinv32_normalize_30(&d, f.v[8], modinfo);
+    rustsecp256k1_v0_12_modinv32_normalize_30(&d, f.v[8], modinfo);
     *x = d;
 }
 
 /* Compute the inverse of x modulo modinfo->modulus, and replace x with it (variable time). */
-static void rustsecp256k1_v0_11_modinv32_var(rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo) {
+static void rustsecp256k1_v0_12_modinv32_var(rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo) {
     /* Start with d=0, e=1, f=modulus, g=x, eta=-1. */
-    rustsecp256k1_v0_11_modinv32_signed30 d = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
-    rustsecp256k1_v0_11_modinv32_signed30 e = {{1, 0, 0, 0, 0, 0, 0, 0, 0}};
-    rustsecp256k1_v0_11_modinv32_signed30 f = modinfo->modulus;
-    rustsecp256k1_v0_11_modinv32_signed30 g = *x;
+    rustsecp256k1_v0_12_modinv32_signed30 d = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    rustsecp256k1_v0_12_modinv32_signed30 e = {{1, 0, 0, 0, 0, 0, 0, 0, 0}};
+    rustsecp256k1_v0_12_modinv32_signed30 f = modinfo->modulus;
+    rustsecp256k1_v0_12_modinv32_signed30 g = *x;
 #ifdef VERIFY
     int i = 0;
 #endif
@@ -594,18 +594,18 @@ static void rustsecp256k1_v0_11_modinv32_var(rustsecp256k1_v0_11_modinv32_signed
     /* Do iterations of 30 divsteps each until g=0. */
     while (1) {
         /* Compute transition matrix and new eta after 30 divsteps. */
-        rustsecp256k1_v0_11_modinv32_trans2x2 t;
-        eta = rustsecp256k1_v0_11_modinv32_divsteps_30_var(eta, f.v[0], g.v[0], &t);
+        rustsecp256k1_v0_12_modinv32_trans2x2 t;
+        eta = rustsecp256k1_v0_12_modinv32_divsteps_30_var(eta, f.v[0], g.v[0], &t);
         /* Update d,e using that transition matrix. */
-        rustsecp256k1_v0_11_modinv32_update_de_30(&d, &e, &t, modinfo);
+        rustsecp256k1_v0_12_modinv32_update_de_30(&d, &e, &t, modinfo);
         /* Update f,g using that transition matrix. */
 
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, -1) > 0); /* f > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, -1) > 0); /* g > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g <  modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, -1) > 0); /* f > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, -1) > 0); /* g > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g <  modulus */
 
-        rustsecp256k1_v0_11_modinv32_update_fg_30_var(len, &f, &g, &t);
+        rustsecp256k1_v0_12_modinv32_update_fg_30_var(len, &f, &g, &t);
         /* If the bottom limb of g is 0, there is a chance g=0. */
         if (g.v[0] == 0) {
             cond = 0;
@@ -631,26 +631,26 @@ static void rustsecp256k1_v0_11_modinv32_var(rustsecp256k1_v0_11_modinv32_signed
         }
 
         VERIFY_CHECK(++i < 25); /* We should never need more than 25*30 = 750 divsteps */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, -1) > 0); /* f > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, -1) > 0); /* g > -modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g <  modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, -1) > 0); /* f > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, -1) > 0); /* g > -modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g <  modulus */
     }
 
     /* At this point g is 0 and (if g was not originally 0) f must now equal +/- GCD of
      * the initial f, g values i.e. +/- 1, and d now contains +/- the modular inverse. */
 
     /* g == 0 */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &SECP256K1_SIGNED30_ONE, 0) == 0);
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &SECP256K1_SIGNED30_ONE, 0) == 0);
     /* |f| == 1, or (x == 0 and d == 0 and f == modulus) */
-    VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &SECP256K1_SIGNED30_ONE, -1) == 0 ||
-                 rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &SECP256K1_SIGNED30_ONE, 1) == 0 ||
-                 (rustsecp256k1_v0_11_modinv32_mul_cmp_30(x, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
-                  rustsecp256k1_v0_11_modinv32_mul_cmp_30(&d, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
-                  rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) == 0));
+    VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &SECP256K1_SIGNED30_ONE, -1) == 0 ||
+                 rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &SECP256K1_SIGNED30_ONE, 1) == 0 ||
+                 (rustsecp256k1_v0_12_modinv32_mul_cmp_30(x, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
+                  rustsecp256k1_v0_12_modinv32_mul_cmp_30(&d, 9, &SECP256K1_SIGNED30_ONE, 0) == 0 &&
+                  rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) == 0));
 
     /* Optionally negate d, normalize to [0,modulus), and return it. */
-    rustsecp256k1_v0_11_modinv32_normalize_30(&d, f.v[len - 1], modinfo);
+    rustsecp256k1_v0_12_modinv32_normalize_30(&d, f.v[len - 1], modinfo);
     *x = d;
 }
 
@@ -663,10 +663,10 @@ static void rustsecp256k1_v0_11_modinv32_var(rustsecp256k1_v0_11_modinv32_signed
 #endif
 
 /* Compute the Jacobi symbol of x modulo modinfo->modulus (variable time). gcd(x,modulus) must be 1. */
-static int rustsecp256k1_v0_11_jacobi32_maybe_var(const rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo) {
+static int rustsecp256k1_v0_12_jacobi32_maybe_var(const rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo) {
     /* Start with f=modulus, g=x, eta=-1. */
-    rustsecp256k1_v0_11_modinv32_signed30 f = modinfo->modulus;
-    rustsecp256k1_v0_11_modinv32_signed30 g = *x;
+    rustsecp256k1_v0_12_modinv32_signed30 f = modinfo->modulus;
+    rustsecp256k1_v0_12_modinv32_signed30 g = *x;
     int j, len = 9;
     int32_t eta = -1; /* eta = -delta; delta is initially 1 */
     int32_t cond, fn, gn;
@@ -683,15 +683,15 @@ static int rustsecp256k1_v0_11_jacobi32_maybe_var(const rustsecp256k1_v0_11_modi
 
     for (count = 0; count < JACOBI32_ITERATIONS; ++count) {
         /* Compute transition matrix and new eta after 30 posdivsteps. */
-        rustsecp256k1_v0_11_modinv32_trans2x2 t;
-        eta = rustsecp256k1_v0_11_modinv32_posdivsteps_30_var(eta, f.v[0] | ((uint32_t)f.v[1] << 30), g.v[0] | ((uint32_t)g.v[1] << 30), &t, &jac);
+        rustsecp256k1_v0_12_modinv32_trans2x2 t;
+        eta = rustsecp256k1_v0_12_modinv32_posdivsteps_30_var(eta, f.v[0] | ((uint32_t)f.v[1] << 30), g.v[0] | ((uint32_t)g.v[1] << 30), &t, &jac);
         /* Update f,g using that transition matrix. */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 0) > 0); /* f > 0 */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 0) > 0); /* g > 0 */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g < modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 0) > 0); /* f > 0 */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 0) > 0); /* g > 0 */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g < modulus */
 
-        rustsecp256k1_v0_11_modinv32_update_fg_30_var(len, &f, &g, &t);
+        rustsecp256k1_v0_12_modinv32_update_fg_30_var(len, &f, &g, &t);
         /* If the bottom limb of f is 1, there is a chance that f=1. */
         if (f.v[0] == 1) {
             cond = 0;
@@ -712,10 +712,10 @@ static int rustsecp256k1_v0_11_jacobi32_maybe_var(const rustsecp256k1_v0_11_modi
         /* If so, reduce length. */
         if (cond == 0) --len;
 
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 0) > 0); /* f > 0 */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 0) > 0); /* g > 0 */
-        VERIFY_CHECK(rustsecp256k1_v0_11_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g < modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 0) > 0); /* f > 0 */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&f, len, &modinfo->modulus, 1) <= 0); /* f <= modulus */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 0) > 0); /* g > 0 */
+        VERIFY_CHECK(rustsecp256k1_v0_12_modinv32_mul_cmp_30(&g, len, &modinfo->modulus, 1) < 0);  /* g < modulus */
     }
 
     /* The loop failed to converge to f=g after 1500 iterations. Return 0, indicating unknown result. */

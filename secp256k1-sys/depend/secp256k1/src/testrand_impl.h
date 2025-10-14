@@ -15,24 +15,24 @@
 #include "hash.h"
 #include "util.h"
 
-static uint64_t rustsecp256k1_v0_11_test_state[4];
+static uint64_t rustsecp256k1_v0_12_test_state[4];
 
 SECP256K1_INLINE static void testrand_seed(const unsigned char *seed16) {
     static const unsigned char PREFIX[] = {'s', 'e', 'c', 'p', '2', '5', '6', 'k', '1', ' ', 't', 'e', 's', 't', ' ', 'i', 'n', 'i', 't'};
     unsigned char out32[32];
-    rustsecp256k1_v0_11_sha256 hash;
+    rustsecp256k1_v0_12_sha256 hash;
     int i;
 
     /* Use SHA256(PREFIX || seed16) as initial state. */
-    rustsecp256k1_v0_11_sha256_initialize(&hash);
-    rustsecp256k1_v0_11_sha256_write(&hash, PREFIX, sizeof(PREFIX));
-    rustsecp256k1_v0_11_sha256_write(&hash, seed16, 16);
-    rustsecp256k1_v0_11_sha256_finalize(&hash, out32);
+    rustsecp256k1_v0_12_sha256_initialize(&hash);
+    rustsecp256k1_v0_12_sha256_write(&hash, PREFIX, sizeof(PREFIX));
+    rustsecp256k1_v0_12_sha256_write(&hash, seed16, 16);
+    rustsecp256k1_v0_12_sha256_finalize(&hash, out32);
     for (i = 0; i < 4; ++i) {
         uint64_t s = 0;
         int j;
         for (j = 0; j < 8; ++j) s = (s << 8) | out32[8*i + j];
-        rustsecp256k1_v0_11_test_state[i] = s;
+        rustsecp256k1_v0_12_test_state[i] = s;
     }
 }
 
@@ -42,14 +42,14 @@ SECP256K1_INLINE static uint64_t rotl(const uint64_t x, int k) {
 
 SECP256K1_INLINE static uint64_t testrand64(void) {
     /* Test-only Xoshiro256++ RNG. See https://prng.di.unimi.it/ */
-    const uint64_t result = rotl(rustsecp256k1_v0_11_test_state[0] + rustsecp256k1_v0_11_test_state[3], 23) + rustsecp256k1_v0_11_test_state[0];
-    const uint64_t t = rustsecp256k1_v0_11_test_state[1] << 17;
-    rustsecp256k1_v0_11_test_state[2] ^= rustsecp256k1_v0_11_test_state[0];
-    rustsecp256k1_v0_11_test_state[3] ^= rustsecp256k1_v0_11_test_state[1];
-    rustsecp256k1_v0_11_test_state[1] ^= rustsecp256k1_v0_11_test_state[2];
-    rustsecp256k1_v0_11_test_state[0] ^= rustsecp256k1_v0_11_test_state[3];
-    rustsecp256k1_v0_11_test_state[2] ^= t;
-    rustsecp256k1_v0_11_test_state[3] = rotl(rustsecp256k1_v0_11_test_state[3], 45);
+    const uint64_t result = rotl(rustsecp256k1_v0_12_test_state[0] + rustsecp256k1_v0_12_test_state[3], 23) + rustsecp256k1_v0_12_test_state[0];
+    const uint64_t t = rustsecp256k1_v0_12_test_state[1] << 17;
+    rustsecp256k1_v0_12_test_state[2] ^= rustsecp256k1_v0_12_test_state[0];
+    rustsecp256k1_v0_12_test_state[3] ^= rustsecp256k1_v0_12_test_state[1];
+    rustsecp256k1_v0_12_test_state[1] ^= rustsecp256k1_v0_12_test_state[2];
+    rustsecp256k1_v0_12_test_state[0] ^= rustsecp256k1_v0_12_test_state[3];
+    rustsecp256k1_v0_12_test_state[2] ^= t;
+    rustsecp256k1_v0_12_test_state[3] = rotl(rustsecp256k1_v0_12_test_state[3], 45);
     return result;
 }
 

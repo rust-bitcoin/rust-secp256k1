@@ -13,9 +13,9 @@
 #include "group.h"
 #include "ecmult.h"
 
-static int rustsecp256k1_v0_11_ecdsa_sig_parse(rustsecp256k1_v0_11_scalar *r, rustsecp256k1_v0_11_scalar *s, const unsigned char *sig, size_t size);
-static int rustsecp256k1_v0_11_ecdsa_sig_serialize(unsigned char *sig, size_t *size, const rustsecp256k1_v0_11_scalar *r, const rustsecp256k1_v0_11_scalar *s);
-static int rustsecp256k1_v0_11_ecdsa_sig_verify(const rustsecp256k1_v0_11_scalar* r, const rustsecp256k1_v0_11_scalar* s, const rustsecp256k1_v0_11_ge *pubkey, const rustsecp256k1_v0_11_scalar *message);
-static int rustsecp256k1_v0_11_ecdsa_sig_sign(const rustsecp256k1_v0_11_ecmult_gen_context *ctx, rustsecp256k1_v0_11_scalar* r, rustsecp256k1_v0_11_scalar* s, const rustsecp256k1_v0_11_scalar *seckey, const rustsecp256k1_v0_11_scalar *message, const rustsecp256k1_v0_11_scalar *nonce, int *recid);
+static int rustsecp256k1_v0_12_ecdsa_sig_parse(rustsecp256k1_v0_12_scalar *r, rustsecp256k1_v0_12_scalar *s, const unsigned char *sig, size_t size);
+static int rustsecp256k1_v0_12_ecdsa_sig_serialize(unsigned char *sig, size_t *size, const rustsecp256k1_v0_12_scalar *r, const rustsecp256k1_v0_12_scalar *s);
+static int rustsecp256k1_v0_12_ecdsa_sig_verify(const rustsecp256k1_v0_12_scalar* r, const rustsecp256k1_v0_12_scalar* s, const rustsecp256k1_v0_12_ge *pubkey, const rustsecp256k1_v0_12_scalar *message);
+static int rustsecp256k1_v0_12_ecdsa_sig_sign(const rustsecp256k1_v0_12_ecmult_gen_context *ctx, rustsecp256k1_v0_12_scalar* r, rustsecp256k1_v0_12_scalar* s, const rustsecp256k1_v0_12_scalar *seckey, const rustsecp256k1_v0_12_scalar *message, const rustsecp256k1_v0_12_scalar *nonce, int *recid);
 
 #endif /* SECP256K1_ECDSA_H */
