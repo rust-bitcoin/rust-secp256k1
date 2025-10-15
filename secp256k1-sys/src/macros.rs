@@ -7,7 +7,7 @@ macro_rules! impl_array_newtype {
         impl $thing {
             /// Like `cmp::Ord` but faster and with no guarantees across library versions.
             ///
-            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// The inner byte array of `Self` is passed across the FFI boundary, as such there are
             /// no guarantees on its layout and it is subject to change across library versions,
             /// even minor versions. For this reason comparison function implementations (e.g.
             /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by
@@ -20,7 +20,7 @@ macro_rules! impl_array_newtype {
 
             /// Like `cmp::Eq` but faster and with no guarantees across library versions.
             ///
-            /// The inner byte array of `Self` is passed across the FFI boundry, as such there are
+            /// The inner byte array of `Self` is passed across the FFI boundary, as such there are
             /// no guarantees on its layout and it is subject to change across library versions,
             /// even minor versions. For this reason comparison function implementations (e.g.
             /// `Ord`, `PartialEq`) take measures to ensure the data will remain constant (e.g., by

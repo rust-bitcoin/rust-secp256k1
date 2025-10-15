@@ -15,7 +15,7 @@ const MAX_SPINLOCK_ATTEMPTS: usize = 128;
 // for some small number of iterations before giving up. By trying again in
 // a loop, you can emulate a "true" spinlock that will only yield once it
 // has access. However, this would be very dangerous, especially in a nostd
-// environment, because if we are pre-empted by an interrupt handler while
+// environment, because if we are pre-emptied by an interrupt handler while
 // the lock is held, and that interrupt handler attempts to take the lock,
 // then we deadlock.
 //

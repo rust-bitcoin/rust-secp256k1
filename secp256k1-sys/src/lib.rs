@@ -159,7 +159,7 @@ impl PublicKey {
     /// # Safety
     ///
     /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
+    /// the result is likely to be an assertion failure and process
     /// termination.
     pub unsafe fn new() -> Self { Self::from_array_unchecked([0; 64]) }
 
@@ -168,7 +168,7 @@ impl PublicKey {
     /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
+    /// invalid the result may be assertion failures (and process aborts) from
     /// the underlying library. You should not use this method except with data
     /// that you obtained from the FFI interface of the same version of this
     /// library.
@@ -244,7 +244,7 @@ impl Signature {
     /// # Safety
     ///
     /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
+    /// the result is likely to be an assertion failure and process
     /// termination.
     pub unsafe fn new() -> Self { Self::from_array_unchecked([0; 64]) }
 
@@ -253,7 +253,7 @@ impl Signature {
     /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
+    /// invalid the result may be assertion failures (and process aborts) from
     /// the underlying library. You should not use this method except with data
     /// that you obtained from the FFI interface of the same version of this
     /// library.
@@ -325,7 +325,7 @@ impl XOnlyPublicKey {
     /// # Safety
     ///
     /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
+    /// the result is likely to be an assertion failure and process
     /// termination.
     pub unsafe fn new() -> Self { Self::from_array_unchecked([0; 64]) }
 
@@ -334,7 +334,7 @@ impl XOnlyPublicKey {
     /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
+    /// invalid the result may be assertion failures (and process aborts) from
     /// the underlying library. You should not use this method except with data
     /// that you obtained from the FFI interface of the same version of this
     /// library.
@@ -405,7 +405,7 @@ impl Keypair {
     /// # Safety
     ///
     /// If you pass this to any FFI functions, except as an out-pointer,
-    /// the result is likely to be an assertation failure and process
+    /// the result is likely to be an assertion failure and process
     /// termination.
     pub unsafe fn new() -> Self { Self::from_array_unchecked([0; 96]) }
 
@@ -414,7 +414,7 @@ impl Keypair {
     /// # Safety
     ///
     /// Does not check the validity of the underlying representation. If it is
-    /// invalid the result may be assertation failures (and process aborts) from
+    /// invalid the result may be assertion failures (and process aborts) from
     /// the underlying library. You should not use this method except with data
     /// that you obtained from the FFI interface of the same version of this
     /// library.
