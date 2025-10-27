@@ -13,7 +13,9 @@ use core::{fmt, ptr, str};
 pub use self::recovery::{RecoverableSignature, RecoveryId};
 pub use self::serialized_signature::SerializedSignature;
 use crate::ffi::CPtr;
-use crate::{ecdsa, ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey};
+use crate::{
+    ecdsa, ffi, from_hex, Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
+};
 
 /// An ECDSA signature
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -339,6 +341,91 @@ pub fn sign_grind_r(msg: impl Into<Message>, sk: &SecretKey, bytes_to_grind: usi
 /// Requires a signing capable context.
 pub fn sign_low_r(msg: impl Into<Message>, sk: &SecretKey) -> Signature {
     sign_grind_with_check(msg, sk, compact_sig_has_zero_first_bit)
+}
+
+impl<C: Signing> Secp256k1<C> {
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// Requires a signing-capable context.
+    #[deprecated(since = "0.32.0", note = "use ecdsa::sign instead")]
+    pub fn sign_ecdsa(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
+        self::sign(msg, sk)
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// and includes 32 bytes of noncedata in the nonce generation via inclusion in
+    /// one of the hash operations during nonce generation. This is useful when multiple
+    /// signatures are needed for the same Message and SecretKey while still using RFC6979.
+    /// Requires a signing-capable context.
+    #[deprecated(since = "0.32.0", note = "use ecdsa::sign_with_noncedata instead")]
+    pub fn sign_ecdsa_with_noncedata(
+        &self,
+        msg: impl Into<Message>,
+        sk: &SecretKey,
+        noncedata: &[u8; 32],
+    ) -> Signature {
+        self::sign_with_noncedata(msg, sk, noncedata)
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+    /// and "grinds" the nonce by passing extra entropy if necessary to produce
+    /// a signature that is less than 71 - `bytes_to_grind` bytes. The number
+    /// of signing operation performed by this function is exponential in the
+    /// number of bytes grinded.
+    /// Requires a signing capable context.
+    #[deprecated(since = "0.32.0", note = "use ecdsa::sign_grind_r instead")]
+    pub fn sign_ecdsa_grind_r(
+        &self,
+        msg: impl Into<Message>,
+        sk: &SecretKey,
+        bytes_to_grind: usize,
+    ) -> Signature {
+        self::sign_grind_r(msg, sk, bytes_to_grind)
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk`, RFC6979 nonce
+    /// and "grinds" the nonce by passing extra entropy if necessary to produce
+    /// a signature that is less than 71 bytes and compatible with the low r
+    /// signature implementation of bitcoin core. In average, this function
+    /// will perform two signing operations.
+    /// Requires a signing capable context.
+    #[deprecated(since = "0.32.0", note = "use ecdsa::sign_low_r instead")]
+    pub fn sign_ecdsa_low_r(&self, msg: impl Into<Message>, sk: &SecretKey) -> Signature {
+        self::sign_low_r(msg, sk)
+    }
+}
+
+impl<C: Verification> Secp256k1<C> {
+    /// Checks that `sig` is a valid ECDSA signature for `msg` using the public
+    /// key `pubkey`. Returns `Ok(())` on success. Note that this function cannot
+    /// be used for Bitcoin consensus checking since there may exist signatures
+    /// which OpenSSL would verify but not libsecp256k1, or vice-versa. Requires a
+    /// verify-capable context.
+    ///
+    /// ```rust
+    /// # #[cfg(all(feature = "rand", feature = "std"))] {
+    /// # use secp256k1::{rand, Secp256k1, Message, Error};
+    /// #
+    /// # let secp = Secp256k1::new();
+    /// # let (secret_key, public_key) = secp.generate_keypair(&mut rand::rng());
+    /// #
+    /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
+    /// let sig = secp.sign_ecdsa(message, &secret_key);
+    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Ok(()));
+    ///
+    /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
+    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Err(Error::IncorrectSignature));
+    /// # }
+    /// ```
+    #[inline]
+    #[deprecated(since = "0.32.0", note = "use ecdsa::verify instead")]
+    pub fn verify_ecdsa(
+        &self,
+        sig: &Signature,
+        msg: impl Into<Message>,
+        pk: &PublicKey,
+    ) -> Result<(), Error> {
+        self::verify(sig, msg, pk)
+    }
 }
 
 /// Checks that `sig` is a valid ECDSA signature for `msg` using the public

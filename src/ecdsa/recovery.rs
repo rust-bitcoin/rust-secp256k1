@@ -10,7 +10,7 @@ use self::super_ffi::CPtr;
 use super::ffi as super_ffi;
 use crate::ecdsa::Signature;
 use crate::ffi::recovery as ffi;
-use crate::{key, Error, Message};
+use crate::{key, Error, Message, Secp256k1, Signing, Verification};
 
 /// A tag used for recovering the public key from a compact signature.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -226,6 +226,53 @@ impl RecoverableSignature {
             },
             None,
         )
+    }
+}
+
+impl<C: Signing> Secp256k1<C> {
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// Requires a signing-capable context.
+    #[deprecated(
+        since = "0.32.0",
+        note = "use RecoverableSignature::sign_ecdsa_recoverable instead"
+    )]
+    pub fn sign_ecdsa_recoverable(
+        &self,
+        msg: impl Into<Message>,
+        sk: &key::SecretKey,
+    ) -> RecoverableSignature {
+        RecoverableSignature::sign_ecdsa_recoverable(msg, sk)
+    }
+
+    /// Constructs a signature for `msg` using the secret key `sk` and RFC6979 nonce
+    /// and includes 32 bytes of noncedata in the nonce generation via inclusion in
+    /// one of the hash operations during nonce generation. This is useful when multiple
+    /// signatures are needed for the same Message and SecretKey while still using RFC6979.
+    /// Requires a signing-capable context.
+    #[deprecated(
+        since = "0.32.0",
+        note = "use RecoverableSignature::sign_ecdsa_recoverable_with_noncedata instead"
+    )]
+    pub fn sign_ecdsa_recoverable_with_noncedata(
+        &self,
+        msg: impl Into<Message>,
+        sk: &key::SecretKey,
+        noncedata: &[u8; 32],
+    ) -> RecoverableSignature {
+        RecoverableSignature::sign_ecdsa_recoverable_with_noncedata(msg, sk, noncedata)
+    }
+}
+
+impl<C: Verification> Secp256k1<C> {
+    /// Determines the public key for which `sig` is a valid signature for
+    /// `msg`. Requires a verify-capable context.
+    #[deprecated(since = "0.32.0", note = "use sig.recover_ecdsa instead")]
+    pub fn recover_ecdsa(
+        &self,
+        msg: impl Into<Message>,
+        sig: &RecoverableSignature,
+    ) -> Result<key::PublicKey, Error> {
+        sig.recover_ecdsa(msg)
     }
 }
 
