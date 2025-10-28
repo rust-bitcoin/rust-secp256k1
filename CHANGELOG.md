@@ -10,6 +10,8 @@ don't have to create and pass in a context object in all the APIs - BOOM!
 * Remove context from the API [#844](https://github.com/rust-bitcoin/rust-secp256k1/pull/844)
 * Fix rerandomization seed usage [#855](https://github.com/rust-bitcoin/rust-secp256k1/pull/855)
 
+(Note, to help with the upgrade path we left the methods on the context in place but deprecated.)
+
 And we also did:
 
 * Remove the `bitcoin-hashes` feature (and dependency) [#837](https://github.com/rust-bitcoin/rust-secp256k1/pull/837)
