@@ -410,18 +410,18 @@ impl<C: Verification> Secp256k1<C> {
     /// #
     /// let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
     /// let sig = secp.sign_ecdsa(message, &secret_key);
-    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Ok(()));
+    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Ok(()));
     ///
     /// let message = Message::from_digest_slice(&[0xcd; 32]).expect("32 bytes");
-    /// assert_eq!(secp.verify_ecdsa(&sig, message, &public_key), Err(Error::IncorrectSignature));
+    /// assert_eq!(secp.verify_ecdsa(message, &sig, &public_key), Err(Error::IncorrectSignature));
     /// # }
     /// ```
     #[inline]
     #[deprecated(since = "0.32.0", note = "use ecdsa::verify instead")]
     pub fn verify_ecdsa(
         &self,
-        sig: &Signature,
         msg: impl Into<Message>,
+        sig: &Signature,
         pk: &PublicKey,
     ) -> Result<(), Error> {
         self::verify(sig, msg, pk)
