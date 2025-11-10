@@ -23,6 +23,7 @@ const MAX_SPINLOCK_ATTEMPTS: usize = 128;
 // new stack-local context object if we are unable to obtain a lock on the
 // global one. This is slow and loses the defense-in-depth "rerandomization"
 // anti-sidechannel measure, but it is better than deadlocking..
+#[derive(Debug)]
 pub struct SpinLock<T> {
     flag: AtomicBool,
     // Invariant: if this is non-None, then the store is valid and can be
@@ -83,6 +84,7 @@ impl<T> SpinLock<T> {
 }
 
 /// Drops the lock when it goes out of scope.
+#[derive(Debug)]
 pub struct SpinLockGuard<'a, T> {
     lock: &'a SpinLock<T>,
 }

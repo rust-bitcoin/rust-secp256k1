@@ -16,18 +16,9 @@ exclude = ["tests", "contrib"]
 [features]
 default = ["std"]
 std = ["alloc", "secp256k1-sys/std", "rand?/std", "rand?/std_rng", "rand?/thread_rng"]
-# allow use of Secp256k1::new and related API that requires an allocator
 alloc = ["secp256k1-sys/alloc"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
-global-context = ["std"]
-# disable re-randomization of the global context, which provides some
-# defense-in-depth against sidechannel attacks. You should only use
-# this feature if you expect the `rand` crate's thread_rng to panic.
-# (If you are sure the `rand` and `std` features will not be enabled, e.g.
-# if you are doing a no-std build, then this feature does nothing
-# and is not necessary.)
-global-context-less-secure = ["global-context"]
 arbitrary = ["dep:arbitrary"]
 
 [dependencies]

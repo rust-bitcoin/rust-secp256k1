@@ -17,6 +17,7 @@ mod self_contained_context {
     const MAX_PREALLOC_SIZE: usize = 16; // measured at 208 bytes on Andrew's 64-bit system
 
     /// A secp256k1 context object which can be allocated on the stack or in static storage.
+    #[derive(Debug)]
     pub struct SelfContainedContext(
         [MaybeUninit<AlignedType>; MAX_PREALLOC_SIZE],
         Option<NonNull<ffi::Context>>,
@@ -73,7 +74,8 @@ mod self_contained_context {
 // because we need a const constructor.)
 pub(super) use self_contained_context::SelfContainedContext;
 
-static SECP256K1: SpinLock<SelfContainedContext> = SpinLock::<SelfContainedContext>::new();
+/// A global static context to avoid repeatedly creating contexts.
+pub static SECP256K1: SpinLock<SelfContainedContext> = SpinLock::<SelfContainedContext>::new();
 
 /// Borrows the global context and does some operation on it.
 ///
