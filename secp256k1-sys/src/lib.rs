@@ -923,6 +923,10 @@ extern "C" {
 pub mod silentpayments {
     use super::*;
 
+    /// Size (in bytes) of the internal representation of label.
+    /// This structure include magic bytes ([0x27, 0x9d, 0x44, 0xba]) alongside the actual data.
+    pub const LABEL_SIZE: usize = 68;
+
     extern "C" {
         #[cfg_attr(
             not(rust_secp_no_symbol_renaming),
@@ -939,7 +943,83 @@ pub mod silentpayments {
             plain_seckeys: *const *const c_uchar,
             n_plain_seckeys: size_t,
         ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_label_parse"
+        )]
+        pub fn secp256k1_silentpayments_recipient_label_parse(
+            ctx: *const Context,
+            label: *mut Label,
+            in33: *const c_uchar,
+        ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_label_serialize"
+        )]
+        pub fn secp256k1_silentpayments_recipient_label_serialize(
+            ctx: *const Context,
+            out33: *mut c_uchar,
+            label: *const Label,
+        ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_label_create"
+        )]
+        pub fn secp256k1_silentpayments_recipient_label_create(
+            ctx: *const Context,
+            label: *mut Label,
+            label_tweak32: *mut c_uchar,
+            scan_key32: *const c_uchar,
+            m: c_uint,
+        ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_create_labeled_spend_pubkey"
+        )]
+        pub fn secp256k1_silentpayments_recipient_create_labeled_spend_pubkey(
+            ctx: *const Context,
+            labeled_spend_pubkey: *mut PublicKey,
+            unlabeled_spend_pubkey: *const PublicKey,
+            label: *const Label,
+        ) -> c_int;
     }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Label([c_uchar; LABEL_SIZE]);
+    impl_array_newtype!(Label, c_uchar, LABEL_SIZE);
+
+    impl Label {
+        pub fn from_byte_array(arr: [c_uchar; LABEL_SIZE]) -> Self { Self(arr) }
+        pub fn to_byte_array(self) -> [c_uchar; LABEL_SIZE] { self.0 }
+    }
+
+    impl core::fmt::Debug for Label {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(f, "magic: {{")?;
+            for magic_byte in &self.0[..3] {
+                write!(f, "0x{magic_byte:02x}, ")?;
+            }
+            writeln!(f, "0x{:02x}}},", &self.0[3])?;
+            write!(f, "x: 0x")?;
+            for x_byte in &self.0[4..36] {
+                write!(f, "{x_byte:02x}")?;
+            }
+            writeln!(f, ",")?;
+            write!(f, "y: 0x")?;
+            for y_byte in &self.0[36..LABEL_SIZE] {
+                write!(f, "{y_byte:02x}")?;
+            }
+            Ok(())
+        }
+    }
+
+    pub type LabelLookup =
+        Option<unsafe extern "C" fn(*const c_uchar, *const c_void) -> *const c_uchar>;
 
     #[repr(C)]
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
