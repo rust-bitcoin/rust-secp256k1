@@ -41,9 +41,9 @@
 #define ECMULT_TABLE_SIZE(w) (1L << ((w)-2))
 
 /** Double multiply: R = na*A + ng*G */
-static void rustsecp256k1_v0_12_ecmult(rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_gej *a, const rustsecp256k1_v0_12_scalar *na, const rustsecp256k1_v0_12_scalar *ng);
+static void rustsecp256k1_v0_13_ecmult(rustsecp256k1_v0_13_gej *r, const rustsecp256k1_v0_13_gej *a, const rustsecp256k1_v0_13_scalar *na, const rustsecp256k1_v0_13_scalar *ng);
 
-typedef int (rustsecp256k1_v0_12_ecmult_multi_callback)(rustsecp256k1_v0_12_scalar *sc, rustsecp256k1_v0_12_ge *pt, size_t idx, void *data);
+typedef int (rustsecp256k1_v0_13_ecmult_multi_callback)(rustsecp256k1_v0_13_scalar *sc, rustsecp256k1_v0_13_ge *pt, size_t idx, void *data);
 
 /**
  * Multi-multiply: R = inp_g_sc * G + sum_i ni * Ai.
@@ -56,6 +56,6 @@ typedef int (rustsecp256k1_v0_12_ecmult_multi_callback)(rustsecp256k1_v0_12_scal
  *          0 if there is not enough scratch space for a single point or
  *          callback returns 0
  */
-static int rustsecp256k1_v0_12_ecmult_multi_var(const rustsecp256k1_v0_12_callback* error_callback, rustsecp256k1_v0_12_scratch *scratch, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *inp_g_sc, rustsecp256k1_v0_12_ecmult_multi_callback cb, void *cbdata, size_t n);
+static int rustsecp256k1_v0_13_ecmult_multi_var(const rustsecp256k1_v0_13_callback* error_callback, rustsecp256k1_v0_13_scratch *scratch, rustsecp256k1_v0_13_gej *r, const rustsecp256k1_v0_13_scalar *inp_g_sc, rustsecp256k1_v0_13_ecmult_multi_callback cb, void *cbdata, size_t n);
 
 #endif /* SECP256K1_ECMULT_H */

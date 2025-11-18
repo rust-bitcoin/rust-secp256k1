@@ -1,23 +1,86 @@
-# Must be included before CMAKE_INSTALL_INCLUDEDIR is used.
-include(GNUInstallDirs)
+add_library(secp256k1)
 
-add_library(rustsecp256k1_v0_12_precomputed OBJECT EXCLUDE_FROM_ALL
+set_property(TARGET secp256k1 PROPERTY PUBLIC_HEADER
+  ${PROJECT_SOURCE_DIR}/include/secp256k1.h
+  ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_preallocated.h
+)
+
+# Processing must be done in a topological sorting of the dependency graph
+# (dependent module first).
+if(SECP256K1_ENABLE_MODULE_ELLSWIFT)
+  add_compile_definitions(ENABLE_MODULE_ELLSWIFT=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_ellswift.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_MUSIG)
+  if(DEFINED SECP256K1_ENABLE_MODULE_SCHNORRSIG AND NOT SECP256K1_ENABLE_MODULE_SCHNORRSIG)
+    message(FATAL_ERROR "Module dependency error: You have disabled the schnorrsig module explicitly, but it is required by the musig module.")
+  endif()
+  set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON)
+  add_compile_definitions(ENABLE_MODULE_MUSIG=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_musig.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_SILENTPAYMENTS)
+  if(DEFINED SECP256K1_ENABLE_MODULE_SCHNORRSIG AND NOT SECP256K1_ENABLE_MODULE_SCHNORRSIG)
+    message(FATAL_ERROR "Module dependency error: You have disabled the schnorrsig module explicitly, but it is required by the silent payments module.")
+  endif()
+  set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON)
+  add_compile_definitions(ENABLE_MODULE_SILENTPAYMENTS=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_silentpayments.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_SCHNORRSIG)
+  if(DEFINED SECP256K1_ENABLE_MODULE_EXTRAKEYS AND NOT SECP256K1_ENABLE_MODULE_EXTRAKEYS)
+    message(FATAL_ERROR "Module dependency error: You have disabled the extrakeys module explicitly, but it is required by the schnorrsig module.")
+  endif()
+  set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON)
+  add_compile_definitions(ENABLE_MODULE_SCHNORRSIG=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_schnorrsig.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_EXTRAKEYS)
+  add_compile_definitions(ENABLE_MODULE_EXTRAKEYS=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_extrakeys.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_RECOVERY)
+  add_compile_definitions(ENABLE_MODULE_RECOVERY=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_recovery.h)
+endif()
+
+if(SECP256K1_ENABLE_MODULE_ECDH)
+  add_compile_definitions(ENABLE_MODULE_ECDH=1)
+  set_property(TARGET secp256k1 APPEND PROPERTY PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_13_ecdh.h)
+endif()
+
+add_library(rustsecp256k1_v0_13_precomputed OBJECT EXCLUDE_FROM_ALL
   precomputed_ecmult.c
   precomputed_ecmult_gen.c
 )
 
 # Add objects explicitly rather than linking to the object libs to keep them
 # from being exported.
-add_library(secp256k1 secp256k1.c $<TARGET_OBJECTS:rustsecp256k1_v0_12_precomputed>)
+target_sources(secp256k1 PRIVATE secp256k1.c $<TARGET_OBJECTS:rustsecp256k1_v0_13_precomputed>)
 
-add_library(rustsecp256k1_v0_12_asm INTERFACE)
+if(NOT SECP256K1_ENABLE_API_VISIBILITY_ATTRIBUTES)
+  target_compile_definitions(secp256k1 PRIVATE SECP256K1_NO_API_VISIBILITY_ATTRIBUTES)
+endif()
+
+# Create a helper lib that parent projects can use to link secp256k1 into a
+# static lib.
+add_library(rustsecp256k1_v0_13_objs INTERFACE)
+target_sources(rustsecp256k1_v0_13_objs INTERFACE $<TARGET_OBJECTS:secp256k1> $<TARGET_OBJECTS:rustsecp256k1_v0_13_precomputed>)
+
+add_library(rustsecp256k1_v0_13_asm INTERFACE)
 if(SECP256K1_ASM STREQUAL "arm32")
-  add_library(rustsecp256k1_v0_12_asm_arm OBJECT EXCLUDE_FROM_ALL)
-  target_sources(rustsecp256k1_v0_12_asm_arm PUBLIC
+  add_library(rustsecp256k1_v0_13_asm_arm OBJECT EXCLUDE_FROM_ALL)
+  target_sources(rustsecp256k1_v0_13_asm_arm PUBLIC
     asm/field_10x26_arm.s
   )
-  target_sources(secp256k1 PRIVATE $<TARGET_OBJECTS:rustsecp256k1_v0_12_asm_arm>)
-  target_link_libraries(rustsecp256k1_v0_12_asm INTERFACE rustsecp256k1_v0_12_asm_arm)
+  target_sources(secp256k1 PRIVATE $<TARGET_OBJECTS:rustsecp256k1_v0_13_asm_arm>)
+  target_sources(rustsecp256k1_v0_13_objs INTERFACE $<TARGET_OBJECTS:rustsecp256k1_v0_13_asm_arm>)
+  target_link_libraries(rustsecp256k1_v0_13_asm INTERFACE rustsecp256k1_v0_13_asm_arm)
 endif()
 
 if(WIN32)
@@ -29,12 +92,15 @@ endif()
 # Object libs don't know if they're being built for a shared or static lib.
 # Grab the PIC property from secp256k1 which knows.
 get_target_property(use_pic secp256k1 POSITION_INDEPENDENT_CODE)
-set_target_properties(rustsecp256k1_v0_12_precomputed PROPERTIES POSITION_INDEPENDENT_CODE ${use_pic})
+set_target_properties(rustsecp256k1_v0_13_precomputed PROPERTIES POSITION_INDEPENDENT_CODE ${use_pic})
 
+# Add the include path for parent projects so that they don't have to manually add it.
 target_include_directories(secp256k1 INTERFACE
-  # Add the include path for parent projects so that they don't have to manually add it.
   $<BUILD_INTERFACE:$<$<NOT:$<BOOL:${PROJECT_IS_TOP_LEVEL}>>:${PROJECT_SOURCE_DIR}/include>>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+set_target_properties(rustsecp256k1_v0_13_objs PROPERTIES
+  INTERFACE_COMPILE_DEFINITIONS "$<TARGET_PROPERTY:secp256k1,INTERFACE_COMPILE_DEFINITIONS>"
+  INTERFACE_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:secp256k1,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 
 # This emulates Libtool to make sure Libtool and CMake agree on the ABI version,
@@ -43,25 +109,17 @@ math(EXPR ${PROJECT_NAME}_soversion "${${PROJECT_NAME}_LIB_VERSION_CURRENT} - ${
 set_target_properties(secp256k1 PROPERTIES
   SOVERSION ${${PROJECT_NAME}_soversion}
 )
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|FreeBSD)$")
   set_target_properties(secp256k1 PROPERTIES
     VERSION ${${PROJECT_NAME}_soversion}.${${PROJECT_NAME}_LIB_VERSION_AGE}.${${PROJECT_NAME}_LIB_VERSION_REVISION}
   )
 elseif(APPLE)
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.17)
-    math(EXPR ${PROJECT_NAME}_compatibility_version "${${PROJECT_NAME}_LIB_VERSION_CURRENT} + 1")
-    set_target_properties(secp256k1 PROPERTIES
-      MACHO_COMPATIBILITY_VERSION ${${PROJECT_NAME}_compatibility_version}
-      MACHO_CURRENT_VERSION ${${PROJECT_NAME}_compatibility_version}.${${PROJECT_NAME}_LIB_VERSION_REVISION}
-    )
-    unset(${PROJECT_NAME}_compatibility_version)
-  elseif(BUILD_SHARED_LIBS)
-    message(WARNING
-      "The 'compatibility version' and 'current version' values of the DYLIB "
-      "will diverge from the values set by the GNU Libtool. To ensure "
-      "compatibility, it is recommended to upgrade CMake to at least version 3.17."
-    )
-  endif()
+  math(EXPR ${PROJECT_NAME}_compatibility_version "${${PROJECT_NAME}_LIB_VERSION_CURRENT} + 1")
+  set_target_properties(secp256k1 PROPERTIES
+    MACHO_COMPATIBILITY_VERSION ${${PROJECT_NAME}_compatibility_version}
+    MACHO_CURRENT_VERSION ${${PROJECT_NAME}_compatibility_version}.${${PROJECT_NAME}_LIB_VERSION_REVISION}
+  )
+  unset(${PROJECT_NAME}_compatibility_version)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(${PROJECT_NAME}_windows "secp256k1")
   if(MSVC)
@@ -79,29 +137,41 @@ if(SECP256K1_BUILD_BENCHMARK)
   add_executable(bench bench.c)
   target_link_libraries(bench secp256k1)
   add_executable(bench_internal bench_internal.c)
-  target_link_libraries(bench_internal rustsecp256k1_v0_12_precomputed rustsecp256k1_v0_12_asm)
+  target_link_libraries(bench_internal rustsecp256k1_v0_13_precomputed rustsecp256k1_v0_13_asm)
   add_executable(bench_ecmult bench_ecmult.c)
-  target_link_libraries(bench_ecmult rustsecp256k1_v0_12_precomputed rustsecp256k1_v0_12_asm)
+  target_link_libraries(bench_ecmult rustsecp256k1_v0_13_precomputed rustsecp256k1_v0_13_asm)
 endif()
 
 if(SECP256K1_BUILD_TESTS)
+  include(CheckIncludeFile)
+  check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+  check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
+  check_include_file(unistd.h HAVE_UNISTD_H)
+
+  set(TEST_DEFINITIONS "")
+  if(HAVE_SYS_TYPES_H AND HAVE_SYS_WAIT_H AND HAVE_UNISTD_H)
+    list(APPEND TEST_DEFINITIONS SUPPORTS_CONCURRENCY=1)
+  endif()
+
   add_executable(noverify_tests tests.c)
-  target_link_libraries(noverify_tests rustsecp256k1_v0_12_precomputed rustsecp256k1_v0_12_asm)
-  add_test(NAME rustsecp256k1_v0_12_noverify_tests COMMAND noverify_tests)
+  target_link_libraries(noverify_tests rustsecp256k1_v0_13_precomputed rustsecp256k1_v0_13_asm)
+  target_compile_definitions(noverify_tests PRIVATE ${TEST_DEFINITIONS})
+  add_test(NAME rustsecp256k1_v0_13_noverify_tests COMMAND noverify_tests)
   if(NOT CMAKE_BUILD_TYPE STREQUAL "Coverage")
     add_executable(tests tests.c)
-    target_compile_definitions(tests PRIVATE VERIFY)
-    target_link_libraries(tests rustsecp256k1_v0_12_precomputed rustsecp256k1_v0_12_asm)
-    add_test(NAME rustsecp256k1_v0_12_tests COMMAND tests)
+    target_compile_definitions(tests PRIVATE VERIFY ${TEST_DEFINITIONS})
+    target_link_libraries(tests rustsecp256k1_v0_13_precomputed rustsecp256k1_v0_13_asm)
+    add_test(NAME rustsecp256k1_v0_13_tests COMMAND tests)
   endif()
+  unset(TEST_DEFINITIONS)
 endif()
 
 if(SECP256K1_BUILD_EXHAUSTIVE_TESTS)
-  # Note: do not include rustsecp256k1_v0_12_precomputed in exhaustive_tests (it uses runtime-generated tables).
+  # Note: do not include rustsecp256k1_v0_13_precomputed in exhaustive_tests (it uses runtime-generated tables).
   add_executable(exhaustive_tests tests_exhaustive.c)
-  target_link_libraries(exhaustive_tests rustsecp256k1_v0_12_asm)
+  target_link_libraries(exhaustive_tests rustsecp256k1_v0_13_asm)
   target_compile_definitions(exhaustive_tests PRIVATE $<$<NOT:$<CONFIG:Coverage>>:VERIFY>)
-  add_test(NAME rustsecp256k1_v0_12_exhaustive_tests COMMAND exhaustive_tests)
+  add_test(NAME rustsecp256k1_v0_13_exhaustive_tests COMMAND exhaustive_tests)
 endif()
 
 if(SECP256K1_BUILD_CTIME_TESTS)
@@ -110,36 +180,16 @@ if(SECP256K1_BUILD_CTIME_TESTS)
 endif()
 
 if(SECP256K1_INSTALL)
+  include(GNUInstallDirs)
+  target_include_directories(secp256k1 INTERFACE
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
   install(TARGETS secp256k1
     EXPORT ${PROJECT_NAME}-targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-  set(${PROJECT_NAME}_headers
-    "${PROJECT_SOURCE_DIR}/include/secp256k1.h"
-    "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_preallocated.h"
-  )
-  if(SECP256K1_ENABLE_MODULE_ECDH)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_ecdh.h")
-  endif()
-  if(SECP256K1_ENABLE_MODULE_RECOVERY)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_recovery.h")
-  endif()
-  if(SECP256K1_ENABLE_MODULE_EXTRAKEYS)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_extrakeys.h")
-  endif()
-  if(SECP256K1_ENABLE_MODULE_SCHNORRSIG)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_schnorrsig.h")
-  endif()
-  if(SECP256K1_ENABLE_MODULE_MUSIG)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_musig.h")
-  endif()
-  if(SECP256K1_ENABLE_MODULE_ELLSWIFT)
-    list(APPEND ${PROJECT_NAME}_headers "${PROJECT_SOURCE_DIR}/include/rustsecp256k1_v0_12_ellswift.h")
-  endif()
-  install(FILES ${${PROJECT_NAME}_headers}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
   install(EXPORT ${PROJECT_NAME}-targets

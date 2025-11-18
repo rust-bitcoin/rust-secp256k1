@@ -12,27 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#if (defined(_MSC_VER) && _MSC_VER >= 1900)
-#  include <time.h>
-#else
-#  include <sys/time.h>
-#endif
-
-static int64_t gettime_i64(void) {
-#if (defined(_MSC_VER) && _MSC_VER >= 1900)
-    /* C11 way to get wallclock time */
-    struct timespec tv;
-    if (!timespec_get(&tv, TIME_UTC)) {
-        fputs("timespec_get failed!", stderr);
-        exit(1);
-    }
-    return (int64_t)tv.tv_nsec / 1000 + (int64_t)tv.tv_sec * 1000000LL;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (int64_t)tv.tv_usec + (int64_t)tv.tv_sec * 1000000LL;
-#endif
-}
+#include "tests_common.h"
 
 #define FP_EXP (6)
 #define FP_MULT (1000000LL)
@@ -120,7 +100,7 @@ static void run_benchmark(char *name, void (*benchmark)(void*, int), void (*setu
         sum += total;
     }
     /* ',' is used as a column delimiter */
-    printf("%-30s, ", name);
+    printf("%-40s, ", name);
     print_number(min * FP_MULT / iter);
     printf("   , ");
     print_number(((sum * FP_MULT) / count) / iter);
@@ -181,7 +161,7 @@ static void print_output_table_header_row(void) {
     char* min_str = "    Min(us)    "; /* center alignment */
     char* avg_str = "    Avg(us)    ";
     char* max_str = "    Max(us)    ";
-    printf("%-30s,%-15s,%-15s,%-15s\n", bench_str, min_str, avg_str, max_str);
+    printf("%-40s,%-15s,%-15s,%-15s\n", bench_str, min_str, avg_str, max_str);
     printf("\n");
 }
 
