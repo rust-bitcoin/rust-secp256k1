@@ -919,6 +919,43 @@ extern "C" {
     ) -> c_int;
 }
 
+#[cfg(feature = "silentpayments")]
+pub mod silentpayments {
+    use super::*;
+
+    extern "C" {
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_sender_create_outputs"
+        )]
+        pub fn secp256k1_silentpayments_sender_create_outputs(
+            ctx: *const Context,
+            generated_outputs: *mut *mut XOnlyPublicKey,
+            recipients: *const *mut Recipient,
+            n_recipients: c_uint,
+            outpoint_smallest36: *const c_uchar,
+            taproot_seckeys: *const *const Keypair,
+            n_taproot_seckeys: size_t,
+            plain_seckeys: *const *const c_uchar,
+            n_plain_seckeys: size_t,
+        ) -> c_int;
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Recipient {
+        scan_pubkey: PublicKey,
+        spend_pubkey: PublicKey,
+        index: c_uint,
+    }
+
+    impl Recipient {
+        pub fn new(scan_pubkey: &PublicKey, spend_pubkey: &PublicKey, index: c_uint) -> Self {
+            Self { scan_pubkey: *scan_pubkey, spend_pubkey: *spend_pubkey, index }
+        }
+    }
+}
+
 #[cfg(not(secp256k1_fuzz))]
 extern "C" {
     // Contexts

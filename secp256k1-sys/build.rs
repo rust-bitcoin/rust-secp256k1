@@ -32,6 +32,10 @@ fn main() {
         // just #define it away.
         .define("printf(...)", Some(""));
 
+    if cfg!(feature = "silentpayments") {
+        base_config.define("ENABLE_MODULE_SILENTPAYMENTS", Some("1"));
+    }
+
     if cfg!(feature = "lowmemory") {
         base_config.define("ECMULT_WINDOW_SIZE", Some("4")); // A low-enough value to consume negligible memory
         base_config.define("COMB_BLOCKS", Some("2"));

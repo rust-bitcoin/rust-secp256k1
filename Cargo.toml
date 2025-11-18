@@ -21,6 +21,7 @@ alloc = ["secp256k1-sys/alloc"]
 recovery = ["secp256k1-sys/recovery"]
 lowmemory = ["secp256k1-sys/lowmemory"]
 global-context = ["std"]
+silentpayments = ["secp256k1-sys/silentpayments"]
 # disable re-randomization of the global context, which provides some
 # defense-in-depth against sidechannel attacks. You should only use
 # this feature if you expect the `rand` crate's thread_rng to panic.
