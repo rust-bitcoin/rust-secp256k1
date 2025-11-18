@@ -72,6 +72,10 @@ required-features = ["rand", "std"]
 name = "musig"
 required-features = ["rand", "std"]
 
+[[example]]
+name = "silentpayments"
+required-features = ["rand", "silentpayments"]
+
 [workspace]
 members = ["secp256k1-sys"]
 exclude = ["no_std_test"]
