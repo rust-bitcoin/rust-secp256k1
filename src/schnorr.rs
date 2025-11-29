@@ -11,7 +11,7 @@ use secp256k1_sys::SchnorrSigExtraParams;
 
 use crate::ffi::{self, CPtr};
 use crate::key::{Keypair, XOnlyPublicKey};
-use crate::{constants, from_hex, Error, Secp256k1};
+use crate::{constants, from_hex, Error, Secp256k1, Signing, Verification};
 
 /// Represents a schnorr signature.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -180,6 +180,59 @@ pub fn verify(sig: &Signature, msg: &[u8], pubkey: &XOnlyPublicKey) -> Result<()
         } else {
             Err(Error::IncorrectSignature)
         }
+    }
+}
+
+impl<C: Signing> Secp256k1<C> {
+    /// Creates a schnorr signature internally using the [`rand::rngs::ThreadRng`] random number
+    /// generator to generate the auxiliary random data.
+    #[cfg(all(feature = "rand", feature = "std"))]
+    #[deprecated(since = "0.32.0", note = "use schnorr::sign instead")]
+    pub fn sign_schnorr(&self, msg: &[u8], keypair: &Keypair) -> Signature {
+        self::sign(msg, keypair)
+    }
+
+    /// Creates a schnorr signature without using any auxiliary random data.
+    #[deprecated(since = "0.32.0", note = "use schnorr::sign_no_aux_rand instead")]
+    pub fn sign_schnorr_no_aux_rand(&self, msg: &[u8], keypair: &Keypair) -> Signature {
+        self::sign_no_aux_rand(msg, keypair)
+    }
+
+    /// Creates a schnorr signature using the given auxiliary random data.
+    #[deprecated(since = "0.32.0", note = "use schnorr::sign_with_aux_rand instead")]
+    pub fn sign_schnorr_with_aux_rand(
+        &self,
+        msg: &[u8],
+        keypair: &Keypair,
+        aux_rand: &[u8; 32],
+    ) -> Signature {
+        self::sign_with_aux_rand(msg, keypair, aux_rand)
+    }
+
+    /// Creates a schnorr signature using the given random number generator to
+    /// generate the auxiliary random data.
+    #[cfg(feature = "rand")]
+    #[deprecated(since = "0.32.0", note = "use schnorr::sign_with_rng instead")]
+    pub fn sign_schnorr_with_rng<R: Rng + CryptoRng>(
+        &self,
+        msg: &[u8],
+        keypair: &Keypair,
+        rng: &mut R,
+    ) -> Signature {
+        self::sign_with_rng(msg, keypair, rng)
+    }
+}
+
+impl<C: Verification> Secp256k1<C> {
+    /// Verifies a schnorr signature.
+    #[deprecated(since = "0.32.0", note = "use schnorr::verify instead")]
+    pub fn verify_schnorr(
+        &self,
+        sig: &Signature,
+        msg: &[u8],
+        pubkey: &XOnlyPublicKey,
+    ) -> Result<(), Error> {
+        self::verify(sig, msg, pubkey)
     }
 }
 

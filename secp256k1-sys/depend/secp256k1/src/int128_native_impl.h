@@ -4,88 +4,88 @@
 #include "int128.h"
 #include "util.h"
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_load(rustsecp256k1_v0_11_uint128 *r, uint64_t hi, uint64_t lo) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_load(rustsecp256k1_v0_12_uint128 *r, uint64_t hi, uint64_t lo) {
     *r = (((uint128_t)hi) << 64) + lo;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_mul(rustsecp256k1_v0_11_uint128 *r, uint64_t a, uint64_t b) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_mul(rustsecp256k1_v0_12_uint128 *r, uint64_t a, uint64_t b) {
    *r = (uint128_t)a * b;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_accum_mul(rustsecp256k1_v0_11_uint128 *r, uint64_t a, uint64_t b) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_accum_mul(rustsecp256k1_v0_12_uint128 *r, uint64_t a, uint64_t b) {
    *r += (uint128_t)a * b;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_accum_u64(rustsecp256k1_v0_11_uint128 *r, uint64_t a) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_accum_u64(rustsecp256k1_v0_12_uint128 *r, uint64_t a) {
    *r += a;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_rshift(rustsecp256k1_v0_11_uint128 *r, unsigned int n) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_rshift(rustsecp256k1_v0_12_uint128 *r, unsigned int n) {
    VERIFY_CHECK(n < 128);
    *r >>= n;
 }
 
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_u128_to_u64(const rustsecp256k1_v0_11_uint128 *a) {
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_u128_to_u64(const rustsecp256k1_v0_12_uint128 *a) {
    return (uint64_t)(*a);
 }
 
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_u128_hi_u64(const rustsecp256k1_v0_11_uint128 *a) {
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_u128_hi_u64(const rustsecp256k1_v0_12_uint128 *a) {
    return (uint64_t)(*a >> 64);
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_u128_from_u64(rustsecp256k1_v0_11_uint128 *r, uint64_t a) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_u128_from_u64(rustsecp256k1_v0_12_uint128 *r, uint64_t a) {
    *r = a;
 }
 
-static SECP256K1_INLINE int rustsecp256k1_v0_11_u128_check_bits(const rustsecp256k1_v0_11_uint128 *r, unsigned int n) {
+static SECP256K1_INLINE int rustsecp256k1_v0_12_u128_check_bits(const rustsecp256k1_v0_12_uint128 *r, unsigned int n) {
    VERIFY_CHECK(n < 128);
    return (*r >> n == 0);
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_load(rustsecp256k1_v0_11_int128 *r, int64_t hi, uint64_t lo) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_load(rustsecp256k1_v0_12_int128 *r, int64_t hi, uint64_t lo) {
     *r = (((uint128_t)(uint64_t)hi) << 64) + lo;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_mul(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_mul(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b) {
    *r = (int128_t)a * b;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_accum_mul(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_accum_mul(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b) {
    int128_t ab = (int128_t)a * b;
    VERIFY_CHECK(0 <= ab ? *r <= INT128_MAX - ab : INT128_MIN - ab <= *r);
    *r += ab;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_det(rustsecp256k1_v0_11_int128 *r, int64_t a, int64_t b, int64_t c, int64_t d) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_det(rustsecp256k1_v0_12_int128 *r, int64_t a, int64_t b, int64_t c, int64_t d) {
    int128_t ad = (int128_t)a * d;
    int128_t bc = (int128_t)b * c;
    VERIFY_CHECK(0 <= bc ? INT128_MIN + bc <= ad : ad <= INT128_MAX + bc);
    *r = ad - bc;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_rshift(rustsecp256k1_v0_11_int128 *r, unsigned int n) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_rshift(rustsecp256k1_v0_12_int128 *r, unsigned int n) {
    VERIFY_CHECK(n < 128);
    *r >>= n;
 }
 
-static SECP256K1_INLINE uint64_t rustsecp256k1_v0_11_i128_to_u64(const rustsecp256k1_v0_11_int128 *a) {
+static SECP256K1_INLINE uint64_t rustsecp256k1_v0_12_i128_to_u64(const rustsecp256k1_v0_12_int128 *a) {
    return (uint64_t)*a;
 }
 
-static SECP256K1_INLINE int64_t rustsecp256k1_v0_11_i128_to_i64(const rustsecp256k1_v0_11_int128 *a) {
+static SECP256K1_INLINE int64_t rustsecp256k1_v0_12_i128_to_i64(const rustsecp256k1_v0_12_int128 *a) {
    VERIFY_CHECK(INT64_MIN <= *a && *a <= INT64_MAX);
    return *a;
 }
 
-static SECP256K1_INLINE void rustsecp256k1_v0_11_i128_from_i64(rustsecp256k1_v0_11_int128 *r, int64_t a) {
+static SECP256K1_INLINE void rustsecp256k1_v0_12_i128_from_i64(rustsecp256k1_v0_12_int128 *r, int64_t a) {
    *r = a;
 }
 
-static SECP256K1_INLINE int rustsecp256k1_v0_11_i128_eq_var(const rustsecp256k1_v0_11_int128 *a, const rustsecp256k1_v0_11_int128 *b) {
+static SECP256K1_INLINE int rustsecp256k1_v0_12_i128_eq_var(const rustsecp256k1_v0_12_int128 *a, const rustsecp256k1_v0_12_int128 *b) {
    return *a == *b;
 }
 
-static SECP256K1_INLINE int rustsecp256k1_v0_11_i128_check_pow2(const rustsecp256k1_v0_11_int128 *r, unsigned int n, int sign) {
+static SECP256K1_INLINE int rustsecp256k1_v0_12_i128_check_pow2(const rustsecp256k1_v0_12_int128 *r, unsigned int n, int sign) {
    VERIFY_CHECK(n < 127);
    VERIFY_CHECK(sign == 1 || sign == -1);
    return (*r == (int128_t)((uint128_t)sign << n));

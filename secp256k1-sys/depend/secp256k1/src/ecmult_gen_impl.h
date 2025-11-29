@@ -14,49 +14,49 @@
 #include "hash_impl.h"
 #include "precomputed_ecmult_gen.h"
 
-static void rustsecp256k1_v0_11_ecmult_gen_context_build(rustsecp256k1_v0_11_ecmult_gen_context *ctx) {
-    rustsecp256k1_v0_11_ecmult_gen_blind(ctx, NULL);
+static void rustsecp256k1_v0_12_ecmult_gen_context_build(rustsecp256k1_v0_12_ecmult_gen_context *ctx) {
+    rustsecp256k1_v0_12_ecmult_gen_blind(ctx, NULL);
     ctx->built = 1;
 }
 
-static int rustsecp256k1_v0_11_ecmult_gen_context_is_built(const rustsecp256k1_v0_11_ecmult_gen_context* ctx) {
+static int rustsecp256k1_v0_12_ecmult_gen_context_is_built(const rustsecp256k1_v0_12_ecmult_gen_context* ctx) {
     return ctx->built;
 }
 
-static void rustsecp256k1_v0_11_ecmult_gen_context_clear(rustsecp256k1_v0_11_ecmult_gen_context *ctx) {
+static void rustsecp256k1_v0_12_ecmult_gen_context_clear(rustsecp256k1_v0_12_ecmult_gen_context *ctx) {
     ctx->built = 0;
-    rustsecp256k1_v0_11_scalar_clear(&ctx->scalar_offset);
-    rustsecp256k1_v0_11_ge_clear(&ctx->ge_offset);
-    rustsecp256k1_v0_11_fe_clear(&ctx->proj_blind);
+    rustsecp256k1_v0_12_scalar_clear(&ctx->scalar_offset);
+    rustsecp256k1_v0_12_ge_clear(&ctx->ge_offset);
+    rustsecp256k1_v0_12_fe_clear(&ctx->proj_blind);
 }
 
 /* Compute the scalar (2^COMB_BITS - 1) / 2, the difference between the gn argument to
- * rustsecp256k1_v0_11_ecmult_gen, and the scalar whose encoding the table lookup bits are drawn
+ * rustsecp256k1_v0_12_ecmult_gen, and the scalar whose encoding the table lookup bits are drawn
  * from (before applying blinding). */
-static void rustsecp256k1_v0_11_ecmult_gen_scalar_diff(rustsecp256k1_v0_11_scalar* diff) {
+static void rustsecp256k1_v0_12_ecmult_gen_scalar_diff(rustsecp256k1_v0_12_scalar* diff) {
     int i;
 
     /* Compute scalar -1/2. */
-    rustsecp256k1_v0_11_scalar neghalf;
-    rustsecp256k1_v0_11_scalar_half(&neghalf, &rustsecp256k1_v0_11_scalar_one);
-    rustsecp256k1_v0_11_scalar_negate(&neghalf, &neghalf);
+    rustsecp256k1_v0_12_scalar neghalf;
+    rustsecp256k1_v0_12_scalar_half(&neghalf, &rustsecp256k1_v0_12_scalar_one);
+    rustsecp256k1_v0_12_scalar_negate(&neghalf, &neghalf);
 
     /* Compute offset = 2^(COMB_BITS - 1). */
-    *diff = rustsecp256k1_v0_11_scalar_one;
+    *diff = rustsecp256k1_v0_12_scalar_one;
     for (i = 0; i < COMB_BITS - 1; ++i) {
-        rustsecp256k1_v0_11_scalar_add(diff, diff, diff);
+        rustsecp256k1_v0_12_scalar_add(diff, diff, diff);
     }
 
     /* The result is the sum 2^(COMB_BITS - 1) + (-1/2). */
-    rustsecp256k1_v0_11_scalar_add(diff, diff, &neghalf);
+    rustsecp256k1_v0_12_scalar_add(diff, diff, &neghalf);
 }
 
-static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_context *ctx, rustsecp256k1_v0_11_gej *r, const rustsecp256k1_v0_11_scalar *gn) {
+static void rustsecp256k1_v0_12_ecmult_gen(const rustsecp256k1_v0_12_ecmult_gen_context *ctx, rustsecp256k1_v0_12_gej *r, const rustsecp256k1_v0_12_scalar *gn) {
     uint32_t comb_off;
-    rustsecp256k1_v0_11_ge add;
-    rustsecp256k1_v0_11_fe neg;
-    rustsecp256k1_v0_11_ge_storage adds;
-    rustsecp256k1_v0_11_scalar d;
+    rustsecp256k1_v0_12_ge add;
+    rustsecp256k1_v0_12_fe neg;
+    rustsecp256k1_v0_12_ge_storage adds;
+    rustsecp256k1_v0_12_scalar d;
     /* Array of uint32_t values large enough to store COMB_BITS bits. Only the bottom
      * 8 are ever nonzero, but having the zero padding at the end if COMB_BITS>256
      * avoids the need to deal with out-of-bounds reads from a scalar. */
@@ -107,14 +107,14 @@ static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_
      */
 
     /* Compute the scalar d = (gn + ctx->scalar_offset). */
-    rustsecp256k1_v0_11_scalar_add(&d, &ctx->scalar_offset, gn);
+    rustsecp256k1_v0_12_scalar_add(&d, &ctx->scalar_offset, gn);
     /* Convert to recoded array. */
     for (i = 0; i < 8 && i < ((COMB_BITS + 31) >> 5); ++i) {
-        recoded[i] = rustsecp256k1_v0_11_scalar_get_bits_limb32(&d, 32 * i, 32);
+        recoded[i] = rustsecp256k1_v0_12_scalar_get_bits_limb32(&d, 32 * i, 32);
     }
-    rustsecp256k1_v0_11_scalar_clear(&d);
+    rustsecp256k1_v0_12_scalar_clear(&d);
 
-    /* In rustsecp256k1_v0_11_ecmult_gen_prec_table we have precomputed sums of the
+    /* In rustsecp256k1_v0_12_ecmult_gen_prec_table we have precomputed sums of the
      * (2*d[i]-1) * 2^(i-1) * G points, for various combinations of i positions.
      * We rewrite our equation in terms of these table entries.
      *
@@ -185,7 +185,7 @@ static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_
      * entry from the second half is needed, we look up its bit-flipped version instead, and negate
      * it.
      *
-     * rustsecp256k1_v0_11_ecmult_gen_prec_table[b][index] stores the table(b, m) entries. Index
+     * rustsecp256k1_v0_12_ecmult_gen_prec_table[b][index] stores the table(b, m) entries. Index
      * is the relevant mask(b) bits of m packed together without gaps. */
 
     /* Outer loop: iterate over comb_off from COMB_SPACING - 1 down to 0. */
@@ -216,7 +216,7 @@ static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_
                  * which ensures that bitdata doesn't loose entropy. This relies on the
                  * rotation being atomic, i.e., the compiler emitting an actual rot
                  * instruction. */
-                uint32_t bitdata = rustsecp256k1_v0_11_rotr32(recoded[bit_pos >> 5], bit_pos & 0x1f);
+                uint32_t bitdata = rustsecp256k1_v0_12_rotr32(recoded[bit_pos >> 5], bit_pos & 0x1f);
 
                 /* Clear the bit at position tooth, but sssh, don't tell clang. */
                 uint32_t volatile vmask = ~(1 << tooth);
@@ -245,97 +245,97 @@ static void rustsecp256k1_v0_11_ecmult_gen(const rustsecp256k1_v0_11_ecmult_gen_
              *    (https://www.tau.ac.il/~tromer/papers/cache.pdf)
              */
             for (index = 0; index < COMB_POINTS; ++index) {
-                rustsecp256k1_v0_11_ge_storage_cmov(&adds, &rustsecp256k1_v0_11_ecmult_gen_prec_table[block][index], index == abs);
+                rustsecp256k1_v0_12_ge_storage_cmov(&adds, &rustsecp256k1_v0_12_ecmult_gen_prec_table[block][index], index == abs);
             }
 
             /* Set add=adds or add=-adds, in constant time, based on sign. */
-            rustsecp256k1_v0_11_ge_from_storage(&add, &adds);
-            rustsecp256k1_v0_11_fe_negate(&neg, &add.y, 1);
-            rustsecp256k1_v0_11_fe_cmov(&add.y, &neg, sign);
+            rustsecp256k1_v0_12_ge_from_storage(&add, &adds);
+            rustsecp256k1_v0_12_fe_negate(&neg, &add.y, 1);
+            rustsecp256k1_v0_12_fe_cmov(&add.y, &neg, sign);
 
             /* Add the looked up and conditionally negated value to r. */
             if (EXPECT(first, 0)) {
                 /* If this is the first table lookup, we can skip addition. */
-                rustsecp256k1_v0_11_gej_set_ge(r, &add);
+                rustsecp256k1_v0_12_gej_set_ge(r, &add);
                 /* Give the entry a random Z coordinate to blind intermediary results. */
-                rustsecp256k1_v0_11_gej_rescale(r, &ctx->proj_blind);
+                rustsecp256k1_v0_12_gej_rescale(r, &ctx->proj_blind);
                 first = 0;
             } else {
-                rustsecp256k1_v0_11_gej_add_ge(r, r, &add);
+                rustsecp256k1_v0_12_gej_add_ge(r, r, &add);
             }
         }
 
         /* Double the result, except in the last iteration. */
         if (comb_off-- == 0) break;
-        rustsecp256k1_v0_11_gej_double(r, r);
+        rustsecp256k1_v0_12_gej_double(r, r);
     }
 
     /* Correct for the scalar_offset added at the start (ge_offset = b*G, while b was
      * subtracted from the input scalar gn). */
-    rustsecp256k1_v0_11_gej_add_ge(r, r, &ctx->ge_offset);
+    rustsecp256k1_v0_12_gej_add_ge(r, r, &ctx->ge_offset);
 
     /* Cleanup. */
-    rustsecp256k1_v0_11_fe_clear(&neg);
-    rustsecp256k1_v0_11_ge_clear(&add);
-    rustsecp256k1_v0_11_memclear(&adds, sizeof(adds));
-    rustsecp256k1_v0_11_memclear(&recoded, sizeof(recoded));
+    rustsecp256k1_v0_12_fe_clear(&neg);
+    rustsecp256k1_v0_12_ge_clear(&add);
+    rustsecp256k1_v0_12_memclear(&adds, sizeof(adds));
+    rustsecp256k1_v0_12_memclear(&recoded, sizeof(recoded));
 }
 
-/* Setup blinding values for rustsecp256k1_v0_11_ecmult_gen. */
-static void rustsecp256k1_v0_11_ecmult_gen_blind(rustsecp256k1_v0_11_ecmult_gen_context *ctx, const unsigned char *seed32) {
-    rustsecp256k1_v0_11_scalar b;
-    rustsecp256k1_v0_11_scalar diff;
-    rustsecp256k1_v0_11_gej gb;
-    rustsecp256k1_v0_11_fe f;
+/* Setup blinding values for rustsecp256k1_v0_12_ecmult_gen. */
+static void rustsecp256k1_v0_12_ecmult_gen_blind(rustsecp256k1_v0_12_ecmult_gen_context *ctx, const unsigned char *seed32) {
+    rustsecp256k1_v0_12_scalar b;
+    rustsecp256k1_v0_12_scalar diff;
+    rustsecp256k1_v0_12_gej gb;
+    rustsecp256k1_v0_12_fe f;
     unsigned char nonce32[32];
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256 rng;
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256 rng;
     unsigned char keydata[64];
 
     /* Compute the (2^COMB_BITS - 1)/2 term once. */
-    rustsecp256k1_v0_11_ecmult_gen_scalar_diff(&diff);
+    rustsecp256k1_v0_12_ecmult_gen_scalar_diff(&diff);
 
     if (seed32 == NULL) {
         /* When seed is NULL, reset the final point and blinding value. */
-        rustsecp256k1_v0_11_ge_neg(&ctx->ge_offset, &rustsecp256k1_v0_11_ge_const_g);
-        rustsecp256k1_v0_11_scalar_add(&ctx->scalar_offset, &rustsecp256k1_v0_11_scalar_one, &diff);
-        ctx->proj_blind = rustsecp256k1_v0_11_fe_one;
+        rustsecp256k1_v0_12_ge_neg(&ctx->ge_offset, &rustsecp256k1_v0_12_ge_const_g);
+        rustsecp256k1_v0_12_scalar_add(&ctx->scalar_offset, &rustsecp256k1_v0_12_scalar_one, &diff);
+        ctx->proj_blind = rustsecp256k1_v0_12_fe_one;
         return;
     }
     /* The prior blinding value (if not reset) is chained forward by including it in the hash. */
-    rustsecp256k1_v0_11_scalar_get_b32(keydata, &ctx->scalar_offset);
+    rustsecp256k1_v0_12_scalar_get_b32(keydata, &ctx->scalar_offset);
     /** Using a CSPRNG allows a failure free interface, avoids needing large amounts of random data,
      *   and guards against weak or adversarial seeds.  This is a simpler and safer interface than
      *   asking the caller for blinding values directly and expecting them to retry on failure.
      */
     VERIFY_CHECK(seed32 != NULL);
     memcpy(keydata + 32, seed32, 32);
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256_initialize(&rng, keydata, 64);
-    rustsecp256k1_v0_11_memclear(keydata, sizeof(keydata));
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256_initialize(&rng, keydata, 64);
+    rustsecp256k1_v0_12_memclear(keydata, sizeof(keydata));
 
     /* Compute projective blinding factor (cannot be 0). */
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
-    rustsecp256k1_v0_11_fe_set_b32_mod(&f, nonce32);
-    rustsecp256k1_v0_11_fe_cmov(&f, &rustsecp256k1_v0_11_fe_one, rustsecp256k1_v0_11_fe_normalizes_to_zero(&f));
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
+    rustsecp256k1_v0_12_fe_set_b32_mod(&f, nonce32);
+    rustsecp256k1_v0_12_fe_cmov(&f, &rustsecp256k1_v0_12_fe_one, rustsecp256k1_v0_12_fe_normalizes_to_zero(&f));
     ctx->proj_blind = f;
 
     /* For a random blinding value b, set scalar_offset=diff-b, ge_offset=bG */
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
-    rustsecp256k1_v0_11_scalar_set_b32(&b, nonce32, NULL);
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
+    rustsecp256k1_v0_12_scalar_set_b32(&b, nonce32, NULL);
     /* The blinding value cannot be zero, as that would mean ge_offset = infinity,
-     * which rustsecp256k1_v0_11_gej_add_ge cannot handle. */
-    rustsecp256k1_v0_11_scalar_cmov(&b, &rustsecp256k1_v0_11_scalar_one, rustsecp256k1_v0_11_scalar_is_zero(&b));
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256_finalize(&rng);
-    rustsecp256k1_v0_11_ecmult_gen(ctx, &gb, &b);
-    rustsecp256k1_v0_11_scalar_negate(&b, &b);
-    rustsecp256k1_v0_11_scalar_add(&ctx->scalar_offset, &b, &diff);
-    rustsecp256k1_v0_11_ge_set_gej(&ctx->ge_offset, &gb);
+     * which rustsecp256k1_v0_12_gej_add_ge cannot handle. */
+    rustsecp256k1_v0_12_scalar_cmov(&b, &rustsecp256k1_v0_12_scalar_one, rustsecp256k1_v0_12_scalar_is_zero(&b));
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256_finalize(&rng);
+    rustsecp256k1_v0_12_ecmult_gen(ctx, &gb, &b);
+    rustsecp256k1_v0_12_scalar_negate(&b, &b);
+    rustsecp256k1_v0_12_scalar_add(&ctx->scalar_offset, &b, &diff);
+    rustsecp256k1_v0_12_ge_set_gej(&ctx->ge_offset, &gb);
 
     /* Clean up. */
-    rustsecp256k1_v0_11_memclear(nonce32, sizeof(nonce32));
-    rustsecp256k1_v0_11_scalar_clear(&b);
-    rustsecp256k1_v0_11_gej_clear(&gb);
-    rustsecp256k1_v0_11_fe_clear(&f);
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256_clear(&rng);
+    rustsecp256k1_v0_12_memclear(nonce32, sizeof(nonce32));
+    rustsecp256k1_v0_12_scalar_clear(&b);
+    rustsecp256k1_v0_12_gej_clear(&gb);
+    rustsecp256k1_v0_12_fe_clear(&f);
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256_clear(&rng);
 }
 
 #endif /* SECP256K1_ECMULT_GEN_IMPL_H */

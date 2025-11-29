@@ -14,15 +14,15 @@
  * Its value is sum(v[i] * 2^(30*i), i=0..8). */
 typedef struct {
     int32_t v[9];
-} rustsecp256k1_v0_11_modinv32_signed30;
+} rustsecp256k1_v0_12_modinv32_signed30;
 
 typedef struct {
     /* The modulus in signed30 notation, must be odd and in [3, 2^256]. */
-    rustsecp256k1_v0_11_modinv32_signed30 modulus;
+    rustsecp256k1_v0_12_modinv32_signed30 modulus;
 
     /* modulus^{-1} mod 2^30 */
     uint32_t modulus_inv30;
-} rustsecp256k1_v0_11_modinv32_modinfo;
+} rustsecp256k1_v0_12_modinv32_modinfo;
 
 /* Replace x with its modular inverse mod modinfo->modulus. x must be in range [0, modulus).
  * If x is zero, the result will be zero as well. If not, the inverse must exist (i.e., the gcd of
@@ -30,14 +30,14 @@ typedef struct {
  *
  * On output, all of x's limbs will be in [0, 2^30).
  */
-static void rustsecp256k1_v0_11_modinv32_var(rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo);
+static void rustsecp256k1_v0_12_modinv32_var(rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo);
 
-/* Same as rustsecp256k1_v0_11_modinv32_var, but constant time in x (not in the modulus). */
-static void rustsecp256k1_v0_11_modinv32(rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo);
+/* Same as rustsecp256k1_v0_12_modinv32_var, but constant time in x (not in the modulus). */
+static void rustsecp256k1_v0_12_modinv32(rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo);
 
 /* Compute the Jacobi symbol for (x | modinfo->modulus). x must be coprime with modulus (and thus
  * cannot be 0, as modulus >= 3). All limbs of x must be non-negative. Returns 0 if the result
  * cannot be computed. */
-static int rustsecp256k1_v0_11_jacobi32_maybe_var(const rustsecp256k1_v0_11_modinv32_signed30 *x, const rustsecp256k1_v0_11_modinv32_modinfo *modinfo);
+static int rustsecp256k1_v0_12_jacobi32_maybe_var(const rustsecp256k1_v0_12_modinv32_signed30 *x, const rustsecp256k1_v0_12_modinv32_modinfo *modinfo);
 
 #endif /* SECP256K1_MODINV32_H */

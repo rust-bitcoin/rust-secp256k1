@@ -197,7 +197,7 @@ checksum = "e1cf6437eb19a8f4a6cc0f7dca544973b0b78843adbfeb3683d1a94a0024a294"
 
 [[package]]
 name = "secp256k1"
-version = "0.31.1"
+version = "0.32.0-beta.2"
 dependencies = [
  "arbitrary",
  "bincode",
@@ -214,7 +214,7 @@ dependencies = [
 
 [[package]]
 name = "secp256k1-sys"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "cc",
  "libc",

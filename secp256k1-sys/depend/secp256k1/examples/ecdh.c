@@ -26,19 +26,19 @@ int main(void) {
     unsigned char randomize[32];
     int return_val;
     size_t len;
-    rustsecp256k1_v0_11_pubkey pubkey1;
-    rustsecp256k1_v0_11_pubkey pubkey2;
+    rustsecp256k1_v0_12_pubkey pubkey1;
+    rustsecp256k1_v0_12_pubkey pubkey2;
 
     /* Before we can call actual API functions, we need to create a "context". */
-    rustsecp256k1_v0_11_context* ctx = rustsecp256k1_v0_11_context_create(SECP256K1_CONTEXT_NONE);
+    rustsecp256k1_v0_12_context* ctx = rustsecp256k1_v0_12_context_create(SECP256K1_CONTEXT_NONE);
     if (!fill_random(randomize, sizeof(randomize))) {
         printf("Failed to generate randomness\n");
         return 1;
     }
     /* Randomizing the context is recommended to protect against side-channel
-     * leakage See `rustsecp256k1_v0_11_context_randomize` in secp256k1.h for more
+     * leakage See `rustsecp256k1_v0_12_context_randomize` in secp256k1.h for more
      * information about it. This should never fail. */
-    return_val = rustsecp256k1_v0_11_context_randomize(ctx, randomize);
+    return_val = rustsecp256k1_v0_12_context_randomize(ctx, randomize);
     assert(return_val);
 
     /*** Key Generation ***/
@@ -49,27 +49,27 @@ int main(void) {
     /* If the secret key is zero or out of range (greater than secp256k1's
     * order), we fail. Note that the probability of this occurring is negligible
     * with a properly functioning random number generator. */
-    if (!rustsecp256k1_v0_11_ec_seckey_verify(ctx, seckey1) || !rustsecp256k1_v0_11_ec_seckey_verify(ctx, seckey2)) {
+    if (!rustsecp256k1_v0_12_ec_seckey_verify(ctx, seckey1) || !rustsecp256k1_v0_12_ec_seckey_verify(ctx, seckey2)) {
         printf("Generated secret key is invalid. This indicates an issue with the random number generator.\n");
         return 1;
     }
 
     /* Public key creation using a valid context with a verified secret key should never fail */
-    return_val = rustsecp256k1_v0_11_ec_pubkey_create(ctx, &pubkey1, seckey1);
+    return_val = rustsecp256k1_v0_12_ec_pubkey_create(ctx, &pubkey1, seckey1);
     assert(return_val);
-    return_val = rustsecp256k1_v0_11_ec_pubkey_create(ctx, &pubkey2, seckey2);
+    return_val = rustsecp256k1_v0_12_ec_pubkey_create(ctx, &pubkey2, seckey2);
     assert(return_val);
 
     /* Serialize pubkey1 in a compressed form (33 bytes), should always return 1 */
     len = sizeof(compressed_pubkey1);
-    return_val = rustsecp256k1_v0_11_ec_pubkey_serialize(ctx, compressed_pubkey1, &len, &pubkey1, SECP256K1_EC_COMPRESSED);
+    return_val = rustsecp256k1_v0_12_ec_pubkey_serialize(ctx, compressed_pubkey1, &len, &pubkey1, SECP256K1_EC_COMPRESSED);
     assert(return_val);
     /* Should be the same size as the size of the output, because we passed a 33 byte array. */
     assert(len == sizeof(compressed_pubkey1));
 
     /* Serialize pubkey2 in a compressed form (33 bytes) */
     len = sizeof(compressed_pubkey2);
-    return_val = rustsecp256k1_v0_11_ec_pubkey_serialize(ctx, compressed_pubkey2, &len, &pubkey2, SECP256K1_EC_COMPRESSED);
+    return_val = rustsecp256k1_v0_12_ec_pubkey_serialize(ctx, compressed_pubkey2, &len, &pubkey2, SECP256K1_EC_COMPRESSED);
     assert(return_val);
     /* Should be the same size as the size of the output, because we passed a 33 byte array. */
     assert(len == sizeof(compressed_pubkey2));
@@ -78,12 +78,12 @@ int main(void) {
 
     /* Perform ECDH with seckey1 and pubkey2. Should never fail with a verified
      * seckey and valid pubkey */
-    return_val = rustsecp256k1_v0_11_ecdh(ctx, shared_secret1, &pubkey2, seckey1, NULL, NULL);
+    return_val = rustsecp256k1_v0_12_ecdh(ctx, shared_secret1, &pubkey2, seckey1, NULL, NULL);
     assert(return_val);
 
     /* Perform ECDH with seckey2 and pubkey1. Should never fail with a verified
      * seckey and valid pubkey */
-    return_val = rustsecp256k1_v0_11_ecdh(ctx, shared_secret2, &pubkey1, seckey2, NULL, NULL);
+    return_val = rustsecp256k1_v0_12_ecdh(ctx, shared_secret2, &pubkey1, seckey2, NULL, NULL);
     assert(return_val);
 
     /* Both parties should end up with the same shared secret */
@@ -102,7 +102,7 @@ int main(void) {
     print_hex(shared_secret1, sizeof(shared_secret1));
 
     /* This will clear everything from the context and free the memory */
-    rustsecp256k1_v0_11_context_destroy(ctx);
+    rustsecp256k1_v0_12_context_destroy(ctx);
 
     /* It's best practice to try to clear secrets from memory after using them.
      * This is done because some bugs can allow an attacker to leak memory, for

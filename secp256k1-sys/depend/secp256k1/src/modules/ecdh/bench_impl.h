@@ -10,8 +10,8 @@
 #include "../../../include/secp256k1_ecdh.h"
 
 typedef struct {
-    rustsecp256k1_v0_11_context *ctx;
-    rustsecp256k1_v0_11_pubkey point;
+    rustsecp256k1_v0_12_context *ctx;
+    rustsecp256k1_v0_12_pubkey point;
     unsigned char scalar[32];
 } bench_ecdh_data;
 
@@ -29,7 +29,7 @@ static void bench_ecdh_setup(void* arg) {
     for (i = 0; i < 32; i++) {
         data->scalar[i] = i + 1;
     }
-    CHECK(rustsecp256k1_v0_11_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
+    CHECK(rustsecp256k1_v0_12_ec_pubkey_parse(data->ctx, &data->point, point, sizeof(point)) == 1);
 }
 
 static void bench_ecdh(void* arg, int iters) {
@@ -38,7 +38,7 @@ static void bench_ecdh(void* arg, int iters) {
     bench_ecdh_data *data = (bench_ecdh_data*)arg;
 
     for (i = 0; i < iters; i++) {
-        CHECK(rustsecp256k1_v0_11_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_12_ecdh(data->ctx, res, &data->point, data->scalar, NULL, NULL) == 1);
     }
 }
 
@@ -47,11 +47,11 @@ static void run_ecdh_bench(int iters, int argc, char** argv) {
     int d = argc == 1;
 
     /* create a context with no capabilities */
-    data.ctx = rustsecp256k1_v0_11_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
+    data.ctx = rustsecp256k1_v0_12_context_create(SECP256K1_FLAGS_TYPE_CONTEXT);
 
     if (d || have_flag(argc, argv, "ecdh")) run_benchmark("ecdh", bench_ecdh, bench_ecdh_setup, NULL, &data, 10, iters);
 
-    rustsecp256k1_v0_11_context_destroy(data.ctx);
+    rustsecp256k1_v0_12_context_destroy(data.ctx);
 }
 
 #endif /* SECP256K1_MODULE_ECDH_BENCH_H */

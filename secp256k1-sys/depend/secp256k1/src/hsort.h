@@ -21,13 +21,13 @@
  *        size: size in bytes of each element.
  *         cmp: pointer to a comparison function that is called with two
  *              arguments that point to the objects being compared. The cmp_data
- *              argument of rustsecp256k1_v0_11_hsort is passed as third argument. The
+ *              argument of rustsecp256k1_v0_12_hsort is passed as third argument. The
  *              function must return an integer less than, equal to, or greater
  *              than zero if the first argument is considered to be respectively
  *              less than, equal to, or greater than the second.
  *    cmp_data: pointer passed as third argument to cmp.
  */
-static void rustsecp256k1_v0_11_hsort(void *ptr, size_t count, size_t size,
+static void rustsecp256k1_v0_12_hsort(void *ptr, size_t count, size_t size,
                             int (*cmp)(const void *, const void *, void *),
                             void *cmp_data);
 #endif

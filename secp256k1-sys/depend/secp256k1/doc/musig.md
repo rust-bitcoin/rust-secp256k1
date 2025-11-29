@@ -1,7 +1,7 @@
 Notes on the musig module API
 ===========================
 
-The following sections contain additional notes on the API of the musig module (`include/rustsecp256k1_v0_11_musig.h`).
+The following sections contain additional notes on the API of the musig module (`include/rustsecp256k1_v0_12_musig.h`).
 A usage example can be found in `examples/musig.c`.
 
 ## API misuse
@@ -12,17 +12,17 @@ While the results can be catastrophic (e.g. leaking of the secret key), it is un
 
 Therefore, users of the musig module must take great care to make sure of the following:
 
-1. A unique nonce per signing session is generated in `rustsecp256k1_v0_11_musig_nonce_gen`.
-   See the corresponding comment in `include/rustsecp256k1_v0_11_musig.h` for how to ensure that.
-2. The `rustsecp256k1_v0_11_musig_secnonce` structure is never copied or serialized.
-   See also the comment on `rustsecp256k1_v0_11_musig_secnonce` in `include/rustsecp256k1_v0_11_musig.h`.
+1. A unique nonce per signing session is generated in `rustsecp256k1_v0_12_musig_nonce_gen`.
+   See the corresponding comment in `include/rustsecp256k1_v0_12_musig.h` for how to ensure that.
+2. The `rustsecp256k1_v0_12_musig_secnonce` structure is never copied or serialized.
+   See also the comment on `rustsecp256k1_v0_12_musig_secnonce` in `include/rustsecp256k1_v0_12_musig.h`.
 3. Opaque data structures are never written to or read from directly.
    Instead, only the provided accessor functions are used.
 
 ## Key Aggregation and (Taproot) Tweaking
 
-Given a set of public keys, the aggregate public key is computed with `rustsecp256k1_v0_11_musig_pubkey_agg`.
-A plain tweak can be added to the resulting public key with `rustsecp256k1_v0_11_ec_pubkey_tweak_add` by setting the `tweak32` argument to the hash defined in BIP 32. Similarly, a Taproot tweak can be added with `rustsecp256k1_v0_11_xonly_pubkey_tweak_add` by setting the `tweak32` argument to the TapTweak hash defined in BIP 341.
+Given a set of public keys, the aggregate public key is computed with `rustsecp256k1_v0_12_musig_pubkey_agg`.
+A plain tweak can be added to the resulting public key with `rustsecp256k1_v0_12_ec_pubkey_tweak_add` by setting the `tweak32` argument to the hash defined in BIP 32. Similarly, a Taproot tweak can be added with `rustsecp256k1_v0_12_xonly_pubkey_tweak_add` by setting the `tweak32` argument to the TapTweak hash defined in BIP 341.
 Both types of tweaking can be combined and invoked multiple times if the specific application requires it.
 
 ## Signing
@@ -30,17 +30,17 @@ Both types of tweaking can be combined and invoked multiple times if the specifi
 This is covered by `examples/musig.c`.
 Essentially, the protocol proceeds in the following steps:
 
-1. Generate a keypair with `rustsecp256k1_v0_11_keypair_create` and obtain the public key with `rustsecp256k1_v0_11_keypair_pub`.
-2. Call `rustsecp256k1_v0_11_musig_pubkey_agg` with the pubkeys of all participants.
-3. Optionally add a (Taproot) tweak with `rustsecp256k1_v0_11_musig_pubkey_xonly_tweak_add` and a plain tweak with `rustsecp256k1_v0_11_musig_pubkey_ec_tweak_add`.
-4. Generate a pair of secret and public nonce with `rustsecp256k1_v0_11_musig_nonce_gen` and send the public nonce to the other signers.
-5. Someone (not necessarily the signer) aggregates the public nonces with `rustsecp256k1_v0_11_musig_nonce_agg` and sends it to the signers.
-6. Process the aggregate nonce with `rustsecp256k1_v0_11_musig_nonce_process`.
-7. Create a partial signature with `rustsecp256k1_v0_11_musig_partial_sign`.
-8. Verify the partial signatures (optional in some scenarios) with `rustsecp256k1_v0_11_musig_partial_sig_verify`.
-9. Someone (not necessarily the signer) obtains all partial signatures and aggregates them into the final Schnorr signature using `rustsecp256k1_v0_11_musig_partial_sig_agg`.
+1. Generate a keypair with `rustsecp256k1_v0_12_keypair_create` and obtain the public key with `rustsecp256k1_v0_12_keypair_pub`.
+2. Call `rustsecp256k1_v0_12_musig_pubkey_agg` with the pubkeys of all participants.
+3. Optionally add a (Taproot) tweak with `rustsecp256k1_v0_12_musig_pubkey_xonly_tweak_add` and a plain tweak with `rustsecp256k1_v0_12_musig_pubkey_ec_tweak_add`.
+4. Generate a pair of secret and public nonce with `rustsecp256k1_v0_12_musig_nonce_gen` and send the public nonce to the other signers.
+5. Someone (not necessarily the signer) aggregates the public nonces with `rustsecp256k1_v0_12_musig_nonce_agg` and sends it to the signers.
+6. Process the aggregate nonce with `rustsecp256k1_v0_12_musig_nonce_process`.
+7. Create a partial signature with `rustsecp256k1_v0_12_musig_partial_sign`.
+8. Verify the partial signatures (optional in some scenarios) with `rustsecp256k1_v0_12_musig_partial_sig_verify`.
+9. Someone (not necessarily the signer) obtains all partial signatures and aggregates them into the final Schnorr signature using `rustsecp256k1_v0_12_musig_partial_sig_agg`.
 
-The aggregate signature can be verified with `rustsecp256k1_v0_11_schnorrsig_verify`.
+The aggregate signature can be verified with `rustsecp256k1_v0_12_schnorrsig_verify`.
 
 Steps 1 through 5 above can occur before or after the signers are aware of the message to be signed.
 Whenever possible, it is recommended to generate the nonces only after the message is known.

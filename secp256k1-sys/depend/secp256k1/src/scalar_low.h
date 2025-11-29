@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 /** A scalar modulo the group order of the secp256k1 curve. */
-typedef uint32_t rustsecp256k1_v0_11_scalar;
+typedef uint32_t rustsecp256k1_v0_12_scalar;
 
 /* A compile-time constant equal to 2^32 (modulo order). */
 #define SCALAR_2P32 ((0xffffffffUL % EXHAUSTIVE_TEST_ORDER) + 1U)

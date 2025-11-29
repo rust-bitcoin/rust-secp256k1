@@ -1,4 +1,4 @@
-load("rustsecp256k1_v0_11_params.sage")
+load("rustsecp256k1_v0_12_params.sage")
 
 MAX_ORDER = 1000
 
@@ -124,7 +124,7 @@ for f in sorted(solutions.keys()):
     print(f"#  {'if' if first else 'elif'} EXHAUSTIVE_TEST_ORDER == {f}")
     first = False
     print()
-    print(f"static const rustsecp256k1_v0_11_ge rustsecp256k1_v0_11_ge_const_g = SECP256K1_G_ORDER_{f};")
+    print(f"static const rustsecp256k1_v0_12_ge rustsecp256k1_v0_12_ge_const_g = SECP256K1_G_ORDER_{f};")
     output_b(b)
     print()
 print("#  else")
@@ -132,7 +132,7 @@ print("#    error No known generator for the specified exhaustive test group ord
 print("#  endif")
 print("#else")
 print()
-print("static const rustsecp256k1_v0_11_ge rustsecp256k1_v0_11_ge_const_g = SECP256K1_G;")
+print("static const rustsecp256k1_v0_12_ge rustsecp256k1_v0_12_ge_const_g = SECP256K1_G;")
 output_b(7)
 print()
 print("#endif")

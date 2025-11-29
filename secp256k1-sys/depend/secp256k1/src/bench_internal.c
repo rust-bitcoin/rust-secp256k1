@@ -37,10 +37,10 @@ static void help(int default_iters) {
 }
 
 typedef struct {
-    rustsecp256k1_v0_11_scalar scalar[2];
-    rustsecp256k1_v0_11_fe fe[4];
-    rustsecp256k1_v0_11_ge ge[2];
-    rustsecp256k1_v0_11_gej gej[2];
+    rustsecp256k1_v0_12_scalar scalar[2];
+    rustsecp256k1_v0_12_fe fe[4];
+    rustsecp256k1_v0_12_ge ge[2];
+    rustsecp256k1_v0_12_gej gej[2];
     unsigned char data[64];
     int wnaf[256];
 } bench_inv;
@@ -81,18 +81,18 @@ static void bench_setup(void* arg) {
         }
     };
 
-    rustsecp256k1_v0_11_scalar_set_b32(&data->scalar[0], init[0], NULL);
-    rustsecp256k1_v0_11_scalar_set_b32(&data->scalar[1], init[1], NULL);
-    rustsecp256k1_v0_11_fe_set_b32_limit(&data->fe[0], init[0]);
-    rustsecp256k1_v0_11_fe_set_b32_limit(&data->fe[1], init[1]);
-    rustsecp256k1_v0_11_fe_set_b32_limit(&data->fe[2], init[2]);
-    rustsecp256k1_v0_11_fe_set_b32_limit(&data->fe[3], init[3]);
-    CHECK(rustsecp256k1_v0_11_ge_set_xo_var(&data->ge[0], &data->fe[0], 0));
-    CHECK(rustsecp256k1_v0_11_ge_set_xo_var(&data->ge[1], &data->fe[1], 1));
-    rustsecp256k1_v0_11_gej_set_ge(&data->gej[0], &data->ge[0]);
-    rustsecp256k1_v0_11_gej_rescale(&data->gej[0], &data->fe[2]);
-    rustsecp256k1_v0_11_gej_set_ge(&data->gej[1], &data->ge[1]);
-    rustsecp256k1_v0_11_gej_rescale(&data->gej[1], &data->fe[3]);
+    rustsecp256k1_v0_12_scalar_set_b32(&data->scalar[0], init[0], NULL);
+    rustsecp256k1_v0_12_scalar_set_b32(&data->scalar[1], init[1], NULL);
+    rustsecp256k1_v0_12_fe_set_b32_limit(&data->fe[0], init[0]);
+    rustsecp256k1_v0_12_fe_set_b32_limit(&data->fe[1], init[1]);
+    rustsecp256k1_v0_12_fe_set_b32_limit(&data->fe[2], init[2]);
+    rustsecp256k1_v0_12_fe_set_b32_limit(&data->fe[3], init[3]);
+    CHECK(rustsecp256k1_v0_12_ge_set_xo_var(&data->ge[0], &data->fe[0], 0));
+    CHECK(rustsecp256k1_v0_12_ge_set_xo_var(&data->ge[1], &data->fe[1], 1));
+    rustsecp256k1_v0_12_gej_set_ge(&data->gej[0], &data->ge[0]);
+    rustsecp256k1_v0_12_gej_rescale(&data->gej[0], &data->fe[2]);
+    rustsecp256k1_v0_12_gej_set_ge(&data->gej[1], &data->ge[1]);
+    rustsecp256k1_v0_12_gej_rescale(&data->gej[1], &data->fe[3]);
     memcpy(data->data, init[0], 32);
     memcpy(data->data + 32, init[1], 32);
 }
@@ -102,7 +102,7 @@ static void bench_scalar_add(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        j += rustsecp256k1_v0_11_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
+        j += rustsecp256k1_v0_12_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
     }
     CHECK(j <= iters);
 }
@@ -112,17 +112,17 @@ static void bench_scalar_negate(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_negate(&data->scalar[0], &data->scalar[0]);
+        rustsecp256k1_v0_12_scalar_negate(&data->scalar[0], &data->scalar[0]);
     }
 }
 
 static void bench_scalar_half(void* arg, int iters) {
     int i;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_scalar s = data->scalar[0];
+    rustsecp256k1_v0_12_scalar s = data->scalar[0];
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_half(&s, &s);
+        rustsecp256k1_v0_12_scalar_half(&s, &s);
     }
 
     data->scalar[0] = s;
@@ -133,18 +133,18 @@ static void bench_scalar_mul(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_mul(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
+        rustsecp256k1_v0_12_scalar_mul(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
     }
 }
 
 static void bench_scalar_split(void* arg, int iters) {
     int i, j = 0;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_scalar tmp;
+    rustsecp256k1_v0_12_scalar tmp;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_split_lambda(&tmp, &data->scalar[1], &data->scalar[0]);
-        j += rustsecp256k1_v0_11_scalar_add(&data->scalar[0], &tmp, &data->scalar[1]);
+        rustsecp256k1_v0_12_scalar_split_lambda(&tmp, &data->scalar[1], &data->scalar[0]);
+        j += rustsecp256k1_v0_12_scalar_add(&data->scalar[0], &tmp, &data->scalar[1]);
     }
     CHECK(j <= iters);
 }
@@ -154,8 +154,8 @@ static void bench_scalar_inverse(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_inverse(&data->scalar[0], &data->scalar[0]);
-        j += rustsecp256k1_v0_11_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
+        rustsecp256k1_v0_12_scalar_inverse(&data->scalar[0], &data->scalar[0]);
+        j += rustsecp256k1_v0_12_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
     }
     CHECK(j <= iters);
 }
@@ -165,8 +165,8 @@ static void bench_scalar_inverse_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_scalar_inverse_var(&data->scalar[0], &data->scalar[0]);
-        j += rustsecp256k1_v0_11_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
+        rustsecp256k1_v0_12_scalar_inverse_var(&data->scalar[0], &data->scalar[0]);
+        j += rustsecp256k1_v0_12_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
     }
     CHECK(j <= iters);
 }
@@ -176,7 +176,7 @@ static void bench_field_half(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_half(&data->fe[0]);
+        rustsecp256k1_v0_12_fe_half(&data->fe[0]);
     }
 }
 
@@ -185,7 +185,7 @@ static void bench_field_normalize(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_normalize(&data->fe[0]);
+        rustsecp256k1_v0_12_fe_normalize(&data->fe[0]);
     }
 }
 
@@ -194,7 +194,7 @@ static void bench_field_normalize_weak(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_normalize_weak(&data->fe[0]);
+        rustsecp256k1_v0_12_fe_normalize_weak(&data->fe[0]);
     }
 }
 
@@ -203,7 +203,7 @@ static void bench_field_mul(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_mul(&data->fe[0], &data->fe[0], &data->fe[1]);
+        rustsecp256k1_v0_12_fe_mul(&data->fe[0], &data->fe[0], &data->fe[1]);
     }
 }
 
@@ -212,7 +212,7 @@ static void bench_field_sqr(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_sqr(&data->fe[0], &data->fe[0]);
+        rustsecp256k1_v0_12_fe_sqr(&data->fe[0], &data->fe[0]);
     }
 }
 
@@ -221,8 +221,8 @@ static void bench_field_inverse(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_inv(&data->fe[0], &data->fe[0]);
-        rustsecp256k1_v0_11_fe_add(&data->fe[0], &data->fe[1]);
+        rustsecp256k1_v0_12_fe_inv(&data->fe[0], &data->fe[0]);
+        rustsecp256k1_v0_12_fe_add(&data->fe[0], &data->fe[1]);
     }
 }
 
@@ -231,20 +231,20 @@ static void bench_field_inverse_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_fe_inv_var(&data->fe[0], &data->fe[0]);
-        rustsecp256k1_v0_11_fe_add(&data->fe[0], &data->fe[1]);
+        rustsecp256k1_v0_12_fe_inv_var(&data->fe[0], &data->fe[0]);
+        rustsecp256k1_v0_12_fe_add(&data->fe[0], &data->fe[1]);
     }
 }
 
 static void bench_field_sqrt(void* arg, int iters) {
     int i, j = 0;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_fe t;
+    rustsecp256k1_v0_12_fe t;
 
     for (i = 0; i < iters; i++) {
         t = data->fe[0];
-        j += rustsecp256k1_v0_11_fe_sqrt(&data->fe[0], &t);
-        rustsecp256k1_v0_11_fe_add(&data->fe[0], &data->fe[1]);
+        j += rustsecp256k1_v0_12_fe_sqrt(&data->fe[0], &t);
+        rustsecp256k1_v0_12_fe_add(&data->fe[0], &data->fe[1]);
     }
     CHECK(j <= iters);
 }
@@ -252,12 +252,12 @@ static void bench_field_sqrt(void* arg, int iters) {
 static void bench_field_is_square_var(void* arg, int iters) {
     int i, j = 0;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_fe t = data->fe[0];
+    rustsecp256k1_v0_12_fe t = data->fe[0];
 
     for (i = 0; i < iters; i++) {
-        j += rustsecp256k1_v0_11_fe_is_square_var(&t);
-        rustsecp256k1_v0_11_fe_add(&t, &data->fe[1]);
-        rustsecp256k1_v0_11_fe_normalize_var(&t);
+        j += rustsecp256k1_v0_12_fe_is_square_var(&t);
+        rustsecp256k1_v0_12_fe_add(&t, &data->fe[1]);
+        rustsecp256k1_v0_12_fe_normalize_var(&t);
     }
     CHECK(j <= iters);
 }
@@ -267,7 +267,7 @@ static void bench_group_double_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_gej_double_var(&data->gej[0], &data->gej[0], NULL);
+        rustsecp256k1_v0_12_gej_double_var(&data->gej[0], &data->gej[0], NULL);
     }
 }
 
@@ -276,7 +276,7 @@ static void bench_group_add_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_gej_add_var(&data->gej[0], &data->gej[0], &data->gej[1], NULL);
+        rustsecp256k1_v0_12_gej_add_var(&data->gej[0], &data->gej[0], &data->gej[1], NULL);
     }
 }
 
@@ -285,7 +285,7 @@ static void bench_group_add_affine(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_gej_add_ge(&data->gej[0], &data->gej[0], &data->ge[1]);
+        rustsecp256k1_v0_12_gej_add_ge(&data->gej[0], &data->gej[0], &data->ge[1]);
     }
 }
 
@@ -294,7 +294,7 @@ static void bench_group_add_affine_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_gej_add_ge_var(&data->gej[0], &data->gej[0], &data->ge[1], NULL);
+        rustsecp256k1_v0_12_gej_add_ge_var(&data->gej[0], &data->gej[0], &data->ge[1], NULL);
     }
 }
 
@@ -303,7 +303,7 @@ static void bench_group_add_zinv_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_gej_add_zinv_var(&data->gej[0], &data->gej[0], &data->ge[1], &data->gej[0].y);
+        rustsecp256k1_v0_12_gej_add_zinv_var(&data->gej[0], &data->gej[0], &data->ge[1], &data->gej[0].y);
     }
 }
 
@@ -312,18 +312,18 @@ static void bench_group_to_affine_var(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; ++i) {
-        rustsecp256k1_v0_11_ge_set_gej_var(&data->ge[1], &data->gej[0]);
+        rustsecp256k1_v0_12_ge_set_gej_var(&data->ge[1], &data->gej[0]);
         /* Use the output affine X/Y coordinates to vary the input X/Y/Z coordinates.
            Note that the resulting coordinates will generally not correspond to a point
            on the curve, but this is not a problem for the code being benchmarked here.
            Adding and normalizing have less overhead than EC operations (which could
            guarantee the point remains on the curve). */
-        rustsecp256k1_v0_11_fe_add(&data->gej[0].x, &data->ge[1].y);
-        rustsecp256k1_v0_11_fe_add(&data->gej[0].y, &data->fe[2]);
-        rustsecp256k1_v0_11_fe_add(&data->gej[0].z, &data->ge[1].x);
-        rustsecp256k1_v0_11_fe_normalize_var(&data->gej[0].x);
-        rustsecp256k1_v0_11_fe_normalize_var(&data->gej[0].y);
-        rustsecp256k1_v0_11_fe_normalize_var(&data->gej[0].z);
+        rustsecp256k1_v0_12_fe_add(&data->gej[0].x, &data->ge[1].y);
+        rustsecp256k1_v0_12_fe_add(&data->gej[0].y, &data->fe[2]);
+        rustsecp256k1_v0_12_fe_add(&data->gej[0].z, &data->ge[1].x);
+        rustsecp256k1_v0_12_fe_normalize_var(&data->gej[0].x);
+        rustsecp256k1_v0_12_fe_normalize_var(&data->gej[0].y);
+        rustsecp256k1_v0_12_fe_normalize_var(&data->gej[0].z);
     }
 }
 
@@ -332,8 +332,8 @@ static void bench_ecmult_wnaf(void* arg, int iters) {
     bench_inv *data = (bench_inv*)arg;
 
     for (i = 0; i < iters; i++) {
-        bits += rustsecp256k1_v0_11_ecmult_wnaf(data->wnaf, 256, &data->scalar[0], WINDOW_A);
-        overflow += rustsecp256k1_v0_11_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
+        bits += rustsecp256k1_v0_12_ecmult_wnaf(data->wnaf, 256, &data->scalar[0], WINDOW_A);
+        overflow += rustsecp256k1_v0_12_scalar_add(&data->scalar[0], &data->scalar[0], &data->scalar[1]);
     }
     CHECK(overflow >= 0);
     CHECK(bits <= 256*iters);
@@ -342,35 +342,35 @@ static void bench_ecmult_wnaf(void* arg, int iters) {
 static void bench_sha256(void* arg, int iters) {
     int i;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_sha256_initialize(&sha);
-        rustsecp256k1_v0_11_sha256_write(&sha, data->data, 32);
-        rustsecp256k1_v0_11_sha256_finalize(&sha, data->data);
+        rustsecp256k1_v0_12_sha256_initialize(&sha);
+        rustsecp256k1_v0_12_sha256_write(&sha, data->data, 32);
+        rustsecp256k1_v0_12_sha256_finalize(&sha, data->data);
     }
 }
 
 static void bench_hmac_sha256(void* arg, int iters) {
     int i;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_hmac_sha256 hmac;
+    rustsecp256k1_v0_12_hmac_sha256 hmac;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_hmac_sha256_initialize(&hmac, data->data, 32);
-        rustsecp256k1_v0_11_hmac_sha256_write(&hmac, data->data, 32);
-        rustsecp256k1_v0_11_hmac_sha256_finalize(&hmac, data->data);
+        rustsecp256k1_v0_12_hmac_sha256_initialize(&hmac, data->data, 32);
+        rustsecp256k1_v0_12_hmac_sha256_write(&hmac, data->data, 32);
+        rustsecp256k1_v0_12_hmac_sha256_finalize(&hmac, data->data);
     }
 }
 
 static void bench_rfc6979_hmac_sha256(void* arg, int iters) {
     int i;
     bench_inv *data = (bench_inv*)arg;
-    rustsecp256k1_v0_11_rfc6979_hmac_sha256 rng;
+    rustsecp256k1_v0_12_rfc6979_hmac_sha256 rng;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_rfc6979_hmac_sha256_initialize(&rng, data->data, 64);
-        rustsecp256k1_v0_11_rfc6979_hmac_sha256_generate(&rng, data->data, 32);
+        rustsecp256k1_v0_12_rfc6979_hmac_sha256_initialize(&rng, data->data, 64);
+        rustsecp256k1_v0_12_rfc6979_hmac_sha256_generate(&rng, data->data, 32);
     }
 }
 
@@ -378,7 +378,7 @@ static void bench_context(void* arg, int iters) {
     int i;
     (void)arg;
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_context_destroy(rustsecp256k1_v0_11_context_create(SECP256K1_CONTEXT_NONE));
+        rustsecp256k1_v0_12_context_destroy(rustsecp256k1_v0_12_context_create(SECP256K1_CONTEXT_NONE));
     }
 }
 

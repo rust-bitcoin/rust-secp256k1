@@ -13,8 +13,8 @@
 
 /* Initializes SHA256 with fixed midstate. This midstate was computed by applying
  * SHA256 to SHA256("BIP0340/nonce")||SHA256("BIP0340/nonce"). */
-static void rustsecp256k1_v0_11_nonce_function_bip340_sha256_tagged(rustsecp256k1_v0_11_sha256 *sha) {
-    rustsecp256k1_v0_11_sha256_initialize(sha);
+static void rustsecp256k1_v0_12_nonce_function_bip340_sha256_tagged(rustsecp256k1_v0_12_sha256 *sha) {
+    rustsecp256k1_v0_12_sha256_initialize(sha);
     sha->s[0] = 0x46615b35ul;
     sha->s[1] = 0xf4bfbff7ul;
     sha->s[2] = 0x9f8dc671ul;
@@ -29,8 +29,8 @@ static void rustsecp256k1_v0_11_nonce_function_bip340_sha256_tagged(rustsecp256k
 
 /* Initializes SHA256 with fixed midstate. This midstate was computed by applying
  * SHA256 to SHA256("BIP0340/aux")||SHA256("BIP0340/aux"). */
-static void rustsecp256k1_v0_11_nonce_function_bip340_sha256_tagged_aux(rustsecp256k1_v0_11_sha256 *sha) {
-    rustsecp256k1_v0_11_sha256_initialize(sha);
+static void rustsecp256k1_v0_12_nonce_function_bip340_sha256_tagged_aux(rustsecp256k1_v0_12_sha256 *sha) {
+    rustsecp256k1_v0_12_sha256_initialize(sha);
     sha->s[0] = 0x24dd3219ul;
     sha->s[1] = 0x4eba7e70ul;
     sha->s[2] = 0xca0fabb9ul;
@@ -50,7 +50,7 @@ static const unsigned char bip340_algo[] = {'B', 'I', 'P', '0', '3', '4', '0', '
 static const unsigned char schnorrsig_extraparams_magic[4] = SECP256K1_SCHNORRSIG_EXTRAPARAMS_MAGIC;
 
 static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *msg, size_t msglen, const unsigned char *key32, const unsigned char *xonly_pk32, const unsigned char *algo, size_t algolen, void *data) {
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
     unsigned char masked_key[32];
     int i;
 
@@ -59,9 +59,9 @@ static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *ms
     }
 
     if (data != NULL) {
-        rustsecp256k1_v0_11_nonce_function_bip340_sha256_tagged_aux(&sha);
-        rustsecp256k1_v0_11_sha256_write(&sha, data, 32);
-        rustsecp256k1_v0_11_sha256_finalize(&sha, masked_key);
+        rustsecp256k1_v0_12_nonce_function_bip340_sha256_tagged_aux(&sha);
+        rustsecp256k1_v0_12_sha256_write(&sha, data, 32);
+        rustsecp256k1_v0_12_sha256_finalize(&sha, masked_key);
         for (i = 0; i < 32; i++) {
             masked_key[i] ^= key32[i];
         }
@@ -82,27 +82,27 @@ static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *ms
      * algorithms. If this nonce function is used in BIP-340 signing as defined
      * in the spec, an optimized tagging implementation is used. */
     if (algolen == sizeof(bip340_algo)
-            && rustsecp256k1_v0_11_memcmp_var(algo, bip340_algo, algolen) == 0) {
-        rustsecp256k1_v0_11_nonce_function_bip340_sha256_tagged(&sha);
+            && rustsecp256k1_v0_12_memcmp_var(algo, bip340_algo, algolen) == 0) {
+        rustsecp256k1_v0_12_nonce_function_bip340_sha256_tagged(&sha);
     } else {
-        rustsecp256k1_v0_11_sha256_initialize_tagged(&sha, algo, algolen);
+        rustsecp256k1_v0_12_sha256_initialize_tagged(&sha, algo, algolen);
     }
 
     /* Hash masked-key||pk||msg using the tagged hash as per the spec */
-    rustsecp256k1_v0_11_sha256_write(&sha, masked_key, 32);
-    rustsecp256k1_v0_11_sha256_write(&sha, xonly_pk32, 32);
-    rustsecp256k1_v0_11_sha256_write(&sha, msg, msglen);
-    rustsecp256k1_v0_11_sha256_finalize(&sha, nonce32);
-    rustsecp256k1_v0_11_sha256_clear(&sha);
+    rustsecp256k1_v0_12_sha256_write(&sha, masked_key, 32);
+    rustsecp256k1_v0_12_sha256_write(&sha, xonly_pk32, 32);
+    rustsecp256k1_v0_12_sha256_write(&sha, msg, msglen);
+    rustsecp256k1_v0_12_sha256_finalize(&sha, nonce32);
+    rustsecp256k1_v0_12_sha256_clear(&sha);
     return 1;
 }
 
-const rustsecp256k1_v0_11_nonce_function_hardened rustsecp256k1_v0_11_nonce_function_bip340 = nonce_function_bip340;
+const rustsecp256k1_v0_12_nonce_function_hardened rustsecp256k1_v0_12_nonce_function_bip340 = nonce_function_bip340;
 
 /* Initializes SHA256 with fixed midstate. This midstate was computed by applying
  * SHA256 to SHA256("BIP0340/challenge")||SHA256("BIP0340/challenge"). */
-static void rustsecp256k1_v0_11_schnorrsig_sha256_tagged(rustsecp256k1_v0_11_sha256 *sha) {
-    rustsecp256k1_v0_11_sha256_initialize(sha);
+static void rustsecp256k1_v0_12_schnorrsig_sha256_tagged(rustsecp256k1_v0_12_sha256 *sha) {
+    rustsecp256k1_v0_12_sha256_initialize(sha);
     sha->s[0] = 0x9cecba11ul;
     sha->s[1] = 0x23925381ul;
     sha->s[2] = 0x11679112ul;
@@ -114,118 +114,118 @@ static void rustsecp256k1_v0_11_schnorrsig_sha256_tagged(rustsecp256k1_v0_11_sha
     sha->bytes = 64;
 }
 
-static void rustsecp256k1_v0_11_schnorrsig_challenge(rustsecp256k1_v0_11_scalar* e, const unsigned char *r32, const unsigned char *msg, size_t msglen, const unsigned char *pubkey32)
+static void rustsecp256k1_v0_12_schnorrsig_challenge(rustsecp256k1_v0_12_scalar* e, const unsigned char *r32, const unsigned char *msg, size_t msglen, const unsigned char *pubkey32)
 {
     unsigned char buf[32];
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
 
     /* tagged hash(r.x, pk.x, msg) */
-    rustsecp256k1_v0_11_schnorrsig_sha256_tagged(&sha);
-    rustsecp256k1_v0_11_sha256_write(&sha, r32, 32);
-    rustsecp256k1_v0_11_sha256_write(&sha, pubkey32, 32);
-    rustsecp256k1_v0_11_sha256_write(&sha, msg, msglen);
-    rustsecp256k1_v0_11_sha256_finalize(&sha, buf);
+    rustsecp256k1_v0_12_schnorrsig_sha256_tagged(&sha);
+    rustsecp256k1_v0_12_sha256_write(&sha, r32, 32);
+    rustsecp256k1_v0_12_sha256_write(&sha, pubkey32, 32);
+    rustsecp256k1_v0_12_sha256_write(&sha, msg, msglen);
+    rustsecp256k1_v0_12_sha256_finalize(&sha, buf);
     /* Set scalar e to the challenge hash modulo the curve order as per
      * BIP340. */
-    rustsecp256k1_v0_11_scalar_set_b32(e, buf, NULL);
+    rustsecp256k1_v0_12_scalar_set_b32(e, buf, NULL);
 }
 
-static int rustsecp256k1_v0_11_schnorrsig_sign_internal(const rustsecp256k1_v0_11_context* ctx, unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_11_keypair *keypair, rustsecp256k1_v0_11_nonce_function_hardened noncefp, void *ndata) {
-    rustsecp256k1_v0_11_scalar sk;
-    rustsecp256k1_v0_11_scalar e;
-    rustsecp256k1_v0_11_scalar k;
-    rustsecp256k1_v0_11_gej rj;
-    rustsecp256k1_v0_11_ge pk;
-    rustsecp256k1_v0_11_ge r;
+static int rustsecp256k1_v0_12_schnorrsig_sign_internal(const rustsecp256k1_v0_12_context* ctx, unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_12_keypair *keypair, rustsecp256k1_v0_12_nonce_function_hardened noncefp, void *ndata) {
+    rustsecp256k1_v0_12_scalar sk;
+    rustsecp256k1_v0_12_scalar e;
+    rustsecp256k1_v0_12_scalar k;
+    rustsecp256k1_v0_12_gej rj;
+    rustsecp256k1_v0_12_ge pk;
+    rustsecp256k1_v0_12_ge r;
     unsigned char buf[32] = { 0 };
     unsigned char pk_buf[32];
     unsigned char seckey[32];
     int ret = 1;
 
     VERIFY_CHECK(ctx != NULL);
-    ARG_CHECK(rustsecp256k1_v0_11_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
+    ARG_CHECK(rustsecp256k1_v0_12_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
     ARG_CHECK(sig64 != NULL);
     ARG_CHECK(msg != NULL || msglen == 0);
     ARG_CHECK(keypair != NULL);
 
     if (noncefp == NULL) {
-        noncefp = rustsecp256k1_v0_11_nonce_function_bip340;
+        noncefp = rustsecp256k1_v0_12_nonce_function_bip340;
     }
 
-    ret &= rustsecp256k1_v0_11_keypair_load(ctx, &sk, &pk, keypair);
+    ret &= rustsecp256k1_v0_12_keypair_load(ctx, &sk, &pk, keypair);
     /* Because we are signing for a x-only pubkey, the secret key is negated
      * before signing if the point corresponding to the secret key does not
      * have an even Y. */
-    if (rustsecp256k1_v0_11_fe_is_odd(&pk.y)) {
-        rustsecp256k1_v0_11_scalar_negate(&sk, &sk);
+    if (rustsecp256k1_v0_12_fe_is_odd(&pk.y)) {
+        rustsecp256k1_v0_12_scalar_negate(&sk, &sk);
     }
 
-    rustsecp256k1_v0_11_scalar_get_b32(seckey, &sk);
-    rustsecp256k1_v0_11_fe_get_b32(pk_buf, &pk.x);
+    rustsecp256k1_v0_12_scalar_get_b32(seckey, &sk);
+    rustsecp256k1_v0_12_fe_get_b32(pk_buf, &pk.x);
     ret &= !!noncefp(buf, msg, msglen, seckey, pk_buf, bip340_algo, sizeof(bip340_algo), ndata);
-    rustsecp256k1_v0_11_scalar_set_b32(&k, buf, NULL);
-    ret &= !rustsecp256k1_v0_11_scalar_is_zero(&k);
-    rustsecp256k1_v0_11_scalar_cmov(&k, &rustsecp256k1_v0_11_scalar_one, !ret);
+    rustsecp256k1_v0_12_scalar_set_b32(&k, buf, NULL);
+    ret &= !rustsecp256k1_v0_12_scalar_is_zero(&k);
+    rustsecp256k1_v0_12_scalar_cmov(&k, &rustsecp256k1_v0_12_scalar_one, !ret);
 
-    rustsecp256k1_v0_11_ecmult_gen(&ctx->ecmult_gen_ctx, &rj, &k);
-    rustsecp256k1_v0_11_ge_set_gej(&r, &rj);
+    rustsecp256k1_v0_12_ecmult_gen(&ctx->ecmult_gen_ctx, &rj, &k);
+    rustsecp256k1_v0_12_ge_set_gej(&r, &rj);
 
     /* We declassify r to allow using it as a branch point. This is fine
      * because r is not a secret. */
-    rustsecp256k1_v0_11_declassify(ctx, &r, sizeof(r));
-    rustsecp256k1_v0_11_fe_normalize_var(&r.y);
-    if (rustsecp256k1_v0_11_fe_is_odd(&r.y)) {
-        rustsecp256k1_v0_11_scalar_negate(&k, &k);
+    rustsecp256k1_v0_12_declassify(ctx, &r, sizeof(r));
+    rustsecp256k1_v0_12_fe_normalize_var(&r.y);
+    if (rustsecp256k1_v0_12_fe_is_odd(&r.y)) {
+        rustsecp256k1_v0_12_scalar_negate(&k, &k);
     }
-    rustsecp256k1_v0_11_fe_normalize_var(&r.x);
-    rustsecp256k1_v0_11_fe_get_b32(&sig64[0], &r.x);
+    rustsecp256k1_v0_12_fe_normalize_var(&r.x);
+    rustsecp256k1_v0_12_fe_get_b32(&sig64[0], &r.x);
 
-    rustsecp256k1_v0_11_schnorrsig_challenge(&e, &sig64[0], msg, msglen, pk_buf);
-    rustsecp256k1_v0_11_scalar_mul(&e, &e, &sk);
-    rustsecp256k1_v0_11_scalar_add(&e, &e, &k);
-    rustsecp256k1_v0_11_scalar_get_b32(&sig64[32], &e);
+    rustsecp256k1_v0_12_schnorrsig_challenge(&e, &sig64[0], msg, msglen, pk_buf);
+    rustsecp256k1_v0_12_scalar_mul(&e, &e, &sk);
+    rustsecp256k1_v0_12_scalar_add(&e, &e, &k);
+    rustsecp256k1_v0_12_scalar_get_b32(&sig64[32], &e);
 
-    rustsecp256k1_v0_11_memczero(sig64, 64, !ret);
-    rustsecp256k1_v0_11_scalar_clear(&k);
-    rustsecp256k1_v0_11_scalar_clear(&sk);
-    rustsecp256k1_v0_11_memclear(seckey, sizeof(seckey));
-    rustsecp256k1_v0_11_gej_clear(&rj);
+    rustsecp256k1_v0_12_memczero(sig64, 64, !ret);
+    rustsecp256k1_v0_12_scalar_clear(&k);
+    rustsecp256k1_v0_12_scalar_clear(&sk);
+    rustsecp256k1_v0_12_memclear(seckey, sizeof(seckey));
+    rustsecp256k1_v0_12_gej_clear(&rj);
 
     return ret;
 }
 
-int rustsecp256k1_v0_11_schnorrsig_sign32(const rustsecp256k1_v0_11_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_11_keypair *keypair, const unsigned char *aux_rand32) {
+int rustsecp256k1_v0_12_schnorrsig_sign32(const rustsecp256k1_v0_12_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_12_keypair *keypair, const unsigned char *aux_rand32) {
     /* We cast away const from the passed aux_rand32 argument since we know the default nonce function does not modify it. */
-    return rustsecp256k1_v0_11_schnorrsig_sign_internal(ctx, sig64, msg32, 32, keypair, rustsecp256k1_v0_11_nonce_function_bip340, (unsigned char*)aux_rand32);
+    return rustsecp256k1_v0_12_schnorrsig_sign_internal(ctx, sig64, msg32, 32, keypair, rustsecp256k1_v0_12_nonce_function_bip340, (unsigned char*)aux_rand32);
 }
 
-int rustsecp256k1_v0_11_schnorrsig_sign(const rustsecp256k1_v0_11_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_11_keypair *keypair, const unsigned char *aux_rand32) {
-    return rustsecp256k1_v0_11_schnorrsig_sign32(ctx, sig64, msg32, keypair, aux_rand32);
+int rustsecp256k1_v0_12_schnorrsig_sign(const rustsecp256k1_v0_12_context* ctx, unsigned char *sig64, const unsigned char *msg32, const rustsecp256k1_v0_12_keypair *keypair, const unsigned char *aux_rand32) {
+    return rustsecp256k1_v0_12_schnorrsig_sign32(ctx, sig64, msg32, keypair, aux_rand32);
 }
 
-int rustsecp256k1_v0_11_schnorrsig_sign_custom(const rustsecp256k1_v0_11_context* ctx, unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_11_keypair *keypair, rustsecp256k1_v0_11_schnorrsig_extraparams *extraparams) {
-    rustsecp256k1_v0_11_nonce_function_hardened noncefp = NULL;
+int rustsecp256k1_v0_12_schnorrsig_sign_custom(const rustsecp256k1_v0_12_context* ctx, unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_12_keypair *keypair, rustsecp256k1_v0_12_schnorrsig_extraparams *extraparams) {
+    rustsecp256k1_v0_12_nonce_function_hardened noncefp = NULL;
     void *ndata = NULL;
     VERIFY_CHECK(ctx != NULL);
 
     if (extraparams != NULL) {
-        ARG_CHECK(rustsecp256k1_v0_11_memcmp_var(extraparams->magic,
+        ARG_CHECK(rustsecp256k1_v0_12_memcmp_var(extraparams->magic,
                                        schnorrsig_extraparams_magic,
                                        sizeof(extraparams->magic)) == 0);
         noncefp = extraparams->noncefp;
         ndata = extraparams->ndata;
     }
-    return rustsecp256k1_v0_11_schnorrsig_sign_internal(ctx, sig64, msg, msglen, keypair, noncefp, ndata);
+    return rustsecp256k1_v0_12_schnorrsig_sign_internal(ctx, sig64, msg, msglen, keypair, noncefp, ndata);
 }
 
-int rustsecp256k1_v0_11_schnorrsig_verify(const rustsecp256k1_v0_11_context* ctx, const unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_11_xonly_pubkey *pubkey) {
-    rustsecp256k1_v0_11_scalar s;
-    rustsecp256k1_v0_11_scalar e;
-    rustsecp256k1_v0_11_gej rj;
-    rustsecp256k1_v0_11_ge pk;
-    rustsecp256k1_v0_11_gej pkj;
-    rustsecp256k1_v0_11_fe rx;
-    rustsecp256k1_v0_11_ge r;
+int rustsecp256k1_v0_12_schnorrsig_verify(const rustsecp256k1_v0_12_context* ctx, const unsigned char *sig64, const unsigned char *msg, size_t msglen, const rustsecp256k1_v0_12_xonly_pubkey *pubkey) {
+    rustsecp256k1_v0_12_scalar s;
+    rustsecp256k1_v0_12_scalar e;
+    rustsecp256k1_v0_12_gej rj;
+    rustsecp256k1_v0_12_ge pk;
+    rustsecp256k1_v0_12_gej pkj;
+    rustsecp256k1_v0_12_fe rx;
+    rustsecp256k1_v0_12_ge r;
     unsigned char buf[32];
     int overflow;
 
@@ -234,36 +234,36 @@ int rustsecp256k1_v0_11_schnorrsig_verify(const rustsecp256k1_v0_11_context* ctx
     ARG_CHECK(msg != NULL || msglen == 0);
     ARG_CHECK(pubkey != NULL);
 
-    if (!rustsecp256k1_v0_11_fe_set_b32_limit(&rx, &sig64[0])) {
+    if (!rustsecp256k1_v0_12_fe_set_b32_limit(&rx, &sig64[0])) {
         return 0;
     }
 
-    rustsecp256k1_v0_11_scalar_set_b32(&s, &sig64[32], &overflow);
+    rustsecp256k1_v0_12_scalar_set_b32(&s, &sig64[32], &overflow);
     if (overflow) {
         return 0;
     }
 
-    if (!rustsecp256k1_v0_11_xonly_pubkey_load(ctx, &pk, pubkey)) {
+    if (!rustsecp256k1_v0_12_xonly_pubkey_load(ctx, &pk, pubkey)) {
         return 0;
     }
 
     /* Compute e. */
-    rustsecp256k1_v0_11_fe_get_b32(buf, &pk.x);
-    rustsecp256k1_v0_11_schnorrsig_challenge(&e, &sig64[0], msg, msglen, buf);
+    rustsecp256k1_v0_12_fe_get_b32(buf, &pk.x);
+    rustsecp256k1_v0_12_schnorrsig_challenge(&e, &sig64[0], msg, msglen, buf);
 
     /* Compute rj =  s*G + (-e)*pkj */
-    rustsecp256k1_v0_11_scalar_negate(&e, &e);
-    rustsecp256k1_v0_11_gej_set_ge(&pkj, &pk);
-    rustsecp256k1_v0_11_ecmult(&rj, &pkj, &e, &s);
+    rustsecp256k1_v0_12_scalar_negate(&e, &e);
+    rustsecp256k1_v0_12_gej_set_ge(&pkj, &pk);
+    rustsecp256k1_v0_12_ecmult(&rj, &pkj, &e, &s);
 
-    rustsecp256k1_v0_11_ge_set_gej_var(&r, &rj);
-    if (rustsecp256k1_v0_11_ge_is_infinity(&r)) {
+    rustsecp256k1_v0_12_ge_set_gej_var(&r, &rj);
+    if (rustsecp256k1_v0_12_ge_is_infinity(&r)) {
         return 0;
     }
 
-    rustsecp256k1_v0_11_fe_normalize_var(&r.y);
-    return !rustsecp256k1_v0_11_fe_is_odd(&r.y) &&
-           rustsecp256k1_v0_11_fe_equal(&rx, &r.x);
+    rustsecp256k1_v0_12_fe_normalize_var(&r.y);
+    return !rustsecp256k1_v0_12_fe_is_odd(&r.y) &&
+           rustsecp256k1_v0_12_fe_equal(&rx, &r.x);
 }
 
 #endif

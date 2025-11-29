@@ -1,9 +1,9 @@
-""" Generates the constants used in rustsecp256k1_v0_11_scalar_split_lambda.
+""" Generates the constants used in rustsecp256k1_v0_12_scalar_split_lambda.
 
-See the comments for rustsecp256k1_v0_11_scalar_split_lambda in src/scalar_impl.h for detailed explanations.
+See the comments for rustsecp256k1_v0_12_scalar_split_lambda in src/scalar_impl.h for detailed explanations.
 """
 
-load("rustsecp256k1_v0_11_params.sage")
+load("rustsecp256k1_v0_12_params.sage")
 
 def inf_norm(v):
     """Returns the infinity norm of a vector."""
@@ -24,17 +24,17 @@ def gauss_reduction(i1, i2):
         v2[1] -= m*v1[1]
 
 def find_split_constants_gauss():
-    """Find constants for rustsecp256k1_v0_11_scalar_split_lamdba using gauss reduction."""
+    """Find constants for rustsecp256k1_v0_12_scalar_split_lamdba using gauss reduction."""
     (v11, v12), (v21, v22) = gauss_reduction([0, N], [1, int(LAMBDA)])
 
-    # We use related vectors in rustsecp256k1_v0_11_scalar_split_lambda.
+    # We use related vectors in rustsecp256k1_v0_12_scalar_split_lambda.
     A1, B1 = -v21, -v11
     A2, B2 = v22, -v21
 
     return A1, B1, A2, B2
 
 def find_split_constants_explicit_tof():
-    """Find constants for rustsecp256k1_v0_11_scalar_split_lamdba using the trace of Frobenius.
+    """Find constants for rustsecp256k1_v0_12_scalar_split_lamdba using the trace of Frobenius.
 
     See Benjamin Smith: "Easy scalar decompositions for efficient scalar multiplication on
     elliptic curves and genus 2 Jacobians" (https://eprint.iacr.org/2013/672), Example 2
@@ -51,7 +51,7 @@ def find_split_constants_explicit_tof():
     A2 = Integer((t + c)/2 - 1)
     B2 = Integer(1 - (t - c)/2)
 
-    # We use a negated b values in rustsecp256k1_v0_11_scalar_split_lambda.
+    # We use a negated b values in rustsecp256k1_v0_12_scalar_split_lambda.
     B1, B2 = -B1, -B2
 
     return A1, B1, A2, B2
@@ -90,7 +90,7 @@ def rnddiv2(v):
     return v >> 1
 
 def scalar_lambda_split(k):
-    """Equivalent to rustsecp256k1_v0_11_scalar_lambda_split()."""
+    """Equivalent to rustsecp256k1_v0_12_scalar_lambda_split()."""
     c1 = rnddiv2((k * G1) >> 383)
     c2 = rnddiv2((k * G2) >> 383)
     c1 = (c1 * -B1) % N

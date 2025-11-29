@@ -12,10 +12,10 @@
 #define MSGLEN 32
 
 typedef struct {
-    rustsecp256k1_v0_11_context *ctx;
+    rustsecp256k1_v0_12_context *ctx;
     int n;
 
-    const rustsecp256k1_v0_11_keypair **keypairs;
+    const rustsecp256k1_v0_12_keypair **keypairs;
     const unsigned char **pk;
     const unsigned char **sigs;
     const unsigned char **msgs;
@@ -30,7 +30,7 @@ static void bench_schnorrsig_sign(void* arg, int iters) {
     for (i = 0; i < iters; i++) {
         msg[0] = i;
         msg[1] = i >> 8;
-        CHECK(rustsecp256k1_v0_11_schnorrsig_sign_custom(data->ctx, sig, msg, MSGLEN, data->keypairs[i], NULL));
+        CHECK(rustsecp256k1_v0_12_schnorrsig_sign_custom(data->ctx, sig, msg, MSGLEN, data->keypairs[i], NULL));
     }
 }
 
@@ -39,9 +39,9 @@ static void bench_schnorrsig_verify(void* arg, int iters) {
     int i;
 
     for (i = 0; i < iters; i++) {
-        rustsecp256k1_v0_11_xonly_pubkey pk;
-        CHECK(rustsecp256k1_v0_11_xonly_pubkey_parse(data->ctx, &pk, data->pk[i]) == 1);
-        CHECK(rustsecp256k1_v0_11_schnorrsig_verify(data->ctx, data->sigs[i], data->msgs[i], MSGLEN, &pk));
+        rustsecp256k1_v0_12_xonly_pubkey pk;
+        CHECK(rustsecp256k1_v0_12_xonly_pubkey_parse(data->ctx, &pk, data->pk[i]) == 1);
+        CHECK(rustsecp256k1_v0_12_schnorrsig_verify(data->ctx, data->sigs[i], data->msgs[i], MSGLEN, &pk));
     }
 }
 
@@ -50,8 +50,8 @@ static void run_schnorrsig_bench(int iters, int argc, char** argv) {
     bench_schnorrsig_data data;
     int d = argc == 1;
 
-    data.ctx = rustsecp256k1_v0_11_context_create(SECP256K1_CONTEXT_NONE);
-    data.keypairs = (const rustsecp256k1_v0_11_keypair **)malloc(iters * sizeof(rustsecp256k1_v0_11_keypair *));
+    data.ctx = rustsecp256k1_v0_12_context_create(SECP256K1_CONTEXT_NONE);
+    data.keypairs = (const rustsecp256k1_v0_12_keypair **)malloc(iters * sizeof(rustsecp256k1_v0_12_keypair *));
     data.pk = (const unsigned char **)malloc(iters * sizeof(unsigned char *));
     data.msgs = (const unsigned char **)malloc(iters * sizeof(unsigned char *));
     data.sigs = (const unsigned char **)malloc(iters * sizeof(unsigned char *));
@@ -61,9 +61,9 @@ static void run_schnorrsig_bench(int iters, int argc, char** argv) {
         unsigned char sk[32];
         unsigned char *msg = (unsigned char *)malloc(MSGLEN);
         unsigned char *sig = (unsigned char *)malloc(64);
-        rustsecp256k1_v0_11_keypair *keypair = (rustsecp256k1_v0_11_keypair *)malloc(sizeof(*keypair));
+        rustsecp256k1_v0_12_keypair *keypair = (rustsecp256k1_v0_12_keypair *)malloc(sizeof(*keypair));
         unsigned char *pk_char = (unsigned char *)malloc(32);
-        rustsecp256k1_v0_11_xonly_pubkey pk;
+        rustsecp256k1_v0_12_xonly_pubkey pk;
         msg[0] = sk[0] = i;
         msg[1] = sk[1] = i >> 8;
         msg[2] = sk[2] = i >> 16;
@@ -76,10 +76,10 @@ static void run_schnorrsig_bench(int iters, int argc, char** argv) {
         data.msgs[i] = msg;
         data.sigs[i] = sig;
 
-        CHECK(rustsecp256k1_v0_11_keypair_create(data.ctx, keypair, sk));
-        CHECK(rustsecp256k1_v0_11_schnorrsig_sign_custom(data.ctx, sig, msg, MSGLEN, keypair, NULL));
-        CHECK(rustsecp256k1_v0_11_keypair_xonly_pub(data.ctx, &pk, NULL, keypair));
-        CHECK(rustsecp256k1_v0_11_xonly_pubkey_serialize(data.ctx, pk_char, &pk) == 1);
+        CHECK(rustsecp256k1_v0_12_keypair_create(data.ctx, keypair, sk));
+        CHECK(rustsecp256k1_v0_12_schnorrsig_sign_custom(data.ctx, sig, msg, MSGLEN, keypair, NULL));
+        CHECK(rustsecp256k1_v0_12_keypair_xonly_pub(data.ctx, &pk, NULL, keypair));
+        CHECK(rustsecp256k1_v0_12_xonly_pubkey_serialize(data.ctx, pk_char, &pk) == 1);
     }
 
     if (d || have_flag(argc, argv, "schnorrsig") || have_flag(argc, argv, "sign") || have_flag(argc, argv, "schnorrsig_sign")) run_benchmark("schnorrsig_sign", bench_schnorrsig_sign, NULL, NULL, (void *) &data, 10, iters);
@@ -98,7 +98,7 @@ static void run_schnorrsig_bench(int iters, int argc, char** argv) {
     free((void *)data.msgs);
     free((void *)data.sigs);
 
-    rustsecp256k1_v0_11_context_destroy(data.ctx);
+    rustsecp256k1_v0_12_context_destroy(data.ctx);
 }
 
 #endif

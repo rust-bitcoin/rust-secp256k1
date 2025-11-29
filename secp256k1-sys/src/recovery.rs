@@ -101,7 +101,7 @@ impl core::hash::Hash for RecoverableSignature {
 extern "C" {
     #[cfg_attr(
         not(rust_secp_no_symbol_renaming),
-        link_name = "rustsecp256k1_v0_11_ecdsa_recoverable_signature_parse_compact"
+        link_name = "rustsecp256k1_v0_12_ecdsa_recoverable_signature_parse_compact"
     )]
     pub fn secp256k1_ecdsa_recoverable_signature_parse_compact(
         cx: *const Context,
@@ -112,7 +112,7 @@ extern "C" {
 
     #[cfg_attr(
         not(rust_secp_no_symbol_renaming),
-        link_name = "rustsecp256k1_v0_11_ecdsa_recoverable_signature_serialize_compact"
+        link_name = "rustsecp256k1_v0_12_ecdsa_recoverable_signature_serialize_compact"
     )]
     pub fn secp256k1_ecdsa_recoverable_signature_serialize_compact(
         cx: *const Context,
@@ -123,7 +123,7 @@ extern "C" {
 
     #[cfg_attr(
         not(rust_secp_no_symbol_renaming),
-        link_name = "rustsecp256k1_v0_11_ecdsa_recoverable_signature_convert"
+        link_name = "rustsecp256k1_v0_12_ecdsa_recoverable_signature_convert"
     )]
     pub fn secp256k1_ecdsa_recoverable_signature_convert(
         cx: *const Context,
@@ -136,7 +136,7 @@ extern "C" {
 extern "C" {
     #[cfg_attr(
         not(rust_secp_no_symbol_renaming),
-        link_name = "rustsecp256k1_v0_11_ecdsa_sign_recoverable"
+        link_name = "rustsecp256k1_v0_12_ecdsa_sign_recoverable"
     )]
     pub fn secp256k1_ecdsa_sign_recoverable(
         cx: *const Context,
@@ -147,7 +147,7 @@ extern "C" {
         noncedata: *const c_void,
     ) -> c_int;
 
-    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_11_ecdsa_recover")]
+    #[cfg_attr(not(rust_secp_no_symbol_renaming), link_name = "rustsecp256k1_v0_12_ecdsa_recover")]
     pub fn secp256k1_ecdsa_recover(
         cx: *const Context,
         pk: *mut PublicKey,

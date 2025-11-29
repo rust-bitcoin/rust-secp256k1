@@ -7,7 +7,7 @@
 #    error Cannot compile precomputed_ecmult_gen.c in exhaustive test mode
 #endif /* EXHAUSTIVE_TEST_ORDER */
 #define S(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) SECP256K1_GE_STORAGE_CONST(0x##a##u,0x##b##u,0x##c##u,0x##d##u,0x##e##u,0x##f##u,0x##g##u,0x##h##u,0x##i##u,0x##j##u,0x##k##u,0x##l##u,0x##m##u,0x##n##u,0x##o##u,0x##p##u)
-const rustsecp256k1_v0_11_ge_storage rustsecp256k1_v0_11_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS] = {
+const rustsecp256k1_v0_12_ge_storage rustsecp256k1_v0_12_ecmult_gen_prec_table[COMB_BLOCKS][COMB_POINTS] = {
 #if 0
 #elif (COMB_BLOCKS == 2) && (COMB_TEETH == 5) && (COMB_SPACING == 26)
 {S(7081b567,8cb87d01,99c9c76e,d1e0a5e0,1d784be9,27f6b135,161e0fd0,3f39b473,ad5222ac,f062cb39,21b234a7,15b626ae,f780b307,9b5122d1,53210f42,d9369242),

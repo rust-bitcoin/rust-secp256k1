@@ -13,7 +13,7 @@ SECP256K1_GNUC_EXT typedef __int128 int128_t;
 /* No (U)INT128_C macros because compilers providing __int128 do not support 128-bit literals.  */
 #endif
 
-typedef uint128_t rustsecp256k1_v0_11_uint128;
-typedef int128_t rustsecp256k1_v0_11_int128;
+typedef uint128_t rustsecp256k1_v0_12_uint128;
+typedef int128_t rustsecp256k1_v0_12_int128;
 
 #endif

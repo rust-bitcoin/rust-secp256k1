@@ -1,6 +1,6 @@
 include(CheckCCompilerFlag)
 
-function(rustsecp256k1_v0_11_check_c_flags_internal flags output)
+function(rustsecp256k1_v0_12_check_c_flags_internal flags output)
   string(MAKE_C_IDENTIFIER "${flags}" result)
   string(TOUPPER "${result}" result)
   set(result "C_SUPPORTS_${result}")
@@ -17,7 +17,7 @@ endfunction()
 
 # Append flags to the COMPILE_OPTIONS directory property if CC accepts them.
 macro(try_append_c_flags)
-  rustsecp256k1_v0_11_check_c_flags_internal("${ARGV}" result)
+  rustsecp256k1_v0_12_check_c_flags_internal("${ARGV}" result)
   if(result)
     add_compile_options(${ARGV})
   endif()

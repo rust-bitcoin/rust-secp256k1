@@ -1,3 +1,10 @@
+# 0.12.0 - 2025-10-10
+
+* Fix lowmemory feature [#799](https://github.com/rust-bitcoin/rust-secp256k1/pull/799)
+* Add support for MuSig2, initial PR
+  [#716](https://github.com/rust-bitcoin/rust-secp256k1/pull/716) then
+  a bunch of follow up PRs. See `../CHANGELOG.md` for full listing.
+
 # 0.10.0 - 2024-03-28
 
 * Bump MSRV to Rust `v1.56.1` [#693](https://github.com/rust-bitcoin/rust-secp256k1/pull/693)

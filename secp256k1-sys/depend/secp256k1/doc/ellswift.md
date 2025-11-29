@@ -144,8 +144,8 @@ but the approach here is simple enough and gives fairly uniform output even in t
 **Note**: in the paper these conditions result in $\infty$ as output, due to the use of projective coordinates there.
 We wish to avoid the need for callers to deal with this special case.
 
-This is implemented in `rustsecp256k1_v0_11_ellswift_xswiftec_frac_var` (which decodes to an x-coordinate represented as a fraction), and
-in `rustsecp256k1_v0_11_ellswift_xswiftec_var` (which outputs the actual x-coordinate).
+This is implemented in `rustsecp256k1_v0_12_ellswift_xswiftec_frac_var` (which decodes to an x-coordinate represented as a fraction), and
+in `rustsecp256k1_v0_12_ellswift_xswiftec_var` (which outputs the actual x-coordinate).
 
 ## 3. The encoding function
 
@@ -247,7 +247,7 @@ the loop can be simplified to only compute one of the inverses instead of all of
   * Let $t = G_{c,u}(x).$
   * If $t \neq \bot$, return $(u, t)$; restart loop otherwise.
 
-This is implemented in `rustsecp256k1_v0_11_ellswift_xelligatorswift_var`.
+This is implemented in `rustsecp256k1_v0_12_ellswift_xelligatorswift_var`.
 
 ### 3.3 Finding the inverse
 
@@ -388,7 +388,7 @@ Specialized for odd-ordered $a=0$ curves:
   * If $c \in \\{4, 6\\}:$ return $w(\frac{-\sqrt{-3}+1}{2}u + v).$
   * If $c \in \\{5, 7\\}:$ return $w(\frac{-\sqrt{-3}-1}{2}u - v).$
 
-This is implemented in `rustsecp256k1_v0_11_ellswift_xswiftec_inv_var`.
+This is implemented in `rustsecp256k1_v0_12_ellswift_xswiftec_inv_var`.
 
 And the x-only ElligatorSwift encoding algorithm is still:
 
@@ -471,11 +471,11 @@ as decoder:
 * Let $y = \sqrt{g(x)}.$
 * Return $(x, y)$ if $sign(y) = sign(t)$; $(x, -y)$ otherwise.
 
-This is implemented in `rustsecp256k1_v0_11_ellswift_swiftec_var`. The used $sign(x)$ function is the parity of $x$ when represented as in integer in $[0,q).$
+This is implemented in `rustsecp256k1_v0_12_ellswift_swiftec_var`. The used $sign(x)$ function is the parity of $x$ when represented as in integer in $[0,q).$
 
 The corresponding encoder would invoke the x-only one, but negating the output $t$ if $sign(t) \neq sign(y).$
 
-This is implemented in `rustsecp256k1_v0_11_ellswift_elligatorswift_var`.
+This is implemented in `rustsecp256k1_v0_12_ellswift_elligatorswift_var`.
 
 Note that this is only intended for encoding points where both the x-coordinate and y-coordinate are unpredictable. When encoding x-only points
 where the y-coordinate is implicitly even (or implicitly square, or implicitly in $[0,q/2]$), the encoder in

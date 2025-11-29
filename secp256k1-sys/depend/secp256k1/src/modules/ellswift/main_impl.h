@@ -12,16 +12,16 @@
 #include "../../hash.h"
 
 /** c1 = (sqrt(-3)-1)/2 */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ellswift_c1 = SECP256K1_FE_CONST(0x851695d4, 0x9a83f8ef, 0x919bb861, 0x53cbcb16, 0x630fb68a, 0xed0a766a, 0x3ec693d6, 0x8e6afa40);
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ellswift_c1 = SECP256K1_FE_CONST(0x851695d4, 0x9a83f8ef, 0x919bb861, 0x53cbcb16, 0x630fb68a, 0xed0a766a, 0x3ec693d6, 0x8e6afa40);
 /** c2 = (-sqrt(-3)-1)/2 = -(c1+1) */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ellswift_c2 = SECP256K1_FE_CONST(0x7ae96a2b, 0x657c0710, 0x6e64479e, 0xac3434e9, 0x9cf04975, 0x12f58995, 0xc1396c28, 0x719501ee);
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ellswift_c2 = SECP256K1_FE_CONST(0x7ae96a2b, 0x657c0710, 0x6e64479e, 0xac3434e9, 0x9cf04975, 0x12f58995, 0xc1396c28, 0x719501ee);
 /** c3 = (-sqrt(-3)+1)/2 = -c1 = c2+1 */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ellswift_c3 = SECP256K1_FE_CONST(0x7ae96a2b, 0x657c0710, 0x6e64479e, 0xac3434e9, 0x9cf04975, 0x12f58995, 0xc1396c28, 0x719501ef);
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ellswift_c3 = SECP256K1_FE_CONST(0x7ae96a2b, 0x657c0710, 0x6e64479e, 0xac3434e9, 0x9cf04975, 0x12f58995, 0xc1396c28, 0x719501ef);
 /** c4 = (sqrt(-3)+1)/2 = -c2 = c1+1 */
-static const rustsecp256k1_v0_11_fe rustsecp256k1_v0_11_ellswift_c4 = SECP256K1_FE_CONST(0x851695d4, 0x9a83f8ef, 0x919bb861, 0x53cbcb16, 0x630fb68a, 0xed0a766a, 0x3ec693d6, 0x8e6afa41);
+static const rustsecp256k1_v0_12_fe rustsecp256k1_v0_12_ellswift_c4 = SECP256K1_FE_CONST(0x851695d4, 0x9a83f8ef, 0x919bb861, 0x53cbcb16, 0x630fb68a, 0xed0a766a, 0x3ec693d6, 0x8e6afa41);
 
 /** Decode ElligatorSwift encoding (u, t) to a fraction xn/xd representing a curve X coordinate. */
-static void rustsecp256k1_v0_11_ellswift_xswiftec_frac_var(rustsecp256k1_v0_11_fe *xn, rustsecp256k1_v0_11_fe *xd, const rustsecp256k1_v0_11_fe *u, const rustsecp256k1_v0_11_fe *t) {
+static void rustsecp256k1_v0_12_ellswift_xswiftec_frac_var(rustsecp256k1_v0_12_fe *xn, rustsecp256k1_v0_12_fe *xd, const rustsecp256k1_v0_12_fe *u, const rustsecp256k1_v0_12_fe *t) {
     /* The implemented algorithm is the following (all operations in GF(p)):
      *
      * - Let c0 = sqrt(-3) = 0xa2d2ba93507f1df233770c2a797962cc61f6d15da14ecd47d8d27ae1cd5f852.
@@ -83,67 +83,67 @@ static void rustsecp256k1_v0_11_ellswift_xswiftec_frac_var(rustsecp256k1_v0_11_f
      * - If x2 = u*(c1*s+c2*g)/(g+s) is a valid x coordinate, return it.
      * - Return x1 = -(x2+u).
      */
-    rustsecp256k1_v0_11_fe u1, s, g, p, d, n, l;
+    rustsecp256k1_v0_12_fe u1, s, g, p, d, n, l;
     u1 = *u;
-    if (EXPECT(rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&u1), 0)) u1 = rustsecp256k1_v0_11_fe_one;
-    rustsecp256k1_v0_11_fe_sqr(&s, t);
-    if (EXPECT(rustsecp256k1_v0_11_fe_normalizes_to_zero_var(t), 0)) s = rustsecp256k1_v0_11_fe_one;
-    rustsecp256k1_v0_11_fe_sqr(&l, &u1);                                   /* l = u^2 */
-    rustsecp256k1_v0_11_fe_mul(&g, &l, &u1);                               /* g = u^3 */
-    rustsecp256k1_v0_11_fe_add_int(&g, SECP256K1_B);                       /* g = u^3 + 7 */
+    if (EXPECT(rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&u1), 0)) u1 = rustsecp256k1_v0_12_fe_one;
+    rustsecp256k1_v0_12_fe_sqr(&s, t);
+    if (EXPECT(rustsecp256k1_v0_12_fe_normalizes_to_zero_var(t), 0)) s = rustsecp256k1_v0_12_fe_one;
+    rustsecp256k1_v0_12_fe_sqr(&l, &u1);                                   /* l = u^2 */
+    rustsecp256k1_v0_12_fe_mul(&g, &l, &u1);                               /* g = u^3 */
+    rustsecp256k1_v0_12_fe_add_int(&g, SECP256K1_B);                       /* g = u^3 + 7 */
     p = g;                                                       /* p = g */
-    rustsecp256k1_v0_11_fe_add(&p, &s);                                    /* p = g+s */
-    if (EXPECT(rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&p), 0)) {
-        rustsecp256k1_v0_11_fe_mul_int(&s, 4);
+    rustsecp256k1_v0_12_fe_add(&p, &s);                                    /* p = g+s */
+    if (EXPECT(rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&p), 0)) {
+        rustsecp256k1_v0_12_fe_mul_int(&s, 4);
         /* Recompute p = g+s */
         p = g;                                                   /* p = g */
-        rustsecp256k1_v0_11_fe_add(&p, &s);                                /* p = g+s */
+        rustsecp256k1_v0_12_fe_add(&p, &s);                                /* p = g+s */
     }
-    rustsecp256k1_v0_11_fe_mul(&d, &s, &l);                                /* d = s*u^2 */
-    rustsecp256k1_v0_11_fe_mul_int(&d, 3);                                 /* d = 3*s*u^2 */
-    rustsecp256k1_v0_11_fe_sqr(&l, &p);                                    /* l = (g+s)^2 */
-    rustsecp256k1_v0_11_fe_negate(&l, &l, 1);                              /* l = -(g+s)^2 */
-    rustsecp256k1_v0_11_fe_mul(&n, &d, &u1);                               /* n = 3*s*u^3 */
-    rustsecp256k1_v0_11_fe_add(&n, &l);                                    /* n = 3*s*u^3-(g+s)^2 */
-    if (rustsecp256k1_v0_11_ge_x_frac_on_curve_var(&n, &d)) {
+    rustsecp256k1_v0_12_fe_mul(&d, &s, &l);                                /* d = s*u^2 */
+    rustsecp256k1_v0_12_fe_mul_int(&d, 3);                                 /* d = 3*s*u^2 */
+    rustsecp256k1_v0_12_fe_sqr(&l, &p);                                    /* l = (g+s)^2 */
+    rustsecp256k1_v0_12_fe_negate(&l, &l, 1);                              /* l = -(g+s)^2 */
+    rustsecp256k1_v0_12_fe_mul(&n, &d, &u1);                               /* n = 3*s*u^3 */
+    rustsecp256k1_v0_12_fe_add(&n, &l);                                    /* n = 3*s*u^3-(g+s)^2 */
+    if (rustsecp256k1_v0_12_ge_x_frac_on_curve_var(&n, &d)) {
         /* Return x3 = n/d = (3*s*u^3-(g+s)^2)/(3*s*u^2) */
         *xn = n;
         *xd = d;
         return;
     }
     *xd = p;
-    rustsecp256k1_v0_11_fe_mul(&l, &rustsecp256k1_v0_11_ellswift_c1, &s);            /* l = c1*s */
-    rustsecp256k1_v0_11_fe_mul(&n, &rustsecp256k1_v0_11_ellswift_c2, &g);            /* n = c2*g */
-    rustsecp256k1_v0_11_fe_add(&n, &l);                                    /* n = c1*s+c2*g */
-    rustsecp256k1_v0_11_fe_mul(&n, &n, &u1);                               /* n = u*(c1*s+c2*g) */
+    rustsecp256k1_v0_12_fe_mul(&l, &rustsecp256k1_v0_12_ellswift_c1, &s);            /* l = c1*s */
+    rustsecp256k1_v0_12_fe_mul(&n, &rustsecp256k1_v0_12_ellswift_c2, &g);            /* n = c2*g */
+    rustsecp256k1_v0_12_fe_add(&n, &l);                                    /* n = c1*s+c2*g */
+    rustsecp256k1_v0_12_fe_mul(&n, &n, &u1);                               /* n = u*(c1*s+c2*g) */
     /* Possible optimization: in the invocation below, p^2 = (g+s)^2 is computed,
      * which we already have computed above. This could be deduplicated. */
-    if (rustsecp256k1_v0_11_ge_x_frac_on_curve_var(&n, &p)) {
+    if (rustsecp256k1_v0_12_ge_x_frac_on_curve_var(&n, &p)) {
         /* Return x2 = n/p = u*(c1*s+c2*g)/(g+s) */
         *xn = n;
         return;
     }
-    rustsecp256k1_v0_11_fe_mul(&l, &p, &u1);                               /* l = u*(g+s) */
-    rustsecp256k1_v0_11_fe_add(&n, &l);                                    /* n = u*(c1*s+c2*g)+u*(g+s) */
-    rustsecp256k1_v0_11_fe_negate(xn, &n, 2);                              /* n = -u*(c1*s+c2*g)-u*(g+s) */
+    rustsecp256k1_v0_12_fe_mul(&l, &p, &u1);                               /* l = u*(g+s) */
+    rustsecp256k1_v0_12_fe_add(&n, &l);                                    /* n = u*(c1*s+c2*g)+u*(g+s) */
+    rustsecp256k1_v0_12_fe_negate(xn, &n, 2);                              /* n = -u*(c1*s+c2*g)-u*(g+s) */
 
-    VERIFY_CHECK(rustsecp256k1_v0_11_ge_x_frac_on_curve_var(xn, &p));
+    VERIFY_CHECK(rustsecp256k1_v0_12_ge_x_frac_on_curve_var(xn, &p));
     /* Return x3 = n/p = -(u*(c1*s+c2*g)/(g+s)+u) */
 }
 
 /** Decode ElligatorSwift encoding (u, t) to X coordinate. */
-static void rustsecp256k1_v0_11_ellswift_xswiftec_var(rustsecp256k1_v0_11_fe *x, const rustsecp256k1_v0_11_fe *u, const rustsecp256k1_v0_11_fe *t) {
-    rustsecp256k1_v0_11_fe xn, xd;
-    rustsecp256k1_v0_11_ellswift_xswiftec_frac_var(&xn, &xd, u, t);
-    rustsecp256k1_v0_11_fe_inv_var(&xd, &xd);
-    rustsecp256k1_v0_11_fe_mul(x, &xn, &xd);
+static void rustsecp256k1_v0_12_ellswift_xswiftec_var(rustsecp256k1_v0_12_fe *x, const rustsecp256k1_v0_12_fe *u, const rustsecp256k1_v0_12_fe *t) {
+    rustsecp256k1_v0_12_fe xn, xd;
+    rustsecp256k1_v0_12_ellswift_xswiftec_frac_var(&xn, &xd, u, t);
+    rustsecp256k1_v0_12_fe_inv_var(&xd, &xd);
+    rustsecp256k1_v0_12_fe_mul(x, &xn, &xd);
 }
 
 /** Decode ElligatorSwift encoding (u, t) to point P. */
-static void rustsecp256k1_v0_11_ellswift_swiftec_var(rustsecp256k1_v0_11_ge *p, const rustsecp256k1_v0_11_fe *u, const rustsecp256k1_v0_11_fe *t) {
-    rustsecp256k1_v0_11_fe x;
-    rustsecp256k1_v0_11_ellswift_xswiftec_var(&x, u, t);
-    rustsecp256k1_v0_11_ge_set_xo_var(p, &x, rustsecp256k1_v0_11_fe_is_odd(t));
+static void rustsecp256k1_v0_12_ellswift_swiftec_var(rustsecp256k1_v0_12_ge *p, const rustsecp256k1_v0_12_fe *u, const rustsecp256k1_v0_12_fe *t) {
+    rustsecp256k1_v0_12_fe x;
+    rustsecp256k1_v0_12_ellswift_xswiftec_var(&x, u, t);
+    rustsecp256k1_v0_12_ge_set_xo_var(p, &x, rustsecp256k1_v0_12_fe_is_odd(t));
 }
 
 /* Try to complete an ElligatorSwift encoding (u, t) for X coordinate x, given u and x.
@@ -153,7 +153,7 @@ static void rustsecp256k1_v0_11_ellswift_swiftec_var(rustsecp256k1_v0_11_ge *p, 
  * distinct input argument c (in range 0-7), and some or all of these may return failure.
  * The following guarantees exist:
  * - Given (x, u), no two distinct c values give the same successful result t.
- * - Every successful result maps back to x through rustsecp256k1_v0_11_ellswift_xswiftec_var.
+ * - Every successful result maps back to x through rustsecp256k1_v0_12_ellswift_xswiftec_var.
  * - Given (x, u), all t values that map back to x can be reached by combining the
  *   successful results from this function over all c values, with the exception of:
  *   - this function cannot be called with u=0
@@ -165,7 +165,7 @@ static void rustsecp256k1_v0_11_ellswift_swiftec_var(rustsecp256k1_v0_11_ge *p, 
  * encoding more closely: c=0 through c=3 match branches 1..4 in the paper, while c=4 through
  * c=7 are copies of those with an additional negation of sqrt(w).
  */
-static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe *t, const rustsecp256k1_v0_11_fe *x_in, const rustsecp256k1_v0_11_fe *u_in, int c) {
+static int rustsecp256k1_v0_12_ellswift_xswiftec_inv_var(rustsecp256k1_v0_12_fe *t, const rustsecp256k1_v0_12_fe *x_in, const rustsecp256k1_v0_12_fe *u_in, int c) {
     /* The implemented algorithm is this (all arithmetic, except involving c, is mod p):
      *
      * - If (c & 2) = 0:
@@ -186,14 +186,14 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
      * - If (c & 5) = 4: return  w*(c3*u + v).
      * - If (c & 5) = 5: return -w*(c4*u + v).
      */
-    rustsecp256k1_v0_11_fe x = *x_in, u = *u_in, g, v, s, m, r, q;
+    rustsecp256k1_v0_12_fe x = *x_in, u = *u_in, g, v, s, m, r, q;
     int ret;
 
-    rustsecp256k1_v0_11_fe_normalize_weak(&x);
-    rustsecp256k1_v0_11_fe_normalize_weak(&u);
+    rustsecp256k1_v0_12_fe_normalize_weak(&x);
+    rustsecp256k1_v0_12_fe_normalize_weak(&u);
 
     VERIFY_CHECK(c >= 0 && c < 8);
-    VERIFY_CHECK(rustsecp256k1_v0_11_ge_x_on_curve_var(&x));
+    VERIFY_CHECK(rustsecp256k1_v0_12_ge_x_on_curve_var(&x));
 
     if (!(c & 2)) {
         /* c is in {0, 1, 4, 5}. In this case we look for an inverse under the x1 (if c=0 or
@@ -203,16 +203,16 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
          * back under the x3 formula instead (which has priority over x1 and x2, so the decoding
          * would not match x). */
         m = x;                                          /* m = x */
-        rustsecp256k1_v0_11_fe_add(&m, &u);                       /* m = u+x */
-        rustsecp256k1_v0_11_fe_negate(&m, &m, 2);                 /* m = -u-x */
+        rustsecp256k1_v0_12_fe_add(&m, &u);                       /* m = u+x */
+        rustsecp256k1_v0_12_fe_negate(&m, &m, 2);                 /* m = -u-x */
         /* Test if (-u-x) is a valid X coordinate. If so, fail. */
-        if (rustsecp256k1_v0_11_ge_x_on_curve_var(&m)) return 0;
+        if (rustsecp256k1_v0_12_ge_x_on_curve_var(&m)) return 0;
 
         /* Let s = -(u^3 + 7)/(u^2 + u*x + x^2) [first part] */
-        rustsecp256k1_v0_11_fe_sqr(&s, &m);                       /* s = (u+x)^2 */
-        rustsecp256k1_v0_11_fe_negate(&s, &s, 1);                 /* s = -(u+x)^2 */
-        rustsecp256k1_v0_11_fe_mul(&m, &u, &x);                   /* m = u*x */
-        rustsecp256k1_v0_11_fe_add(&s, &m);                       /* s = -(u^2 + u*x + x^2) */
+        rustsecp256k1_v0_12_fe_sqr(&s, &m);                       /* s = (u+x)^2 */
+        rustsecp256k1_v0_12_fe_negate(&s, &s, 1);                 /* s = -(u+x)^2 */
+        rustsecp256k1_v0_12_fe_mul(&m, &u, &x);                   /* m = u*x */
+        rustsecp256k1_v0_12_fe_add(&s, &m);                       /* s = -(u^2 + u*x + x^2) */
 
         /* Note that at this point, s = 0 is impossible. If it were the case:
          *             s = -(u^2 + u*x + x^2) = 0
@@ -224,23 +224,23 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
          * =>                         x^3 + B = (-u - x)^3 + B
          *
          * However, we know x^3 + B is square (because x is on the curve) and
-         * that (-u-x)^3 + B is not square (the rustsecp256k1_v0_11_ge_x_on_curve_var(&m)
+         * that (-u-x)^3 + B is not square (the rustsecp256k1_v0_12_ge_x_on_curve_var(&m)
          * test above would have failed). This is a contradiction, and thus the
          * assumption s=0 is false. */
-        VERIFY_CHECK(!rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&s));
+        VERIFY_CHECK(!rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&s));
 
         /* If s is not square, fail. We have not fully computed s yet, but s is square iff
          * -(u^3+7)*(u^2+u*x+x^2) is square (because a/b is square iff a*b is square and b is
          * nonzero). */
-        rustsecp256k1_v0_11_fe_sqr(&g, &u);                       /* g = u^2 */
-        rustsecp256k1_v0_11_fe_mul(&g, &g, &u);                   /* g = u^3 */
-        rustsecp256k1_v0_11_fe_add_int(&g, SECP256K1_B);          /* g = u^3+7 */
-        rustsecp256k1_v0_11_fe_mul(&m, &s, &g);                   /* m = -(u^3 + 7)*(u^2 + u*x + x^2) */
-        if (!rustsecp256k1_v0_11_fe_is_square_var(&m)) return 0;
+        rustsecp256k1_v0_12_fe_sqr(&g, &u);                       /* g = u^2 */
+        rustsecp256k1_v0_12_fe_mul(&g, &g, &u);                   /* g = u^3 */
+        rustsecp256k1_v0_12_fe_add_int(&g, SECP256K1_B);          /* g = u^3+7 */
+        rustsecp256k1_v0_12_fe_mul(&m, &s, &g);                   /* m = -(u^3 + 7)*(u^2 + u*x + x^2) */
+        if (!rustsecp256k1_v0_12_fe_is_square_var(&m)) return 0;
 
         /* Let s = -(u^3 + 7)/(u^2 + u*x + x^2) [second part] */
-        rustsecp256k1_v0_11_fe_inv_var(&s, &s);                   /* s = -1/(u^2 + u*x + x^2) [no div by 0] */
-        rustsecp256k1_v0_11_fe_mul(&s, &s, &g);                   /* s = -(u^3 + 7)/(u^2 + u*x + x^2) */
+        rustsecp256k1_v0_12_fe_inv_var(&s, &s);                   /* s = -1/(u^2 + u*x + x^2) [no div by 0] */
+        rustsecp256k1_v0_12_fe_mul(&s, &s, &g);                   /* s = -(u^3 + 7)/(u^2 + u*x + x^2) */
 
         /* Let v = x. */
         v = x;
@@ -248,25 +248,25 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
         /* c is in {2, 3, 6, 7}. In this case we look for an inverse under the x3 formula. */
 
         /* Let s = x-u. */
-        rustsecp256k1_v0_11_fe_negate(&m, &u, 1);                 /* m = -u */
+        rustsecp256k1_v0_12_fe_negate(&m, &u, 1);                 /* m = -u */
         s = m;                                          /* s = -u */
-        rustsecp256k1_v0_11_fe_add(&s, &x);                       /* s = x-u */
+        rustsecp256k1_v0_12_fe_add(&s, &x);                       /* s = x-u */
 
         /* If s is not square, fail. */
-        if (!rustsecp256k1_v0_11_fe_is_square_var(&s)) return 0;
+        if (!rustsecp256k1_v0_12_fe_is_square_var(&s)) return 0;
 
         /* Let r = sqrt(-s*(4*(u^3+7)+3*u^2*s)); fail if it doesn't exist. */
-        rustsecp256k1_v0_11_fe_sqr(&g, &u);                       /* g = u^2 */
-        rustsecp256k1_v0_11_fe_mul(&q, &s, &g);                   /* q = s*u^2 */
-        rustsecp256k1_v0_11_fe_mul_int(&q, 3);                    /* q = 3*s*u^2 */
-        rustsecp256k1_v0_11_fe_mul(&g, &g, &u);                   /* g = u^3 */
-        rustsecp256k1_v0_11_fe_mul_int(&g, 4);                    /* g = 4*u^3 */
-        rustsecp256k1_v0_11_fe_add_int(&g, 4 * SECP256K1_B);      /* g = 4*(u^3+7) */
-        rustsecp256k1_v0_11_fe_add(&q, &g);                       /* q = 4*(u^3+7)+3*s*u^2 */
-        rustsecp256k1_v0_11_fe_mul(&q, &q, &s);                   /* q = s*(4*(u^3+7)+3*u^2*s) */
-        rustsecp256k1_v0_11_fe_negate(&q, &q, 1);                 /* q = -s*(4*(u^3+7)+3*u^2*s) */
-        if (!rustsecp256k1_v0_11_fe_is_square_var(&q)) return 0;
-        ret = rustsecp256k1_v0_11_fe_sqrt(&r, &q);                /* r = sqrt(-s*(4*(u^3+7)+3*u^2*s)) */
+        rustsecp256k1_v0_12_fe_sqr(&g, &u);                       /* g = u^2 */
+        rustsecp256k1_v0_12_fe_mul(&q, &s, &g);                   /* q = s*u^2 */
+        rustsecp256k1_v0_12_fe_mul_int(&q, 3);                    /* q = 3*s*u^2 */
+        rustsecp256k1_v0_12_fe_mul(&g, &g, &u);                   /* g = u^3 */
+        rustsecp256k1_v0_12_fe_mul_int(&g, 4);                    /* g = 4*u^3 */
+        rustsecp256k1_v0_12_fe_add_int(&g, 4 * SECP256K1_B);      /* g = 4*(u^3+7) */
+        rustsecp256k1_v0_12_fe_add(&q, &g);                       /* q = 4*(u^3+7)+3*s*u^2 */
+        rustsecp256k1_v0_12_fe_mul(&q, &q, &s);                   /* q = s*(4*(u^3+7)+3*u^2*s) */
+        rustsecp256k1_v0_12_fe_negate(&q, &q, 1);                 /* q = -s*(4*(u^3+7)+3*u^2*s) */
+        if (!rustsecp256k1_v0_12_fe_is_square_var(&q)) return 0;
+        ret = rustsecp256k1_v0_12_fe_sqrt(&r, &q);                /* r = sqrt(-s*(4*(u^3+7)+3*u^2*s)) */
 #ifdef VERIFY
         VERIFY_CHECK(ret);
 #else
@@ -274,31 +274,31 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
 #endif
 
         /* If (c & 1) = 1 and r = 0, fail. */
-        if (EXPECT((c & 1) && rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&r), 0)) return 0;
+        if (EXPECT((c & 1) && rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&r), 0)) return 0;
 
         /* If s = 0, fail. */
-        if (EXPECT(rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&s), 0)) return 0;
+        if (EXPECT(rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&s), 0)) return 0;
 
         /* Let v = (r/s-u)/2. */
-        rustsecp256k1_v0_11_fe_inv_var(&v, &s);                   /* v = 1/s [no div by 0] */
-        rustsecp256k1_v0_11_fe_mul(&v, &v, &r);                   /* v = r/s */
-        rustsecp256k1_v0_11_fe_add(&v, &m);                       /* v = r/s-u */
-        rustsecp256k1_v0_11_fe_half(&v);                          /* v = (r/s-u)/2 */
+        rustsecp256k1_v0_12_fe_inv_var(&v, &s);                   /* v = 1/s [no div by 0] */
+        rustsecp256k1_v0_12_fe_mul(&v, &v, &r);                   /* v = r/s */
+        rustsecp256k1_v0_12_fe_add(&v, &m);                       /* v = r/s-u */
+        rustsecp256k1_v0_12_fe_half(&v);                          /* v = (r/s-u)/2 */
     }
 
     /* Let w = sqrt(s). */
-    ret = rustsecp256k1_v0_11_fe_sqrt(&m, &s);                    /* m = sqrt(s) = w */
+    ret = rustsecp256k1_v0_12_fe_sqrt(&m, &s);                    /* m = sqrt(s) = w */
     VERIFY_CHECK(ret);
 
     /* Return logic. */
     if ((c & 5) == 0 || (c & 5) == 5) {
-        rustsecp256k1_v0_11_fe_negate(&m, &m, 1);                 /* m = -w */
+        rustsecp256k1_v0_12_fe_negate(&m, &m, 1);                 /* m = -w */
     }
     /* Now m = {-w if c&5=0 or c&5=5; w otherwise}. */
-    rustsecp256k1_v0_11_fe_mul(&u, &u, c&1 ? &rustsecp256k1_v0_11_ellswift_c4 : &rustsecp256k1_v0_11_ellswift_c3);
+    rustsecp256k1_v0_12_fe_mul(&u, &u, c&1 ? &rustsecp256k1_v0_12_ellswift_c4 : &rustsecp256k1_v0_12_ellswift_c3);
     /* u = {c4 if c&1=1; c3 otherwise}*u */
-    rustsecp256k1_v0_11_fe_add(&u, &v);                           /* u = {c4 if c&1=1; c3 otherwise}*u + v */
-    rustsecp256k1_v0_11_fe_mul(t, &m, &u);
+    rustsecp256k1_v0_12_fe_add(&u, &v);                           /* u = {c4 if c&1=1; c3 otherwise}*u + v */
+    rustsecp256k1_v0_12_fe_mul(t, &m, &u);
     return 1;
 }
 
@@ -307,8 +307,8 @@ static int rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(rustsecp256k1_v0_11_fe 
  * hasher is a SHA256 object to which an incrementing 4-byte counter is written to generate randomness.
  * Writing 13 bytes (4 bytes for counter, plus 9 bytes for the SHA256 padding) cannot cross a
  * 64-byte block size boundary (to make sure it only triggers a single SHA256 compression). */
-static void rustsecp256k1_v0_11_ellswift_prng(unsigned char* out32, const rustsecp256k1_v0_11_sha256 *hasher, uint32_t cnt) {
-    rustsecp256k1_v0_11_sha256 hash = *hasher;
+static void rustsecp256k1_v0_12_ellswift_prng(unsigned char* out32, const rustsecp256k1_v0_12_sha256 *hasher, uint32_t cnt) {
+    rustsecp256k1_v0_12_sha256 hash = *hasher;
     unsigned char buf4[4];
 #ifdef VERIFY
     size_t blocks = hash.bytes >> 6;
@@ -317,8 +317,8 @@ static void rustsecp256k1_v0_11_ellswift_prng(unsigned char* out32, const rustse
     buf4[1] = cnt >> 8;
     buf4[2] = cnt >> 16;
     buf4[3] = cnt >> 24;
-    rustsecp256k1_v0_11_sha256_write(&hash, buf4, 4);
-    rustsecp256k1_v0_11_sha256_finalize(&hash, out32);
+    rustsecp256k1_v0_12_sha256_write(&hash, buf4, 4);
+    rustsecp256k1_v0_12_sha256_finalize(&hash, out32);
 
     /* Writing and finalizing together should trigger exactly one SHA256 compression. */
     VERIFY_CHECK(((hash.bytes) >> 6) == (blocks + 1));
@@ -329,8 +329,8 @@ static void rustsecp256k1_v0_11_ellswift_prng(unsigned char* out32, const rustse
  * u32 is the 32-byte big endian encoding of u; t is the output field element t that still
  * needs encoding.
  *
- * hasher is a hasher in the rustsecp256k1_v0_11_ellswift_prng sense, with the same restrictions. */
-static void rustsecp256k1_v0_11_ellswift_xelligatorswift_var(unsigned char *u32, rustsecp256k1_v0_11_fe *t, const rustsecp256k1_v0_11_fe *x, const rustsecp256k1_v0_11_sha256 *hasher) {
+ * hasher is a hasher in the rustsecp256k1_v0_12_ellswift_prng sense, with the same restrictions. */
+static void rustsecp256k1_v0_12_ellswift_xelligatorswift_var(unsigned char *u32, rustsecp256k1_v0_12_fe *t, const rustsecp256k1_v0_12_fe *x, const rustsecp256k1_v0_12_sha256 *hasher) {
     /* Pool of 3-bit branch values. */
     unsigned char branch_hash[32];
     /* Number of 3-bit values in branch_hash left. */
@@ -343,47 +343,47 @@ static void rustsecp256k1_v0_11_ellswift_xelligatorswift_var(unsigned char *u32,
     uint32_t cnt = 0;
     while (1) {
         int branch;
-        rustsecp256k1_v0_11_fe u;
+        rustsecp256k1_v0_12_fe u;
         /* If the pool of branch values is empty, populate it. */
         if (branches_left == 0) {
-            rustsecp256k1_v0_11_ellswift_prng(branch_hash, hasher, cnt++);
+            rustsecp256k1_v0_12_ellswift_prng(branch_hash, hasher, cnt++);
             branches_left = 64;
         }
         /* Take a 3-bit branch value from the branch pool (top bit is discarded). */
         --branches_left;
         branch = (branch_hash[branches_left >> 1] >> ((branches_left & 1) << 2)) & 7;
         /* Compute a new u value by hashing. */
-        rustsecp256k1_v0_11_ellswift_prng(u32, hasher, cnt++);
+        rustsecp256k1_v0_12_ellswift_prng(u32, hasher, cnt++);
         /* overflow is not a problem (we prefer uniform u32 over uniform u). */
-        rustsecp256k1_v0_11_fe_set_b32_mod(&u, u32);
+        rustsecp256k1_v0_12_fe_set_b32_mod(&u, u32);
         /* Since u is the output of a hash, it should practically never be 0. We could apply the
          * u=0 to u=1 correction here too to deal with that case still, but it's such a low
          * probability event that we do not bother. */
-        VERIFY_CHECK(!rustsecp256k1_v0_11_fe_normalizes_to_zero_var(&u));
+        VERIFY_CHECK(!rustsecp256k1_v0_12_fe_normalizes_to_zero_var(&u));
 
         /* Find a remainder t, and return it if found. */
-        if (EXPECT(rustsecp256k1_v0_11_ellswift_xswiftec_inv_var(t, x, &u, branch), 0)) break;
+        if (EXPECT(rustsecp256k1_v0_12_ellswift_xswiftec_inv_var(t, x, &u, branch), 0)) break;
     }
 }
 
 /** Find an ElligatorSwift encoding (u, t) for point P.
  *
- * This is similar rustsecp256k1_v0_11_ellswift_xelligatorswift_var, except it takes a full group element p
+ * This is similar rustsecp256k1_v0_12_ellswift_xelligatorswift_var, except it takes a full group element p
  * as input, and returns an encoding that matches the provided Y coordinate rather than a random
  * one.
  */
-static void rustsecp256k1_v0_11_ellswift_elligatorswift_var(unsigned char *u32, rustsecp256k1_v0_11_fe *t, const rustsecp256k1_v0_11_ge *p, const rustsecp256k1_v0_11_sha256 *hasher) {
-    rustsecp256k1_v0_11_ellswift_xelligatorswift_var(u32, t, &p->x, hasher);
-    rustsecp256k1_v0_11_fe_normalize_var(t);
-    if (rustsecp256k1_v0_11_fe_is_odd(t) != rustsecp256k1_v0_11_fe_is_odd(&p->y)) {
-        rustsecp256k1_v0_11_fe_negate(t, t, 1);
-        rustsecp256k1_v0_11_fe_normalize_var(t);
+static void rustsecp256k1_v0_12_ellswift_elligatorswift_var(unsigned char *u32, rustsecp256k1_v0_12_fe *t, const rustsecp256k1_v0_12_ge *p, const rustsecp256k1_v0_12_sha256 *hasher) {
+    rustsecp256k1_v0_12_ellswift_xelligatorswift_var(u32, t, &p->x, hasher);
+    rustsecp256k1_v0_12_fe_normalize_var(t);
+    if (rustsecp256k1_v0_12_fe_is_odd(t) != rustsecp256k1_v0_12_fe_is_odd(&p->y)) {
+        rustsecp256k1_v0_12_fe_negate(t, t, 1);
+        rustsecp256k1_v0_12_fe_normalize_var(t);
     }
 }
 
-/** Set hash state to the BIP340 tagged hash midstate for "rustsecp256k1_v0_11_ellswift_encode". */
-static void rustsecp256k1_v0_11_ellswift_sha256_init_encode(rustsecp256k1_v0_11_sha256* hash) {
-    rustsecp256k1_v0_11_sha256_initialize(hash);
+/** Set hash state to the BIP340 tagged hash midstate for "rustsecp256k1_v0_12_ellswift_encode". */
+static void rustsecp256k1_v0_12_ellswift_sha256_init_encode(rustsecp256k1_v0_12_sha256* hash) {
+    rustsecp256k1_v0_12_sha256_initialize(hash);
     hash->s[0] = 0xd1a6524bul;
     hash->s[1] = 0x028594b3ul;
     hash->s[2] = 0x96e42f4eul;
@@ -396,35 +396,35 @@ static void rustsecp256k1_v0_11_ellswift_sha256_init_encode(rustsecp256k1_v0_11_
     hash->bytes = 64;
 }
 
-int rustsecp256k1_v0_11_ellswift_encode(const rustsecp256k1_v0_11_context *ctx, unsigned char *ell64, const rustsecp256k1_v0_11_pubkey *pubkey, const unsigned char *rnd32) {
-    rustsecp256k1_v0_11_ge p;
+int rustsecp256k1_v0_12_ellswift_encode(const rustsecp256k1_v0_12_context *ctx, unsigned char *ell64, const rustsecp256k1_v0_12_pubkey *pubkey, const unsigned char *rnd32) {
+    rustsecp256k1_v0_12_ge p;
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(ell64 != NULL);
     ARG_CHECK(pubkey != NULL);
     ARG_CHECK(rnd32 != NULL);
 
-    if (rustsecp256k1_v0_11_pubkey_load(ctx, &p, pubkey)) {
-        rustsecp256k1_v0_11_fe t;
+    if (rustsecp256k1_v0_12_pubkey_load(ctx, &p, pubkey)) {
+        rustsecp256k1_v0_12_fe t;
         unsigned char p64[64] = {0};
         size_t ser_size;
         int ser_ret;
-        rustsecp256k1_v0_11_sha256 hash;
+        rustsecp256k1_v0_12_sha256 hash;
 
         /* Set up hasher state; the used RNG is H(pubkey || "\x00"*31 || rnd32 || cnt++), using
-         * BIP340 tagged hash with tag "rustsecp256k1_v0_11_ellswift_encode". */
-        rustsecp256k1_v0_11_ellswift_sha256_init_encode(&hash);
-        ser_ret = rustsecp256k1_v0_11_eckey_pubkey_serialize(&p, p64, &ser_size, 1);
+         * BIP340 tagged hash with tag "rustsecp256k1_v0_12_ellswift_encode". */
+        rustsecp256k1_v0_12_ellswift_sha256_init_encode(&hash);
+        ser_ret = rustsecp256k1_v0_12_eckey_pubkey_serialize(&p, p64, &ser_size, 1);
 #ifdef VERIFY
         VERIFY_CHECK(ser_ret && ser_size == 33);
 #else
         (void)ser_ret;
 #endif
-        rustsecp256k1_v0_11_sha256_write(&hash, p64, sizeof(p64));
-        rustsecp256k1_v0_11_sha256_write(&hash, rnd32, 32);
+        rustsecp256k1_v0_12_sha256_write(&hash, p64, sizeof(p64));
+        rustsecp256k1_v0_12_sha256_write(&hash, rnd32, 32);
 
         /* Compute ElligatorSwift encoding and construct output. */
-        rustsecp256k1_v0_11_ellswift_elligatorswift_var(ell64, &t, &p, &hash); /* puts u in ell64[0..32] */
-        rustsecp256k1_v0_11_fe_get_b32(ell64 + 32, &t); /* puts t in ell64[32..64] */
+        rustsecp256k1_v0_12_ellswift_elligatorswift_var(ell64, &t, &p, &hash); /* puts u in ell64[0..32] */
+        rustsecp256k1_v0_12_fe_get_b32(ell64 + 32, &t); /* puts t in ell64[32..64] */
         return 1;
     }
     /* Only reached in case the provided pubkey is invalid. */
@@ -432,9 +432,9 @@ int rustsecp256k1_v0_11_ellswift_encode(const rustsecp256k1_v0_11_context *ctx, 
     return 0;
 }
 
-/** Set hash state to the BIP340 tagged hash midstate for "rustsecp256k1_v0_11_ellswift_create". */
-static void rustsecp256k1_v0_11_ellswift_sha256_init_create(rustsecp256k1_v0_11_sha256* hash) {
-    rustsecp256k1_v0_11_sha256_initialize(hash);
+/** Set hash state to the BIP340 tagged hash midstate for "rustsecp256k1_v0_12_ellswift_create". */
+static void rustsecp256k1_v0_12_ellswift_sha256_init_create(rustsecp256k1_v0_12_sha256* hash) {
+    rustsecp256k1_v0_12_sha256_initialize(hash);
     hash->s[0] = 0xd29e1bf5ul;
     hash->s[1] = 0xf7025f42ul;
     hash->s[2] = 0x9b024773ul;
@@ -447,11 +447,11 @@ static void rustsecp256k1_v0_11_ellswift_sha256_init_create(rustsecp256k1_v0_11_
     hash->bytes = 64;
 }
 
-int rustsecp256k1_v0_11_ellswift_create(const rustsecp256k1_v0_11_context *ctx, unsigned char *ell64, const unsigned char *seckey32, const unsigned char *auxrnd32) {
-    rustsecp256k1_v0_11_ge p;
-    rustsecp256k1_v0_11_fe t;
-    rustsecp256k1_v0_11_sha256 hash;
-    rustsecp256k1_v0_11_scalar seckey_scalar;
+int rustsecp256k1_v0_12_ellswift_create(const rustsecp256k1_v0_12_context *ctx, unsigned char *ell64, const unsigned char *seckey32, const unsigned char *auxrnd32) {
+    rustsecp256k1_v0_12_ge p;
+    rustsecp256k1_v0_12_fe t;
+    rustsecp256k1_v0_12_sha256 hash;
+    rustsecp256k1_v0_12_scalar seckey_scalar;
     int ret;
     static const unsigned char zero32[32] = {0};
 
@@ -459,65 +459,65 @@ int rustsecp256k1_v0_11_ellswift_create(const rustsecp256k1_v0_11_context *ctx, 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(ell64 != NULL);
     memset(ell64, 0, 64);
-    ARG_CHECK(rustsecp256k1_v0_11_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
+    ARG_CHECK(rustsecp256k1_v0_12_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
     ARG_CHECK(seckey32 != NULL);
 
     /* Compute (affine) public key */
-    ret = rustsecp256k1_v0_11_ec_pubkey_create_helper(&ctx->ecmult_gen_ctx, &seckey_scalar, &p, seckey32);
-    rustsecp256k1_v0_11_declassify(ctx, &p, sizeof(p)); /* not constant time in produced pubkey */
-    rustsecp256k1_v0_11_fe_normalize_var(&p.x);
-    rustsecp256k1_v0_11_fe_normalize_var(&p.y);
+    ret = rustsecp256k1_v0_12_ec_pubkey_create_helper(&ctx->ecmult_gen_ctx, &seckey_scalar, &p, seckey32);
+    rustsecp256k1_v0_12_declassify(ctx, &p, sizeof(p)); /* not constant time in produced pubkey */
+    rustsecp256k1_v0_12_fe_normalize_var(&p.x);
+    rustsecp256k1_v0_12_fe_normalize_var(&p.y);
 
     /* Set up hasher state. The used RNG is H(privkey || "\x00"*32 [|| auxrnd32] || cnt++),
-     * using BIP340 tagged hash with tag "rustsecp256k1_v0_11_ellswift_create". */
-    rustsecp256k1_v0_11_ellswift_sha256_init_create(&hash);
-    rustsecp256k1_v0_11_sha256_write(&hash, seckey32, 32);
-    rustsecp256k1_v0_11_sha256_write(&hash, zero32, sizeof(zero32));
-    rustsecp256k1_v0_11_declassify(ctx, &hash, sizeof(hash)); /* private key is hashed now */
-    if (auxrnd32) rustsecp256k1_v0_11_sha256_write(&hash, auxrnd32, 32);
+     * using BIP340 tagged hash with tag "rustsecp256k1_v0_12_ellswift_create". */
+    rustsecp256k1_v0_12_ellswift_sha256_init_create(&hash);
+    rustsecp256k1_v0_12_sha256_write(&hash, seckey32, 32);
+    rustsecp256k1_v0_12_sha256_write(&hash, zero32, sizeof(zero32));
+    rustsecp256k1_v0_12_declassify(ctx, &hash, sizeof(hash)); /* private key is hashed now */
+    if (auxrnd32) rustsecp256k1_v0_12_sha256_write(&hash, auxrnd32, 32);
 
     /* Compute ElligatorSwift encoding and construct output. */
-    rustsecp256k1_v0_11_ellswift_elligatorswift_var(ell64, &t, &p, &hash); /* puts u in ell64[0..32] */
-    rustsecp256k1_v0_11_fe_get_b32(ell64 + 32, &t); /* puts t in ell64[32..64] */
+    rustsecp256k1_v0_12_ellswift_elligatorswift_var(ell64, &t, &p, &hash); /* puts u in ell64[0..32] */
+    rustsecp256k1_v0_12_fe_get_b32(ell64 + 32, &t); /* puts t in ell64[32..64] */
 
-    rustsecp256k1_v0_11_memczero(ell64, 64, !ret);
-    rustsecp256k1_v0_11_scalar_clear(&seckey_scalar);
+    rustsecp256k1_v0_12_memczero(ell64, 64, !ret);
+    rustsecp256k1_v0_12_scalar_clear(&seckey_scalar);
 
     return ret;
 }
 
-int rustsecp256k1_v0_11_ellswift_decode(const rustsecp256k1_v0_11_context *ctx, rustsecp256k1_v0_11_pubkey *pubkey, const unsigned char *ell64) {
-    rustsecp256k1_v0_11_fe u, t;
-    rustsecp256k1_v0_11_ge p;
+int rustsecp256k1_v0_12_ellswift_decode(const rustsecp256k1_v0_12_context *ctx, rustsecp256k1_v0_12_pubkey *pubkey, const unsigned char *ell64) {
+    rustsecp256k1_v0_12_fe u, t;
+    rustsecp256k1_v0_12_ge p;
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(pubkey != NULL);
     ARG_CHECK(ell64 != NULL);
 
-    rustsecp256k1_v0_11_fe_set_b32_mod(&u, ell64);
-    rustsecp256k1_v0_11_fe_set_b32_mod(&t, ell64 + 32);
-    rustsecp256k1_v0_11_fe_normalize_var(&t);
-    rustsecp256k1_v0_11_ellswift_swiftec_var(&p, &u, &t);
-    rustsecp256k1_v0_11_pubkey_save(pubkey, &p);
+    rustsecp256k1_v0_12_fe_set_b32_mod(&u, ell64);
+    rustsecp256k1_v0_12_fe_set_b32_mod(&t, ell64 + 32);
+    rustsecp256k1_v0_12_fe_normalize_var(&t);
+    rustsecp256k1_v0_12_ellswift_swiftec_var(&p, &u, &t);
+    rustsecp256k1_v0_12_pubkey_save(pubkey, &p);
     return 1;
 }
 
 static int ellswift_xdh_hash_function_prefix(unsigned char *output, const unsigned char *x32, const unsigned char *ell_a64, const unsigned char *ell_b64, void *data) {
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
 
-    rustsecp256k1_v0_11_sha256_initialize(&sha);
-    rustsecp256k1_v0_11_sha256_write(&sha, data, 64);
-    rustsecp256k1_v0_11_sha256_write(&sha, ell_a64, 64);
-    rustsecp256k1_v0_11_sha256_write(&sha, ell_b64, 64);
-    rustsecp256k1_v0_11_sha256_write(&sha, x32, 32);
-    rustsecp256k1_v0_11_sha256_finalize(&sha, output);
-    rustsecp256k1_v0_11_sha256_clear(&sha);
+    rustsecp256k1_v0_12_sha256_initialize(&sha);
+    rustsecp256k1_v0_12_sha256_write(&sha, data, 64);
+    rustsecp256k1_v0_12_sha256_write(&sha, ell_a64, 64);
+    rustsecp256k1_v0_12_sha256_write(&sha, ell_b64, 64);
+    rustsecp256k1_v0_12_sha256_write(&sha, x32, 32);
+    rustsecp256k1_v0_12_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_12_sha256_clear(&sha);
 
     return 1;
 }
 
 /** Set hash state to the BIP340 tagged hash midstate for "bip324_ellswift_xonly_ecdh". */
-static void rustsecp256k1_v0_11_ellswift_sha256_init_bip324(rustsecp256k1_v0_11_sha256* hash) {
-    rustsecp256k1_v0_11_sha256_initialize(hash);
+static void rustsecp256k1_v0_12_ellswift_sha256_init_bip324(rustsecp256k1_v0_12_sha256* hash) {
+    rustsecp256k1_v0_12_sha256_initialize(hash);
     hash->s[0] = 0x8c12d730ul;
     hash->s[1] = 0x827bd392ul;
     hash->s[2] = 0x9e4fb2eeul;
@@ -531,28 +531,28 @@ static void rustsecp256k1_v0_11_ellswift_sha256_init_bip324(rustsecp256k1_v0_11_
 }
 
 static int ellswift_xdh_hash_function_bip324(unsigned char* output, const unsigned char *x32, const unsigned char *ell_a64, const unsigned char *ell_b64, void *data) {
-    rustsecp256k1_v0_11_sha256 sha;
+    rustsecp256k1_v0_12_sha256 sha;
 
     (void)data;
 
-    rustsecp256k1_v0_11_ellswift_sha256_init_bip324(&sha);
-    rustsecp256k1_v0_11_sha256_write(&sha, ell_a64, 64);
-    rustsecp256k1_v0_11_sha256_write(&sha, ell_b64, 64);
-    rustsecp256k1_v0_11_sha256_write(&sha, x32, 32);
-    rustsecp256k1_v0_11_sha256_finalize(&sha, output);
-    rustsecp256k1_v0_11_sha256_clear(&sha);
+    rustsecp256k1_v0_12_ellswift_sha256_init_bip324(&sha);
+    rustsecp256k1_v0_12_sha256_write(&sha, ell_a64, 64);
+    rustsecp256k1_v0_12_sha256_write(&sha, ell_b64, 64);
+    rustsecp256k1_v0_12_sha256_write(&sha, x32, 32);
+    rustsecp256k1_v0_12_sha256_finalize(&sha, output);
+    rustsecp256k1_v0_12_sha256_clear(&sha);
 
     return 1;
 }
 
-const rustsecp256k1_v0_11_ellswift_xdh_hash_function rustsecp256k1_v0_11_ellswift_xdh_hash_function_prefix = ellswift_xdh_hash_function_prefix;
-const rustsecp256k1_v0_11_ellswift_xdh_hash_function rustsecp256k1_v0_11_ellswift_xdh_hash_function_bip324 = ellswift_xdh_hash_function_bip324;
+const rustsecp256k1_v0_12_ellswift_xdh_hash_function rustsecp256k1_v0_12_ellswift_xdh_hash_function_prefix = ellswift_xdh_hash_function_prefix;
+const rustsecp256k1_v0_12_ellswift_xdh_hash_function rustsecp256k1_v0_12_ellswift_xdh_hash_function_bip324 = ellswift_xdh_hash_function_bip324;
 
-int rustsecp256k1_v0_11_ellswift_xdh(const rustsecp256k1_v0_11_context *ctx, unsigned char *output, const unsigned char *ell_a64, const unsigned char *ell_b64, const unsigned char *seckey32, int party, rustsecp256k1_v0_11_ellswift_xdh_hash_function hashfp, void *data) {
+int rustsecp256k1_v0_12_ellswift_xdh(const rustsecp256k1_v0_12_context *ctx, unsigned char *output, const unsigned char *ell_a64, const unsigned char *ell_b64, const unsigned char *seckey32, int party, rustsecp256k1_v0_12_ellswift_xdh_hash_function hashfp, void *data) {
     int ret = 0;
     int overflow;
-    rustsecp256k1_v0_11_scalar s;
-    rustsecp256k1_v0_11_fe xn, xd, px, u, t;
+    rustsecp256k1_v0_12_scalar s;
+    rustsecp256k1_v0_12_fe xn, xd, px, u, t;
     unsigned char sx[32];
     const unsigned char* theirs64;
 
@@ -565,26 +565,26 @@ int rustsecp256k1_v0_11_ellswift_xdh(const rustsecp256k1_v0_11_context *ctx, uns
 
     /* Load remote public key (as fraction). */
     theirs64 = party ? ell_a64 : ell_b64;
-    rustsecp256k1_v0_11_fe_set_b32_mod(&u, theirs64);
-    rustsecp256k1_v0_11_fe_set_b32_mod(&t, theirs64 + 32);
-    rustsecp256k1_v0_11_ellswift_xswiftec_frac_var(&xn, &xd, &u, &t);
+    rustsecp256k1_v0_12_fe_set_b32_mod(&u, theirs64);
+    rustsecp256k1_v0_12_fe_set_b32_mod(&t, theirs64 + 32);
+    rustsecp256k1_v0_12_ellswift_xswiftec_frac_var(&xn, &xd, &u, &t);
 
     /* Load private key (using one if invalid). */
-    rustsecp256k1_v0_11_scalar_set_b32(&s, seckey32, &overflow);
-    overflow = rustsecp256k1_v0_11_scalar_is_zero(&s);
-    rustsecp256k1_v0_11_scalar_cmov(&s, &rustsecp256k1_v0_11_scalar_one, overflow);
+    rustsecp256k1_v0_12_scalar_set_b32(&s, seckey32, &overflow);
+    overflow = rustsecp256k1_v0_12_scalar_is_zero(&s);
+    rustsecp256k1_v0_12_scalar_cmov(&s, &rustsecp256k1_v0_12_scalar_one, overflow);
 
     /* Compute shared X coordinate. */
-    rustsecp256k1_v0_11_ecmult_const_xonly(&px, &xn, &xd, &s, 1);
-    rustsecp256k1_v0_11_fe_normalize(&px);
-    rustsecp256k1_v0_11_fe_get_b32(sx, &px);
+    rustsecp256k1_v0_12_ecmult_const_xonly(&px, &xn, &xd, &s, 1);
+    rustsecp256k1_v0_12_fe_normalize(&px);
+    rustsecp256k1_v0_12_fe_get_b32(sx, &px);
 
     /* Invoke hasher */
     ret = hashfp(output, sx, ell_a64, ell_b64, data);
 
-    rustsecp256k1_v0_11_memclear(sx, sizeof(sx));
-    rustsecp256k1_v0_11_fe_clear(&px);
-    rustsecp256k1_v0_11_scalar_clear(&s);
+    rustsecp256k1_v0_12_memclear(sx, sizeof(sx));
+    rustsecp256k1_v0_12_fe_clear(&px);
+    rustsecp256k1_v0_12_scalar_clear(&s);
 
     return !!ret & !overflow;
 }

@@ -1,4 +1,4 @@
-include_HEADERS += include/rustsecp256k1_v0_11_extrakeys.h
+include_HEADERS += include/rustsecp256k1_v0_12_extrakeys.h
 noinst_HEADERS += src/modules/extrakeys/tests_impl.h
 noinst_HEADERS += src/modules/extrakeys/tests_exhaustive_impl.h
 noinst_HEADERS += src/modules/extrakeys/main_impl.h

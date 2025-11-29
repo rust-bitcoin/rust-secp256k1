@@ -1,6 +1,8 @@
 default:
   @just --list
 
+alias ulf := update-lock-files
+
 # Cargo build everything.
 build:
   cargo build --workspace --all-targets --all-features

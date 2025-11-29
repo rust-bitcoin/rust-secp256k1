@@ -6,7 +6,7 @@
     <a href="https://github.com/rust-bitcoin/rust-secp256k1/blob/master/LICENSE"><img alt="CC0 1.0 Universal Licensed" src="https://img.shields.io/badge/license-CC0--1.0-blue.svg"/></a>
     <a href="https://github.com/rust-bitcoin/rust-secp256k1/actions?query=workflow%3AContinuous%20integration"><img alt="CI Status" src="https://github.com/rust-bitcoin/rust-secp256k1/workflows/Continuous%20integration/badge.svg"></a>
     <a href="https://docs.rs/secp256k1"><img alt="API Docs" src="https://img.shields.io/badge/docs.rs-secp256k1-green"/></a>
-    <a href="https://blog.rust-lang.org/2020/02/27/Rust-1.63.0.html"><img alt="Rustc Version 1.63.0+" src="https://img.shields.io/badge/rustc-1.63.0.0%2B-lightgrey.svg"/></a>
+    <a href="https://releases.rs/docs/1.63.0/"><img alt="Rustc Version 1.63.0+" src="https://img.shields.io/badge/rustc-1.63.0.0%2B-lightgrey.svg"/></a>
   </p>
 </div>
 

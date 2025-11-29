@@ -15,7 +15,7 @@ extern "C" {
 
 /** A pointer to a function to deterministically generate a nonce.
  *
- *  Same as rustsecp256k1_v0_11_nonce function with the exception of accepting an
+ *  Same as rustsecp256k1_v0_12_nonce function with the exception of accepting an
  *  additional pubkey argument and not requiring an attempt argument. The pubkey
  *  argument can protect signature schemes with key-prefixed challenge hash
  *  inputs against reusing the nonce when signing with the wrong precomputed
@@ -38,7 +38,7 @@ extern "C" {
  *  Except for test cases, this function should compute some cryptographic hash of
  *  the message, the key, the pubkey, the algorithm description, and data.
  */
-typedef int (*rustsecp256k1_v0_11_nonce_function_hardened)(
+typedef int (*rustsecp256k1_v0_12_nonce_function_hardened)(
     unsigned char *nonce32,
     const unsigned char *msg,
     size_t msglen,
@@ -61,7 +61,7 @@ typedef int (*rustsecp256k1_v0_11_nonce_function_hardened)(
  *  Therefore, to create BIP-340 compliant signatures, algo must be set to
  *  "BIP0340/nonce" and algolen to 13.
  */
-SECP256K1_API const rustsecp256k1_v0_11_nonce_function_hardened rustsecp256k1_v0_11_nonce_function_bip340;
+SECP256K1_API const rustsecp256k1_v0_12_nonce_function_hardened rustsecp256k1_v0_12_nonce_function_bip340;
 
 /** Data structure that contains additional arguments for schnorrsig_sign_custom.
  *
@@ -73,17 +73,17 @@ SECP256K1_API const rustsecp256k1_v0_11_nonce_function_hardened rustsecp256k1_v0
  *             and has no other function than making sure the object is
  *             initialized.
  *    noncefp: pointer to a nonce generation function. If NULL,
- *             rustsecp256k1_v0_11_nonce_function_bip340 is used
+ *             rustsecp256k1_v0_12_nonce_function_bip340 is used
  *      ndata: pointer to arbitrary data used by the nonce generation function
  *             (can be NULL). If it is non-NULL and
- *             rustsecp256k1_v0_11_nonce_function_bip340 is used, then ndata must be a
+ *             rustsecp256k1_v0_12_nonce_function_bip340 is used, then ndata must be a
  *             pointer to 32-byte auxiliary randomness as per BIP-340.
  */
-typedef struct rustsecp256k1_v0_11_schnorrsig_extraparams {
+typedef struct rustsecp256k1_v0_12_schnorrsig_extraparams {
     unsigned char magic[4];
-    rustsecp256k1_v0_11_nonce_function_hardened noncefp;
+    rustsecp256k1_v0_12_nonce_function_hardened noncefp;
     void *ndata;
-} rustsecp256k1_v0_11_schnorrsig_extraparams;
+} rustsecp256k1_v0_12_schnorrsig_extraparams;
 
 #define SECP256K1_SCHNORRSIG_EXTRAPARAMS_MAGIC { 0xda, 0x6f, 0xb3, 0x8c }
 #define SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT {\
@@ -95,18 +95,18 @@ typedef struct rustsecp256k1_v0_11_schnorrsig_extraparams {
 /** Create a Schnorr signature.
  *
  *  Does _not_ strictly follow BIP-340 because it does not verify the resulting
- *  signature. Instead, you can manually use rustsecp256k1_v0_11_schnorrsig_verify and
+ *  signature. Instead, you can manually use rustsecp256k1_v0_12_schnorrsig_verify and
  *  abort if it fails.
  *
  *  This function only signs 32-byte messages. If you have messages of a
  *  different size (or the same size but without a context-specific tag
  *  prefix), it is recommended to create a 32-byte message hash with
- *  rustsecp256k1_v0_11_tagged_sha256 and then sign the hash. Tagged hashing allows
+ *  rustsecp256k1_v0_12_tagged_sha256 and then sign the hash. Tagged hashing allows
  *  providing an context-specific tag for domain separation. This prevents
  *  signatures from being valid in multiple contexts by accident.
  *
  *  Returns 1 on success, 0 on failure.
- *  Args:    ctx: pointer to a context object (not rustsecp256k1_v0_11_context_static).
+ *  Args:    ctx: pointer to a context object (not rustsecp256k1_v0_12_context_static).
  *  Out:   sig64: pointer to a 64-byte array to store the serialized signature.
  *  In:    msg32: the 32-byte message being signed.
  *       keypair: pointer to an initialized keypair.
@@ -116,53 +116,53 @@ typedef struct rustsecp256k1_v0_11_schnorrsig_extraparams {
  *                BIP-340 "Default Signing" for a full explanation of this
  *                argument and for guidance if randomness is expensive.
  */
-SECP256K1_API int rustsecp256k1_v0_11_schnorrsig_sign32(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API int rustsecp256k1_v0_12_schnorrsig_sign32(
+    const rustsecp256k1_v0_12_context *ctx,
     unsigned char *sig64,
     const unsigned char *msg32,
-    const rustsecp256k1_v0_11_keypair *keypair,
+    const rustsecp256k1_v0_12_keypair *keypair,
     const unsigned char *aux_rand32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4);
 
-/** Same as rustsecp256k1_v0_11_schnorrsig_sign32, but DEPRECATED. Will be removed in
+/** Same as rustsecp256k1_v0_12_schnorrsig_sign32, but DEPRECATED. Will be removed in
  *  future versions. */
-SECP256K1_API int rustsecp256k1_v0_11_schnorrsig_sign(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API int rustsecp256k1_v0_12_schnorrsig_sign(
+    const rustsecp256k1_v0_12_context *ctx,
     unsigned char *sig64,
     const unsigned char *msg32,
-    const rustsecp256k1_v0_11_keypair *keypair,
+    const rustsecp256k1_v0_12_keypair *keypair,
     const unsigned char *aux_rand32
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4)
-  SECP256K1_DEPRECATED("Use rustsecp256k1_v0_11_schnorrsig_sign32 instead");
+  SECP256K1_DEPRECATED("Use rustsecp256k1_v0_12_schnorrsig_sign32 instead");
 
 /** Create a Schnorr signature with a more flexible API.
  *
- *  Same arguments as rustsecp256k1_v0_11_schnorrsig_sign except that it allows signing
+ *  Same arguments as rustsecp256k1_v0_12_schnorrsig_sign except that it allows signing
  *  variable length messages and accepts a pointer to an extraparams object that
  *  allows customizing signing by passing additional arguments.
  *
- *  Equivalent to rustsecp256k1_v0_11_schnorrsig_sign32(..., aux_rand32) if msglen is 32
+ *  Equivalent to rustsecp256k1_v0_12_schnorrsig_sign32(..., aux_rand32) if msglen is 32
  *  and extraparams is initialized as follows:
  *  ```
- *  rustsecp256k1_v0_11_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
+ *  rustsecp256k1_v0_12_schnorrsig_extraparams extraparams = SECP256K1_SCHNORRSIG_EXTRAPARAMS_INIT;
  *  extraparams.ndata = (unsigned char*)aux_rand32;
  *  ```
  *
  *  Returns 1 on success, 0 on failure.
- *  Args:   ctx: pointer to a context object (not rustsecp256k1_v0_11_context_static).
+ *  Args:   ctx: pointer to a context object (not rustsecp256k1_v0_12_context_static).
  *  Out:  sig64: pointer to a 64-byte array to store the serialized signature.
  *  In:     msg: the message being signed. Can only be NULL if msglen is 0.
  *       msglen: length of the message.
  *      keypair: pointer to an initialized keypair.
  *  extraparams: pointer to an extraparams object (can be NULL).
  */
-SECP256K1_API int rustsecp256k1_v0_11_schnorrsig_sign_custom(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API int rustsecp256k1_v0_12_schnorrsig_sign_custom(
+    const rustsecp256k1_v0_12_context *ctx,
     unsigned char *sig64,
     const unsigned char *msg,
     size_t msglen,
-    const rustsecp256k1_v0_11_keypair *keypair,
-    rustsecp256k1_v0_11_schnorrsig_extraparams *extraparams
+    const rustsecp256k1_v0_12_keypair *keypair,
+    rustsecp256k1_v0_12_schnorrsig_extraparams *extraparams
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(5);
 
 /** Verify a Schnorr signature.
@@ -175,12 +175,12 @@ SECP256K1_API int rustsecp256k1_v0_11_schnorrsig_sign_custom(
  *        msglen: length of the message
  *        pubkey: pointer to an x-only public key to verify with
  */
-SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_11_schnorrsig_verify(
-    const rustsecp256k1_v0_11_context *ctx,
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int rustsecp256k1_v0_12_schnorrsig_verify(
+    const rustsecp256k1_v0_12_context *ctx,
     const unsigned char *sig64,
     const unsigned char *msg,
     size_t msglen,
-    const rustsecp256k1_v0_11_xonly_pubkey *pubkey
+    const rustsecp256k1_v0_12_xonly_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(5);
 
 #ifdef __cplusplus

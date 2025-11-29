@@ -612,9 +612,14 @@ impl Keypair {
 
     /// Returns the secret bytes for this key pair.
     #[inline]
-    pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
+    pub fn to_secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         *SecretKey::from_keypair(self).as_ref()
     }
+
+    /// Returns the secret bytes for this key pair.
+    #[deprecated(since = "TBD", note = "use to_secret_bytes instead")]
+    #[inline]
+    pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] { self.to_secret_bytes() }
 
     /// Tweaks a keypair by first converting the public key to an xonly key and tweaking it.
     ///

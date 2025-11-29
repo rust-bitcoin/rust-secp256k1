@@ -149,7 +149,6 @@
 #![warn(missing_docs, missing_copy_implementations, missing_debug_implementations)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 // Experimental features we need.
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(bench, feature(test))]
 
 #[cfg(feature = "alloc")]
@@ -407,6 +406,20 @@ impl<C: Context> Secp256k1<C> {
             // thread to be on the safe side.
             assert_eq!(err, 1);
         }
+    }
+}
+
+impl<C: Signing> Secp256k1<C> {
+    /// Generates a random keypair. Convenience function for [`SecretKey::new`] and
+    /// [`PublicKey::from_secret_key`].
+    #[inline]
+    #[cfg(feature = "rand")]
+    #[deprecated(since = "0.32.0", note = "use secp256k1::generate_keypair instead")]
+    pub fn generate_keypair<R: rand::Rng + ?Sized>(
+        &self,
+        rng: &mut R,
+    ) -> (key::SecretKey, key::PublicKey) {
+        generate_keypair(rng)
     }
 }
 
