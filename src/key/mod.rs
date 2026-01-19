@@ -928,6 +928,12 @@ impl XOnlyPublicKey {
         ret
     }
 
+    /// Serializes the key as a byte-encoded x coordinate value (32 bytes).
+    #[inline]
+    pub fn to_byte_array(&self) -> [u8; constants::SCHNORR_PUBLIC_KEY_SIZE] {
+        self.serialize()
+    }
+
     /// Tweaks an [`XOnlyPublicKey`] by adding the generator multiplied with the given tweak to it.
     ///
     /// # Returns

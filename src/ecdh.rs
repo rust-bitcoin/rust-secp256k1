@@ -62,6 +62,16 @@ impl SharedSecret {
     #[inline]
     pub fn secret_bytes(&self) -> [u8; SHARED_SECRET_SIZE] { self.to_secret_bytes() }
 
+    /// Returns the shared secret as a reference to a byte array.
+    #[inline]
+    pub fn as_secret_bytes(&self) -> &[u8; SHARED_SECRET_SIZE] { &self.0 }
+
+    /// Creates a shared secret from `bytes` array.
+    #[inline]
+    pub fn from_secret_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret {
+        Self::from_bytes(bytes)
+    }
+
     /// Creates a shared secret from `bytes` array.
     #[inline]
     pub fn from_bytes(bytes: [u8; SHARED_SECRET_SIZE]) -> SharedSecret { SharedSecret(bytes) }
