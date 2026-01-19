@@ -923,6 +923,10 @@ extern "C" {
 pub mod silentpayments {
     use super::*;
 
+    /// Size (in bytes) of the internal representation of the prevouts summary.
+    /// This structure include magic bytes ([0xa7, 0x1c, 0xd3, 0x5e]) alongside the actual data.
+    pub const PREVOUTS_SUMMARY_SIZE: usize = 101;
+
     /// Size (in bytes) of the internal representation of label.
     /// This structure include magic bytes ([0x27, 0x9d, 0x44, 0xba]) alongside the actual data.
     pub const LABEL_SIZE: usize = 68;
@@ -986,6 +990,108 @@ pub mod silentpayments {
             unlabeled_spend_pubkey: *const PublicKey,
             label: *const Label,
         ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_prevouts_summary_create"
+        )]
+        pub fn secp256k1_silentpayments_recipient_prevouts_summary_create(
+            ctx: *const Context,
+            prevouts_summary: *mut PrevoutsSummary,
+            outpoint_smallest36: *const c_uchar,
+            xonly_pubkeys: *const *const XOnlyPublicKey,
+            n_xonly_pubkeys: size_t,
+            plain_pubkeys: *const *const PublicKey,
+            n_plain_pubkeys: size_t,
+        ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_scan_outputs"
+        )]
+        pub fn secp256k1_silentpayments_recipient_scan_outputs(
+            ctx: *const Context,
+            found_outputs: *mut *mut FoundOutput,
+            n_found_outputs: *mut c_uint,
+            tx_outputs: *const *const XOnlyPublicKey,
+            n_tx_outputs: c_uint,
+            scan_key32: *const c_uchar,
+            prevouts_summary: *const PrevoutsSummary,
+            unlabeled_spend_pubkey: *const PublicKey,
+            label_lookup: LabelLookup,
+            label_context: *const c_void,
+        ) -> c_int;
+
+        #[cfg_attr(
+            not(rust_secp_no_symbol_renaming),
+            link_name = "rustsecp256k1_v0_13_silentpayments_recipient_create_output_pubkeys"
+        )]
+        pub fn secp256k1_silentpayments_recipient_create_output_pubkeys(
+            ctx: *const Context,
+            outputs_xonly: *mut *mut XOnlyPublicKey,
+            scan_key32: *const c_uchar,
+            prevouts_summary: *const PrevoutsSummary,
+            spend_pubkeys: *const *mut PublicKey,
+            n_spend_pubkeys: size_t,
+        ) -> c_int;
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct FoundOutput {
+        pub output: XOnlyPublicKey,
+        pub tweak: [c_uchar; 32],
+        pub found_with_label: c_int,
+        pub label: Label,
+    }
+
+    impl Default for FoundOutput {
+        fn default() -> Self {
+            Self {
+                output: unsafe { XOnlyPublicKey::new() },
+                tweak: [0u8; 32],
+                found_with_label: 0i32,
+                label: Label([0u8; LABEL_SIZE]),
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct PrevoutsSummary([c_uchar; PREVOUTS_SUMMARY_SIZE]);
+    impl_array_newtype!(PrevoutsSummary, c_uchar, PREVOUTS_SUMMARY_SIZE);
+
+    impl PrevoutsSummary {
+        pub fn from_byte_array(arr: [c_uchar; PREVOUTS_SUMMARY_SIZE]) -> Self { Self(arr) }
+        pub fn to_byte_array(self) -> [c_uchar; PREVOUTS_SUMMARY_SIZE] { self.0 }
+    }
+
+    impl core::fmt::Debug for PrevoutsSummary {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(f, "magic: {{")?;
+            for magic_byte in &self.0[..3] {
+                write!(f, "0x{magic_byte:02x}, ")?;
+            }
+            writeln!(f, "0x{:02x}}},", &self.0[3])?;
+            writeln!(f, "flag: {},", &self.0[4])?;
+            write!(f, "x: 0x")?;
+            for x_byte in &self.0[5..37] {
+                write!(f, "{x_byte:02x}")?;
+            }
+            writeln!(f, ",")?;
+            write!(f, "y: 0x")?;
+            for y_byte in &self.0[37..69] {
+                write!(f, "{y_byte:02x}")?;
+            }
+            if self.0[4] == 0 {
+                writeln!(f, ",")?;
+                write!(f, "hash: 0x")?;
+                for scalar_byte in &self.0[69..PREVOUTS_SUMMARY_SIZE] {
+                    write!(f, "{scalar_byte:02x}")?;
+                }
+            }
+            Ok(())
+        }
     }
 
     #[repr(C)]
