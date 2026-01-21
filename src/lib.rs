@@ -207,7 +207,13 @@ pub use crate::{
     scalar::Scalar,
 };
 
-/// A (hashed) message input to an ECDSA signature.
+/// A (hashed) message input to an EC signature algorithm (such as ECDSA or Schnorr).
+/// 
+/// Message is invalid if 
+/// - Message has no content or has a length of zero.
+/// - Message length doesn't match the expected size.
+/// - Non hased message is passed as input.
+/// 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Message([u8; constants::MESSAGE_SIZE]);
 impl_array_newtype!(Message, u8, constants::MESSAGE_SIZE);
