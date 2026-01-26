@@ -178,6 +178,8 @@ pub mod ellswift;
 pub mod musig;
 pub mod scalar;
 pub mod schnorr;
+#[cfg(feature = "silentpayments")]
+pub mod silentpayments;
 
 use core::marker::PhantomData;
 use core::ptr::NonNull;

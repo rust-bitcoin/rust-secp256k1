@@ -7,6 +7,15 @@
 #ifndef SECP256K1_MODULE_ECDH_TESTS_H
 #define SECP256K1_MODULE_ECDH_TESTS_H
 
+#include "../../unit_test.h"
+
+static int ecdh_hash_function_test_xpassthru(unsigned char *output, const unsigned char *x, const unsigned char *y, void *data) {
+    (void)y;
+    (void)data;
+    memcpy(output, x, 32);
+    return 1;
+}
+
 static int ecdh_hash_function_test_fail(unsigned char *output, const unsigned char *x, const unsigned char *y, void *data) {
     (void)output;
     (void)x;
@@ -25,95 +34,91 @@ static int ecdh_hash_function_custom(unsigned char *output, const unsigned char 
 }
 
 static void test_ecdh_api(void) {
-    rustsecp256k1_v0_12_pubkey point;
+    rustsecp256k1_v0_13_pubkey point;
     unsigned char res[32];
     unsigned char s_one[32] = { 0 };
     s_one[31] = 1;
 
-    CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point, s_one) == 1);
+    CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point, s_one) == 1);
 
     /* Check all NULLs are detected */
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, res, &point, s_one, NULL, NULL) == 1);
-    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_12_ecdh(CTX, NULL, &point, s_one, NULL, NULL));
-    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_12_ecdh(CTX, res, NULL, s_one, NULL, NULL));
-    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_12_ecdh(CTX, res, &point, NULL, NULL, NULL));
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, res, &point, s_one, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, res, &point, s_one, NULL, NULL) == 1);
+    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_13_ecdh(CTX, NULL, &point, s_one, NULL, NULL));
+    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_13_ecdh(CTX, res, NULL, s_one, NULL, NULL));
+    CHECK_ILLEGAL(CTX, rustsecp256k1_v0_13_ecdh(CTX, res, &point, NULL, NULL, NULL));
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, res, &point, s_one, NULL, NULL) == 1);
 }
 
 static void test_ecdh_generator_basepoint(void) {
     unsigned char s_one[32] = { 0 };
-    rustsecp256k1_v0_12_pubkey point[2];
+    rustsecp256k1_v0_13_pubkey point[2];
     int i;
 
     s_one[31] = 1;
     /* Check against pubkey creation when the basepoint is the generator */
     for (i = 0; i < 2 * COUNT; ++i) {
-        rustsecp256k1_v0_12_sha256 sha;
+        rustsecp256k1_v0_13_sha256 sha;
         unsigned char s_b32[32];
         unsigned char output_ecdh[65];
         unsigned char output_ser[32];
         unsigned char point_ser[65];
         size_t point_ser_len = sizeof(point_ser);
-        rustsecp256k1_v0_12_scalar s;
+        rustsecp256k1_v0_13_scalar s;
 
         testutil_random_scalar_order(&s);
-        rustsecp256k1_v0_12_scalar_get_b32(s_b32, &s);
+        rustsecp256k1_v0_13_scalar_get_b32(s_b32, &s);
 
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point[0], s_one) == 1);
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point[1], s_b32) == 1);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point[0], s_one) == 1);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point[1], s_b32) == 1);
 
         /* compute using ECDH function with custom hash function */
-        CHECK(rustsecp256k1_v0_12_ecdh(CTX, output_ecdh, &point[0], s_b32, ecdh_hash_function_custom, NULL) == 1);
+        CHECK(rustsecp256k1_v0_13_ecdh(CTX, output_ecdh, &point[0], s_b32, ecdh_hash_function_custom, NULL) == 1);
         /* compute "explicitly" */
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_serialize(CTX, point_ser, &point_ser_len, &point[1], SECP256K1_EC_UNCOMPRESSED) == 1);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_serialize(CTX, point_ser, &point_ser_len, &point[1], SECP256K1_EC_UNCOMPRESSED) == 1);
         /* compare */
-        CHECK(rustsecp256k1_v0_12_memcmp_var(output_ecdh, point_ser, 65) == 0);
+        CHECK(rustsecp256k1_v0_13_memcmp_var(output_ecdh, point_ser, 65) == 0);
 
         /* compute using ECDH function with default hash function */
-        CHECK(rustsecp256k1_v0_12_ecdh(CTX, output_ecdh, &point[0], s_b32, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_13_ecdh(CTX, output_ecdh, &point[0], s_b32, NULL, NULL) == 1);
         /* compute "explicitly" */
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_serialize(CTX, point_ser, &point_ser_len, &point[1], SECP256K1_EC_COMPRESSED) == 1);
-        rustsecp256k1_v0_12_sha256_initialize(&sha);
-        rustsecp256k1_v0_12_sha256_write(&sha, point_ser, point_ser_len);
-        rustsecp256k1_v0_12_sha256_finalize(&sha, output_ser);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_serialize(CTX, point_ser, &point_ser_len, &point[1], SECP256K1_EC_COMPRESSED) == 1);
+        rustsecp256k1_v0_13_sha256_initialize(&sha);
+        rustsecp256k1_v0_13_sha256_write(&sha, point_ser, point_ser_len);
+        rustsecp256k1_v0_13_sha256_finalize(&sha, output_ser);
         /* compare */
-        CHECK(rustsecp256k1_v0_12_memcmp_var(output_ecdh, output_ser, 32) == 0);
+        CHECK(rustsecp256k1_v0_13_memcmp_var(output_ecdh, output_ser, 32) == 0);
     }
 }
 
 static void test_bad_scalar(void) {
     unsigned char s_zero[32] = { 0 };
-    unsigned char s_overflow[32] = {
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
-        0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
-        0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41
-    };
+    unsigned char s_overflow[32] = { 0 };
     unsigned char s_rand[32] = { 0 };
     unsigned char output[32];
-    rustsecp256k1_v0_12_scalar rand;
-    rustsecp256k1_v0_12_pubkey point;
+    rustsecp256k1_v0_13_scalar rand;
+    rustsecp256k1_v0_13_pubkey point;
 
     /* Create random point */
     testutil_random_scalar_order(&rand);
-    rustsecp256k1_v0_12_scalar_get_b32(s_rand, &rand);
-    CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point, s_rand) == 1);
+    rustsecp256k1_v0_13_scalar_get_b32(s_rand, &rand);
+    CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point, s_rand) == 1);
 
     /* Try to multiply it by bad values */
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, output, &point, s_zero, NULL, NULL) == 0);
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, output, &point, s_overflow, NULL, NULL) == 0);
+    memcpy(s_overflow, rustsecp256k1_v0_13_group_order_bytes, 32);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, output, &point, s_zero, NULL, NULL) == 0);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, output, &point, s_overflow, NULL, NULL) == 0);
     /* ...and a good one */
     s_overflow[31] -= 1;
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, output, &point, s_overflow, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, output, &point, s_overflow, NULL, NULL) == 1);
 
     /* Hash function failure results in ecdh failure */
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, output, &point, s_overflow, ecdh_hash_function_test_fail, NULL) == 0);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, output, &point, s_overflow, ecdh_hash_function_test_fail, NULL) == 0);
 }
 
 /** Test that ECDH(sG, 1/s) == ECDH((1/s)G, s) == ECDH(G, 1) for a few random s. */
 static void test_result_basepoint(void) {
-    rustsecp256k1_v0_12_pubkey point;
-    rustsecp256k1_v0_12_scalar rand;
+    rustsecp256k1_v0_13_pubkey point;
+    rustsecp256k1_v0_13_scalar rand;
     unsigned char s[32];
     unsigned char s_inv[32];
     unsigned char out[32];
@@ -123,30 +128,65 @@ static void test_result_basepoint(void) {
 
     unsigned char s_one[32] = { 0 };
     s_one[31] = 1;
-    CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point, s_one) == 1);
-    CHECK(rustsecp256k1_v0_12_ecdh(CTX, out_base, &point, s_one, NULL, NULL) == 1);
+    CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point, s_one) == 1);
+    CHECK(rustsecp256k1_v0_13_ecdh(CTX, out_base, &point, s_one, NULL, NULL) == 1);
 
     for (i = 0; i < 2 * COUNT; i++) {
         testutil_random_scalar_order(&rand);
-        rustsecp256k1_v0_12_scalar_get_b32(s, &rand);
-        rustsecp256k1_v0_12_scalar_inverse(&rand, &rand);
-        rustsecp256k1_v0_12_scalar_get_b32(s_inv, &rand);
+        rustsecp256k1_v0_13_scalar_get_b32(s, &rand);
+        rustsecp256k1_v0_13_scalar_inverse(&rand, &rand);
+        rustsecp256k1_v0_13_scalar_get_b32(s_inv, &rand);
 
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point, s) == 1);
-        CHECK(rustsecp256k1_v0_12_ecdh(CTX, out, &point, s_inv, NULL, NULL) == 1);
-        CHECK(rustsecp256k1_v0_12_memcmp_var(out, out_base, 32) == 0);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point, s) == 1);
+        CHECK(rustsecp256k1_v0_13_ecdh(CTX, out, &point, s_inv, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_13_memcmp_var(out, out_base, 32) == 0);
 
-        CHECK(rustsecp256k1_v0_12_ec_pubkey_create(CTX, &point, s_inv) == 1);
-        CHECK(rustsecp256k1_v0_12_ecdh(CTX, out_inv, &point, s, NULL, NULL) == 1);
-        CHECK(rustsecp256k1_v0_12_memcmp_var(out_inv, out_base, 32) == 0);
+        CHECK(rustsecp256k1_v0_13_ec_pubkey_create(CTX, &point, s_inv) == 1);
+        CHECK(rustsecp256k1_v0_13_ecdh(CTX, out_inv, &point, s, NULL, NULL) == 1);
+        CHECK(rustsecp256k1_v0_13_memcmp_var(out_inv, out_base, 32) == 0);
     }
 }
 
-static void run_ecdh_tests(void) {
-    test_ecdh_api();
-    test_ecdh_generator_basepoint();
-    test_bad_scalar();
-    test_result_basepoint();
+static void test_ecdh_wycheproof(void) {
+#include "../../wycheproof/ecdh_secp256k1_test.h"
+    int t;
+    for (t = 0; t < SECP256K1_ECDH_WYCHEPROOF_NUMBER_TESTVECTORS; t++) {
+        int parsed_ok;
+        rustsecp256k1_v0_13_pubkey point;
+        const unsigned char *pk;
+        const unsigned char *sk;
+        const unsigned char *expected_shared_secret;
+        unsigned char output_ecdh[65] = { 0 };
+
+        int expected_result;
+
+        memset(&point, 0, sizeof(point));
+        pk = &wycheproof_ecdh_public_keys[testvectors[t].pk_offset];
+        parsed_ok = rustsecp256k1_v0_13_ec_pubkey_parse(CTX, &point, pk, testvectors[t].pk_len);
+
+        expected_result = testvectors[t].expected_result;
+        CHECK(parsed_ok == expected_result);
+        if (!parsed_ok) {
+            continue;
+        }
+
+        sk = &wycheproof_ecdh_private_keys[testvectors[t].sk_offset];
+        CHECK(testvectors[t].sk_len == 32);
+
+        CHECK(rustsecp256k1_v0_13_ecdh(CTX, output_ecdh, &point, sk, ecdh_hash_function_test_xpassthru, NULL) == 1);
+        expected_shared_secret = &wycheproof_ecdh_shared_secrets[testvectors[t].shared_offset];
+
+        CHECK(rustsecp256k1_v0_13_memcmp_var(output_ecdh, expected_shared_secret, testvectors[t].shared_len) == 0);
+    }
 }
+
+/* --- Test registry --- */
+static const struct tf_test_entry tests_ecdh[] = {
+    CASE1(test_ecdh_api),
+    CASE1(test_ecdh_generator_basepoint),
+    CASE1(test_bad_scalar),
+    CASE1(test_result_basepoint),
+    CASE1(test_ecdh_wycheproof),
+};
 
 #endif /* SECP256K1_MODULE_ECDH_TESTS_H */
