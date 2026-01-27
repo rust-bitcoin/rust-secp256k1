@@ -31,7 +31,7 @@ global-context-less-secure = ["global-context"]
 arbitrary = ["dep:arbitrary"]
 
 [dependencies]
-secp256k1-sys = { version = "0.12.0", default-features = false, path = "./secp256k1-sys" }
+secp256k1-sys = { version = "0.13.0", default-features = false, path = "./secp256k1-sys" }
 
 arbitrary = { version = "1.4", optional = true }
 rand = { version = "0.9", default-features = false, optional = true }

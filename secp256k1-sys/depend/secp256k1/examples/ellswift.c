@@ -9,10 +9,11 @@
 
 /** This file demonstrates how to use the ElligatorSwift module to perform
  *  a key exchange according to BIP 324. Additionally, see the documentation
- *  in include/rustsecp256k1_v0_12_ellswift.h and doc/ellswift.md.
+ *  in include/rustsecp256k1_v0_13_ellswift.h and doc/ellswift.md.
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
@@ -22,7 +23,7 @@
 #include "examples_util.h"
 
 int main(void) {
-    rustsecp256k1_v0_12_context* ctx;
+    rustsecp256k1_v0_13_context* ctx;
     unsigned char randomize[32];
     unsigned char auxrand1[32];
     unsigned char auxrand2[32];
@@ -35,28 +36,28 @@ int main(void) {
     int return_val;
 
     /* Create a secp256k1 context */
-    ctx = rustsecp256k1_v0_12_context_create(SECP256K1_CONTEXT_NONE);
+    ctx = rustsecp256k1_v0_13_context_create(SECP256K1_CONTEXT_NONE);
     if (!fill_random(randomize, sizeof(randomize))) {
         printf("Failed to generate randomness\n");
-        return 1;
+        return EXIT_FAILURE;
     }
     /* Randomizing the context is recommended to protect against side-channel
-     * leakage. See `rustsecp256k1_v0_12_context_randomize` in secp256k1.h for more
+     * leakage. See `rustsecp256k1_v0_13_context_randomize` in secp256k1.h for more
      * information about it. This should never fail. */
-    return_val = rustsecp256k1_v0_12_context_randomize(ctx, randomize);
+    return_val = rustsecp256k1_v0_13_context_randomize(ctx, randomize);
     assert(return_val);
 
     /*** Generate secret keys ***/
     if (!fill_random(seckey1, sizeof(seckey1)) || !fill_random(seckey2, sizeof(seckey2))) {
         printf("Failed to generate randomness\n");
-        return 1;
+        return EXIT_FAILURE;
     }
     /* If the secret key is zero or out of range (greater than secp256k1's
     * order), we fail. Note that the probability of this occurring is negligible
     * with a properly functioning random number generator. */
-    if (!rustsecp256k1_v0_12_ec_seckey_verify(ctx, seckey1) || !rustsecp256k1_v0_12_ec_seckey_verify(ctx, seckey2)) {
+    if (!rustsecp256k1_v0_13_ec_seckey_verify(ctx, seckey1) || !rustsecp256k1_v0_13_ec_seckey_verify(ctx, seckey2)) {
         printf("Generated secret key is invalid. This indicates an issue with the random number generator.\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Generate ElligatorSwift public keys. This should never fail with valid context and
@@ -64,11 +65,11 @@ int main(void) {
        optional, but recommended. */
     if (!fill_random(auxrand1, sizeof(auxrand1)) || !fill_random(auxrand2, sizeof(auxrand2))) {
         printf("Failed to generate randomness\n");
-        return 1;
+        return EXIT_FAILURE;
     }
-    return_val = rustsecp256k1_v0_12_ellswift_create(ctx, ellswift_pubkey1, seckey1, auxrand1);
+    return_val = rustsecp256k1_v0_13_ellswift_create(ctx, ellswift_pubkey1, seckey1, auxrand1);
     assert(return_val);
-    return_val = rustsecp256k1_v0_12_ellswift_create(ctx, ellswift_pubkey2, seckey2, auxrand2);
+    return_val = rustsecp256k1_v0_13_ellswift_create(ctx, ellswift_pubkey2, seckey2, auxrand2);
     assert(return_val);
 
     /*** Create the shared secret on each side ***/
@@ -77,14 +78,14 @@ int main(void) {
      * with a verified seckey and valid pubkey. Note that both parties pass both
      * EllSwift pubkeys in the same order; the pubkey of the calling party is
      * determined by the "party" boolean (sixth parameter). */
-    return_val = rustsecp256k1_v0_12_ellswift_xdh(ctx, shared_secret1, ellswift_pubkey1, ellswift_pubkey2,
-        seckey1, 0, rustsecp256k1_v0_12_ellswift_xdh_hash_function_bip324, NULL);
+    return_val = rustsecp256k1_v0_13_ellswift_xdh(ctx, shared_secret1, ellswift_pubkey1, ellswift_pubkey2,
+        seckey1, 0, rustsecp256k1_v0_13_ellswift_xdh_hash_function_bip324, NULL);
     assert(return_val);
 
     /* Perform x-only ECDH with seckey2 and ellswift_pubkey1. Should never fail
      * with a verified seckey and valid pubkey. */
-    return_val = rustsecp256k1_v0_12_ellswift_xdh(ctx, shared_secret2, ellswift_pubkey1, ellswift_pubkey2,
-        seckey2, 1, rustsecp256k1_v0_12_ellswift_xdh_hash_function_bip324, NULL);
+    return_val = rustsecp256k1_v0_13_ellswift_xdh(ctx, shared_secret2, ellswift_pubkey1, ellswift_pubkey2,
+        seckey2, 1, rustsecp256k1_v0_13_ellswift_xdh_hash_function_bip324, NULL);
     assert(return_val);
 
     /* Both parties should end up with the same shared secret */
@@ -103,7 +104,7 @@ int main(void) {
     print_hex(shared_secret1, sizeof(shared_secret1));
 
     /* This will clear everything from the context and free the memory */
-    rustsecp256k1_v0_12_context_destroy(ctx);
+    rustsecp256k1_v0_13_context_destroy(ctx);
 
     /* It's best practice to try to clear secrets from memory after using them.
      * This is done because some bugs can allow an attacker to leak memory, for
@@ -117,5 +118,5 @@ int main(void) {
     secure_erase(shared_secret1, sizeof(shared_secret1));
     secure_erase(shared_secret2, sizeof(shared_secret2));
 
-    return 0;
+    return EXIT_SUCCESS;
 }

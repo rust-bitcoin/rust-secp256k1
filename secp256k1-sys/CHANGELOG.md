@@ -1,3 +1,7 @@
+# 0.13.0 - 2026-01-12
+
+* Update libsecp256k1 to [v0.7.0](https://github.com/bitcoin-core/secp256k1/releases/tag/v0.7.0).
+
 # 0.12.0 - 2025-10-10
 
 * Fix lowmemory feature [#799](https://github.com/rust-bitcoin/rust-secp256k1/pull/799)
