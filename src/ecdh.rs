@@ -10,7 +10,7 @@ use secp256k1_sys::types::{c_int, c_uchar, c_void};
 
 use crate::ffi::{self, CPtr};
 use crate::key::{PublicKey, SecretKey};
-use crate::{constants, Error};
+use crate::{constants, Error, Secp256k1};
 
 // The logic for displaying shared secrets relies on this (see `secret.rs`).
 const SHARED_SECRET_SIZE: usize = constants::SECRET_KEY_SIZE;
@@ -39,14 +39,20 @@ impl SharedSecret {
     #[inline]
     pub fn new(point: &PublicKey, scalar: &SecretKey) -> SharedSecret {
         let mut buf = [0u8; SHARED_SECRET_SIZE];
+
         let res = unsafe {
-            ffi::secp256k1_ecdh(
-                ffi::secp256k1_context_no_precomp,
-                buf.as_mut_ptr(),
-                point.as_c_ptr(),
-                scalar.as_c_ptr(),
-                ffi::secp256k1_ecdh_hash_function_default,
-                ptr::null_mut(),
+            crate::with_global_context(
+                |secp: &Secp256k1<crate::AllPreallocated>| {
+                    ffi::secp256k1_ecdh(
+                        secp.ctx.as_ptr(),
+                        buf.as_mut_ptr(),
+                        point.as_c_ptr(),
+                        scalar.as_c_ptr(),
+                        ffi::secp256k1_ecdh_hash_function_default,
+                        ptr::null_mut(),
+                    )
+                },
+                None,
             )
         };
         debug_assert_eq!(res, 1);
@@ -130,13 +136,18 @@ pub fn shared_secret_point(point: &PublicKey, scalar: &SecretKey) -> [u8; 64] {
     let mut xy = [0u8; 64];
 
     let res = unsafe {
-        ffi::secp256k1_ecdh(
-            ffi::secp256k1_context_no_precomp,
-            xy.as_mut_ptr(),
-            point.as_c_ptr(),
-            scalar.as_c_ptr(),
-            Some(c_callback),
-            ptr::null_mut(),
+        crate::with_global_context(
+            |secp: &Secp256k1<crate::AllPreallocated>| {
+                ffi::secp256k1_ecdh(
+                    secp.ctx.as_ptr(),
+                    xy.as_mut_ptr(),
+                    point.as_c_ptr(),
+                    scalar.as_c_ptr(),
+                    Some(c_callback),
+                    ptr::null_mut(),
+                )
+            },
+            None,
         )
     };
     // Our callback *always* returns 1.
