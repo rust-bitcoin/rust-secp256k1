@@ -1456,6 +1456,17 @@ impl MusigSecNonce {
     }
 
     pub fn dangerous_into_bytes(self) -> [c_uchar; MUSIG_SECNONCE_SIZE] { self.0 }
+
+    /// Attempts to erase the contents of the underlying array.
+    ///
+    /// Note, however, that the compiler is allowed to freely copy or move the
+    /// contents of this array to other places in memory. Preventing this behavior
+    /// is very subtle. For more discussion on this, please see the documentation
+    /// of the [`zeroize`](https://docs.rs/zeroize) crate.
+    #[inline]
+    pub fn non_secure_erase(&mut self) {
+        non_secure_erase_impl(&mut self.0, [0u8; MUSIG_SECNONCE_SIZE]);
+    }
 }
 
 #[repr(C)]

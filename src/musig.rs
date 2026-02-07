@@ -54,6 +54,7 @@ impl fmt::Display for ParseError {
 #[allow(missing_copy_implementations)]
 #[derive(Debug, Eq, PartialEq)]
 pub struct SessionSecretRand([u8; 32]);
+impl_non_secure_erase!(SessionSecretRand, 0, [0u8; 32]);
 
 impl SessionSecretRand {
     /// Creates a new [`SessionSecretRand`] with random bytes from the given rng
@@ -717,6 +718,15 @@ impl SecretNonce {
     pub fn dangerous_from_bytes(array: [u8; secp256k1_sys::MUSIG_SECNONCE_SIZE]) -> Self {
         SecretNonce(ffi::MusigSecNonce::dangerous_from_bytes(array))
     }
+
+    /// Attempts to erase the secret within the underlying array.
+    ///
+    /// Note, however, that the compiler is allowed to freely copy or move the contents
+    /// of this array to other places in memory. Preventing this behavior is very subtle.
+    /// For more discussion on this, please see the documentation of the
+    /// [`zeroize`](https://docs.rs/zeroize) crate.
+    #[inline]
+    pub fn non_secure_erase(&mut self) { self.0.non_secure_erase(); }
 }
 
 /// An individual MuSig public nonce. Not to be confused with [`AggregatedNonce`].
