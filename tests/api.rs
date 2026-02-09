@@ -54,11 +54,11 @@ macro_rules! bytes_rtt_test {
 
 // Message is special because its to/from methods havve the name "digest" in them
 // PublicKey is special because it has two serialization forms with different names (but maybe I should rename them?)
-// FIXME XOnlyPublicKey should pass this
 // ecdsa::Signature and SerializedSignature and RecoverableSignature are variable-length
-// FIXME ElligatorSwift should pass this
 // Scalar has to_be_bytes and to_le_bytes (and corresponding froms)
 bytes_rtt_test!(rtt_i, schnorr::Signature);
+bytes_rtt_test!(rtt_c, XOnlyPublicKey);
+bytes_rtt_test!(rtt_g, ellswift::ElligatorSwift);
 
 macro_rules! secret_bytes_rtt_test {
     ($name: ident, $ty:ty) => {
@@ -73,6 +73,6 @@ macro_rules! secret_bytes_rtt_test {
     };
 }
 secret_bytes_rtt_test!(secret_rtt_a, SecretKey);
-// FIXME ecdh::SharedSecret should pass this
-// FIXME unsure about Keypair -- it currently only roundtrips through secret keys
-// FIXME ellswift::ElligatorSwiftharedSecret should pass this
+secret_bytes_rtt_test!(secret_rtt_b, ecdh::SharedSecret);
+secret_bytes_rtt_test!(secret_rtt_c, Keypair);
+secret_bytes_rtt_test!(secret_rtt_d, ellswift::ElligatorSwiftSharedSecret);

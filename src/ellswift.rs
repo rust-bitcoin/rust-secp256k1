@@ -100,8 +100,14 @@ impl ElligatorSwift {
         ElligatorSwift(ffi::ElligatorSwift::from_array(ellswift))
     }
 
+    /// Creates an `ElligatorSwift` object from a byte array.
+    pub fn from_byte_array(ellswift: [u8; 64]) -> ElligatorSwift { Self::from_array(ellswift) }
+
     /// Returns the 64-byte array representation of this `ElligatorSwift` object.
     pub fn to_array(&self) -> [u8; 64] { self.0.to_array() }
+
+    /// Returns the 64-byte array representation of this `ElligatorSwift` object.
+    pub fn to_byte_array(&self) -> [u8; 64] { self.to_array() }
 
     /// Creates the Elligator Swift encoding from a secret key, using some aux_rand if defined.
     /// This method is preferred instead of just decoding, because the private key offers extra
@@ -264,6 +270,7 @@ impl ElligatorSwift {
 /// private key.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElligatorSwiftSharedSecret([u8; 32]);
+impl_non_secure_erase!(ElligatorSwiftSharedSecret, 0, [0u8; 32]);
 
 impl ElligatorSwiftSharedSecret {
     /// Creates shared secret from bytes.
@@ -277,6 +284,10 @@ impl ElligatorSwiftSharedSecret {
 
     /// Returns the secret bytes as a reference to an array.
     pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
+}
+
+impl AsRef<[u8]> for ElligatorSwiftSharedSecret {
+    fn as_ref(&self) -> &[u8] { &self.0 }
 }
 
 /// Represents the two parties in ECDH
