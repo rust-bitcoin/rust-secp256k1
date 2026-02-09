@@ -1,4 +1,11 @@
+# 0.33.0-beta - 2025-10-02
+
+* Depend on latest `secp256k1-sys` (vendors `secp256k1 v0.7.0`) [#879](https://github.com/rust-bitcoin/rust-secp256k1/pull/879)
+
 # 0.32.0 - 2025-10-02
+
+We released `0.32.0-beta.0`, `0.32.0-beta.1`, `0.32.0-beta.2` before
+working out that this number scheme does not play nicely with `cargo`.
 
 ### Remove `Secp256k1` from public API functions
 
