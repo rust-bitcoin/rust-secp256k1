@@ -525,9 +525,31 @@ impl Keypair {
     ///
     /// [`Error::InvalidSecretKey`] if the encoded number is an invalid scalar.
     #[inline]
+    #[deprecated(since = "TBD", note = "use Keypair::from_secret_bytes instead")]
     pub fn from_seckey_byte_array(
         data: [u8; constants::SECRET_KEY_SIZE],
     ) -> Result<Keypair, Error> {
+        unsafe {
+            let mut kp = ffi::Keypair::new();
+            if crate::with_raw_global_context(
+                |ctx| ffi::secp256k1_keypair_create(ctx.as_ptr(), &mut kp, data.as_c_ptr()),
+                Some(&data),
+            ) == 1
+            {
+                Ok(Keypair(kp))
+            } else {
+                Err(Error::InvalidSecretKey)
+            }
+        }
+    }
+
+    /// Creates a [`Keypair`] directly from secret bytes
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidSecretKey`] if the bytes array
+    #[inline]
+    pub fn from_secret_bytes(data: [u8; constants::SECRET_KEY_SIZE]) -> Result<Keypair, Error> {
         unsafe {
             let mut kp = ffi::Keypair::new();
             if crate::with_raw_global_context(
@@ -612,6 +634,7 @@ impl Keypair {
 
     /// Returns the secret bytes for this key pair.
     #[inline]
+    #[deprecated(since = "TBD", note = "use Keypair::as_secret_bytes instead")]
     pub fn to_secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] {
         *SecretKey::from_keypair(self).as_ref()
     }
@@ -620,6 +643,15 @@ impl Keypair {
     #[deprecated(since = "TBD", note = "use to_secret_bytes instead")]
     #[inline]
     pub fn secret_bytes(&self) -> [u8; constants::SECRET_KEY_SIZE] { self.to_secret_bytes() }
+
+    /// Returns the Keypair as secret bytes.
+    #[inline]
+    pub fn as_secret_bytes(&self) -> &[u8; constants::SECRET_KEY_SIZE] {
+        unsafe {
+            let p = self.0.as_ref().as_ptr();
+            &*(p as *const [u8; 32])
+        }
+    }
 
     /// Tweaks a keypair by first converting the public key to an xonly key and tweaking it.
     ///
@@ -751,6 +783,10 @@ impl str::FromStr for Keypair {
             _ => Err(Error::InvalidSecretKey),
         }
     }
+}
+
+impl AsRef<[u8]> for Keypair {
+    fn as_ref(&self) -> &[u8] { self.as_secret_bytes() }
 }
 
 #[cfg(feature = "serde")]
