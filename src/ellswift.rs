@@ -100,8 +100,16 @@ impl ElligatorSwift {
         ElligatorSwift(ffi::ElligatorSwift::from_array(ellswift))
     }
 
+    /// Creates an `ElligatorSwift` object from a byte array.
+    pub fn from_byte_array(ellswift: [u8; 64]) -> ElligatorSwift {
+        ElligatorSwift(ffi::ElligatorSwift::from_array(ellswift))
+    }
+
     /// Returns the 64-byte array representation of this `ElligatorSwift` object.
     pub fn to_array(&self) -> [u8; 64] { self.0.to_array() }
+
+    /// Returns the byte array representation of this `ElligatorSwift` object.
+    pub fn to_byte_array(&self) -> [u8; 64] { self.0.to_array() }
 
     /// Creates the Elligator Swift encoding from a secret key, using some aux_rand if defined.
     /// This method is preferred instead of just decoding, because the private key offers extra
