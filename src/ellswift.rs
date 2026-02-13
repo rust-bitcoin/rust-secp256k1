@@ -264,6 +264,7 @@ impl ElligatorSwift {
 /// private key.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElligatorSwiftSharedSecret([u8; 32]);
+impl_non_secure_erase!(ElligatorSwiftSharedSecret, 0, [0u8; 32]);
 
 impl ElligatorSwiftSharedSecret {
     /// Creates shared secret from bytes.
@@ -277,6 +278,10 @@ impl ElligatorSwiftSharedSecret {
 
     /// Returns the secret bytes as a reference to an array.
     pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
+}
+
+impl AsRef<[u8]> for ElligatorSwiftSharedSecret {
+    fn as_ref(&self) -> &[u8] { &self.0 }
 }
 
 /// Represents the two parties in ECDH
