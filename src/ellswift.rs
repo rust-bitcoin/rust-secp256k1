@@ -288,6 +288,10 @@ impl ElligatorSwiftSharedSecret {
     pub const fn as_secret_bytes(&self) -> &[u8; 32] { &self.0 }
 }
 
+impl AsRef<[u8]> for ElligatorSwiftSharedSecret {
+    fn as_ref(&self) -> &[u8] { &self.0 }
+}
+
 /// Represents the two parties in ECDH
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Party {
