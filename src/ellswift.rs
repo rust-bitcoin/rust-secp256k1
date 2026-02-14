@@ -272,6 +272,7 @@ impl ElligatorSwift {
 /// private key.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElligatorSwiftSharedSecret([u8; 32]);
+impl_non_secure_erase!(ElligatorSwiftSharedSecret, 0, [0u8; 32]);
 
 impl ElligatorSwiftSharedSecret {
     /// Creates shared secret from bytes.
