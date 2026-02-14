@@ -105,8 +105,8 @@ fn bincode_keypair() {
 
 #[test]
 fn bincode_x_only_public_key() {
-    let pk = XOnlyPublicKey::from_byte_array(XONLY_PK_BYTES)
-        .expect("failed to create xonly pk from slice");
+    let pk =
+        XOnlyPublicKey::try_from(XONLY_PK_BYTES).expect("failed to create xonly pk from slice");
     let ser = bincode::serialize(&pk).unwrap();
 
     assert_eq!(ser, XONLY_PK_BYTES);

@@ -845,9 +845,22 @@ impl str::FromStr for XOnlyPublicKey {
     fn from_str(s: &str) -> Result<XOnlyPublicKey, Error> {
         let mut res = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
         match from_hex(s, &mut res) {
-            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::from_byte_array(res),
+            Ok(constants::SCHNORR_PUBLIC_KEY_SIZE) => XOnlyPublicKey::parse_byte_array(res),
             _ => Err(Error::InvalidPublicKey),
         }
+    }
+}
+
+impl TryFrom<[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]> for XOnlyPublicKey {
+    type Error = Error;
+
+    /// Attempts to create an x-only public key from a 32-byte array.
+    ///
+    /// # Errors
+    /// Returns [`Error::InvalidPublicKey`] if the bytes do not represent a valid
+    /// point on the secp256k1 curve.
+    fn try_from(data: [u8; constants::SCHNORR_PUBLIC_KEY_SIZE]) -> Result<Self, Self::Error> {
+        Self::parse_byte_array(data)
     }
 }
 
@@ -882,19 +895,33 @@ impl XOnlyPublicKey {
     #[inline]
     pub fn from_slice(data: &[u8]) -> Result<XOnlyPublicKey, Error> {
         match <[u8; constants::SCHNORR_PUBLIC_KEY_SIZE]>::try_from(data) {
-            Ok(data) => Self::from_byte_array(data),
+            Ok(data) => Self::parse_byte_array(data),
             Err(_) => Err(InvalidPublicKey),
         }
     }
 
-    /// Creates a schnorr public key directly from a byte array.
+    /// Creates an x-only public key from a byte array.
     ///
-    /// # Errors
+    /// # Panics
     ///
-    /// Returns [`Error::InvalidPublicKey`] if the array does not represent a valid Secp256k1 point
-    /// x coordinate.
-    #[inline]
-    pub fn from_byte_array(
+    /// In debug builds, this function will panic if the input does not represent
+    /// a valid point on the curve. In release builds, it assumes the input is
+    /// valid. For untrusted input, use [`TryFrom`].
+    pub fn from_byte_array(data: [u8; constants::SCHNORR_PUBLIC_KEY_SIZE]) -> XOnlyPublicKey {
+        unsafe {
+            let mut pk = ffi::XOnlyPublicKey::new();
+            let ret = ffi::secp256k1_xonly_pubkey_parse(
+                ffi::secp256k1_context_no_precomp,
+                &mut pk,
+                data.as_c_ptr(),
+            );
+            debug_assert_eq!(ret, 1);
+            XOnlyPublicKey(pk)
+        }
+    }
+
+    /// Fallible version of `from_byte_array` for parsing untrusted input.
+    fn parse_byte_array(
         data: [u8; constants::SCHNORR_PUBLIC_KEY_SIZE],
     ) -> Result<XOnlyPublicKey, Error> {
         unsafe {
@@ -912,7 +939,26 @@ impl XOnlyPublicKey {
         }
     }
 
+    /// Serializes the `XOnlyPublicKey` into a 32-byte array.
+    ///
+    /// This represents the x-coordinate of the point on the curve.
     #[inline]
+    pub fn to_byte_array(&self) -> [u8; constants::SCHNORR_PUBLIC_KEY_SIZE] {
+        let mut ret = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
+
+        unsafe {
+            let err = ffi::secp256k1_xonly_pubkey_serialize(
+                ffi::secp256k1_context_no_precomp,
+                ret.as_mut_c_ptr(),
+                self.as_c_ptr(),
+            );
+            debug_assert_eq!(err, 1);
+        }
+        ret
+    }
+
+    #[inline]
+    #[deprecated(since = "TBD", note = "use XOnlyPublicKey::to_byte_array instead")]
     /// Serializes the key as a byte-encoded x coordinate value (32 bytes).
     pub fn serialize(&self) -> [u8; constants::SCHNORR_PUBLIC_KEY_SIZE] {
         let mut ret = [0u8; constants::SCHNORR_PUBLIC_KEY_SIZE];
@@ -1255,7 +1301,7 @@ impl<'de> serde::Deserialize<'de> for XOnlyPublicKey {
         } else {
             let visitor = super::serde_util::Tuple32Visitor::new(
                 "raw 32 bytes schnorr public key",
-                XOnlyPublicKey::from_byte_array,
+                XOnlyPublicKey::parse_byte_array,
             );
             d.deserialize_tuple(constants::SCHNORR_PUBLIC_KEY_SIZE, visitor)
         }
@@ -1348,7 +1394,7 @@ impl<'a> Arbitrary<'a> for XOnlyPublicKey {
             }
 
             u.fill_buffer(&mut bytes[..])?;
-            if let Ok(pk) = XOnlyPublicKey::from_byte_array(bytes) {
+            if let Ok(pk) = XOnlyPublicKey::parse_byte_array(bytes) {
                 return Ok(pk);
             }
         }
@@ -1998,7 +2044,7 @@ mod test {
         let pk = PublicKey::from_slice(&pk_bytes).expect("failed to create pk from iterator");
         let kp = Keypair::from_secret_key(&sk);
         let xonly =
-            XOnlyPublicKey::from_byte_array(PK_BYTES).expect("failed to get xonly from slice");
+            XOnlyPublicKey::parse_byte_array(PK_BYTES).expect("failed to get xonly from slice");
 
         (sk, pk, kp, xonly)
     }
