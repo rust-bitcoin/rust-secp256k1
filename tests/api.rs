@@ -73,6 +73,6 @@ macro_rules! secret_bytes_rtt_test {
     };
 }
 secret_bytes_rtt_test!(secret_rtt_a, SecretKey);
-// FIXME ecdh::SharedSecret should pass this
+secret_bytes_rtt_test!(secret_rtt_b, ecdh::SharedSecret);
 // FIXME unsure about Keypair -- it currently only roundtrips through secret keys
 // FIXME ellswift::ElligatorSwiftharedSecret should pass this
