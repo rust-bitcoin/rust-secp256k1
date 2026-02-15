@@ -1441,7 +1441,7 @@ mod test {
     #[test]
     #[cfg(not(secp256k1_fuzz))]
     fn erased_keypair_is_valid() {
-        let kp = Keypair::from_seckey_byte_array([1u8; constants::SECRET_KEY_SIZE])
+        let kp = Keypair::from_secret_bytes([1u8; constants::SECRET_KEY_SIZE])
             .expect("valid secret key");
         let mut kp2 = kp;
         kp2.non_secure_erase();
@@ -1992,7 +1992,7 @@ mod test {
         ];
         static SK_STR: &str = "01010101010101010001020304050607ffff0000ffff00006363636363636363";
 
-        let sk = Keypair::from_seckey_byte_array(SK_BYTES).unwrap();
+        let sk = Keypair::from_secret_bytes(SK_BYTES).unwrap();
         #[rustfmt::skip]
         assert_tokens(&sk.compact(), &[
             Token::Tuple{ len: 32 },
@@ -2165,7 +2165,7 @@ mod test {
 
         static PK_STR: &str = "18845781f631c48f1c9709e23092067d06837f30aa0cd0544ac887fe91ddd166";
 
-        let kp = Keypair::from_seckey_byte_array(SK_BYTES).unwrap();
+        let kp = Keypair::from_secret_bytes(SK_BYTES).unwrap();
         let (pk, _parity) = XOnlyPublicKey::from_keypair(&kp);
 
         #[rustfmt::skip]
