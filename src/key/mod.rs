@@ -288,14 +288,14 @@ impl PublicKey {
     ///
     /// Returns an error if the resulting key would be invalid.
     #[inline]
-    pub fn mul_tweak(mut self, other: &Scalar) -> Result<PublicKey, Error> {
+    pub fn mul_tweak(mut self, tweak: &Scalar) -> Result<PublicKey, Error> {
         unsafe {
             let res = crate::with_global_context(
                 |secp: &Secp256k1<crate::AllPreallocated>| {
                     ffi::secp256k1_ec_pubkey_tweak_mul(
                         secp.ctx.as_ptr(),
                         &mut self.0,
-                        other.as_c_ptr(),
+                        tweak.as_c_ptr(),
                     )
                 },
                 None,
