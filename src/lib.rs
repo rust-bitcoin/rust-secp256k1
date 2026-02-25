@@ -46,24 +46,8 @@
 //!
 //! let sig = ecdsa::sign(message, &secret_key);
 //! assert!(ecdsa::verify(&sig, message, &public_key).is_ok());
-//! # }
-//! ```
 //!
-//! If the "global-context" feature is enabled you have access to an alternate API.
-//!
-//! ```rust
-//! # #[cfg(all(feature = "global-context", feature = "rand", feature = "std"))] {
-//! use secp256k1::{rand, Message};
-//!
-//! // See previous example regarding this constant.
-//! const HELLO_WORLD_SHA2: [u8; 32] = [
-//!     0x31, 0x5f, 0x5b, 0xdb, 0x76, 0xd0, 0x78, 0xc4, 0x3b, 0x8a, 0xc0, 0x06, 0x4e, 0x4a, 0x01, 0x64,
-//!     0x61, 0x2b, 0x1f, 0xce, 0x77, 0xc8, 0x69, 0x34, 0x5b, 0xfc, 0x94, 0xc7, 0x58, 0x94, 0xed, 0xd3,
-//! ];
-//!
-//! let (secret_key, public_key) = secp256k1::generate_keypair(&mut rand::rng());
-//! let message = Message::from_digest(HELLO_WORLD_SHA2);
-//!
+//! // Equivalent to the `sign_ecdsa` method on `SecretKey`.
 //! let sig = secret_key.sign_ecdsa(message);
 //! assert!(sig.verify(message, &public_key).is_ok());
 //! # }
