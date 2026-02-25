@@ -650,9 +650,6 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn signature_serialize_roundtrip() {
-        let mut s = Secp256k1::new();
-        s.randomize(&mut rand::rng());
-
         for _ in 0..100 {
             let msg = crate::random_32_bytes(&mut rand::rng());
             let msg = Message::from_digest(msg);
@@ -740,9 +737,6 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_ecdsa() {
-        let mut s = Secp256k1::new();
-        s.randomize(&mut rand::rng());
-
         let noncedata = [42u8; 32];
         for _ in 0..100 {
             let msg = crate::random_32_bytes(&mut rand::rng());
@@ -774,9 +768,6 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_extreme() {
-        let mut s = Secp256k1::new();
-        s.randomize(&mut rand::rng());
-
         // Wild keys: 1, CURVE_ORDER - 1
         // Wild msgs: 1, CURVE_ORDER - 1
         let mut wild_keys = [[0u8; 32]; 2];
@@ -808,9 +799,6 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn sign_and_verify_fail() {
-        let mut s = Secp256k1::new();
-        s.randomize(&mut rand::rng());
-
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
 
@@ -1007,7 +995,6 @@ mod benches {
 
     #[bench]
     pub fn generate(bh: &mut Bencher) {
-        let s = Secp256k1::new();
         let mut r = StepRng::new(1, 1);
         bh.iter(|| {
             let (sk, pk) = s.generate_keypair(&mut r);
@@ -1018,7 +1005,6 @@ mod benches {
 
     #[bench]
     pub fn bench_sign_ecdsa(bh: &mut Bencher) {
-        let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
         let (sk, _) = s.generate_keypair(&mut rand::rng());
@@ -1031,7 +1017,6 @@ mod benches {
 
     #[bench]
     pub fn bench_verify_ecdsa(bh: &mut Bencher) {
-        let s = Secp256k1::new();
         let msg = crate::random_32_bytes(&mut rand::rng());
         let msg = Message::from_digest(msg);
         let (sk, pk) = s.generate_keypair(&mut rand::rng());
