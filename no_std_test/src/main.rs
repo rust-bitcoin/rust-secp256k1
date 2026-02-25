@@ -105,7 +105,6 @@ fn start(_argc: isize, _argv: *const *const u8) -> isize {
 
     #[cfg(feature = "alloc")]
     {
-        let secp_alloc = Secp256k1::new();
         let public_key = PublicKey::from_secret_key(&secret_key);
         let message = Message::from_digest_slice(&[0xab; 32]).expect("32 bytes");
 
