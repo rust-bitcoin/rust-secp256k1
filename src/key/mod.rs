@@ -459,10 +459,10 @@ impl<'de> serde::Deserialize<'de> for PublicKey {
 ///
 /// # Serde support
 ///
-/// Implements de/serialization with the `serde` and `global-context` features enabled. Serializes
-/// the secret bytes only. We treat the byte value as a tuple of 32 `u8`s for non-human-readable
-/// formats. This representation is optimal for some formats (e.g. [`bincode`]) however other
-/// formats may be less optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
+/// Implements de/serialization with the `serde` feature enabled. Serializes the secret bytes only.
+/// We treat the byte value as a tuple of 32 `u8`s for non-human-readable formats. This
+/// representation is optimal for some formats (e.g. [`bincode`]) however other formats may be less
+/// optimal (e.g. [`cbor`]). For human-readable formats we use a hex string.
 ///
 /// # Examples
 ///
