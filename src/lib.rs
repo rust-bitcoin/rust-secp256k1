@@ -122,7 +122,6 @@
 //! * `rand` - use `rand` library to provide random generator (e.g. to generate keys).
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
-//! * `global-context` - enable use of global secp256k1 context (implies `std`).
 //! * `serde` - implements serialization and deserialization for types in this crate using `serde`.
 //!   **Important**: `serde` encoding is **not** the same as consensus encoding!
 //!
