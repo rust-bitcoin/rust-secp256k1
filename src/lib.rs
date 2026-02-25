@@ -433,12 +433,12 @@ pub fn generate_keypair<R: rand::Rng + ?Sized>(rng: &mut R) -> (key::SecretKey, 
 /// Constructor for unit testing. (Calls `generate_keypair` if all
 /// the relevant features are on to get coverage of that functoin.)
 #[cfg(test)]
-#[cfg(all(feature = "global-context", feature = "rand", feature = "std"))]
+#[cfg(all(feature = "rand", feature = "std"))]
 fn test_random_keypair() -> (key::SecretKey, key::PublicKey) { generate_keypair(&mut rand::rng()) }
 
 /// Constructor for unit testing.
 #[cfg(test)]
-#[cfg(not(all(feature = "global-context", feature = "rand", feature = "std")))]
+#[cfg(not(all(feature = "rand", feature = "std")))]
 fn test_random_keypair() -> (key::SecretKey, key::PublicKey) {
     let sk = SecretKey::test_random();
     let pk = key::PublicKey::from_secret_key(&sk);
@@ -978,7 +978,6 @@ mod tests {
         assert_tokens(&sig.readable(), &[Token::String(SIG_STR)]);
     }
 
-    #[cfg(feature = "global-context")]
     #[test]
     fn test_global_context() {
         let sk_data = hex!("e6dd32f8761625f105c39a39f19370b3521d845a12456d60ce44debd0a362641");
