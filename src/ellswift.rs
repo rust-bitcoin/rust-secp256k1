@@ -153,7 +153,15 @@ impl ElligatorSwift {
     /// # }
     ///
     /// ```
-    pub fn from_pubkey(pk: PublicKey) -> ElligatorSwift { Self::encode(pk) }
+    #[deprecated(since = "TBD", note = "use from_pubkey_with_rnd instead")]
+    pub fn from_pubkey(pk: PublicKey) -> ElligatorSwift { Self::encode(pk, [0u8; 32]) }
+
+    /// Computes the `ElligatorSwift` encoding for a valid public key usin 32 bytes of randomness.
+    /// The randomness must not be deterministic function of the public key (though it can be
+    /// derived from the private key)
+    pub fn from_pubkey_with_rnd(pk: PublicKey, rnd32: [u8; 32]) -> ElligatorSwift {
+        Self::encode(pk, rnd32)
+    }
 
     /// Computes a shared secret only known by Alice and Bob. This is obtained by computing
     /// the x-only Elliptic Curve Diffie-Hellman (ECDH) shared secret between Alice and Bob.
@@ -237,14 +245,14 @@ impl ElligatorSwift {
     }
 
     /// Encodes a public key into an `ElligatorSwift` encoding
-    fn encode(pk: PublicKey) -> ElligatorSwift {
+    fn encode(pk: PublicKey, rnd32: [u8; 32]) -> ElligatorSwift {
         let mut ell_out = [0u8; constants::ELLSWIFT_ENCODING_SIZE];
         unsafe {
             let ret = ffi::secp256k1_ellswift_encode(
                 ffi::secp256k1_context_no_precomp,
                 ell_out.as_mut_c_ptr(),
                 pk.as_c_ptr(),
-                [0u8; 32].as_ptr(),
+                rnd32.as_ptr(),
             );
             debug_assert_eq!(ret, 1);
         }
@@ -364,6 +372,28 @@ mod tests {
         let pk = PublicKey::from_ellswift(ell);
         assert_eq!(pk, public_key);
     }
+
+    #[test]
+    #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
+    fn test_from_pubkey_with_rnd_rtt() {
+        let public_key =
+            PublicKey::from_secret_key(&SecretKey::from_secret_bytes([1u8; 32]).unwrap());
+
+        let rnd_a = [0xabu8; 32];
+        let rnd_b = [0xcdu8; 32];
+
+        let ell_a = ElligatorSwift::from_pubkey_with_rnd(public_key, rnd_a);
+        let ell_b = ElligatorSwift::from_pubkey_with_rnd(public_key, rnd_b);
+
+        assert_ne!(ell_a, ell_b, "different randomness should yield different encodings");
+
+        let pk_a = PublicKey::from_ellswift(ell_a);
+        let pk_b = PublicKey::from_ellswift(ell_b);
+
+        assert_eq!(pk_a, public_key);
+        assert_eq!(pk_b, public_key);
+    }
+
     #[test]
     #[cfg(all(not(secp256k1_fuzz), feature = "alloc"))]
     fn test_create_elligator_swift_create_rtt() {
