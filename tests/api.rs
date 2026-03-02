@@ -74,5 +74,5 @@ macro_rules! secret_bytes_rtt_test {
 }
 secret_bytes_rtt_test!(secret_rtt_a, SecretKey);
 secret_bytes_rtt_test!(secret_rtt_d, ellswift::ElligatorSwiftSharedSecret);
+secret_bytes_rtt_test!(secret_rtt_c, Keypair);
 // FIXME ecdh::SharedSecret should pass this
-// FIXME unsure about Keypair -- it currently only roundtrips through secret keys
