@@ -4,7 +4,7 @@ AC_PREREQ([2.60])
 # the API. All changes in experimental modules are treated as
 # backwards-compatible and therefore at most increase the minor version.
 define(_PKG_VERSION_MAJOR, 0)
-define(_PKG_VERSION_MINOR, 6)
+define(_PKG_VERSION_MINOR, 7)
 define(_PKG_VERSION_PATCH, 0)
 define(_PKG_VERSION_IS_RELEASE, true)
 
@@ -13,7 +13,7 @@ define(_PKG_VERSION_IS_RELEASE, true)
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # All changes in experimental modules are treated as if they don't affect the
 # interface and therefore only increase the revision.
-define(_LIB_VERSION_CURRENT, 5)
+define(_LIB_VERSION_CURRENT, 6)
 define(_LIB_VERSION_REVISION, 0)
 define(_LIB_VERSION_AGE, 0)
 
@@ -111,7 +111,6 @@ AC_DEFUN([SECP_TRY_APPEND_DEFAULT_CFLAGS], [
       SECP_TRY_APPEND_CFLAGS([-Wcast-align=strict], $1) # GCC >= 8.0
       SECP_TRY_APPEND_CFLAGS([-Wconditional-uninitialized], $1) # Clang >= 3.0 only
       SECP_TRY_APPEND_CFLAGS([-Wreserved-identifier], $1) # Clang >= 13.0 only
-      SECP_TRY_APPEND_CFLAGS([-fvisibility=hidden], $1) # GCC >= 4.0
 
       CFLAGS="$SECP_TRY_APPEND_DEFAULT_CFLAGS_saved_CFLAGS"
     fi
@@ -254,8 +253,8 @@ fi
 print_msan_notice=no
 if test x"$enable_ctime_tests" = x"yes"; then
   SECP_MSAN_CHECK
-  # MSan on Clang >=16 reports unitialized memory in function parameters and return values, even if
-  # the uninitalized variable is never actually "used". This is called "eager" checking, and it's
+  # MSan on Clang >=16 reports uninitialized memory in function parameters and return values, even if
+  # the uninitialized variable is never actually "used". This is called "eager" checking, and it's
   # sounds like good idea for normal use of MSan. However, it yields many false positives in the
   # ctime_tests because many return values depend on secret (i.e., "uninitialized") values, and
   # we're only interested in detecting branches (which count as "uses") on secret data.
@@ -477,6 +476,7 @@ echo "Build Options:"
 echo "  with external callbacks = $enable_external_default_callbacks"
 echo "  with benchmarks         = $enable_benchmark"
 echo "  with tests              = $enable_tests"
+echo "  with exhaustive tests   = $enable_exhaustive_tests"
 echo "  with ctime tests        = $enable_ctime_tests"
 echo "  with coverage           = $enable_coverage"
 echo "  with examples           = $enable_examples"

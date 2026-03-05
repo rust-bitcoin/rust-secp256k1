@@ -69,8 +69,8 @@
 //! # }
 //! ```
 //!
-//! The above code requires `rust-secp256k1` to be compiled with the `rand`, `hashes`, and `std`
-//! feature enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
+//! The above code requires `rust-secp256k1` to be compiled with the `rand` and `std` features
+//! enabled, to get access to [`generate_keypair`](struct.Secp256k1.html#method.generate_keypair)
 //! Alternately, keys and messages can be parsed from slices, like
 //!
 //! ```rust
@@ -136,7 +136,6 @@
 //! * `std` - use standard Rust library, enabled by default.
 //! * `alloc` - use the `alloc` standard Rust library to provide heap allocations.
 //! * `rand` - use `rand` library to provide random generator (e.g. to generate keys).
-//! * `hashes` - use the `hashes` library.
 //! * `recovery` - enable functions that can compute the public key from signature.
 //! * `lowmemory` - optimize the library for low-memory environments.
 //! * `global-context` - enable use of global secp256k1 context (implies `std`).
@@ -516,9 +515,13 @@ fn test_random_32_bytes() -> [u8; 32] {
 
     let mut ret = [0; 32];
     for i in 0..8 {
-        let rng = RNG.load(Ordering::Relaxed).wrapping_mul(PRIME_1).wrapping_add(PRIME_2);
+        let prev = RNG
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |rng| {
+                Some(rng.wrapping_mul(PRIME_1).wrapping_add(PRIME_2))
+            })
+            .unwrap();
+        let rng = prev.wrapping_mul(PRIME_1).wrapping_add(PRIME_2);
         ret[i * 4..(i + 1) * 4].copy_from_slice(&rng.to_be_bytes());
-        RNG.store(rng, Ordering::Relaxed);
     }
     ret
 }
