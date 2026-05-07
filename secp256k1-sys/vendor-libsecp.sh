@@ -34,8 +34,8 @@ while (( "$#" )); do
         ;;
     *)
         if [ -z "$SECP_REV" ]; then
-            echo "Using secp256k1 revision $SECP_REV."
             SECP_REV="$1"
+            echo "Using secp256k1 revision $SECP_REV."
         else
             echo "WARNING: ignoring unknown command-line argument $1"
         fi
