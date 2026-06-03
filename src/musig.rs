@@ -5,9 +5,8 @@
 //! The documentation in this module is for reference and may not be sufficient
 //! for advanced use-cases. A full description of the C API usage along with security considerations
 //! can be found in [C-musig.md](secp256k1-sys/depend/secp256k1/src/modules/musig/musig.md).
-use core;
-use core::fmt;
 use core::mem::MaybeUninit;
+use core::{self, fmt};
 #[cfg(feature = "std")]
 use std;
 

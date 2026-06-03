@@ -6,25 +6,13 @@ set -euox pipefail
 
 main() {
     need_nightly
-    check_required_commands
 
     pushd no_std_test > /dev/null
 
-    xargo run --release --target=x86_64-unknown-linux-gnu | grep -q "Verified Successfully"
-    xargo run --release --target=x86_64-unknown-linux-gnu --features=alloc | grep -q "Verified alloc Successfully"
+    cargo run --release -Z build-std=core,alloc --target=x86_64-unknown-linux-gnu | grep -q "Verified Successfully"
+    cargo run --release -Z build-std=core,alloc --target=x86_64-unknown-linux-gnu --features=alloc | grep -q "Verified alloc Successfully"
 
     popd
-}
-
-# Check all the commands we use are present in the current environment.
-check_required_commands() {
-    need_cmd xargo
-}
-
-need_cmd() {
-    if ! command -v "$1" > /dev/null 2>&1
-    then err "need '$1' (command not found)"
-    fi
 }
 
 err() {

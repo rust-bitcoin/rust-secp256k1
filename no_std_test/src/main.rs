@@ -27,9 +27,9 @@
 //!     * Requires linking with `libc` for calling `printf`.
 //!
 
-#![feature(start)]
 #![feature(alloc_error_handler)]
 #![no_std]
+#![no_main]
 extern crate libc;
 extern crate secp256k1;
 extern crate serde_cbor;
@@ -70,8 +70,8 @@ impl RngCore for FakeRng {
     }
 }
 
-#[start]
-fn start(_argc: isize, _argv: *const *const u8) -> isize {
+#[no_mangle]
+pub extern "C" fn main(_argc: i32, _argv: *const *const u8) -> i32 {
     let mut buf = [AlignedType::zeroed(); 70_000];
     let size = Secp256k1::preallocate_size();
     unsafe { libc::printf("needed size: %d\n\0".as_ptr() as _, size) };
