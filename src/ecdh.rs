@@ -255,7 +255,7 @@ mod benches {
 
     #[bench]
     pub fn bench_ecdh(bh: &mut Bencher) {
-        let (sk, pk) = s.generate_keypair(&mut rand::rng());
+        let (sk, pk) = crate::generate_keypair(&mut rand::rng());
 
         bh.iter(|| {
             let res = SharedSecret::new(&pk, &sk);
