@@ -184,7 +184,7 @@ mod alloc_only {
         /// ```
         /// # #[cfg(all(feature = "rand", feature = "std"))] {
         /// # use secp256k1::Secp256k1;
-        /// # use secp256k1::rand::{rng, RngCore};
+        /// # use secp256k1::rand::{rng, Rng};
         /// let mut ctx = Secp256k1::new();
         /// # let mut rng = rng();
         /// # let mut seed = [0u8; 32];

@@ -1359,11 +1359,12 @@ impl<'a> Arbitrary<'a> for XOnlyPublicKey {
 #[allow(unused_imports)]
 mod test {
     use core::str::FromStr;
+    use std::convert::Infallible;
 
     #[cfg(not(secp256k1_fuzz))]
     use hex_lit::hex;
     #[cfg(feature = "rand")]
-    use rand::{self, RngCore, SeedableRng as _};
+    use rand::{self, Rng, SeedableRng as _, TryRng};
     #[cfg(feature = "rand")]
     use rand_xoshiro::Xoshiro128PlusPlus as SmallRng;
     use serde_test::{Configure, Token};
@@ -1443,13 +1444,16 @@ mod test {
     #[cfg(all(feature = "rand", feature = "alloc"))]
     fn test_out_of_range() {
         struct BadRng(u8);
-        impl RngCore for BadRng {
-            fn next_u32(&mut self) -> u32 { unimplemented!() }
-            fn next_u64(&mut self) -> u64 { unimplemented!() }
+        impl TryRng for BadRng {
+            type Error = Infallible;
+
+            fn try_next_u32(&mut self) -> Result<u32, Self::Error> { unimplemented!() }
+            fn try_next_u64(&mut self) -> Result<u64, Self::Error> { unimplemented!() }
+
             // This will set a secret key to a little over the
             // group order, then decrement with repeated calls
             // until it returns a valid key
-            fn fill_bytes(&mut self, data: &mut [u8]) {
+            fn try_fill_bytes(&mut self, data: &mut [u8]) -> Result<(), Self::Error> {
                 #[rustfmt::skip]
                 let group_order: [u8; 32] = [
                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -1460,6 +1464,8 @@ mod test {
                 data.copy_from_slice(&group_order[..]);
                 data[31] = self.0;
                 self.0 -= 1;
+
+                Ok(())
             }
         }
 

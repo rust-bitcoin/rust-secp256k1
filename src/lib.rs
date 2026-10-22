@@ -497,7 +497,7 @@ fn to_hex<'a>(src: &[u8], target: &'a mut [u8]) -> Result<&'a str, ()> {
 }
 
 #[cfg(feature = "rand")]
-pub(crate) fn random_32_bytes<R: rand::Rng + ?Sized>(rng: &mut R) -> [u8; 32] {
+pub(crate) fn random_32_bytes<R: rand::RngExt + ?Sized>(rng: &mut R) -> [u8; 32] {
     let mut ret = [0u8; 32];
     rng.fill(&mut ret);
     ret
@@ -850,7 +850,7 @@ mod tests {
     #[test]
     #[cfg(all(feature = "rand", feature = "std"))]
     fn test_hex() {
-        use rand::RngCore;
+        use rand::Rng;
 
         use super::to_hex;
 
