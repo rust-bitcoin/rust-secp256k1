@@ -97,7 +97,7 @@ fn bincode_public_key() {
 #[test]
 #[cfg(feature = "global-context")]
 fn bincode_keypair() {
-    let kp = Keypair::from_seckey_byte_array(SK_BYTES).expect("failed to create keypair");
+    let kp = Keypair::from_secret_bytes(SK_BYTES).expect("failed to create keypair");
     let ser = bincode::serialize(&kp).unwrap();
 
     assert_eq!(ser, SK_BYTES);
